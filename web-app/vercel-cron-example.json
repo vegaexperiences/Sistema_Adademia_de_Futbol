@@ -1,0 +1,11 @@
+# Vercel Cron Configuration
+# Add this to your vercel.json to enable automatic email processing
+
+{
+  "crons": [
+    {
+      "path": "/api/cron/process-emails",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

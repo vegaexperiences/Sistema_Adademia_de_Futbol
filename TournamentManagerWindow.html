@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUAREZ ACADEMY - Gestión de Torneos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navegación Superior */
+        .top-navigation {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .nav-logo .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: 0.9em;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .nav-item:hover {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .nav-item.active::before {
+            content: '📍 ';
+        }
+
+        .nav-item.close-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: 2px solid #ef4444;
+        }
+
+        .nav-item.close-btn:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Responsive para menú */
+        @media (max-width: 1200px) {
+            .nav-menu {
+                gap: 6px;
+            }
+            .nav-item {
+                padding: 5px 10px;
+                font-size: 0.85em;
+            }
+        }
+        @media (max-width: 768px) {
+            .nav-menu {
+                gap: 4px;
+                flex-wrap: wrap;
+            }
+            .nav-item {
+                padding: 4px 8px;
+                font-size: 0.8em;
+                border-radius: 4px;
+            }
+        }
+        @media (max-width: 480px) {
+            .nav-menu {
+                flex-direction: column;
+                gap: 4px;
+                align-items: center;
+            }
+            .nav-item {
+                width: 100%;
+                max-width: 200px;
+                text-align: center;
+                padding: 6px 12px;
+            }
+        }
+
+        /* Contenido Principal */
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .page-title {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .page-subtitle {
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        /* Pestañas */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            border-color: #1e3a8a;
+        }
+
+        /* Controles */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            min-width: 150px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 0.9em;
+        }
+
+        /* Tabla */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .table td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Resaltado para jugadores de torneo */
+        .player-row-tournament {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #dcfce7 100%) !important;
+            border-left: 6px solid #22c55e !important;
+            animation: pulseGreen 3s ease-in-out infinite;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2) !important;
+        }
+        
+        .player-row-tournament td {
+            font-weight: 500;
+        }
+        
+        .player-row-tournament:hover {
+            background: linear-gradient(135deg, #bbf7d0 0%, #86efac 50%, #bbf7d0 100%) !important;
+            border-left-color: #16a34a !important;
+            transform: scale(1.01);
+            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3) !important;
+        }
+
+        /* Animación para jugadores de torneo */
+        @keyframes pulseGreen {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2);
+            }
+            50% {
+                transform: scale(1.003);
+                box-shadow: 0 3px 8px rgba(34, 197, 94, 0.3);
+            }
+        }
+
+        /* Badges */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-badge.status-activo {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.status-inactivo {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.status-pendiente {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Botones de acción */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .close {
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* Estadísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        /* Mensajes */
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .message.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                min-width: auto;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    /* Global Loading Overlay - Balón de Fútbol */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    .football-loader {
+        font-size: 80px;
+        animation: spin-football 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin-football {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #1e3a8a;
+    }
+    </style>
+</head>
+<body>
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay" id="globalLoading">
+        <div class="loading-content">
+            <div class="football-loader">⚽</div>
+            <div class="loading-text">Cargando...</div>
+        </div>
+    </div>
+    <div class="container">
+        <!-- Navegación Superior -->
+        <div class="top-navigation">
+            <div class="nav-logo">
+                <div class="logo-icon">🏆</div>
+                SUAREZ ACADEMY - Torneos
+            </div>
+            <div class="nav-menu">
+                <a href="#" class="nav-item" onclick="navigateTo('players')">👥 Jugadores</a>
+                <a href="#" class="nav-item" onclick="navigateTo('families')">👨‍👩‍👧‍👦 Familias</a>
+                <a href="#" class="nav-item" onclick="navigateTo('financial')">💰 Financiero</a>
+                <!-- <a href="#" class="nav-item" onclick="navigateTo('expenses')">💸 Gastos</a> -->
+                <a href="#" class="nav-item" onclick="navigateTo('approvals')">✅ Aprobaciones</a>
+                <a href="#" class="nav-item active">🏆 Torneos</a>
+                <a href="#" class="nav-item" onclick="navigateTo('historic')">📜 Histórico</a>
+                <a href="#" class="nav-item" onclick="navigateTo('config')">⚙️ Config</a>
+                <a href="#" class="nav-item close-btn" onclick="closeWindow()">❌ Cerrar</a>
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="main-content">
+            <h1 class="page-title">🏆 Gestión de Torneos</h1>
+            <p class="page-subtitle">Administra torneos y jugadores de torneo</p>
+
+            <!-- Pestañas -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('tournaments')">🏆 Torneos Activos</div>
+                <div class="tab" onclick="switchTab('players')">👥 Jugadores de Torneo</div>
+                <div class="tab" onclick="switchTab('expired')">📅 Torneos Expirados</div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalTournaments">0</div>
+                    <div class="stat-label">Torneos Activos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPlayers">0</div>
+                    <div class="stat-label">Jugadores de Torneo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalRevenue">$0</div>
+                    <div class="stat-label">Ingresos por Torneos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="expiredTournaments">0</div>
+                    <div class="stat-label">Torneos Expirados</div>
+                </div>
+            </div>
+
+            <!-- Contenido de Torneos -->
+            <div id="tournamentsContent">
+                <div class="controls">
+                    <input type="text" id="searchInput" class="search-box" placeholder="🔍 Buscar torneos por nombre..." autocomplete="off">
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option value="Activo">Activo</option>
+                        <option value="Expirado">Expirado</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="openAddTournamentModal()">
+                        ➕ Crear Torneo
+                    </button>
+                    <button class="btn btn-info" onclick="refreshData()">
+                        🔄 Actualizar
+                    </button>
+                    <button class="btn btn-warning" onclick="executeMigration()">
+                        🔄 Migrar Jugadores Existentes
+                    </button>
+                    <button class="btn btn-secondary" onclick="testConnection()">
+                        🔧 Probar Conexión
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Acciones</th>
+                                <th>Nombre del Torneo</th>
+                                <th>Fecha</th>
+                                <th>Costo</th>
+                                <th>Jugadores</th>
+                                <th>Estado</th>
+                                <th>Ingresos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tournamentsTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                                    Cargando torneos...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contenido de Jugadores -->
+            <div id="playersContent" style="display: none;">
+                <div class="controls">
+                    <input type="text" id="playerSearchInput" class="search-box" placeholder="🔍 Buscar jugadores por nombre, cédula o ID..." autocomplete="off">
+                    <select id="tournamentFilter" class="filter-select">
+                        <option value="">Todos los torneos</option>
+                    </select>
+                    <button class="btn btn-info" onclick="refreshPlayers()">
+                        🔄 Actualizar
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Acciones</th>
+                                <th>Nombre</th>
+                                <th>Cédula</th>
+                                <th>Edad</th>
+                                <th>Torneo</th>
+                                <th>Estado</th>
+                                <th>Pago</th>
+                                <th>Teléfono</th>
+                                <th>ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playersTableBody">
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                                    Cargando jugadores...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contenido de Expirados -->
+            <div id="expiredContent" style="display: none;">
+                <div class="controls">
+                    <input type="text" id="expiredSearchInput" class="search-box" placeholder="🔍 Buscar torneos expirados..." autocomplete="off">
+                    <button class="btn btn-warning" onclick="cleanupExpiredTournaments()">
+                        🧹 Limpiar Expirados
+                    </button>
+                    <button class="btn btn-info" onclick="refreshExpired()">
+                        🔄 Actualizar
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Acciones</th>
+                                <th>Nombre del Torneo</th>
+                                <th>Fecha</th>
+                                <th>Costo</th>
+                                <th>Jugadores</th>
+                                <th>Estado</th>
+                                <th>Ingresos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expiredTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: #7f8c8d;">
+                                    Cargando torneos expirados...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Crear/Editar Torneo -->
+    <div id="tournamentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">➕ Crear Nuevo Torneo</h2>
+                <span class="close" onclick="closeTournamentModal()">&times;</span>
+            </div>
+            <form id="tournamentForm">
+                <div class="form-group">
+                    <label for="tournamentName">Nombre del Torneo *</label>
+                    <input type="text" id="tournamentName" name="tournamentName" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tournamentDate">Fecha del Torneo *</label>
+                        <input type="date" id="tournamentDate" name="tournamentDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tournamentCost">Costo del Torneo *</label>
+                        <input type="number" id="tournamentCost" name="tournamentCost" min="0" step="0.01" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tournamentDescription">Descripción</label>
+                    <textarea id="tournamentDescription" name="tournamentDescription" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tournamentLocation">Ubicación</label>
+                    <input type="text" id="tournamentLocation" name="tournamentLocation">
+                </div>
+                
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn btn-danger" onclick="closeTournamentModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar Torneo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allTournaments = [];
+        let allTournamentPlayers = [];
+        let currentTab = 'tournaments';
+
+        // Navegación
+        function navigateTo(page) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.url) {
+                        window.open(result.url, '_blank');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error navegando:', error);
+                })
+                .navigateToPage(page);
+        }
+
+        
+        // Global Loading Functions
+        function showLoading(message = 'Cargando...') {
+            const loading = document.getElementById('globalLoading');
+            const loadingText = loading.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'none';
+        }
+        function closeWindow() {
+            window.close();
+        }
+
+        // Cambiar pestañas
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Actualizar pestañas
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Mostrar contenido correspondiente
+            document.getElementById('tournamentsContent').style.display = tab === 'tournaments' ? 'block' : 'none';
+            document.getElementById('playersContent').style.display = tab === 'players' ? 'block' : 'none';
+            document.getElementById('expiredContent').style.display = tab === 'expired' ? 'block' : 'none';
+            
+            // Cargar datos según la pestaña
+            if (tab === 'tournaments') {
+                loadTournaments();
+            } else if (tab === 'players') {
+                loadTournamentPlayers();
+            } else if (tab === 'expired') {
+                loadExpiredTournaments();
+            }
+        }
+
+        // Cargar torneos
+        function loadTournaments() {
+            try {
+                google.script.run
+                    .withSuccessHandler(function(tournaments) {
+                        allTournaments = tournaments || [];
+                        renderTournamentsTable(allTournaments);
+                        updateStats();
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error cargando torneos:', error);
+                        showError('Error cargando torneos: ' + error.toString());
+                    })
+                    .getAllTournaments();
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error: ' + error.toString());
+            }
+        }
+
+        // Cargar jugadores de torneo
+        function loadTournamentPlayers() {
+            try {
+                console.log('🔄 Cargando jugadores de torneo...');
+                google.script.run
+                    .withSuccessHandler(function(players) {
+                        console.log('📊 Jugadores recibidos:', players);
+                        allTournamentPlayers = players || [];
+                        console.log('📊 Total jugadores asignados:', allTournamentPlayers.length);
+                        renderPlayersTable(allTournamentPlayers);
+                        updateTournamentFilter();
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('❌ Error cargando jugadores:', error);
+                        showError('Error cargando jugadores: ' + error.toString());
+                    })
+                    .getAllTournamentPlayers();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showError('Error: ' + error.toString());
+            }
+        }
+
+        // Cargar torneos expirados
+        function loadExpiredTournaments() {
+            try {
+                google.script.run
+                    .withSuccessHandler(function(tournaments) {
+                        renderExpiredTable(tournaments || []);
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error cargando torneos expirados:', error);
+                        showError('Error cargando torneos expirados: ' + error.toString());
+                    })
+                    .getExpiredTournaments();
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error: ' + error.toString());
+            }
+        }
+
+        // Renderizar tabla de torneos
+        function renderTournamentsTable(tournaments) {
+            const tbody = document.getElementById('tournamentsTableBody');
+            
+            if (tournaments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #7f8c8d;">No se encontraron torneos</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = tournaments.map(tournament => {
+                const isExpired = new Date(tournament.date) < new Date();
+                const status = isExpired ? 'Expirado' : 'Activo';
+                
+                return `
+                <tr>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="viewTournamentDetails('${tournament.id}')" title="Ver detalles">
+                                👁️ Ver
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="editTournament('${tournament.id}')" title="Editar torneo">
+                                ✏️ Editar
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteTournament('${tournament.id}')" title="Eliminar torneo">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </td>
+                    <td>${tournament.name}</td>
+                    <td>${new Date(tournament.date).toLocaleDateString()}</td>
+                    <td>$${tournament.cost}</td>
+                    <td>${tournament.playerCount || 0}</td>
+                    <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
+                    <td>$${tournament.revenue || 0}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Renderizar tabla de jugadores
+        function renderPlayersTable(players) {
+            console.log('🎨 Renderizando tabla de jugadores:', players);
+            const tbody = document.getElementById('playersTableBody');
+            
+            if (!players || players.length === 0) {
+                console.log('⚠️ No hay jugadores para renderizar');
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #7f8c8d;">No se encontraron jugadores de torneo</td></tr>';
+                return;
+            }
+            
+            console.log(`✅ Renderizando ${players.length} jugadores`);
+
+            tbody.innerHTML = players.map(player => {
+                const nombreCompleto = `${player.Nombre || ''} ${player.Apellidos || ''}`.trim();
+                const cedula = player.Cédula || player['Número de identificación'] || '-';
+                const edad = player.Edad || '-';
+                const torneo = player.tournamentName || '-';
+                const estado = player.Estado || 'Activo';
+                const pago = player.paymentAmount || '-';
+                const telefono = player.Teléfono || player.telefono || '-';
+                const id = player.ID || '';
+                
+                return `
+                <tr class="player-row-tournament">
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="viewPlayerDetails('${id}')" title="Ver detalles">
+                                👁️ Ver
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="removeFromTournament('${id}')" title="Quitar del torneo">
+                                🗑️ Quitar
+                            </button>
+                        </div>
+                    </td>
+                    <td>${nombreCompleto}</td>
+                    <td>${cedula}</td>
+                    <td>${edad}</td>
+                    <td>${torneo}</td>
+                    <td><span class="status-badge status-${estado.toLowerCase()}">${estado}</span></td>
+                    <td>$${pago}</td>
+                    <td>${telefono}</td>
+                    <td><small style="color: #9ca3af; font-size: 0.75em;">${id}</small></td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Renderizar tabla de expirados
+        function renderExpiredTable(tournaments) {
+            const tbody = document.getElementById('expiredTableBody');
+            
+            if (tournaments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #7f8c8d;">No hay torneos expirados</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = tournaments.map(tournament => {
+                return `
+                <tr>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="viewTournamentDetails('${tournament.id}')" title="Ver detalles">
+                                👁️ Ver
+                            </button>
+                            <button class="btn btn-success btn-sm" onclick="moveToHistoric('${tournament.id}')" title="Mover a histórico">
+                                📜 Histórico
+                            </button>
+                        </div>
+                    </td>
+                    <td>${tournament.name}</td>
+                    <td>${new Date(tournament.date).toLocaleDateString()}</td>
+                    <td>$${tournament.cost}</td>
+                    <td>${tournament.playerCount || 0}</td>
+                    <td><span class="status-badge status-expirado">Expirado</span></td>
+                    <td>$${tournament.revenue || 0}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Actualizar estadísticas
+        function updateStats() {
+            const activeTournaments = allTournaments.filter(t => new Date(t.date) >= new Date()).length;
+            const expiredTournaments = allTournaments.filter(t => new Date(t.date) < new Date()).length;
+            const totalPlayers = allTournamentPlayers.length;
+            const totalRevenue = allTournaments.reduce((sum, t) => sum + (t.revenue || 0), 0);
+
+            document.getElementById('totalTournaments').textContent = activeTournaments;
+            document.getElementById('totalPlayers').textContent = totalPlayers;
+            document.getElementById('totalRevenue').textContent = '$' + totalRevenue.toFixed(2);
+            document.getElementById('expiredTournaments').textContent = expiredTournaments;
+        }
+
+        // Actualizar filtro de torneos
+        function updateTournamentFilter() {
+            const filter = document.getElementById('tournamentFilter');
+            const tournaments = [...new Set(allTournamentPlayers.map(p => p.tournamentName).filter(Boolean))];
+            
+            filter.innerHTML = '<option value="">Todos los torneos</option>' +
+                tournaments.map(tournament => `<option value="${tournament}">${tournament}</option>`).join('');
+        }
+
+        // Modal de torneo
+        function openAddTournamentModal() {
+            document.getElementById('modalTitle').textContent = '➕ Crear Nuevo Torneo';
+            document.getElementById('tournamentForm').reset();
+            document.getElementById('tournamentModal').style.display = 'block';
+        }
+
+        function editTournament(tournamentId) {
+            const tournament = allTournaments.find(t => t.id === tournamentId);
+            if (!tournament) return;
+
+            document.getElementById('modalTitle').textContent = '✏️ Editar Torneo';
+            document.getElementById('tournamentName').value = tournament.name;
+            document.getElementById('tournamentDate').value = tournament.date;
+            document.getElementById('tournamentCost').value = tournament.cost;
+            document.getElementById('tournamentDescription').value = tournament.description || '';
+            document.getElementById('tournamentLocation').value = tournament.location || '';
+            
+            document.getElementById('tournamentModal').style.display = 'block';
+        }
+
+        function closeTournamentModal() {
+            document.getElementById('tournamentModal').style.display = 'none';
+        }
+
+        // Formulario de torneo
+        document.getElementById('tournamentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('tournamentName').value,
+                date: document.getElementById('tournamentDate').value,
+                cost: parseFloat(document.getElementById('tournamentCost').value),
+                description: document.getElementById('tournamentDescription').value,
+                location: document.getElementById('tournamentLocation').value
+            };
+
+            try {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.success) {
+                            showSuccess('Torneo guardado exitosamente');
+                            closeTournamentModal();
+                            loadTournaments();
+                        } else {
+                            showError('Error guardando torneo: ' + result.message);
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        showError('Error guardando torneo: ' + error.toString());
+                    })
+                    .saveTournament(formData);
+            } catch (error) {
+                showError('Error: ' + error.toString());
+            }
+        });
+
+        // Funciones de acción
+        function viewTournamentDetails(tournamentId) {
+            // Implementar vista de detalles
+            console.log('Ver detalles del torneo:', tournamentId);
+        }
+
+        function deleteTournament(tournamentId) {
+            if (confirm('¿Está seguro de eliminar este torneo?')) {
+                try {
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            if (result.success) {
+                                showSuccess('Torneo eliminado exitosamente');
+                                loadTournaments();
+                            } else {
+                                showError('Error eliminando torneo: ' + result.message);
+                            }
+                        })
+                        .withFailureHandler(function(error) {
+                            showError('Error eliminando torneo: ' + error.toString());
+                        })
+                        .deleteTournament(tournamentId);
+                } catch (error) {
+                    showError('Error: ' + error.toString());
+                }
+            }
+        }
+
+        function viewPlayerDetails(playerId) {
+            // Implementar vista de detalles del jugador
+            console.log('Ver detalles del jugador:', playerId);
+        }
+
+        function removeFromTournament(playerId) {
+            if (confirm('¿Está seguro de quitar este jugador del torneo?')) {
+                try {
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            if (result.success) {
+                                showSuccess('Jugador removido del torneo');
+                                loadTournamentPlayers();
+                            } else {
+                                showError('Error removiendo jugador: ' + result.message);
+                            }
+                        })
+                        .withFailureHandler(function(error) {
+                            showError('Error removiendo jugador: ' + error.toString());
+                        })
+                        .removePlayerFromTournament(playerId);
+                } catch (error) {
+                    showError('Error: ' + error.toString());
+                }
+            }
+        }
+
+        function moveToHistoric(tournamentId) {
+            if (confirm('¿Está seguro de mover este torneo al histórico?')) {
+                try {
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            if (result.success) {
+                                showSuccess('Torneo movido al histórico');
+                                loadExpiredTournaments();
+                            } else {
+                                showError('Error moviendo torneo: ' + result.message);
+                            }
+                        })
+                        .withFailureHandler(function(error) {
+                            showError('Error moviendo torneo: ' + error.toString());
+                        })
+                        .moveTournamentToHistoric(tournamentId);
+                } catch (error) {
+                    showError('Error: ' + error.toString());
+                }
+            }
+        }
+
+        function cleanupExpiredTournaments() {
+            if (confirm('¿Está seguro de limpiar todos los torneos expirados? Esto los moverá al histórico.')) {
+                try {
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            if (result.success) {
+                                showSuccess('Torneos expirados limpiados');
+                                loadExpiredTournaments();
+                            } else {
+                                showError('Error limpiando torneos: ' + result.message);
+                            }
+                        })
+                        .withFailureHandler(function(error) {
+                            showError('Error limpiando torneos: ' + error.toString());
+                        })
+                        .cleanupExpiredTournaments();
+                } catch (error) {
+                    showError('Error: ' + error.toString());
+                }
+            }
+        }
+
+        // Actualizar datos
+        function refreshData() {
+            if (currentTab === 'tournaments') {
+                loadTournaments();
+            } else if (currentTab === 'players') {
+                loadTournamentPlayers();
+            } else if (currentTab === 'expired') {
+                loadExpiredTournaments();
+            }
+        }
+
+        function refreshPlayers() {
+            loadTournamentPlayers();
+        }
+
+        function refreshExpired() {
+            loadExpiredTournaments();
+        }
+
+        // Mensajes
+        function showSuccess(message) {
+            showMessage(message, 'success');
+        }
+
+        function showError(message) {
+            showMessage(message, 'error');
+        }
+
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            
+            const container = document.querySelector('.main-content');
+            container.insertBefore(messageDiv, container.firstChild);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Probar conexión
+        function testConnection() {
+            try {
+                console.log('🔧 Probando conexión...');
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('✅ Resultado de prueba:', result);
+                        if (result.success) {
+                            showSuccess('✅ Conexión exitosa: ' + result.message);
+                            console.log('📊 Datos de prueba:', result.testData);
+                        } else {
+                            showError('❌ Error en conexión: ' + result.message);
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('❌ Error en prueba:', error);
+                        showError('❌ Error en conexión: ' + error.toString());
+                    })
+                    .testTournamentPlayersConnection();
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showError('Error: ' + error.toString());
+            }
+        }
+
+        // Migración de jugadores existentes
+        function executeMigration() {
+            if (confirm('¿Está seguro de migrar todos los jugadores de torneo existentes?\n\nEsta operación:\n• Creará torneos basados en los jugadores existentes\n• Eliminará jugadores de torneo de la hoja principal\n• Los moverá a la nueva gestión de torneos\n\n¿Continuar?')) {
+                try {
+                    showMessage('🔄 Iniciando migración de jugadores de torneo...', 'info');
+                    
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            if (result.success) {
+                                showSuccess(`✅ ${result.message}`);
+                                showMessage(`📊 Migración completada:\n• ${result.migrated} jugadores migrados\n• ${result.tournamentsCreated} torneos creados\n• ${result.removed} jugadores eliminados de la hoja principal`, 'success');
+                                
+                                // Recargar datos
+                                loadTournaments();
+                                loadTournamentPlayers();
+                            } else {
+                                showError('❌ Error en migración: ' + result.message);
+                            }
+                        })
+                        .withFailureHandler(function(error) {
+                            showError('❌ Error ejecutando migración: ' + error.toString());
+                        })
+                        .executeCompleteTournamentMigration();
+                        
+                } catch (error) {
+                    showError('Error: ' + error.toString());
+                }
+            }
+        }
+
+        // Cargar datos iniciales
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTournaments();
+        });
+    </script>
+</body>
+</html>

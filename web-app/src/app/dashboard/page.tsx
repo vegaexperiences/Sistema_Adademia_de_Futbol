@@ -1,0 +1,177 @@
+import { createClient } from '@/lib/supabase/server';
+import { Users, CheckCircle, Clock, GraduationCap, TrendingUp } from 'lucide-react';
+
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  
+  // Get stats
+  const { data: players } = await supabase.from('players').select('status');
+  const { data: families } = await supabase.from('families').select('id');
+  
+  const totalPlayers = players?.length || 0;
+  const activePlayers = players?.filter(p => p.status === 'Active').length || 0;
+  const pendingPlayers = players?.filter(p => p.status === 'Pending').length || 0;
+  const scholarships = players?.filter(p => p.status === 'Scholarship').length || 0;
+  const totalFamilies = families?.length || 0;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Welcome Header */}
+      <div className="glass-card p-8">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+          ⚽ Dashboard - SUAREZ ACADEMY
+        </h1>
+        <p className="text-lg text-gray-600 dark:text-gray-400">
+          Bienvenido al panel de administración
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Total Players */}
+        <div className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 animate-slide-up">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl" style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            }}>
+              <Users className="h-8 w-8 text-white" />
+            </div>
+            <TrendingUp className="h-5 w-5 text-green-500" />
+          </div>
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            {totalPlayers}
+          </h3>
+          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+            Total Jugadores
+          </p>
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
+              background: 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)',
+              color: '#5b21b6'
+            }}>
+              📊 Activos
+            </span>
+          </div>
+        </div>
+
+        {/* Active Players */}
+        <div className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl" style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            }}>
+              <CheckCircle className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            {activePlayers}
+          </h3>
+          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+            Jugadores Activos
+          </p>
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
+              background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+              color: '#065f46'
+            }}>
+              ✅ Aprobados
+            </span>
+          </div>
+        </div>
+
+        {/* Pending Approvals */}
+        <div className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl" style={{
+              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+            }}>
+              <Clock className="h-8 w-8 text-white" />
+            </div>
+            {pendingPlayers > 0 && (
+              <span className="px-2 py-1 rounded-full text-xs font-bold bg-red-500 text-white animate-pulse">
+                {pendingPlayers}
+              </span>
+            )}
+          </div>
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            {pendingPlayers}
+          </h3>
+          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+            Aprobaciones Pendientes
+          </p>
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
+              background: 'linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)',
+              color: '#92400e'
+            }}>
+              ⏳ En espera
+            </span>
+          </div>
+        </div>
+
+        {/* Scholarships */}
+        <div className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-xl" style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            }}>
+              <GraduationCap className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            {scholarships}
+          </h3>
+          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+            Becados
+          </p>
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
+              background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+              color: '#1e3a8a'
+            }}>
+              🎓 Especial
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="glass-card p-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+          🚀 Acciones Rápidas
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <a href="/dashboard/approvals" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+          }}>
+            <Clock className="h-10 w-10 text-white mb-3" />
+            <h3 className="text-xl font-bold text-white mb-2">Revisar Aprobaciones</h3>
+            <p className="text-white/90 text-sm">
+              {pendingPlayers} solicitudes esperando aprobación
+            </p>
+          </a>
+
+          <a href="/dashboard/players" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          }}>
+            <Users className="h-10 w-10 text-white mb-3" />
+            <h3 className="text-xl font-bold text-white mb-2">Ver Jugadores</h3>
+            <p className="text-white/90 text-sm">
+              Gestionar {totalPlayers} jugadores registrados
+            </p>
+          </a>
+
+          <a href="/dashboard/families" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          }}>
+            <Users className="h-10 w-10 text-white mb-3" />
+            <h3 className="text-xl font-bold text-white mb-2">Ver Familias</h3>
+            <p className="text-white/90 text-sm">
+              {totalFamilies} familias registradas
+            </p>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,2828 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>👨‍👩‍👧‍👦 Grupos Familiares - Academia de Fútbol</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navegación Superior */
+        .top-navigation {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .nav-logo .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: 0.9em;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .nav-item:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+            .nav-item.active::before {
+                content: '📍 ';
+            }
+
+            .nav-item.close-btn {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                border: 2px solid #ef4444;
+            }
+
+            .nav-item.close-btn:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            }
+
+            /* Responsive para menú */
+            @media (max-width: 1200px) {
+                .nav-menu {
+                    gap: 6px;
+                }
+                
+                .nav-item {
+                    padding: 5px 10px;
+                    font-size: 0.85em;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .nav-menu {
+                    gap: 4px;
+                    flex-wrap: wrap;
+                }
+                
+                .nav-item {
+                    padding: 4px 8px;
+                    font-size: 0.8em;
+                    border-radius: 4px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .nav-menu {
+                    flex-direction: column;
+                    gap: 4px;
+                    align-items: center;
+                }
+                
+                .nav-item {
+                    width: 100%;
+                    max-width: 200px;
+                    text-align: center;
+                    padding: 6px 12px;
+                }
+            }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .family-groups-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .family-group {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s ease;
+        }
+
+        .family-group:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .family-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .family-info h3 {
+            color: #2c3e50;
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+
+        .family-info p {
+            color: #6c757d;
+            margin: 2px 0;
+        }
+
+        .family-summary {
+            text-align: right;
+        }
+
+        .total-amount {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .players-count {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .players-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .player-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .player-card:hover {
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .player-details {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin: 2px 0;
+        }
+
+        .player-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-scholarship {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #6c757d;
+            font-size: 1.1em;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .no-data h3 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #ffd700;
+        }
+
+        .modal-tabs {
+            background: #f3f4f6;
+            padding: 15px 20px;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-tab {
+            padding: 10px 20px;
+            border: none;
+            background: #e5e7eb;
+            color: #6b7280;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-tab:hover:not(.active) {
+            background: #d1d5db;
+        }
+
+        .modal-body {
+            padding: 30px;
+            max-height: calc(85vh - 200px);
+            overflow-y: auto;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .info-section {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .info-section p {
+            margin: 8px 0;
+            color: #1f2937;
+        }
+
+        .info-section p strong {
+            color: #6b7280;
+        }
+
+        .family-tab-content {
+            display: none;
+        }
+
+        .family-tab-content.active {
+            display: block;
+        }
+
+        .payment-form {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .player-checkbox-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .player-checkbox {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .player-checkbox:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .player-checkbox input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .player-checkbox.selected {
+            border-color: #667eea;
+            background: #f3f4f6;
+        }
+
+        /* Estilos para formulario de familia */
+        .family-form-section {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 4px solid #667eea;
+        }
+
+        .family-form-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .family-form-mode {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .family-form-mode label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f3f4f6;
+            padding: 8px 14px;
+            border-radius: 8px;
+            color: #374151;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .family-form-mode input[type="radio"] {
+            accent-color: #667eea;
+            transform: scale(1.1);
+        }
+
+        .family-form-mode label.active {
+            border-color: #667eea;
+            background: #e0e7ff;
+            color: #1d4ed8;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        .existing-players-toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .existing-players-search {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        .existing-players-wrapper {
+            max-height: 320px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .existing-player-option {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.2s ease;
+        }
+
+        .existing-player-option:last-child {
+            border-bottom: none;
+        }
+
+        .existing-player-option:hover {
+            background: #f8fafc;
+        }
+
+        .existing-player-option input[type="checkbox"] {
+            margin-top: 4px;
+            transform: scale(1.1);
+            accent-color: #667eea;
+        }
+
+        .existing-player-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.9em;
+            color: #4b5563;
+        }
+
+        .existing-player-details strong {
+            font-size: 1em;
+            color: #1f2937;
+        }
+
+        .tag-warning {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            margin-left: 6px;
+        }
+
+        .existing-players-empty {
+            padding: 15px;
+            text-align: center;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .player-entry {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #e5e7eb;
+            position: relative;
+        }
+
+        .player-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .player-entry-header h4 {
+            color: #374151;
+            margin: 0;
+        }
+
+        .remove-player-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .remove-player-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .add-player-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 20px auto;
+            transition: all 0.3s ease;
+        }
+
+        .add-player-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+    /* Global Loading Overlay - Balón de Fútbol */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    .football-loader {
+        font-size: 80px;
+        animation: spin-football 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin-football {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #1e3a8a;
+    }
+    </style>
+</head>
+<body>
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay" id="globalLoading">
+        <div class="loading-content">
+            <div class="football-loader">⚽</div>
+            <div class="loading-text">Cargando...</div>
+        </div>
+    </div>
+    <div class="container">
+        <!-- Navegación Superior -->
+        <nav class="top-navigation">
+            <div class="nav-logo">
+                <div class="logo-icon">⚽</div>
+                SUAREZ ACADEMY
+            </div>
+                    <div class="nav-menu">
+                        <a href="#" class="nav-item" onclick="navigateTo('players')">👥 Jugadores</a>
+                        <a href="#" class="nav-item active" onclick="navigateTo('families')">👨‍👩‍👧‍👦 Familias</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('financial')">💰 Financiero</a>
+                        <!-- <a href="#" class="nav-item" onclick="navigateTo('expenses')">💸 Gastos</a> -->
+                        <a href="#" class="nav-item" onclick="navigateTo('approvals')">✅ Aprobaciones</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('tournaments')">🏆 Torneos</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('historic')">📜 Histórico</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('config')">⚙️ Config</a>
+                        <a href="#" class="nav-item" onclick="handleGroupFamiliesNav()">👨‍👩‍👧‍👦 Agrupar Familias</a>
+                        <a href="#" class="nav-item close-btn" onclick="closeWindow()">❌ Cerrar</a>
+                    </div>
+        </nav>
+
+        <div class="header">
+            <h1>👨‍👩‍👧‍👦 Grupos Familiares</h1>
+            <p style="text-align: center; color: #6c757d; margin-top: 10px;">
+                Gestión de familias y sus saldos acumulados
+            </p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" class="search-box" placeholder="🔍 Buscar por tutor, jugador o familia...">
+            <select id="statusFilter" class="filter-select">
+                <option value="">Todos los estados</option>
+                <option value="Activo">Activos</option>
+                <option value="Pendiente">Pendientes</option>
+                <option value="becado">Becados</option>
+            </select>
+            <button class="btn btn-success" onclick="openAddFamilyModal()">➕ Agregar Grupo Familiar</button>
+            <button class="btn btn-primary" onclick="loadFamilyGroups()">🔄 Actualizar</button>
+        </div>
+
+        <div class="family-groups-container">
+            <div id="loadingSpinner" class="loading-spinner">
+                <div class="spinner"></div>
+                <div class="loading-text">Cargando grupos familiares...</div>
+            </div>
+
+            <div id="familyGroupsContent">
+                <!-- Los grupos familiares se cargarán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Grupo Familiar -->
+    <div id="addFamilyModal" class="modal">
+        <div class="modal-content" style="max-width: 1000px; max-height: 90vh;">
+            <div class="modal-header">
+                <h2>➕ Agregar Grupo Familiar</h2>
+                <span class="close" onclick="closeAddFamilyModal()">&times;</span>
+            </div>
+            
+            <div class="modal-body" style="overflow-y: auto;">
+                <form id="addFamilyForm">
+                    <div class="family-form-mode" id="familyCreationModeSwitch">
+                        <label id="familyModeManualLabel" class="active">
+                            <input type="radio" name="familyCreationMode" id="familyModeManual" value="manual" checked onchange="setFamilyCreationMode('manual')">
+                            Crear desde cero
+                        </label>
+                        <label id="familyModeExistingLabel">
+                            <input type="radio" name="familyCreationMode" id="familyModeExisting" value="existing" onchange="setFamilyCreationMode('existing')">
+                            Agrupar jugadores existentes
+                        </label>
+                    </div>
+
+                    <!-- Información del Tutor -->
+                    <div class="family-form-section">
+                        <h3>👨‍👩‍👧 Información del Tutor/Padre</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newTutorName">Nombre Completo del Tutor *</label>
+                                <input type="text" id="newTutorName" required placeholder="Ej: Juan Pérez">
+                            </div>
+                            <div class="form-group">
+                                <label for="newTutorCedula">Cédula del Tutor *</label>
+                                <input type="text" id="newTutorCedula" required placeholder="Ej: 8-123-456">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newTutorEmail">Email del Tutor *</label>
+                                <input type="email" id="newTutorEmail" required placeholder="Ej: tutor@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="newTutorPhone">Teléfono del Tutor *</label>
+                                <input type="tel" id="newTutorPhone" required placeholder="Ej: 6479-5352">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newTutorAddress">Dirección Completa *</label>
+                            <input type="text" id="newTutorAddress" required placeholder="Ej: Calle 50, Ciudad de Panamá">
+                        </div>
+                        <div class="form-group">
+                            <label for="newTutorCedulaFile">Cédula del Tutor (Archivo)</label>
+                            <input type="file" id="newTutorCedulaFile" accept="image/*,.pdf" style="padding: 8px;">
+                            <small style="color: #6b7280; display: block; margin-top: 5px;">Sube una foto o PDF de la cédula del tutor</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Jugadores de la Familia (Manual) -->
+                    <div class="family-form-section" id="manualPlayersSection">
+                        <h3>⚽ Jugadores de la Familia (Mínimo 2)</h3>
+                        <p style="color: #6b7280; margin-bottom: 15px;">
+                            Agrega todos los jugadores que pertenecen a esta familia. El primer jugador pagará $130/mes, los siguientes $110.50/mes (descuento familiar 15%).
+                        </p>
+                        
+                        <div id="playersContainer">
+                            <!-- Los jugadores se agregarán aquí dinámicamente -->
+                        </div>
+                        
+                        <button type="button" class="add-player-btn" onclick="addPlayerEntry()">
+                            ➕ Agregar Otro Jugador
+                        </button>
+                    </div>
+
+                    <!-- Jugadores existentes -->
+                    <div class="family-form-section" id="existingPlayersSection" style="display: none;">
+                        <h3>📋 Seleccionar jugadores activos</h3>
+                        <p style="color: #6b7280; margin-bottom: 15px;">
+                            Elige al menos 2 jugadores activos para reagruparlos bajo un nuevo tutor. Todos los jugadores seleccionados recibirán la información del tutor ingresada arriba.
+                        </p>
+
+                        <div class="existing-players-toolbar">
+                            <input type="text" id="existingPlayersSearch" class="existing-players-search" placeholder="🔍 Buscar por jugador, tutor o familia..." oninput="filterExistingPlayers(this.value)">
+                            <button type="button" class="btn btn-primary" onclick="refreshExistingPlayers()">🔄 Actualizar lista</button>
+                        </div>
+
+                        <div id="existingPlayersLoading" style="display: none; color: #6b7280; margin-bottom: 10px;">
+                            Cargando jugadores disponibles...
+                        </div>
+
+                        <div id="existingPlayersWrapper" class="existing-players-wrapper">
+                            <div id="existingPlayersList"></div>
+                            <div id="existingPlayersEmpty" class="existing-players-empty" style="display: none;">
+                                No hay jugadores activos disponibles para asignar.
+                            </div>
+                        </div>
+
+                        <p id="existingPlayersSummary" style="color: #6b7280; margin-top: 12px;">Selecciona al menos 2 jugadores.</p>
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+                        <button type="button" class="btn" onclick="closeAddFamilyModal()" style="background: #95a5a6; color: white; margin-right: 10px;">
+                            ❌ Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            💾 Crear Grupo Familiar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Unificado para Familia -->
+    <div id="familyDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="familyModalTitle">👨‍👩‍👧‍👦 Detalles de la Familia</h2>
+                <span class="close" onclick="closeFamilyModal()">&times;</span>
+            </div>
+            
+            <!-- Pestañas del Modal -->
+            <div class="modal-tabs">
+                <button onclick="switchFamilyTab('info')" id="infoTab" class="modal-tab active">
+                    📋 Información
+                </button>
+                <button onclick="switchFamilyTab('payments')" id="paymentsTab" class="modal-tab">
+                    💰 Pagos e Historial
+                </button>
+                <button onclick="switchFamilyTab('actions')" id="actionsTab" class="modal-tab">
+                    ⚡ Acciones
+                </button>
+            </div>
+            
+            <!-- Contenido de las pestañas -->
+            <div class="modal-body">
+                <!-- Pestaña de Información -->
+                <div id="familyInfoContent" class="family-tab-content active">
+                    <div class="loading">Cargando información...</div>
+                </div>
+                
+                <!-- Pestaña de Pagos -->
+                <div id="familyPaymentsContent" class="family-tab-content">
+                    <div class="loading">Cargando pagos...</div>
+                </div>
+                
+                <!-- Pestaña de Acciones -->
+                <div id="familyActionsContent" class="family-tab-content">
+                    <div class="loading">Cargando acciones...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allFamilyGroups = [];
+        let currentFamilyId = null;
+        let financialConfig = { MONTHLY_FEE: 130, FAMILY_MONTHLY_FEE: 110.50 }; // Valores por defecto
+
+        // Función de navegación directa - abre nueva ventana directamente
+        function navigateTo(section) {
+            try {
+                // Si ya estamos en la sección, no hacer nada
+                if (section === 'families') {
+                    return;
+                }
+                
+                console.log('Navegando a:', section);
+                
+                // Abrir nueva ventana directamente
+                switch(section) {
+                    case 'dashboard':
+                        google.script.run.showMainDashboard();
+                        break;
+                    case 'players':
+                        google.script.run.showPlayersManager();
+                        break;
+                    case 'financial':
+                        google.script.run.showFinancialManager();
+                        break;
+                    case 'approvals':
+                        google.script.run.showApprovalsManager();
+                        break;
+                    case 'historic':
+                        google.script.run.showHistoricPlayersManager();
+                        break;
+                    case 'config':
+                        google.script.run.showSystemConfig();
+                        break;
+                }
+            } catch (error) {
+                console.error('Error navegando:', error);
+            }
+        }
+
+        // Función para cerrar ventana
+        function closeWindow() {
+            try {
+                google.script.host.close();
+            } catch (error) {
+                console.error('Error cerrando ventana:', error);
+            }
+        }
+
+        function handleGroupFamiliesNav() {
+            if (!confirm('¿Agrupar automáticamente a los jugadores que comparten tutor?')) {
+                return;
+            }
+
+            showLoading('Agrupando familias por tutor...');
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    hideLoading();
+
+                    if (result && result.success) {
+                        var lines = [];
+                        lines.push('✅ Agrupamiento completado');
+                        lines.push('👨‍👩‍👧‍👦 Familias procesadas: ' + (result.familiesProcessed || 0));
+                        lines.push('🏠 Familias creadas: ' + (result.familiesCreated || 0));
+                        lines.push('👥 Jugadores actualizados: ' + (result.playersUpdated || 0));
+
+                        if (result.families && result.families.length) {
+                            console.log('Familias agrupadas:', result.families);
+                            lines.push('🏅 Revisa la consola para más detalles de familias');
+                        }
+
+                        showToast(lines.join('<br>'), 'success');
+                        loadFamilyGroups();
+                    } else {
+                        var message = result && result.message ? result.message : 'No se pudo completar el agrupamiento';
+                        showToast('❌ ' + message, 'error');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    hideLoading();
+                    console.error('Error agrupando familias:', error);
+                    showToast('❌ Error agrupando familias: ' + error.toString(), 'error');
+                })
+                .createFamilyGroupsByTutor();
+        }
+
+        // Hacer las funciones globales para que estén disponibles en todas las ventanas
+        window.navigateTo = navigateTo;
+        window.closeWindow = closeWindow;
+        window.handleGroupFamiliesNav = handleGroupFamiliesNav;
+
+        // Cargar configuración financiera
+        function loadFinancialConfig() {
+            google.script.run
+                .withSuccessHandler(function(config) {
+                    if (config && config.MONTHLY_FEE && config.FAMILY_MONTHLY_FEE) {
+                        financialConfig = config;
+                        console.log('Configuración financiera cargada:', financialConfig);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.warn('No se pudo cargar configuración financiera, usando valores por defecto:', error);
+                })
+                .getFinancialConfig();
+        }
+
+        // Cargar grupos familiares al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFinancialConfig();
+            loadFamilyGroups();
+            
+            // Event listeners para filtros
+            document.getElementById('searchInput').addEventListener('input', filterFamilyGroups);
+            document.getElementById('statusFilter').addEventListener('change', filterFamilyGroups);
+        });
+
+        function showLoadingState() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('familyGroupsContent').style.display = 'none';
+        }
+
+        function hideLoadingState() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('familyGroupsContent').style.display = 'block';
+        }
+
+        function showError(message) {
+            const content = document.getElementById('familyGroupsContent');
+            content.innerHTML = `
+                <div class="error-message">
+                    <strong>❌ Error:</strong> ${message}
+                </div>
+            `;
+            hideLoadingState();
+        }
+
+        function showSuccess(message) {
+            const content = document.getElementById('familyGroupsContent');
+            content.innerHTML = `
+                <div class="success-message">
+                    <strong>✅ Éxito:</strong> ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                loadFamilyGroups();
+            }, 2000);
+        }
+
+        // Global Loading Functions
+        function showLoading(message = 'Cargando...') {
+            const loading = document.getElementById('globalLoading');
+            const loadingText = loading.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'none';
+        }
+
+        function loadFamilyGroups() {
+            try {
+                console.log('Cargando grupos familiares...');
+                showLoadingState();
+                
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('Grupos familiares cargados:', result);
+                        hideLoadingState();
+                        
+                        if (Array.isArray(result)) {
+                            allFamilyGroups = result;
+                            renderFamilyGroups(result);
+                        } else {
+                            showError('Error: Los datos no se obtuvieron correctamente');
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error cargando grupos familiares:', error);
+                        showError('Error de conexión: ' + error.toString());
+                    })
+                    .getFamilyGroups();
+            } catch (error) {
+                console.error('Error en loadFamilyGroups:', error);
+                showError('Error cargando grupos familiares: ' + error.message);
+            }
+        }
+
+        function renderFamilyGroups(familyGroups) {
+            const content = document.getElementById('familyGroupsContent');
+            
+            if (familyGroups.length === 0) {
+                content.innerHTML = `
+                    <div class="no-data">
+                        <h3>👨‍👩‍👧‍👦 No hay grupos familiares</h3>
+                        <p>No se encontraron grupos familiares registrados.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            console.log('📋 Renderizando familias:', familyGroups.length);
+
+            let html = '';
+            familyGroups.forEach((group, index) => {
+                console.log(`Familia #${index + 1}:`, {
+                    tutor: group.tutorName,
+                    familyId: group.familyId,
+                    familyIdType: typeof group.familyId,
+                    familyIdLength: group.familyId ? group.familyId.length : 0
+                });
+                html += `
+                    <div class="family-group">
+                        <div class="family-header">
+                            <div class="family-info">
+                                <h3>👨‍👩‍👧‍👦 ${group.tutorName}</h3>
+                                <p><strong>📧 Email:</strong> ${group.tutorEmail}</p>
+                                <p><strong>📞 Teléfono:</strong> ${group.tutorPhone}</p>
+                                <p><strong>🏠 Dirección:</strong> ${group.tutorAddress}</p>
+                            </div>
+                            <div class="family-summary">
+                                <div class="total-amount">$${group.totalAmount.toFixed(2)}</div>
+                                <div class="players-count">${group.playersCount} jugador(es)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="players-list">
+                            ${group.players.map(player => `
+                                <div class="player-card">
+                                    <div class="player-name">${player.name}</div>
+                                    <div class="player-details">
+                                        <strong>Edad:</strong> ${player.age} años<br>
+                                        <strong>Categoría:</strong> ${player.category}<br>
+                                        <strong>ID:</strong> ${player.id}<br>
+                                        <strong>Mensualidad:</strong> $${player.monthlyFee}
+                                    </div>
+                                    <span class="player-status status-${player.status.toLowerCase()}">
+                                        ${player.status}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-sm" onclick="viewFamilyDetails('${group.familyId}')">
+                                👁️ Ver Detalles
+                            </button>
+                            <button class="btn btn-success btn-sm" onclick="recordFamilyPayment('${group.familyId}')">
+                                💰 Registrar Pago
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="viewFamilyHistory('${group.familyId}')">
+                                📊 Historial
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content.innerHTML = html;
+        }
+
+        function filterFamilyGroups() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const filteredGroups = allFamilyGroups.filter(group => {
+                const matchesSearch = !searchTerm || 
+                    group.tutorName.toLowerCase().includes(searchTerm) ||
+                    group.tutorEmail.toLowerCase().includes(searchTerm) ||
+                    group.players.some(player => 
+                        player.name.toLowerCase().includes(searchTerm)
+                    );
+
+                const matchesStatus = !statusFilter || 
+                    group.players.some(player => player.status === statusFilter);
+
+                return matchesSearch && matchesStatus;
+            });
+
+            renderFamilyGroups(filteredGroups);
+        }
+
+        // ========== FUNCIONES DEL MODAL UNIFICADO ==========
+
+        function viewFamilyDetails(familyId) {
+            console.log('👁️ Abriendo detalles de familia:', familyId);
+            console.log('Tipo de familyId:', typeof familyId);
+            console.log('Valor de familyId:', JSON.stringify(familyId));
+            
+            if (!familyId || familyId === '' || familyId === 'undefined') {
+                alert('❌ Error: ID de familia no válido');
+                console.error('FamilyId inválido recibido:', familyId);
+                console.log('Familias disponibles:', allFamilyGroups);
+                return;
+            }
+            
+            const family = allFamilyGroups.find(f => f.familyId === familyId);
+            if (!family) {
+                alert('❌ Familia no encontrada');
+                console.error('No se encontró familia con ID:', familyId);
+                console.log('Familias disponibles:', allFamilyGroups.map(f => ({ id: f.familyId, tutor: f.tutorName })));
+                return;
+            }
+            
+            // IMPORTANTE: Establecer currentFamilyId ANTES de cualquier operación
+            currentFamilyId = familyId;
+            console.log('✅ currentFamilyId establecido:', currentFamilyId);
+            
+            // Actualizar título
+            document.getElementById('familyModalTitle').textContent = `👨‍👩‍👧‍👦 ${family.tutorName}`;
+            
+            // Mostrar modal
+            document.getElementById('familyDetailsModal').style.display = 'block';
+            
+            // Cargar pestaña de información por defecto
+            switchFamilyTab('info');
+            loadFamilyInfo(family);
+        }
+
+        function recordFamilyPayment(familyId) {
+            console.log('💰 Registrar pago para familia:', familyId);
+            viewFamilyDetails(familyId);
+            // Esperar un momento para que currentFamilyId se establezca
+            setTimeout(() => {
+                console.log('💰 Cambiando a pestaña de acciones con currentFamilyId:', currentFamilyId);
+                switchFamilyTab('actions');
+            }, 100);
+        }
+
+        function viewFamilyHistory(familyId) {
+            console.log('📊 Ver historial de familia:', familyId);
+            viewFamilyDetails(familyId);
+            // Esperar un momento para que currentFamilyId se establezca
+            setTimeout(() => {
+                console.log('📊 Cambiando a pestaña de pagos con currentFamilyId:', currentFamilyId);
+                switchFamilyTab('payments');
+            }, 100);
+        }
+
+        function closeFamilyModal() {
+            document.getElementById('familyDetailsModal').style.display = 'none';
+            currentFamilyId = null;
+        }
+
+        function switchFamilyTab(tab) {
+            console.log('🔄 Cambiando a pestaña:', tab, 'con familyId:', currentFamilyId);
+            
+            const tabs = ['info', 'payments', 'actions'];
+            
+            tabs.forEach(t => {
+                const btn = document.getElementById(t + 'Tab');
+                const content = document.getElementById('family' + t.charAt(0).toUpperCase() + t.slice(1) + 'Content');
+                
+                if (t === tab) {
+                    btn.classList.add('active');
+                    content.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                    content.classList.remove('active');
+                }
+            });
+            
+            // Cargar contenido según la pestaña
+            if (tab === 'payments') {
+                if (!currentFamilyId) {
+                    console.error('❌ ERROR: No hay currentFamilyId al cambiar a pestaña de pagos');
+                    document.getElementById('familyPaymentsContent').innerHTML = 
+                        '<div style="padding: 20px; color: red;">Error: ID de familia no disponible</div>';
+                } else {
+                    loadFamilyPayments(currentFamilyId);
+                }
+            } else if (tab === 'actions') {
+                if (!currentFamilyId) {
+                    console.error('❌ ERROR: No hay currentFamilyId al cambiar a pestaña de acciones');
+                    document.getElementById('familyActionsContent').innerHTML = 
+                        '<div style="padding: 20px; color: red;">Error: ID de familia no disponible</div>';
+                } else {
+                    loadFamilyActions(currentFamilyId);
+                }
+            }
+        }
+
+        function loadFamilyInfo(family) {
+            const content = `
+                <div class="info-grid">
+                    <div class="info-section">
+                        <h3>👨‍👩‍👧 Información del Tutor</h3>
+                        <p><strong>Nombre:</strong> ${family.tutorName}</p>
+                        <p><strong>Cédula:</strong> ${family.tutorCedula || 'No registrada'}</p>
+                        <p><strong>Email:</strong> ${family.tutorEmail || 'No registrado'}</p>
+                        <p><strong>Teléfono:</strong> ${family.tutorPhone || 'No registrado'}</p>
+                        <p><strong>Dirección:</strong> ${family.tutorAddress || 'No registrada'}</p>
+                        <p><strong>ID Familia:</strong> ${family.familyId || 'Sin asignar'}</p>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h3>⚽ Resumen de Jugadores</h3>
+                        <p><strong>Total de Jugadores:</strong> ${family.playersCount}</p>
+                        <p><strong>Mensualidad Total:</strong> <span style="color: #10b981; font-weight: bold; font-size: 1.3em;">$${family.totalAmount.toFixed(2)}</span></p>
+                        <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                            <strong>Descuento Familiar:</strong> 
+                            ${family.playersCount > 1 ? '✅ Aplicado (15% desde el 2º jugador)' : '➖ No aplica'}
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <h3 style="color: #667eea; margin-bottom: 20px; font-size: 1.3em;">👥 Jugadores de la Familia</h3>
+                    <div class="info-grid">
+                        ${family.players.map((player, index) => `
+                            <div class="info-section" style="border-left-color: ${index === 0 ? '#10b981' : '#667eea'};">
+                                <h3>${index === 0 ? '👑' : '⚽'} ${player.name}</h3>
+                                <p><strong>ID:</strong> ${player.id}</p>
+                                <p><strong>Edad:</strong> ${player.age} años</p>
+                                <p><strong>Categoría:</strong> ${player.category}</p>
+                                <p><strong>Estado:</strong> <span class="player-status status-${player.status.toLowerCase()}">${player.status}</span></p>
+                                <p><strong>Tipo:</strong> ${player.type === 'becado' ? '🏆 Becado' : '👤 Normal'}</p>
+                                <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+                                    <strong>Mensualidad:</strong> 
+                                    <span style="color: ${player.monthlyFee === 0 ? '#ef4444' : '#10b981'}; font-weight: bold; font-size: 1.2em;">
+                                        $${player.monthlyFee}
+                                    </span>
+                                    ${index === 0 && family.playersCount > 1 ? '<br><small>(Primer jugador - tarifa completa)</small>' : ''}
+                                    ${index > 0 && player.type !== 'becado' ? '<br><small>(Descuento familiar 15%)</small>' : ''}
+                                </p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('familyInfoContent').innerHTML = content;
+        }
+
+        function loadFamilyPayments(familyId) {
+            console.log('💳 loadFamilyPayments llamado con familyId:', familyId);
+            console.log('💳 Tipo:', typeof familyId, 'Longitud:', familyId ? familyId.length : 0);
+            
+            if (!familyId || familyId === '') {
+                console.error('❌ ERROR: familyId está vacío en loadFamilyPayments');
+                console.log('Usando currentFamilyId como fallback:', currentFamilyId);
+                familyId = currentFamilyId;
+            }
+            
+            if (!familyId) {
+                document.getElementById('familyPaymentsContent').innerHTML = 
+                    `<div style="text-align: center; padding: 40px; color: #e74c3c;">
+                        <h3>❌ Error</h3>
+                        <p>No se pudo identificar la familia</p>
+                    </div>`;
+                return;
+            }
+            
+            document.getElementById('familyPaymentsContent').innerHTML = '<div class="loading">Cargando historial de pagos...</div>';
+            
+            console.log('📞 Llamando a getFamilyPaymentHistory con familyId:', familyId);
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    console.log('📥 Respuesta recibida de getFamilyPaymentHistory:', result);
+                    if (result && result.success) {
+                        renderFamilyPayments(result);
+                    } else {
+                        document.getElementById('familyPaymentsContent').innerHTML = 
+                            `<div style="text-align: center; padding: 40px; color: #e74c3c;">
+                                <h3>❌ Error</h3>
+                                <p>${result ? result.message : 'No se pudo cargar el historial'}</p>
+                            </div>`;
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('📛 Error en getFamilyPaymentHistory:', error);
+                    document.getElementById('familyPaymentsContent').innerHTML = 
+                        `<div style="text-align: center; padding: 40px; color: #e74c3c;">
+                            <h3>❌ Error de Conexión</h3>
+                            <p>${error.toString()}</p>
+                        </div>`;
+                })
+                .getFamilyPaymentHistory(familyId);
+        }
+
+        function renderFamilyPayments(data) {
+            const family = data.family;
+            const payments = data.payments || [];
+            const totals = data.totals || { pagado: 0, pendiente: 0, total: 0 };
+            
+            let html = `
+                <div style="background: white; border-radius: 10px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                        <div style="background: #d1fae5; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+                            <small style="color: #6b7280; font-weight: 600;">Total Pagado</small>
+                            <h3 style="color: #10b981; margin-top: 5px;">$${totals.pagado.toFixed(2)}</h3>
+                        </div>
+                        <div style="background: #fee2e2; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                            <small style="color: #6b7280; font-weight: 600;">Total Pendiente</small>
+                            <h3 style="color: #ef4444; margin-top: 5px;">$${totals.pendiente.toFixed(2)}</h3>
+                        </div>
+                        <div style="background: #dbeafe; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                            <small style="color: #6b7280; font-weight: 600;">Mensualidad Familiar</small>
+                            <h3 style="color: #3b82f6; margin-top: 5px;">$${family.totalAmount.toFixed(2)}/mes</h3>
+                        </div>
+                    </div>
+                    
+                    <!-- Botón para ver historial de generación de mensualidades -->
+                    <div style="margin-bottom: 20px; text-align: right;">
+                        <button onclick="viewMonthlyBillingHistory()" class="btn btn-sm" style="background: #f59e0b; color: white; padding: 8px 16px;">
+                            📅 Ver Historial de Generación de Mensualidades
+                        </button>
+                        <button onclick="verifyCurrentPrices()" class="btn btn-sm" style="background: #3b82f6; color: white; padding: 8px 16px; margin-left: 8px;">
+                            💰 Verificar Precios Actuales
+                        </button>
+                        <button onclick="verifyFamilyCalculation()" class="btn btn-sm" style="background: #10b981; color: white; padding: 8px 16px; margin-left: 8px;">
+                            🧮 Verificar Cálculo Familiar
+                        </button>
+                    </div>
+                    
+                    <h4 style="color: #374151; margin-bottom: 15px;">📋 Historial de Transacciones Familiares</h4>
+                    ${(() => {
+                        const pagosConDiscrepancia = payments.filter(p => p['Tiene Discrepancia']);
+                        if (pagosConDiscrepancia.length > 0) {
+                            return `
+                            <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                    <span style="background: #f59e0b; color: white; padding: 8px; border-radius: 8px; font-size: 1.2em;">⚠️</span>
+                                    <h5 style="color: #92400e; font-size: 1.1em; font-weight: 700; margin: 0;">
+                                        DISCREPANCIAS DETECTADAS
+                                    </h5>
+                                </div>
+                                <p style="color: #92400e; margin: 0 0 12px 0; font-size: 0.95em;">
+                                    Se encontraron <strong>${pagosConDiscrepancia.length}</strong> pagos con montos incorrectos que no corresponden a las tarifas del jugador.
+                                </p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    ${pagosConDiscrepancia.map(pago => {
+                                        const esExcesivo = parseFloat(pago.Monto) > parseFloat(pago['Monto Correcto']);
+                                        const montoDif = Math.abs(parseFloat(pago.Monto) - parseFloat(pago['Monto Correcto']));
+                                        const color = esExcesivo ? '#dc2626' : '#059669';
+                                        const icono = esExcesivo ? '💰' : '➕';
+                                        return `
+                                        <span style="background: ${color}; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">
+                                            ${icono} ${pago['Jugador Nombre']}: $${parseFloat(pago.Monto).toFixed(2)} → $${parseFloat(pago['Monto Correcto']).toFixed(2)} (${esExcesivo ? 'Reembolso' : 'Adicional'}: $${montoDif.toFixed(2)})
+                                        </span>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                            `;
+                        }
+                        return '';
+                    })()}
+                    
+                    ${payments.length === 0 ? 
+                        '<p style="text-align: center; color: #9ca3af; padding: 40px;">No hay transacciones registradas para esta familia</p>' 
+                        : 
+                        `<div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                        <th style="padding: 12px; text-align: left; color: #374151; font-weight: 600;">Fecha</th>
+                                        <th style="padding: 12px; text-align: left; color: #374151; font-weight: 600;">Jugador</th>
+                                        <th style="padding: 12px; text-align: left; color: #374151; font-weight: 600;">Tipo</th>
+                                        <th style="padding: 12px; text-align: right; color: #374151; font-weight: 600;">Monto</th>
+                                        <th style="padding: 12px; text-align: center; color: #374151; font-weight: 600;">Estado</th>
+                                        <th style="padding: 12px; text-align: left; color: #374151; font-weight: 600;">Método</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${payments.map(pago => {
+                                        const esPagado = pago.Estado === 'Pagado';
+                                        const colorMonto = esPagado ? '#10b981' : '#ef4444';
+                                        const bgEstado = esPagado ? '#d1fae5' : '#fee2e2';
+                                        const monto = parseFloat(pago.Monto) || 0;
+                                        const fecha = pago.Fecha ? new Date(pago.Fecha).toLocaleDateString('es-ES') : 'N/A';
+                                        const tieneDiscrepancia = pago['Tiene Discrepancia'];
+                                        const requiereReembolso = pago['Requiere Reembolso'];
+                                        const montoReembolso = parseFloat(pago['Monto Reembolso']) || 0;
+                                        const advertencia = pago.Advertencia || '';
+                                        const montoEsperado = parseFloat(pago['Monto Correcto']) || 0;
+                                        const esPagoExcesivo = parseFloat(pago.Monto) > montoEsperado;
+                                        
+                                        return `
+                                        <tr style="border-bottom: 1px solid #e5e7eb; ${tieneDiscrepancia ? 'background: #fef3c7;' : ''}">
+                                            <td style="padding: 12px;">${fecha}</td>
+                                            <td style="padding: 12px;">${pago['Jugador Nombre'] || 'N/A'}</td>
+                                            <td style="padding: 12px;">
+                                                ${pago.Tipo === 'Matrícula' ? '🎓' : pago.Tipo === 'Mensualidad' ? '📅' : '💰'} 
+                                                ${pago.Tipo}
+                                            </td>
+                                            <td style="padding: 12px; text-align: right; position: relative;">
+                                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                                    <span style="color: ${tieneDiscrepancia ? '#f59e0b' : colorMonto}; font-weight: bold; font-size: ${tieneDiscrepancia ? '1.1em' : '1em'};">
+                                                        $${monto.toFixed(2)}
+                                                    </span>
+                                                    ${tieneDiscrepancia ? `
+                                                        <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 6px 8px; margin-top: 4px;">
+                                                            <small style="color: #f59e0b; font-size: 0.75em; font-weight: 700; display: block;">
+                                                                ⚠️ MONTO INCORRECTO
+                                                            </small>
+                                                            <small style="color: #92400e; font-size: 0.7em; font-weight: 600; display: block;">
+                                                                Esperado: $${montoEsperado.toFixed(2)}
+                                                            </small>
+                                                            ${requiereReembolso ? `
+                                                                <button onclick="processRefund('${pago['Jugador ID']}', '${pago.Tipo}', ${pago.Monto}, ${montoEsperado}, ${montoReembolso}, ${esPagoExcesivo}, ${pago['Row Index']})" 
+                                                                        style="background: ${esPagoExcesivo ? '#dc2626' : '#059669'}; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.7em; font-weight: 600; margin-top: 4px; cursor: pointer;">
+                                                                    ${esPagoExcesivo ? '💰 Reembolsar $' + montoReembolso.toFixed(2) : '➕ Cobrar $' + montoReembolso.toFixed(2)}
+                                                                </button>
+                                                            ` : ''}
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                ${tieneDiscrepancia ? `
+                                                    <div style="position: absolute; top: 8px; left: -8px; width: 6px; height: calc(100% - 16px); background: #f59e0b; border-radius: 3px;"></div>
+                                                ` : ''}
+                                            </td>
+                                            <td style="padding: 12px; text-align: center;">
+                                                <span style="background: ${bgEstado}; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">
+                                                    ${esPagado ? '✅ Pagado' : '⏳ Pendiente'}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 12px;">${pago.Método || 'N/A'}</td>
+                                        </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>`
+                    }
+                </div>
+            `;
+            
+            document.getElementById('familyPaymentsContent').innerHTML = html;
+        }
+
+        function loadFamilyActions(familyId) {
+            console.log('⚡ loadFamilyActions llamado con familyId:', familyId);
+            
+            if (!familyId || familyId === '') {
+                console.error('❌ ERROR: familyId está vacío en loadFamilyActions');
+                console.log('Usando currentFamilyId como fallback:', currentFamilyId);
+                familyId = currentFamilyId;
+            }
+            
+            const family = allFamilyGroups.find(f => f.familyId === familyId);
+            
+            if (!family) {
+                console.error('❌ Familia no encontrada. FamilyId buscado:', familyId);
+                console.log('Familias disponibles:', allFamilyGroups.map(f => ({ id: f.familyId, tutor: f.tutorName })));
+                document.getElementById('familyActionsContent').innerHTML = '<p style="color: #ef4444;">Familia no encontrada</p>';
+                return;
+            }
+            
+            console.log('✅ Familia encontrada:', family.tutorName);
+            
+            const html = `
+                <div style="background: white; border-radius: 10px;">
+                    <h3 style="color: #667eea; margin-bottom: 20px;">💰 Registrar Pagos</h3>
+                    
+                    <!-- Opción de Pago Grupal -->
+                    <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 10px; padding: 20px; margin-bottom: 25px;">
+                        <h4 style="color: #10b981; margin-bottom: 15px;">👨‍👩‍👧‍👦 Pago Grupal (Todos los jugadores)</h4>
+                        <p style="color: #6b7280; margin-bottom: 15px;">Registra un pago para todos los jugadores de la familia de una sola vez.</p>
+                        <p style="font-size: 1.3em; font-weight: bold; color: #10b981; margin-bottom: 15px;">
+                            Total: $${family.totalAmount.toFixed(2)}
+                        </p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Método de Pago</label>
+                                <select id="groupPaymentMethod" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                                    <option value="Efectivo">💵 Efectivo</option>
+                                    <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="Tarjeta">💳 Tarjeta</option>
+                                    <option value="Yappy">📱 Yappy</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Referencia (Opcional)</label>
+                                <input type="text" id="groupPaymentReference" placeholder="Ej: Recibo #12345" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                            </div>
+                        </div>
+                        
+                        <button onclick="registerGroupPayment()" class="btn btn-success" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                            ✅ Registrar Pago Grupal ($${family.totalAmount.toFixed(2)})
+                        </button>
+                    </div>
+                    
+                    <!-- Opción de Pagos Individuales -->
+                    <div style="background: #f9fafb; border: 2px solid #667eea; border-radius: 10px; padding: 20px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">👤 Pagos Individuales (Por jugador)</h4>
+                        <p style="color: #6b7280; margin-bottom: 20px;">Selecciona los jugadores para los que deseas registrar el pago.</p>
+                        
+                        <div class="player-checkbox-list">
+                            ${family.players.map(player => `
+                                <div class="player-checkbox" id="playerCheckbox_${player.id}">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" value="${player.id}" onchange="togglePlayerSelection('${player.id}', ${player.monthlyFee})">
+                                        <div>
+                                            <div style="font-weight: bold; color: #2c3e50;">${player.name}</div>
+                                            <div style="font-size: 0.9em; color: #6b7280;">${player.category} - $${player.monthlyFee}</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div id="selectedPaymentSummary" style="background: white; padding: 15px; border-radius: 8px; margin: 20px 0; display: none;">
+                            <p style="color: #374151; font-weight: 600;">Jugadores seleccionados: <span id="selectedCount">0</span></p>
+                            <p style="color: #10b981; font-size: 1.2em; font-weight: bold; margin-top: 5px;">Total: $<span id="selectedTotal">0.00</span></p>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Método de Pago</label>
+                                <select id="individualPaymentMethod" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                                    <option value="Efectivo">💵 Efectivo</option>
+                                    <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="Tarjeta">💳 Tarjeta</option>
+                                    <option value="Yappy">📱 Yappy</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Referencia (Opcional)</label>
+                                <input type="text" id="individualPaymentReference" placeholder="Ej: Recibo #12345" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                            </div>
+                        </div>
+                        
+                        <button onclick="registerIndividualPayments()" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 1.1em;" id="individualPaymentBtn" disabled>
+                            💰 Registrar Pago Individual
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('familyActionsContent').innerHTML = html;
+        }
+
+        // Variables para pagos individuales
+        let selectedPlayers = [];
+
+        function togglePlayerSelection(playerId, fee) {
+            const checkbox = document.querySelector(`input[value="${playerId}"]`);
+            const checkboxDiv = document.getElementById(`playerCheckbox_${playerId}`);
+            
+            if (checkbox.checked) {
+                selectedPlayers.push({ id: playerId, fee: fee });
+                checkboxDiv.classList.add('selected');
+            } else {
+                selectedPlayers = selectedPlayers.filter(p => p.id !== playerId);
+                checkboxDiv.classList.remove('selected');
+            }
+            
+            updatePaymentSummary();
+        }
+
+        function updatePaymentSummary() {
+            const summary = document.getElementById('selectedPaymentSummary');
+            const btn = document.getElementById('individualPaymentBtn');
+            
+            if (selectedPlayers.length > 0) {
+                summary.style.display = 'block';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                
+                const total = selectedPlayers.reduce((sum, p) => sum + p.fee, 0);
+                document.getElementById('selectedCount').textContent = selectedPlayers.length;
+                document.getElementById('selectedTotal').textContent = total.toFixed(2);
+            } else {
+                summary.style.display = 'none';
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+            }
+        }
+
+        function registerGroupPayment() {
+            const family = allFamilyGroups.find(f => f.familyId === currentFamilyId);
+            if (!family) return;
+            
+            const method = document.getElementById('groupPaymentMethod').value;
+            const reference = document.getElementById('groupPaymentReference').value;
+            
+            if (!confirm(`¿Registrar pago grupal de $${family.totalAmount.toFixed(2)} para ${family.playersCount} jugadores?`)) {
+                return;
+            }
+            
+            const playerPayments = family.players.map(player => ({
+                playerId: player.id,
+                amount: player.monthlyFee
+            }));
+            
+            console.log('Registrando pago grupal:', playerPayments);
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showToast('✅ Pago grupal registrado exitosamente', 'success');
+                        closeFamilyModal();
+                        loadFamilyGroups();
+                    } else {
+                        showToast('❌ Error: ' + (result ? result.message : 'Desconocido'), 'error');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    showToast('❌ Error: ' + error.toString(), 'error');
+                })
+                .registerFamilyPayment(currentFamilyId, playerPayments, method, reference);
+        }
+
+        function registerIndividualPayments() {
+            if (selectedPlayers.length === 0) {
+                alert('Por favor selecciona al menos un jugador');
+                return;
+            }
+            
+            const method = document.getElementById('individualPaymentMethod').value;
+            const reference = document.getElementById('individualPaymentReference').value;
+            const total = selectedPlayers.reduce((sum, p) => sum + p.fee, 0);
+            
+            if (!confirm(`¿Registrar pago de $${total.toFixed(2)} para ${selectedPlayers.length} jugador(es)?`)) {
+                return;
+            }
+            
+            const playerPayments = selectedPlayers.map(p => ({
+                playerId: p.id,
+                amount: p.fee
+            }));
+            
+            console.log('Registrando pagos individuales:', playerPayments);
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showToast('✅ Pagos registrados exitosamente', 'success');
+                        closeFamilyModal();
+                        loadFamilyGroups();
+                    } else {
+                        showToast('❌ Error: ' + (result ? result.message : 'Desconocido'), 'error');
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    showToast('❌ Error: ' + error.toString(), 'error');
+                })
+                .registerFamilyPayment(currentFamilyId, playerPayments, method, reference);
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                z-index: 10000;
+                font-weight: 600;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Ver historial de generación de mensualidades
+        function viewMonthlyBillingHistory() {
+            console.log('📅 Cargando historial de generación de mensualidades...');
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    console.log('📥 Historial recibido:', result);
+                    
+                    if (result && result.success) {
+                        showBillingHistoryModal(result.history);
+                    } else {
+                        alert('❌ Error: ' + (result ? result.message : 'No se pudo cargar el historial'));
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('📛 Error:', error);
+                    alert('❌ Error al cargar historial: ' + error.toString());
+                })
+                .getMonthlyBillingHistory();
+        }
+        
+        function showBillingHistoryModal(history) {
+            if (!history || history.length === 0) {
+                alert('ℹ️ No hay historial de generación de mensualidades.\n\nLas mensualidades se generan automáticamente el día 1 de cada mes.');
+                return;
+            }
+            
+            let html = `
+                <div style="max-width: 800px; max-height: 600px; overflow-y: auto; padding: 20px;">
+                    <h2 style="color: #667eea; margin-bottom: 20px;">📅 Historial de Generación de Mensualidades</h2>
+                    <p style="color: #6b7280; margin-bottom: 20px;">
+                        Las mensualidades se generan automáticamente el día 1 de cada mes para todos los jugadores activos.
+                    </p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        ${history.map((log, index) => {
+                            const fecha = new Date(log.fecha);
+                            const fechaFormato = fecha.toLocaleDateString('es-ES', { 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            
+                            return `
+                            <div style="background: #f9fafb; border-radius: 10px; padding: 15px; border-left: 4px solid ${index === 0 ? '#10b981' : '#667eea'};">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                    <div>
+                                        <strong style="color: #374151; font-size: 1.1em;">
+                                            ${index === 0 ? '🆕 ' : ''}Generación #${history.length - index}
+                                        </strong>
+                                        <p style="color: #6b7280; margin: 5px 0;">📅 ${fechaFormato}</p>
+                                    </div>
+                                </div>
+                                <p style="color: #374151; margin: 10px 0;">
+                                    ${log.detalle}
+                                </p>
+                                ${log.resultados && log.resultados.length > 0 ? `
+                                    <details style="margin-top: 10px;">
+                                        <summary style="cursor: pointer; color: #667eea; font-weight: 600;">
+                                            Ver detalles (${log.resultados.length} jugadores)
+                                        </summary>
+                                        <div style="margin-top: 10px; max-height: 200px; overflow-y: auto;">
+                                            ${log.resultados.slice(0, 20).map(r => `
+                                                <div style="padding: 5px; border-bottom: 1px solid #e5e7eb;">
+                                                    ${r.status === 'success' ? '✅' : '❌'} 
+                                                    ${r.playerName} - $${r.amount}
+                                                </div>
+                                            `).join('')}
+                                            ${log.resultados.length > 20 ? `<p style="color: #6b7280; padding: 5px;">... y ${log.resultados.length - 20} más</p>` : ''}
+                                        </div>
+                                    </details>
+                                ` : ''}
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // Crear modal temporal
+            const tempModal = document.createElement('div');
+            tempModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(5px);
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            tempModal.innerHTML = `
+                <div style="background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); position: relative;">
+                    <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" 
+                            style="position: absolute; top: 15px; right: 15px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px; font-weight: bold;">
+                        ×
+                    </button>
+                    ${html}
+                </div>
+            `;
+            
+            document.body.appendChild(tempModal);
+            
+            // Cerrar al hacer click fuera
+            tempModal.addEventListener('click', function(e) {
+                if (e.target === tempModal) {
+                    tempModal.remove();
+                }
+            });
+        }
+
+        // ========== FUNCIONES PARA AGREGAR GRUPO FAMILIAR ==========
+        
+        let playerCount = 0;
+        let familyCreationMode = 'manual';
+        let availableFamilyPlayers = [];
+        let selectedExistingPlayers = new Set();
+        const existingPlayersMap = new Map();
+
+        function sanitizeHtml(value) {
+            return (value || '').toString().replace(/[&<>"']/g, function(char) {
+                const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+                return entities[char] || char;
+            });
+        }
+
+        function ensureManualPlayers() {
+            const container = document.getElementById('playersContainer');
+            if (!container) return;
+
+            if (container.children.length === 0) {
+                addPlayerEntry();
+                addPlayerEntry();
+            }
+        }
+
+        function updateManualInputsAccessibility(disable) {
+            const manualSection = document.getElementById('manualPlayersSection');
+            if (!manualSection) return;
+
+            const manualInputs = manualSection.querySelectorAll('input, select, textarea');
+            manualInputs.forEach(input => {
+                if (disable) {
+                    if (input.getAttribute('data-manual-required') === null) {
+                        input.setAttribute('data-manual-required', input.required ? 'true' : 'false');
+                    }
+                    input.required = false;
+                    input.disabled = true;
+                } else {
+                    const wasRequired = input.getAttribute('data-manual-required');
+                    if (wasRequired === 'true') {
+                        input.required = true;
+                    }
+                    input.disabled = false;
+                }
+            });
+
+            const addButton = manualSection.querySelector('.add-player-btn');
+            if (addButton) {
+                addButton.style.display = disable ? 'none' : 'flex';
+            }
+        }
+
+        function setFamilyCreationMode(mode, options = {}) {
+            const { skipRadioUpdate = false } = options;
+            familyCreationMode = mode;
+
+            if (!skipRadioUpdate) {
+                const manualRadio = document.getElementById('familyModeManual');
+                const existingRadio = document.getElementById('familyModeExisting');
+                const manualLabel = document.getElementById('familyModeManualLabel');
+                const existingLabel = document.getElementById('familyModeExistingLabel');
+
+                if (manualRadio) manualRadio.checked = mode === 'manual';
+                if (existingRadio) existingRadio.checked = mode === 'existing';
+
+                if (manualLabel) manualLabel.classList.toggle('active', mode === 'manual');
+                if (existingLabel) existingLabel.classList.toggle('active', mode === 'existing');
+            }
+
+            const manualSection = document.getElementById('manualPlayersSection');
+            const existingSection = document.getElementById('existingPlayersSection');
+
+            if (manualSection) {
+                manualSection.style.display = mode === 'manual' ? 'block' : 'none';
+            }
+            if (existingSection) {
+                existingSection.style.display = mode === 'existing' ? 'block' : 'none';
+            }
+
+            if (mode === 'manual') {
+                updateManualInputsAccessibility(false);
+                ensureManualPlayers();
+            } else {
+                updateManualInputsAccessibility(true);
+                ensureExistingPlayersLoaded();
+                updateExistingPlayersSummary();
+            }
+        }
+
+        function ensureExistingPlayersLoaded(force = false) {
+            if (!force && availableFamilyPlayers.length > 0) {
+                renderExistingPlayersList(availableFamilyPlayers);
+                return;
+            }
+
+            const loadingEl = document.getElementById('existingPlayersLoading');
+            if (loadingEl) loadingEl.style.display = 'block';
+
+            const listEl = document.getElementById('existingPlayersList');
+            if (listEl) listEl.innerHTML = '';
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (loadingEl) loadingEl.style.display = 'none';
+                    if (result && result.success && Array.isArray(result.players)) {
+                        availableFamilyPlayers = result.players;
+                    } else {
+                        availableFamilyPlayers = [];
+                        showToast('⚠️ No se pudieron obtener jugadores para asignar', 'error');
+                    }
+
+                    existingPlayersMap.clear();
+                    availableFamilyPlayers.forEach(player => {
+                        existingPlayersMap.set(String(player.id), player);
+                    });
+
+                    renderExistingPlayersList(availableFamilyPlayers);
+                })
+                .withFailureHandler(function(error) {
+                    if (loadingEl) loadingEl.style.display = 'none';
+                    console.error('Error cargando jugadores:', error);
+                    showToast('❌ Error cargando jugadores: ' + error.toString(), 'error');
+                })
+                .getPlayersForFamilySelection();
+        }
+
+        function renderExistingPlayersList(players) {
+            const listEl = document.getElementById('existingPlayersList');
+            const emptyEl = document.getElementById('existingPlayersEmpty');
+
+            if (!listEl) {
+                return;
+            }
+
+            if (!players || players.length === 0) {
+                listEl.innerHTML = '';
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+
+            if (emptyEl) emptyEl.style.display = 'none';
+
+            listEl.innerHTML = players.map(player => {
+                const originalId = String(player.id);
+                const encodedId = encodeURIComponent(originalId);
+                const isChecked = selectedExistingPlayers.has(originalId) ? 'checked' : '';
+                const tutorDisplay = sanitizeHtml(player.tutorName || '');
+                const familyDisplay = sanitizeHtml(player.familyId || '');
+                const categoryDisplay = sanitizeHtml(player.category || '');
+
+                const tutorLine = tutorDisplay ? `<span>Tutor actual: ${tutorDisplay}</span>` : '<span>Tutor actual: Sin registro</span>';
+                const familyTag = familyDisplay ? `<span class="tag-warning">Familia actual: ${familyDisplay}</span>` : '';
+
+                return `
+                    <label class="existing-player-option" data-player-id="${encodedId}">
+                        <input type="checkbox" data-player-id="${encodedId}" ${isChecked} onchange="toggleExistingPlayerSelection(this)">
+                        <div class="existing-player-details">
+                            <strong>${sanitizeHtml(player.name)}</strong>
+                            <span>Categoría: ${categoryDisplay || 'N/D'}</span>
+                            ${tutorLine}
+                            ${familyTag}
+                        </div>
+                    </label>
+                `;
+            }).join('');
+
+            updateExistingPlayersSummary();
+        }
+
+        function filterExistingPlayers(term) {
+            const normalized = (term || '').toString().trim().toLowerCase();
+            if (!normalized) {
+                renderExistingPlayersList(availableFamilyPlayers);
+                return;
+            }
+
+            const filtered = availableFamilyPlayers.filter(player => {
+                return [player.name, player.tutorName, player.category, player.familyId]
+                    .filter(Boolean)
+                    .some(value => value.toString().toLowerCase().includes(normalized));
+            });
+
+            renderExistingPlayersList(filtered);
+        }
+
+        function toggleExistingPlayerSelection(checkbox) {
+            if (!checkbox) return;
+
+            const encodedId = checkbox.getAttribute('data-player-id') || checkbox.value;
+            const playerId = encodedId ? decodeURIComponent(encodedId) : '';
+            if (!playerId) return;
+
+            if (checkbox.checked) {
+                selectedExistingPlayers.add(playerId);
+            } else {
+                selectedExistingPlayers.delete(playerId);
+            }
+
+            updateExistingPlayersSummary();
+            autofillTutorFromSelection();
+        }
+
+        function updateExistingPlayersSummary() {
+            const summaryEl = document.getElementById('existingPlayersSummary');
+            if (!summaryEl) return;
+
+            const count = selectedExistingPlayers.size;
+            if (familyCreationMode !== 'existing') {
+                summaryEl.textContent = '';
+                return;
+            }
+
+            if (count === 0) {
+                summaryEl.textContent = 'Selecciona al menos 2 jugadores.';
+                return;
+            }
+
+            const selectedNames = Array.from(selectedExistingPlayers)
+                .map(id => {
+                    const player = existingPlayersMap.get(id);
+                    return player ? player.name : id;
+                })
+                .slice(0, 3)
+                .map(name => sanitizeHtml(name));
+
+            const moreCount = count - selectedNames.length;
+            const namesText = selectedNames.join(', ') + (moreCount > 0 ? ` y ${moreCount} más` : '');
+
+            summaryEl.textContent = `${count} jugador${count === 1 ? '' : 'es'} seleccionados: ${namesText}`;
+        }
+
+        function autofillTutorFromSelection(force = false) {
+            if (familyCreationMode !== 'existing' || selectedExistingPlayers.size === 0) {
+                return;
+            }
+
+            const firstId = selectedExistingPlayers.values().next().value;
+            const player = existingPlayersMap.get(firstId);
+            if (!player) {
+                return;
+            }
+
+            const nameInput = document.getElementById('newTutorName');
+            const cedulaInput = document.getElementById('newTutorCedula');
+            const emailInput = document.getElementById('newTutorEmail');
+            const phoneInput = document.getElementById('newTutorPhone');
+            const addressInput = document.getElementById('newTutorAddress');
+
+            if (nameInput && (force || !nameInput.value)) {
+                const tutorName = player.tutorName && player.tutorName.indexOf('Tutor ') === 0 && player.tutorCedula ? '' : player.tutorName;
+                nameInput.value = tutorName || nameInput.value;
+            }
+            if (cedulaInput && (force || !cedulaInput.value)) {
+                cedulaInput.value = player.tutorCedula || cedulaInput.value;
+            }
+            if (emailInput && (force || !emailInput.value)) {
+                emailInput.value = player.tutorEmail || emailInput.value;
+            }
+            if (phoneInput && (force || !phoneInput.value)) {
+                phoneInput.value = player.tutorPhone || phoneInput.value;
+            }
+            if (addressInput && (force || !addressInput.value)) {
+                addressInput.value = player.tutorAddress || addressInput.value;
+            }
+        }
+
+        function refreshExistingPlayers() {
+            selectedExistingPlayers = new Set();
+            ensureExistingPlayersLoaded(true);
+            updateExistingPlayersSummary();
+        }
+        
+        function openAddFamilyModal() {
+            console.log('➕ Abriendo modal para agregar grupo familiar');
+            
+            const form = document.getElementById('addFamilyForm');
+            if (form) {
+                form.reset();
+            }
+
+            playerCount = 0;
+            const playersContainer = document.getElementById('playersContainer');
+            if (playersContainer) {
+                playersContainer.innerHTML = '';
+            }
+
+            selectedExistingPlayers = new Set();
+            const summaryEl = document.getElementById('existingPlayersSummary');
+            if (summaryEl) {
+                summaryEl.textContent = 'Selecciona al menos 2 jugadores.';
+            }
+
+            const searchEl = document.getElementById('existingPlayersSearch');
+            if (searchEl) {
+                searchEl.value = '';
+            }
+
+            setFamilyCreationMode('manual');
+            ensureExistingPlayersLoaded();
+
+            const modal = document.getElementById('addFamilyModal');
+            if (modal) {
+                modal.style.display = 'block';
+            }
+        }
+        
+        function closeAddFamilyModal() {
+            document.getElementById('addFamilyModal').style.display = 'none';
+            playerCount = 0;
+            selectedExistingPlayers = new Set();
+            familyCreationMode = 'manual';
+        }
+        
+        function addPlayerEntry() {
+            playerCount++;
+            const playerId = playerCount;
+            
+            const isFirst = playerCount === 1;
+            const monthlyFee = isFirst ? financialConfig.MONTHLY_FEE : financialConfig.FAMILY_MONTHLY_FEE;
+            const monthlyFeeFormatted = monthlyFee.toFixed(2);
+            
+            const playerHtml = `
+                <div class="player-entry" id="playerEntry${playerId}">
+                    <div class="player-entry-header">
+                        <h4>${isFirst ? '👑' : '⚽'} Jugador #${playerId} ${isFirst ? `(Mensualidad: $${monthlyFeeFormatted})` : `(Mensualidad: $${monthlyFeeFormatted} - Descuento Familiar)`}</h4>
+                        ${playerCount > 2 ? `<button type="button" class="remove-player-btn" onclick="removePlayerEntry(${playerId})">🗑️ Eliminar</button>` : ''}
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre del Jugador *</label>
+                            <input type="text" id="player${playerId}_name" required placeholder="Ej: Juan">
+                        </div>
+                        <div class="form-group">
+                            <label>Apellidos del Jugador *</label>
+                            <input type="text" id="player${playerId}_lastName" required placeholder="Ej: Pérez">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Edad *</label>
+                            <input type="number" id="player${playerId}_age" min="4" max="18" required placeholder="10">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Nacimiento</label>
+                            <input type="date" id="player${playerId}_birthdate">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cédula del Jugador *</label>
+                            <input type="text" id="player${playerId}_cedula" required placeholder="Ej: E-8-123456">
+                        </div>
+                        <div class="form-group">
+                            <label>Género *</label>
+                            <select id="player${playerId}_gender" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Categoría *</label>
+                            <select id="player${playerId}_category" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="U-6 M">U-6 M</option>
+                                <option value="U-8 M">U-8 M</option>
+                                <option value="U-10 M">U-10 M</option>
+                                <option value="U-12 M">U-12 M</option>
+                                <option value="U-14 M">U-14 M</option>
+                                <option value="U-16 M">U-16 M</option>
+                                <option value="U-10 F">U-10 F</option>
+                                <option value="U-12 F">U-12 F</option>
+                                <option value="U-14 F">U-14 F</option>
+                                <option value="U-16 F">U-16 F</option>
+                                <option value="U-18 F">U-18 F</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="player${playerId}_type">
+                                <option value="normal">Normal</option>
+                                <option value="becado">Becado</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Cédula del Jugador (Archivo)</label>
+                        <input type="file" id="player${playerId}_cedulaFile" accept="image/*,.pdf" style="padding: 8px;">
+                        <small style="color: #6b7280; display: block; margin-top: 5px;">Sube una foto o PDF de la cédula</small>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('playersContainer').insertAdjacentHTML('beforeend', playerHtml);
+        }
+        
+        function removePlayerEntry(playerId) {
+            const entry = document.getElementById(`playerEntry${playerId}`);
+            if (entry) {
+                entry.remove();
+                console.log(`🗑️ Jugador #${playerId} eliminado`);
+            }
+        }
+        
+        // Guardar grupo familiar
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('addFamilyForm')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveFamilyGroup();
+            });
+        });
+        
+        function saveFamilyGroup() {
+            console.log('💾 Guardando grupo familiar...');
+            
+            // Recopilar datos del tutor
+            const tutorData = {
+                name: document.getElementById('newTutorName').value,
+                cedula: document.getElementById('newTutorCedula').value,
+                email: document.getElementById('newTutorEmail').value,
+                phone: document.getElementById('newTutorPhone').value,
+                address: document.getElementById('newTutorAddress').value
+            };
+            
+            // Validar tutor
+            if (!tutorData.name || !tutorData.cedula || !tutorData.email || !tutorData.phone || !tutorData.address) {
+                alert('❌ Por favor completa todos los campos del tutor');
+                return;
+            }
+
+            if (familyCreationMode === 'existing') {
+                const selectedIds = Array.from(selectedExistingPlayers);
+
+                if (selectedIds.length < 2) {
+                    alert('❌ Selecciona al menos 2 jugadores para crear el grupo familiar');
+                    return;
+                }
+
+                showLoading('Asignando jugadores al grupo familiar...');
+
+                const familyData = {
+                    tutorName: tutorData.name,
+                    tutorCedula: tutorData.cedula,
+                    tutorEmail: tutorData.email,
+                    tutorPhone: tutorData.phone,
+                    tutorAddress: tutorData.address,
+                    playerIds: selectedIds
+                };
+
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        hideLoading();
+                        if (result && result.success) {
+                            const updated = result.playersUpdated || selectedIds.length;
+                            const familyId = result.familyId ? ` (${result.familyId})` : '';
+                            showToast(`✅ ${updated} jugador${updated === 1 ? '' : 'es'} asignados al nuevo grupo${familyId}`, 'success');
+                            closeAddFamilyModal();
+                            loadFamilyGroups();
+                        } else {
+                            const message = result && result.message ? result.message : 'No se pudo asignar a los jugadores';
+                            showToast('❌ ' + message, 'error');
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        hideLoading();
+                        console.error('Error asignando jugadores:', error);
+                        showToast('❌ Error asignando jugadores: ' + error.toString(), 'error');
+                    })
+                    .assignPlayersToFamilyGroup(familyData);
+
+                return;
+            }
+            
+            // Recopilar datos de jugadores
+            const players = [];
+            const playerEntries = document.querySelectorAll('.player-entry');
+            
+            if (playerEntries.length < 2) {
+                alert('❌ Debes agregar al menos 2 jugadores para crear un grupo familiar');
+                return;
+            }
+            
+            for (let i = 0; i < playerEntries.length; i++) {
+                const entry = playerEntries[i];
+                const playerId = entry.id.replace('playerEntry', '');
+                
+                const player = {
+                    name: document.getElementById(`player${playerId}_name`).value,
+                    lastName: document.getElementById(`player${playerId}_lastName`).value,
+                    age: parseInt(document.getElementById(`player${playerId}_age`).value),
+                    birthdate: document.getElementById(`player${playerId}_birthdate`).value,
+                    cedula: document.getElementById(`player${playerId}_cedula`).value,
+                    gender: document.getElementById(`player${playerId}_gender`).value,
+                    category: document.getElementById(`player${playerId}_category`).value,
+                    type: document.getElementById(`player${playerId}_type`).value,
+                    cedulaFile: document.getElementById(`player${playerId}_cedulaFile`).files[0]
+                };
+                
+                // Validar jugador
+                if (!player.name || !player.lastName || !player.cedula || !player.gender || !player.category) {
+                    alert(`❌ Por favor completa todos los campos del Jugador #${i + 1}`);
+                    return;
+                }
+                
+                players.push(player);
+            }
+            
+            console.log('Datos del tutor:', tutorData);
+            console.log('Jugadores:', players.length);
+            
+            // Procesar archivos y enviar
+            processFamilyFilesAndSave(tutorData, players);
+        }
+        
+        function processFamilyFilesAndSave(tutorData, players) {
+            // Función auxiliar para leer archivo como base64
+            function readFileAsBase64(file) {
+                return new Promise((resolve, reject) => {
+                    if (!file) {
+                        resolve(null);
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        resolve({
+                            name: file.name,
+                            mimeType: file.type,
+                            data: e.target.result.split(',')[1]
+                        });
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+            
+            const promises = [];
+            
+            // Archivo del tutor
+            const tutorFile = document.getElementById('newTutorCedulaFile').files[0];
+            promises.push(readFileAsBase64(tutorFile).then(fileData => {
+                tutorData.cedulaFileData = fileData;
+            }));
+            
+            // Archivos de jugadores
+            players.forEach((player, index) => {
+                promises.push(readFileAsBase64(player.cedulaFile).then(fileData => {
+                    player.cedulaFileData = fileData;
+                    delete player.cedulaFile; // Remover objeto File
+                }));
+            });
+            
+            // Procesar todos los archivos y enviar
+            Promise.all(promises)
+                .then(() => {
+                    console.log('📤 Enviando grupo familiar al servidor...');
+                    
+                    const familyGroupData = {
+                        tutor: tutorData,
+                        players: players
+                    };
+                    
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            if (result && result.success) {
+                                showToast(`✅ Grupo familiar creado exitosamente: ${result.playersCreated} jugadores registrados`, 'success');
+                                closeAddFamilyModal();
+                                loadFamilyGroups();
+                            } else {
+                                showToast('❌ Error: ' + (result ? result.message : 'Desconocido'), 'error');
+                            }
+                        })
+                        .withFailureHandler(function(error) {
+                            showToast('❌ Error: ' + error.toString(), 'error');
+                        })
+                        .createFamilyGroup(familyGroupData);
+                })
+                .catch(error => {
+                    showToast('❌ Error procesando archivos: ' + error.toString(), 'error');
+                });
+        }
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const detailsModal = document.getElementById('familyDetailsModal');
+            const addModal = document.getElementById('addFamilyModal');
+            
+            if (event.target === detailsModal) {
+                closeFamilyModal();
+            }
+            if (event.target === addModal) {
+                closeAddFamilyModal();
+            }
+        }
+
+        /**
+         * PROCESAR REEMBOLSO PARA UN PAGO CON DISCREPANCIA
+         */
+        function processRefund(jugadorId, tipo, montoOriginal, montoCorrecto, montoReembolso, esPagoExcesivo, rowIndex) {
+            const accion = esPagoExcesivo ? 'reembolsar' : 'cobrar adicional';
+            const montoTexto = esPagoExcesivo ? `$${montoReembolso.toFixed(2)}` : `$${montoReembolso.toFixed(2)}`;
+            
+            if (!confirm(`¿Estás seguro de que quieres ${accion} ${montoTexto} para este pago?\n\n` +
+                         `Jugador: ${jugadorId}\n` +
+                         `Tipo: ${tipo}\n` +
+                         `Monto original: $${montoOriginal.toFixed(2)}\n` +
+                         `Monto correcto: $${montoCorrecto.toFixed(2)}\n` +
+                         `Diferencia: $${montoReembolso.toFixed(2)}`)) {
+                return;
+            }
+            
+            // Mostrar loading
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '⏳ Procesando...';
+            button.disabled = true;
+            
+            try {
+                // Preparar datos para el backend
+                const paymentData = {
+                    jugadorId: jugadorId,
+                    tipo: tipo,
+                    montoOriginal: montoOriginal,
+                    montoCorrecto: montoCorrecto,
+                    montoReembolso: montoReembolso,
+                    requiereReembolso: true,
+                    rowIndex: rowIndex
+                };
+                
+                // Llamar a la función de Google Apps Script
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.success) {
+                            showToast('✅ ' + result.message, 'success');
+                            
+                            // Actualizar la interfaz
+                            setTimeout(() => {
+                                viewFamilyDetails(currentFamilyId);
+                            }, 1500);
+                        } else {
+                            showToast('❌ Error: ' + result.message, 'error');
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error procesando reembolso:', error);
+                        showToast('❌ Error procesando reembolso: ' + error.toString(), 'error');
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    })
+                    .processRefundForPayment(paymentData);
+                    
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('❌ Error: ' + error.toString(), 'error');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        /**
+         * VERIFICAR PRECIOS ACTUALES DE CONFIGURACIÓN
+         */
+        function verifyCurrentPrices() {
+            try {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.success) {
+                            const prices = result.prices;
+                            
+                            let message = '💰 PRECIOS ACTUALES DE CONFIGURACIÓN:\n\n';
+                            message += `🎓 Matrícula: $${prices.matricula.configurado}\n`;
+                            message += `   Fuente: ${prices.matricula.fuente}\n\n`;
+                            message += `📅 Mensualidad: $${prices.mensualidad.configurado}\n`;
+                            message += `   Fuente: ${prices.mensualidad.fuente}\n\n`;
+                            message += `👨‍👩‍👧‍👦 Mensualidad Familiar: $${prices.mensualidadFamiliar.configurado}\n`;
+                            message += `   Fuente: ${prices.mensualidadFamiliar.fuente}\n\n`;
+                            message += '💡 Estos precios se usan para validar discrepancias en pagos.';
+                            
+                            alert(message);
+                            showToast('✅ Precios verificados correctamente', 'success');
+                        } else {
+                            showToast('❌ Error: ' + result.message, 'error');
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error verificando precios:', error);
+                        showToast('❌ Error verificando precios: ' + error.toString(), 'error');
+                    })
+                    .verifyCurrentPrices();
+                    
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('❌ Error: ' + error.toString(), 'error');
+            }
+        }
+
+        /**
+         * VERIFICAR CÁLCULO DE MENSUALIDAD FAMILIAR
+         */
+        function verifyFamilyCalculation() {
+            if (!currentFamilyId) {
+                showToast('❌ No hay familia seleccionada', 'error');
+                return;
+            }
+            
+            try {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.success) {
+                            const calc = result.calculation;
+                            
+                            let message = '🧮 VERIFICACIÓN DE CÁLCULO FAMILIAR:\n\n';
+                            message += `👨‍👩‍👧‍👦 Familia: ${calc.familyId}\n`;
+                            message += `👥 Total Jugadores: ${calc.totalPlayers}\n\n`;
+                            message += `💰 Precios Base:\n`;
+                            message += `• Individual: $${calc.mensualidadIndividual}\n`;
+                            message += `• Familiar: $${calc.mensualidadFamiliar}\n\n`;
+                            message += `📊 Cálculo por Jugador:\n`;
+                            
+                            calc.players.forEach((player, index) => {
+                                message += `${index + 1}. ${player.nombre}\n`;
+                                message += `   Tipo: ${player.tipo}\n`;
+                                if (player.mensualidadPersonalizada) {
+                                    message += `   Personalizada: $${player.mensualidadPersonalizada}\n`;
+                                }
+                                if (player.descuento) {
+                                    message += `   Descuento: ${player.descuento}%\n`;
+                                }
+                                message += `   → $${player.mensualidad.toFixed(2)} (${player.razon})\n\n`;
+                            });
+                            
+                            message += `🎯 TOTAL CALCULADO: $${calc.totalCalculated.toFixed(2)}/mes`;
+                            
+                            alert(message);
+                            showToast('✅ Cálculo verificado correctamente', 'success');
+                        } else {
+                            showToast('❌ Error: ' + result.message, 'error');
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error verificando cálculo familiar:', error);
+                        showToast('❌ Error verificando cálculo: ' + error.toString(), 'error');
+                    })
+                    .verifyFamilyMonthlyCalculation(currentFamilyId);
+                    
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('❌ Error: ' + error.toString(), 'error');
+            }
+        }
+
+    </script>
+</body>
+</html>

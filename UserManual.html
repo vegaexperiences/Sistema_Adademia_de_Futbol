@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - SUAREZ ACADEMY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: white;
+            color: #1e3a8a;
+            transform: translateY(-2px);
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 180px;
+            width: 250px;
+            background: white;
+            padding: 20px;
+            border-right: 2px solid #e5e7eb;
+            height: calc(100vh - 180px);
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar h3 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li {
+            margin-bottom: 8px;
+        }
+
+        .sidebar a {
+            color: #6b7280;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            display: block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .sidebar a:hover {
+            color: #3b82f6;
+            background: #f3f4f6;
+        }
+
+        .sidebar a.active {
+            color: #1e3a8a;
+            background: #dbeafe;
+            font-weight: 600;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 40px;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+        }
+
+        .section {
+            margin-bottom: 50px;
+            scroll-margin-top: 20px;
+        }
+
+        .section h2 {
+            color: #1e3a8a;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #3b82f6;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section h3 {
+            color: #3b82f6;
+            font-size: 1.5em;
+            margin: 25px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section p {
+            color: #4b5563;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            font-size: 1.05em;
+        }
+
+        .step-box {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 5px solid #3b82f6;
+        }
+
+        .step-box .step-number {
+            background: #1e3a8a;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 1.1em;
+        }
+
+        .step-box .step-title {
+            color: #1e3a8a;
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .step-box .step-description {
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 5px solid #f59e0b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .warning-box h4 {
+            color: #d97706;
+            margin-bottom: 10px;
+        }
+
+        .success-box {
+            background: #d1fae5;
+            border-left: 5px solid #10b981;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .success-box h4 {
+            color: #059669;
+            margin-bottom: 10px;
+        }
+
+        .info-box {
+            background: #e0f2fe;
+            border-left: 5px solid #0284c7;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .info-box h4 {
+            color: #0369a1;
+            margin-bottom: 10px;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #ef4444;
+            font-size: 0.95em;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #4b5563;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-green {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-yellow {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 2px solid #e5e7eb;
+            }
+
+            .content {
+                margin-left: 0;
+            }
+        }
+
+    /* Global Loading Overlay - Balón de Fútbol */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    .football-loader {
+        font-size: 80px;
+        animation: spin-football 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin-football {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #1e3a8a;
+    }
+    </style>
+</head>
+<body>
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay" id="globalLoading">
+        <div class="loading-content">
+            <div class="football-loader">⚽</div>
+            <div class="loading-text">Cargando...</div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="header">
+            <button class="close-btn" onclick="closeWindow()">❌ Cerrar</button>
+            <h1>📚 Manual de Usuario</h1>
+            <p>Guía Práctica - SUAREZ ACADEMY</p>
+        </div>
+
+        <div class="sidebar">
+            <h3>📑 Índice</h3>
+            <ul>
+                <li><a href="#inicio" onclick="scrollToSection('inicio')">🏠 Inicio</a></li>
+                <li><a href="#jugadores" onclick="scrollToSection('jugadores')">👥 Jugadores</a></li>
+                <li><a href="#familias" onclick="scrollToSection('familias')">👨‍👩‍👧‍👦 Familias</a></li>
+                <li><a href="#pagos" onclick="scrollToSection('pagos')">💳 Pagos</a></li>
+                <li><a href="#gastos" onclick="scrollToSection('gastos')">💸 Gastos</a></li>
+                <li><a href="#aprobaciones" onclick="scrollToSection('aprobaciones')">✅ Aprobaciones</a></li>
+                <li><a href="#reportes" onclick="scrollToSection('reportes')">📊 Reportes</a></li>
+            </ul>
+        </div>
+
+        <div class="content">
+            <!-- INICIO -->
+            <section id="inicio" class="section">
+                <h2>🏠 Bienvenido</h2>
+                
+                <p>Este manual te guiará en el uso diario del sistema de gestión de <strong>SUAREZ ACADEMY</strong>.</p>
+
+                <div class="info-box">
+                    <h4>🎯 Tareas Principales</h4>
+                    <ul>
+                        <li>👥 Gestionar jugadores (agregar, editar, retirar)</li>
+                        <li>💰 Registrar pagos de mensualidades y matrículas</li>
+                        <li>💸 Registrar gastos de la academia</li>
+                        <li>✅ Aprobar o rechazar nuevas inscripciones</li>
+                        <li>📊 Generar reportes y ver estadísticas</li>
+                    </ul>
+                </div>
+
+                <h3>🚀 Acceso al Sistema</h3>
+                <p>Abre la hoja de Google Sheets y usa el menú <strong>"🏆 Academia Fútbol"</strong> en la parte superior:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Opción</th>
+                            <th>Para qué sirve</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>👥 Gestión de Jugadores</td>
+                            <td>Ver, agregar y gestionar jugadores</td>
+                        </tr>
+                        <tr>
+                            <td>👨‍👩‍👧‍👦 Grupos Familiares</td>
+                            <td>Ver familias y registrar pagos grupales</td>
+                        </tr>
+                        <tr>
+                            <td>💰 Gestión Financiera</td>
+                            <td>Ver ingresos, gastos y balance</td>
+                        </tr>
+                        <tr>
+                            <td>✅ Aprobaciones</td>
+                            <td>Aprobar o rechazar nuevas inscripciones</td>
+                        </tr>
+                        <tr>
+                            <td>📊 Dashboard Principal</td>
+                            <td>Ver resumen general y estadísticas</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- GESTIÓN DE JUGADORES -->
+            <section id="jugadores" class="section">
+                <h2>👥 Gestión de Jugadores</h2>
+
+                <h3>🔍 Buscar Jugadores</h3>
+                <p>En la pantalla de jugadores puedes buscar por:</p>
+                <ul>
+                    <li>Nombre completo</li>
+                    <li>Número de cédula</li>
+                    <li>Teléfono</li>
+                    <li>ID del jugador</li>
+                </ul>
+
+                <p>También puedes filtrar por:</p>
+                <ul>
+                    <li><strong>Estado:</strong> Activo, Inactivo, Pendiente, Suspendido</li>
+                    <li><strong>Categoría:</strong> U-6, U-8, U-10, U-12, U-14, U-16, U-18</li>
+                    <li><strong>Tipo:</strong> Normal o Becado</li>
+                </ul>
+
+                <h3>🎨 Códigos de Color</h3>
+                <p>Los jugadores están resaltados con colores según su situación:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Color</th>
+                            <th>Significado</th>
+                            <th>Qué hacer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge badge-red">ROJO</span></td>
+                            <td><strong>Jugador moroso</strong> - Tiene pagos pendientes</td>
+                            <td>Contactar al tutor para que pague</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-yellow">AMARILLO</span></td>
+                            <td><strong>Jugador becado</strong> - No paga mensualidad</td>
+                            <td>Solo informativo</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-blue">AZUL</span></td>
+                            <td><strong>Mensualidad especial</strong> - Monto diferente a $130</td>
+                            <td>Solo informativo</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>➕ Agregar Nuevo Jugador</h3>
+                
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">1</div>
+                        <div>
+                            <div class="step-title">Clic en "➕ Agregar Jugador"</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">2</div>
+                        <div>
+                            <div class="step-title">Llenar datos del jugador</div>
+                            <div class="step-description">
+                                <strong>Campos obligatorios:</strong>
+                                <ul>
+                                    <li>Nombre y Apellidos</li>
+                                    <li>Edad y Fecha de Nacimiento</li>
+                                    <li>Cédula del jugador</li>
+                                    <li>Género (Masculino/Femenino)</li>
+                                    <li>Categoría (U-6, U-8, etc.)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">3</div>
+                        <div>
+                            <div class="step-title">Llenar datos del tutor</div>
+                            <div class="step-description">
+                                <strong>Campos obligatorios:</strong>
+                                <ul>
+                                    <li>Nombre completo del tutor</li>
+                                    <li>Cédula del tutor</li>
+                                    <li>Email</li>
+                                    <li>Teléfono</li>
+                                    <li>Dirección</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">4</div>
+                        <div>
+                            <div class="step-title">Subir cédulas (Opcional)</div>
+                            <div class="step-description">
+                                Puedes subir fotos o PDFs de:
+                                <ul>
+                                    <li>Cédula del jugador</li>
+                                    <li>Cédula del tutor</li>
+                                </ul>
+                                Se guardan automáticamente en Google Drive.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">5</div>
+                        <div>
+                            <div class="step-title">Guardar</div>
+                            <div class="step-description">
+                                El sistema automáticamente:
+                                <ul>
+                                    <li>Crea el jugador con un ID único</li>
+                                    <li>Lo agrupa con su familia (si tiene hermanos)</li>
+                                    <li>Cobra la matrícula de $130 (si no es becado)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>👁️ Ver Información de un Jugador</h3>
+                <p>Haz clic en <strong>"👁️ Ver"</strong> junto al jugador. Se abrirá una ventana con 3 pestañas:</p>
+
+                <div class="info-box">
+                    <h4>📋 Información</h4>
+                    <p>Muestra todos los datos del jugador, tutor y archivos de cédulas.</p>
+                </div>
+
+                <div class="info-box">
+                    <h4>💰 Pagos e Historial</h4>
+                    <p>Aquí puedes:</p>
+                    <ul>
+                        <li>Ver el historial completo de pagos</li>
+                        <li>Ver cuánto debe el jugador</li>
+                        <li>Registrar pagos manuales</li>
+                        <li>Agregar cobros extras (uniformes, torneos)</li>
+                        <li>Cambiar la mensualidad personalizada</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>✏️ Editar Datos</h4>
+                    <p>Permite modificar nombre, teléfono, tipo (normal/becado), descuento y observaciones.</p>
+                </div>
+
+                <h3>🔴 Retirar un Jugador</h3>
+                <p>Cuando un jugador deja la academia:</p>
+                <ol>
+                    <li>Busca al jugador en la lista</li>
+                    <li>Haz clic en <strong>"🔴 Retirar"</strong></li>
+                    <li>Escribe el motivo (opcional): "Cambio de academia", "Problemas económicos", etc.</li>
+                    <li>El jugador pasa a estado "Retirado"</li>
+                    <li>Ya no recibirá cobros mensuales</li>
+                    <li>Aparecerá en la pestaña "Jugadores Retirados"</li>
+                </ol>
+
+                <h3>🟢 Reactivar un Jugador</h3>
+                <p>Si un jugador retirado vuelve a la academia:</p>
+                <ol>
+                    <li>Ve a la pestaña <strong>"🔴 Jugadores Retirados"</strong></li>
+                    <li>Busca al jugador</li>
+                    <li>Haz clic en <strong>"🟢 Reactivar"</strong></li>
+                    <li>El sistema automáticamente:
+                        <ul>
+                            <li>Lo marca como "Activo"</li>
+                            <li>Cobra una nueva matrícula de $130</li>
+                            <li>Vuelve a incluirlo en los cobros mensuales</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <div class="warning-box">
+                    <h4>⚠️ Importante</h4>
+                    <p>Al reactivar un jugador, se cobra matrícula nuevamente como si fuera un ingreso nuevo.</p>
+                </div>
+            </section>
+
+            <!-- GRUPOS FAMILIARES -->
+            <section id="familias" class="section">
+                <h2>👨‍👩‍👧‍👦 Grupos Familiares</h2>
+
+                <h3>💰 Tarifas Familiares</h3>
+                <p>El sistema aplica automáticamente descuentos familiares:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Posición</th>
+                            <th>Mensualidad</th>
+                            <th>Matrícula</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Primer hijo</td>
+                            <td>$130 por mes</td>
+                            <td>$130 una vez</td>
+                        </tr>
+                        <tr>
+                            <td>Segundo hijo</td>
+                            <td>$110.50 por mes</td>
+                            <td>$130 una vez</td>
+                        </tr>
+                        <tr>
+                            <td>Tercer hijo</td>
+                            <td>$110.50 por mes</td>
+                            <td>$130 una vez</td>
+                        </tr>
+                        <tr>
+                            <td>Becado</td>
+                            <td>$0 (gratis)</td>
+                            <td>$0 (gratis)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="success-box">
+                    <h4>✅ Ejemplo Real</h4>
+                    <p><strong>Familia Pérez (3 hijos):</strong></p>
+                    <ul>
+                        <li>Juan (primer hijo): $130/mes</li>
+                        <li>María (segunda hija): $110.50/mes</li>
+                        <li>Carlos (tercer hijo): $110.50/mes</li>
+                    </ul>
+                    <p><strong>Total familiar mensual: $351.00</strong></p>
+                </div>
+
+                <h3>👁️ Ver Detalles de una Familia</h3>
+                <ol>
+                    <li>Abre <strong>"👨‍👩‍👧‍👦 Grupos Familiares"</strong> desde el menú</li>
+                    <li>Verás todas las familias con 2 o más jugadores</li>
+                    <li>Haz clic en <strong>"👁️ Ver Detalles"</strong> de la familia</li>
+                    <li>Verás:
+                        <ul>
+                            <li>Lista de todos los jugadores de la familia</li>
+                            <li>Mensualidad de cada uno</li>
+                            <li>Total mensual de la familia</li>
+                            <li>Historial de pagos de todos los miembros</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>💳 Pago Familiar</h3>
+                <p>Cuando un tutor paga la mensualidad de todos sus hijos a la vez:</p>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">1</div>
+                        <div>
+                            <div class="step-title">Abrir detalles de la familia</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">2</div>
+                        <div>
+                            <div class="step-title">Seleccionar jugadores a pagar</div>
+                            <div class="step-description">
+                                Marca con checkbox los jugadores que están pagando este mes
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">3</div>
+                        <div>
+                            <div class="step-title">Completar datos del pago</div>
+                            <div class="step-description">
+                                <ul>
+                                    <li>Método: Efectivo, Transferencia, Yappy, Tarjeta</li>
+                                    <li>Referencia: Número de recibo o transacción (opcional)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">4</div>
+                        <div>
+                            <div class="step-title">Confirmar</div>
+                            <div class="step-description">
+                                El sistema registra un pago para cada jugador seleccionado
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGOS -->
+            <section id="pagos" class="section">
+                <h2>💳 Gestión de Pagos</h2>
+
+                <h3>💵 Registrar un Pago de Mensualidad</h3>
+                
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">1</div>
+                        <div>
+                            <div class="step-title">Buscar al jugador</div>
+                            <div class="step-description">
+                                En "👥 Gestión de Jugadores", busca al jugador por nombre o cédula
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">2</div>
+                        <div>
+                            <div class="step-title">Abrir pestaña de pagos</div>
+                            <div class="step-description">
+                                Haz clic en "👁️ Ver" → Pestaña "💰 Pagos e Historial"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">3</div>
+                        <div>
+                            <div class="step-title">Registrar pago manual</div>
+                            <div class="step-description">
+                                Haz clic en "💵 Registrar Pago Manual" e ingresa:
+                                <ul>
+                                    <li><strong>Monto:</strong> La cantidad que pagó (ej: $130)</li>
+                                    <li><strong>Método:</strong> Efectivo, Transferencia, Yappy, Tarjeta</li>
+                                    <li><strong>Referencia:</strong> Número de recibo (opcional)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <h4>✅ ¿Qué hace el sistema?</h4>
+                    <ul>
+                        <li>Marca el pago como "Pagado"</li>
+                        <li>Reduce el saldo pendiente del jugador</li>
+                        <li>Si estaba moroso (rojo), lo quita de la lista de morosos</li>
+                        <li>Actualiza las estadísticas financieras</li>
+                    </ul>
+                </div>
+
+                <h3>➕ Cobros Extras (Uniformes, Torneos, etc.)</h3>
+                <p>Cuando necesitas cobrar algo adicional a la mensualidad:</p>
+
+                <ol>
+                    <li>Abre el jugador → Pestaña "💰 Pagos e Historial"</li>
+                    <li>Haz clic en <strong>"➕ Agregar Cobro Extra"</strong></li>
+                    <li>Describe qué es: "Uniforme", "Torneo Regional", "Zapatos", etc.</li>
+                    <li>Ingresa el monto: ej: $50</li>
+                    <li>El sistema suma este monto al saldo pendiente del jugador</li>
+                </ol>
+
+                <div class="info-box">
+                    <h4>💡 Ejemplos de Cobros Extras</h4>
+                    <ul>
+                        <li>Uniforme completo: $50</li>
+                        <li>Inscripción a torneo: $30</li>
+                        <li>Zapatos de fútbol: $40</li>
+                        <li>Medias y espinilleras: $15</li>
+                    </ul>
+                </div>
+
+                <h3>📝 Cambiar Mensualidad de un Jugador</h3>
+                <p>Si haces un acuerdo especial con el tutor (ej: pagar $100 en vez de $130):</p>
+
+                <ol>
+                    <li>Abre el jugador → Pestaña "💰 Pagos e Historial"</li>
+                    <li>Haz clic en <strong>"📝 Modificar Mensualidad"</strong></li>
+                    <li>Ingresa el nuevo monto: ej: $100</li>
+                    <li>A partir del siguiente mes, se cobrará ese monto en lugar de $130</li>
+                    <li>El jugador aparecerá resaltado en <span class="badge badge-blue">AZUL</span></li>
+                </ol>
+
+                <h3>🔴 Jugadores Morosos</h3>
+                <p>El sistema detecta automáticamente jugadores con pagos atrasados:</p>
+
+                <div class="warning-box">
+                    <h4>📅 Período de Gracia</h4>
+                    <ul>
+                        <li><strong>Día 1-5 del mes:</strong> Nadie es moroso (período de gracia)</li>
+                        <li><strong>Día 6 en adelante:</strong> Se marcan como morosos los que tienen saldo pendiente</li>
+                    </ul>
+                </div>
+
+                <p><strong>Los jugadores morosos aparecen resaltados en ROJO</strong> en la lista de jugadores.</p>
+
+                <h3>🤖 Cobro Automático Mensual</h3>
+                <p>El sistema cobra automáticamente el día 1 de cada mes:</p>
+
+                <div class="success-box">
+                    <h4>📅 Proceso Automático</h4>
+                    <ul>
+                        <li>Cada día 1 del mes a las 8:00 AM</li>
+                        <li>El sistema crea un cargo de "Mensualidad" para cada jugador activo</li>
+                        <li>El monto depende de si es primer hijo ($130) o segundo+ ($110.50)</li>
+                        <li>Si el jugador tiene mensualidad personalizada, usa ese monto</li>
+                        <li>Los becados NO reciben cargo</li>
+                        <li>El cargo queda en estado "Pendiente" hasta que lo pagues</li>
+                    </ul>
+                </div>
+
+                <p><strong>No necesitas hacer nada</strong> - el sistema cobra automáticamente. Solo debes registrar los pagos cuando los tutores paguen.</p>
+            </section>
+
+            <!-- GASTOS -->
+            <section id="gastos" class="section">
+                <h2>💸 Gestión de Gastos</h2>
+
+                <h3>💸 Registrar un Gasto</h3>
+                <p>Para registrar cualquier gasto de la academia:</p>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">1</div>
+                        <div>
+                            <div class="step-title">Abrir Gestión de Gastos</div>
+                            <div class="step-description">
+                                Desde el menú: <strong>"💸 Gestión de Gastos"</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">2</div>
+                        <div>
+                            <div class="step-title">Completar el formulario</div>
+                            <div class="step-description">
+                                <ul>
+                                    <li><strong>Descripción:</strong> Qué compraste o pagaste</li>
+                                    <li><strong>Monto:</strong> Cuánto gastaste</li>
+                                    <li><strong>Categoría:</strong> Tipo de gasto (ver abajo)</li>
+                                    <li><strong>Método de Pago:</strong> Cómo pagaste</li>
+                                    <li><strong>Referencia:</strong> Número de factura o recibo</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">3</div>
+                        <div>
+                            <div class="step-title">Guardar</div>
+                            <div class="step-description">
+                                El gasto se registra con la fecha actual y se actualiza el balance financiero
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>📂 Categorías de Gastos</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Ejemplos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Equipamiento</td>
+                            <td>Balones, conos, mallas, portátiles</td>
+                        </tr>
+                        <tr>
+                            <td>Sueldos</td>
+                            <td>Pago a entrenadores, asistentes</td>
+                        </tr>
+                        <tr>
+                            <td>Mantenimiento</td>
+                            <td>Corte de grama, reparaciones, limpieza</td>
+                        </tr>
+                        <tr>
+                            <td>Servicios</td>
+                            <td>Agua, luz, internet, teléfono</td>
+                        </tr>
+                        <tr>
+                            <td>Alquiler</td>
+                            <td>Renta de cancha, oficina</td>
+                        </tr>
+                        <tr>
+                            <td>Transporte</td>
+                            <td>Buses para torneos, combustible</td>
+                        </tr>
+                        <tr>
+                            <td>Uniformes</td>
+                            <td>Compra de uniformes para reventa</td>
+                        </tr>
+                        <tr>
+                            <td>Otros</td>
+                            <td>Gastos que no entran en las categorías anteriores</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>🔄 Gastos Recurrentes</h3>
+                <p>Para gastos que se repiten cada mes (alquiler, servicios):</p>
+
+                <ol>
+                    <li>En Gestión de Gastos, busca la sección <strong>"Gastos Recurrentes"</strong></li>
+                    <li>Haz clic en <strong>"➕ Crear Gasto Recurrente"</strong></li>
+                    <li>Configura:
+                        <ul>
+                            <li>Descripción: "Alquiler de cancha"</li>
+                            <li>Monto: $500</li>
+                            <li>Categoría: Alquiler</li>
+                            <li>Frecuencia: Mensual</li>
+                            <li>Día del mes: 5 (se cobrará cada día 5)</li>
+                        </ul>
+                    </li>
+                    <li>El sistema generará automáticamente este gasto cada mes</li>
+                    <li>Te pedirá confirmación antes de registrarlo</li>
+                </ol>
+
+                <div class="info-box">
+                    <h4>💡 Ventajas de Gastos Recurrentes</h4>
+                    <ul>
+                        <li>No olvidas registrar gastos fijos mensuales</li>
+                        <li>Proyecciones financieras más precisas</li>
+                        <li>Control antes de registrar (puedes confirmar o rechazar)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- APROBACIONES -->
+            <section id="aprobaciones" class="section">
+                <h2>✅ Aprobaciones de Nuevos Jugadores</h2>
+
+                <h3>📝 ¿De dónde vienen las solicitudes?</h3>
+                <p>Las solicitudes vienen del <strong>formulario de Google Forms</strong> que compartes con los tutores para inscribirse.</p>
+
+                <h3>👁️ Ver Solicitudes Pendientes</h3>
+                <ol>
+                    <li>Abre <strong>"✅ Aprobaciones"</strong> desde el menú</li>
+                    <li>Verás la lista de jugadores que aplicaron</li>
+                    <li>Cada solicitud muestra:
+                        <ul>
+                            <li>Nombre del jugador y del tutor</li>
+                            <li>Edad y categoría calculada</li>
+                            <li>Datos de contacto</li>
+                            <li>Archivos adjuntos (cédulas)</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>✅ Aprobar un Jugador (Normal)</h3>
+                <p>Cuando aceptas un jugador que pagará normalmente:</p>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">1</div>
+                        <div>
+                            <div class="step-title">Revisar los datos</div>
+                            <div class="step-description">
+                                Verifica que toda la información esté correcta
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">2</div>
+                        <div>
+                            <div class="step-title">Clic en "✅ Aprobar"</div>
+                            <div class="step-description">
+                                El sistema automáticamente:
+                                <ul>
+                                    <li>Agrega al jugador a la hoja "Jugadores"</li>
+                                    <li>Lo marca como "Activo"</li>
+                                    <li>Cobra matrícula de $130</li>
+                                    <li>Lo agrupa con su familia (si tiene hermanos)</li>
+                                    <li>Guarda en el histórico</li>
+                                    <li>Quita de la cola de aprobaciones</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="step-number">3</div>
+                        <div>
+                            <div class="step-title">Cobrar matrícula</div>
+                            <div class="step-description">
+                                El cargo de $130 queda pendiente. Cuando el tutor pague, regístralo como cualquier otro pago.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>🏆 Aprobar un Jugador Becado</h3>
+                <p>Si el jugador tiene una beca completa (no paga nada):</p>
+
+                <ol>
+                    <li>Haz clic en <strong>"🏆 Aprobar Becado"</strong></li>
+                    <li>El sistema:
+                        <ul>
+                            <li>Marca al jugador como tipo "becado"</li>
+                            <li><strong>NO cobra matrícula</strong></li>
+                            <li><strong>NO cobrará mensualidades</strong> automáticamente</li>
+                            <li>Lo marca con descuento del 100%</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>❌ Rechazar una Solicitud</h3>
+                <p>Cuando no aceptas al jugador:</p>
+
+                <ol>
+                    <li>Haz clic en <strong>"❌ Rechazar"</strong></li>
+                    <li>Opcionalmente escribe el motivo</li>
+                    <li>El sistema:
+                        <ul>
+                            <li>Guarda en el histórico como "Rechazado"</li>
+                            <li>Quita de la cola de aprobaciones</li>
+                            <li>NO crea el jugador</li>
+                            <li>NO cobra nada</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <div class="info-box">
+                    <h4>📋 Histórico Completo</h4>
+                    <p>TODAS las decisiones (aprobaciones y rechazos) quedan guardadas en el histórico del sistema para trazabilidad.</p>
+                </div>
+            </section>
+
+            <!-- REPORTES -->
+            <section id="reportes" class="section">
+                <h2>📊 Reportes y Estadísticas</h2>
+
+                <h3>📈 Dashboard Principal</h3>
+                <p>Abre <strong>"📊 Dashboard Principal"</strong> para ver el resumen general:</p>
+
+                <div class="info-box">
+                    <h4>🎯 Qué Muestra</h4>
+                    <ul>
+                        <li><strong>Total de Jugadores:</strong> Cuántos jugadores hay en total</li>
+                        <li><strong>Jugadores Activos:</strong> Cuántos están en el plantel actualmente</li>
+                        <li><strong>Jugadores Becados:</strong> Cuántos tienen beca</li>
+                        <li><strong>Jugadores Morosos:</strong> Cuántos tienen pagos pendientes (⚠️ alerta)</li>
+                        <li><strong>Ingresos del Mes:</strong> Cuánto se ha recibido este mes</li>
+                        <li><strong>Gastos del Mes:</strong> Cuánto se ha gastado este mes</li>
+                        <li><strong>Balance del Mes:</strong> Ganancia o pérdida (Ingresos - Gastos)</li>
+                        <li><strong>Actividad Reciente:</strong> Últimas 10 acciones en el sistema</li>
+                    </ul>
+                </div>
+
+                <h3>💰 Dashboard Financiero</h3>
+                <p>Abre <strong>"💰 Gestión Financiera"</strong> para ver detalles financieros:</p>
+
+                <h4>Pestaña 1: Resumen</h4>
+                <ul>
+                    <li>Métricas financieras del mes</li>
+                    <li>Comparación con el mes anterior</li>
+                    <li>Distribución por métodos de pago</li>
+                    <li>Gastos por categoría</li>
+                </ul>
+
+                <h4>Pestaña 2: Transacciones</h4>
+                <ul>
+                    <li>Lista completa de todos los pagos</li>
+                    <li>Lista completa de todos los gastos</li>
+                    <li>Filtros por fecha y tipo</li>
+                </ul>
+
+                <h4>Pestaña 3: Reportes</h4>
+                <ul>
+                    <li>Gráficas de ingresos vs gastos</li>
+                    <li>Tendencia de los últimos 12 meses</li>
+                    <li>Exportar a Excel</li>
+                </ul>
+
+                <h3>📥 Exportar Datos</h3>
+                <p>Puedes exportar cualquier información a Excel:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Qué Exportar</th>
+                            <th>Para Qué Sirve</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Lista de Jugadores</td>
+                            <td>Backup, análisis externo, compartir con entrenadores</td>
+                        </tr>
+                        <tr>
+                            <td>Reporte Financiero</td>
+                            <td>Contabilidad mensual, impuestos, auditoría</td>
+                        </tr>
+                        <tr>
+                            <td>Grupos Familiares</td>
+                            <td>Contactar familias, enviar comunicados</td>
+                        </tr>
+                        <tr>
+                            <td>Sistema Completo</td>
+                            <td>Backup completo de todos los datos</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- CASOS PRÁCTICOS -->
+            <section id="casos-practicos" class="section">
+                <h2>📖 Casos Prácticos</h2>
+
+                <h3>Ejemplo 1: Llega un padre a inscribir a su hijo</h3>
+
+                <div class="step-box">
+                    <div class="step-title">Situación</div>
+                    <div class="step-description">
+                        El Sr. Rodríguez viene a inscribir a su hijo Daniel de 8 años.
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-title">Qué hacer</div>
+                    <div class="step-description">
+                        <ol>
+                            <li>Abre "👥 Gestión de Jugadores"</li>
+                            <li>Clic en "➕ Agregar Jugador"</li>
+                            <li>Llena:
+                                <ul>
+                                    <li>Nombre: Daniel</li>
+                                    <li>Apellidos: Rodríguez</li>
+                                    <li>Edad: 8</li>
+                                    <li>Cédula del niño</li>
+                                    <li>Género: Masculino</li>
+                                    <li>Categoría: U-8 M</li>
+                                </ul>
+                            </li>
+                            <li>Llena datos del tutor (Sr. Rodríguez)</li>
+                            <li>Guarda</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <h4>✅ Resultado</h4>
+                    <ul>
+                        <li>Daniel queda registrado como jugador activo</li>
+                        <li>Se crea un cargo de matrícula de $130</li>
+                        <li>A partir del siguiente mes, recibirá cobro de $130 mensual automáticamente</li>
+                    </ul>
+                </div>
+
+                <h3>Ejemplo 2: Padre paga mensualidad de 2 hijos</h3>
+
+                <div class="step-box">
+                    <div class="step-title">Situación</div>
+                    <div class="step-description">
+                        La Sra. González paga $240.50 en Yappy por la mensualidad de sus 2 hijos (Ana y Luis).
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-title">Qué hacer</div>
+                    <div class="step-description">
+                        <strong>Opción 1: Pago Individual</strong>
+                        <ol>
+                            <li>Busca a Ana → Ver → Pagos → Registrar Pago Manual</li>
+                            <li>Monto: $130, Método: Yappy, Referencia: #12345</li>
+                            <li>Busca a Luis → Ver → Pagos → Registrar Pago Manual</li>
+                            <li>Monto: $110.50, Método: Yappy, Referencia: #12345</li>
+                        </ol>
+
+                        <strong>Opción 2: Pago Familiar</strong>
+                        <ol>
+                            <li>Abre "👨‍👩‍👧‍👦 Grupos Familiares"</li>
+                            <li>Busca familia González</li>
+                            <li>Ver Detalles</li>
+                            <li>Marca Ana y Luis con checkbox</li>
+                            <li>Método: Yappy, Referencia: #12345</li>
+                            <li>Confirmar - se registran ambos pagos a la vez</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <h3>Ejemplo 3: Jugador necesita uniforme ($50)</h3>
+
+                <div class="step-box">
+                    <div class="step-title">Situación</div>
+                    <div class="step-description">
+                        Carlos necesita un uniforme nuevo que cuesta $50. El tutor dice que lo pagará después.
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-title">Qué hacer</div>
+                    <div class="step-description">
+                        <ol>
+                            <li>Busca a Carlos → Ver → Pestaña "Pagos"</li>
+                            <li>Haz clic en "➕ Agregar Cobro Extra"</li>
+                            <li>Descripción: "Uniforme completo"</li>
+                            <li>Monto: $50</li>
+                            <li>Confirmar</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <h4>✅ Resultado</h4>
+                    <ul>
+                        <li>Se suma $50 al saldo pendiente de Carlos</li>
+                        <li>Cuando el tutor pague, registras un pago manual de $50</li>
+                        <li>El saldo vuelve a quedar en 0</li>
+                    </ul>
+                </div>
+
+                <h3>Ejemplo 4: Acuerdo especial - Pagar $100/mes</h3>
+
+                <div class="step-box">
+                    <div class="step-title">Situación</div>
+                    <div class="step-description">
+                        Llegas a un acuerdo con el tutor de Sofía: pagará $100/mes en lugar de $130.
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-title">Qué hacer</div>
+                    <div class="step-description">
+                        <ol>
+                            <li>Busca a Sofía → Ver → Pestaña "Pagos"</li>
+                            <li>Haz clic en "📝 Modificar Mensualidad"</li>
+                            <li>Ingresa: $100</li>
+                            <li>Confirmar</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <h4>✅ Resultado</h4>
+                    <ul>
+                        <li>A partir del siguiente mes, se cobrará $100 automáticamente</li>
+                        <li>Sofía aparecerá resaltada en <span class="badge badge-blue">AZUL</span></li>
+                        <li>El cambio es permanente hasta que lo modifiques de nuevo</li>
+                    </ul>
+                </div>
+
+                <h3>Ejemplo 5: Familia con 3 hijos se inscribe</h3>
+
+                <div class="step-box">
+                    <div class="step-title">Situación</div>
+                    <div class="step-description">
+                        La familia Martínez inscribe a 3 hijos: Pedro (10), Juan (8) y María (6).
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-title">Qué hacer</div>
+                    <div class="step-description">
+                        <ol>
+                            <li>El padre llena el formulario de Google Forms con los 3 niños</li>
+                            <li>La solicitud aparece en "✅ Aprobaciones"</li>
+                            <li>Apruebas a los 3 (clic 3 veces en "✅ Aprobar")</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <h4>✅ Resultado</h4>
+                    <ul>
+                        <li>Los 3 quedan agrupados como <code>Familia Martínez</code></li>
+                        <li>Cargos de matrícula:
+                            <ul>
+                                <li>Pedro: $130</li>
+                                <li>Juan: $130</li>
+                                <li>María: $130</li>
+                                <li><strong>Total matrículas: $390</strong></li>
+                            </ul>
+                        </li>
+                        <li>Mensualidades (a partir del siguiente mes):
+                            <ul>
+                                <li>Pedro (1er hijo): $130/mes</li>
+                                <li>Juan (2do hijo): $110.50/mes</li>
+                                <li>María (3er hija): $110.50/mes</li>
+                                <li><strong>Total mensual: $351.00</strong></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- PREGUNTAS FRECUENTES -->
+            <section id="faq" class="section">
+                <h2>❓ Preguntas Frecuentes</h2>
+
+                <h3>¿Cuándo se cobran las mensualidades?</h3>
+                <div class="info-box">
+                    <p>El sistema cobra automáticamente cada <strong>día 1 del mes</strong> a las 8:00 AM. Crea un cargo "Pendiente" para cada jugador activo. Tú solo tienes que registrar los pagos cuando los tutores paguen.</p>
+                </div>
+
+                <h3>¿Qué pasa si un jugador no paga?</h3>
+                <div class="warning-box">
+                    <h4>📅 Línea de Tiempo</h4>
+                    <ul>
+                        <li><strong>Día 1-5:</strong> Período de gracia - no aparece como moroso</li>
+                        <li><strong>Día 6 en adelante:</strong> Si no ha pagado, aparece resaltado en <span class="badge badge-red">ROJO</span></li>
+                        <li><strong>Tu acción:</strong> Contactar al tutor para recordarle el pago</li>
+                    </ul>
+                </div>
+
+                <h3>¿Cómo doy una beca a un jugador?</h3>
+                <div class="success-box">
+                    <h4>2 Opciones</h4>
+                    <p><strong>Al aprobar:</strong> Usa el botón "🏆 Aprobar Becado" en lugar de "Aprobar"</p>
+                    <p><strong>Después de aprobado:</strong> Abre el jugador → Editar Datos → Tipo: Becado → Modificar Mensualidad a $0</p>
+                </div>
+
+                <h3>¿Puedo dar descuentos parciales?</h3>
+                <div class="info-box">
+                    <p><strong>Opción 1:</strong> Modificar mensualidad a un monto fijo (ej: $100)</p>
+                    <p><strong>Opción 2:</strong> En Editar Datos, poner "Descuento %" (ej: 20% descuento)</p>
+                </div>
+
+                <h3>¿Cómo registro el pago de matrícula?</h3>
+                <div class="info-box">
+                    <p>Cuando apruebas un jugador, el sistema crea automáticamente el cargo de matrícula ($130) en estado "Pendiente". Cuando el tutor pague, ve al jugador → Pagos → Registrar Pago Manual → Monto: $130.</p>
+                </div>
+
+                <h3>¿Qué hago si un jugador se retira?</h3>
+                <div class="info-box">
+                    <ol>
+                        <li>Busca al jugador en la lista</li>
+                        <li>Haz clic en "🔴 Retirar"</li>
+                        <li>Escribe el motivo (opcional)</li>
+                        <li>Ya no recibirá cobros automáticos</li>
+                        <li>Si vuelve después, puedes reactivarlo con el botón "🟢 Reactivar"</li>
+                    </ol>
+                </div>
+
+                <h3>¿Cómo veo cuánto debe una familia completa?</h3>
+                <div class="info-box">
+                    <ol>
+                        <li>Abre "👨‍👩‍👧‍👦 Grupos Familiares"</li>
+                        <li>Busca la familia</li>
+                        <li>Haz clic en "Ver Detalles"</li>
+                        <li>Verás el total pendiente de todos los hijos sumado</li>
+                    </ol>
+                </div>
+
+                <h3>¿Puedo registrar un pago parcial?</h3>
+                <div class="info-box">
+                    <p>Sí. Si la mensualidad es $130 pero el tutor solo paga $50, registra el pago de $50. El saldo pendiente quedará en $80 y seguirá apareciendo como moroso hasta completar el pago.</p>
+                </div>
+
+                <h3>¿Cómo sé quiénes deben dinero?</h3>
+                <div class="warning-box">
+                    <h4>3 Formas Fáciles</h4>
+                    <ol>
+                        <li><strong>Lista de jugadores:</strong> Los morosos aparecen en <span class="badge badge-red">ROJO</span></li>
+                        <li><strong>Dashboard principal:</strong> Métrica "Jugadores Morosos"</li>
+                        <li><strong>Dashboard financiero:</strong> Sección "Jugadores con Pagos Pendientes"</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- TIPS RÁPIDOS -->
+            <section id="tips" class="section">
+                <h2>💡 Tips Rápidos</h2>
+
+                <div class="success-box">
+                    <h4>✅ Tareas Diarias Recomendadas</h4>
+                    <ul>
+                        <li>📋 Revisar aprobaciones pendientes</li>
+                        <li>💰 Registrar pagos del día</li>
+                        <li>👁️ Verificar jugadores morosos (resaltados en rojo)</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>✅ Tareas Mensuales</h4>
+                    <ul>
+                        <li>📅 Día 1: Verificar que el cobro automático funcionó</li>
+                        <li>📊 Generar reporte financiero del mes</li>
+                        <li>💾 Exportar backup del sistema</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>🔍 Búsqueda Rápida</h4>
+                    <p>En cualquier lista (jugadores, familias, pagos), usa el campo de búsqueda para encontrar rápidamente lo que buscas. Funciona con nombres parciales.</p>
+                </div>
+
+                <div class="info-box">
+                    <h4>💾 Backup Regular</h4>
+                    <p>Se recomienda exportar el sistema completo a Excel al menos una vez al mes para tener un respaldo externo.</p>
+                </div>
+            </section>
+
+            <!-- GLOSARIO -->
+            <section id="glosario" class="section">
+                <h2>📚 Términos Importantes</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Término</th>
+                            <th>Qué Significa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Matrícula</strong></td>
+                            <td>Pago único de $130 al ingresar a la academia</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mensualidad</strong></td>
+                            <td>Pago mensual ($130 primer hijo, $110.50 segundo+)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cobro Extra</strong></td>
+                            <td>Cargos adicionales: uniformes, torneos, equipos</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Becado</strong></td>
+                            <td>Jugador que NO paga mensualidad (beca del 100%)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Moroso</strong></td>
+                            <td>Jugador con pagos pendientes (después del día 5)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Saldo Pendiente</strong></td>
+                            <td>Cuánto dinero debe el jugador</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Familia</strong></td>
+                            <td>Grupo de hermanos del mismo tutor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Categoría</strong></td>
+                            <td>Clasificación por edad: U-6, U-8, U-10, etc.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Retirado</strong></td>
+                            <td>Jugador que dejó la academia</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- PIE DE PÁGINA -->
+            <div style="text-align: center; padding: 40px; border-top: 2px solid #e5e7eb; margin-top: 50px;">
+                <p style="color: #6b7280; font-size: 1.1em; margin-bottom: 10px;">
+                    <strong>SUAREZ ACADEMY</strong> - Sistema de Gestión
+                </p>
+                <p style="color: #9ca3af; font-size: 0.9em;">
+                    Manual de Usuario Simplificado
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Actualizar enlace activo en sidebar
+                document.querySelectorAll('.sidebar a').forEach(link => {
+                    link.classList.remove('active');
+                });
+                if (event && event.target) {
+                    event.target.classList.add('active');
+                }
+            }
+        }
+
+        
+        // Global Loading Functions
+        function showLoading(message = 'Cargando...') {
+            const loading = document.getElementById('globalLoading');
+            const loadingText = loading.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'none';
+        }
+        function closeWindow() {
+            try {
+                google.script.host.close();
+            } catch (error) {
+                window.close();
+            }
+        }
+
+        // Resaltar sección activa al hacer scroll
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('.section');
+            const scrollPos = window.scrollY + 100;
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.offsetHeight;
+                const sectionId = section.getAttribute('id');
+
+                if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+                    document.querySelectorAll('.sidebar a').forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    const activeLink = document.querySelector(`.sidebar a[href="#${sectionId}"]`);
+                    if (activeLink) {
+                        activeLink.classList.add('active');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

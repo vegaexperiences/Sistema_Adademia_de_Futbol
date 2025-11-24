@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUAREZ ACADEMY - Gestión de Gastos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Navigation Styles */
+        .top-navigation {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #1e3a8a;
+        }
+
+        .logo-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nav-item {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .nav-item:hover {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            border-color: #059669;
+            animation: pulseGreen 2s infinite;
+        }
+
+        .nav-item.close-btn {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            border-color: #dc2626;
+        }
+
+        .nav-item.close-btn:hover {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+        }
+
+        @keyframes pulseGreen {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                gap: 4px;
+            }
+            .nav-item {
+                padding: 6px 8px;
+                font-size: 0.8em;
+            }
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #1e3a8a;
+            font-size: 2em;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        tbody tr:hover {
+            background: #f3f4f6;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            color: #1e3a8a;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+
+    /* Global Loading Overlay - Balón de Fútbol */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    .football-loader {
+        font-size: 80px;
+        animation: spin-football 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin-football {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #1e3a8a;
+    }
+    </style>
+</head>
+<body>
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay" id="globalLoading">
+        <div class="loading-content">
+            <div class="football-loader">⚽</div>
+            <div class="loading-text">Cargando...</div>
+        </div>
+    </div>
+    <div class="container">
+        <nav class="top-navigation">
+            <div class="nav-logo">
+                <div class="logo-icon">⚽</div>
+                SUAREZ ACADEMY
+            </div>
+            <div class="nav-menu">
+                <a href="#" class="nav-item" onclick="navigateTo('players')">👥 Jugadores</a>
+                <a href="#" class="nav-item" onclick="navigateTo('families')">👨‍👩‍👧‍👦 Familias</a>
+                <a href="#" class="nav-item" onclick="navigateTo('financial')">💰 Financiero</a>
+                <a href="#" class="nav-item active" onclick="navigateTo('expenses')">💸 Gastos</a>
+                <a href="#" class="nav-item" onclick="navigateTo('approvals')">✅ Aprobaciones</a>
+                <a href="#" class="nav-item" onclick="navigateTo('tournaments')">🏆 Torneos</a>
+                <a href="#" class="nav-item" onclick="navigateTo('historic')">📜 Histórico</a>
+                <a href="#" class="nav-item" onclick="navigateTo('config')">⚙️ Config</a>
+                <a href="#" class="nav-item close-btn" onclick="closeWindow()">❌ Cerrar</a>
+            </div>
+        </nav>
+
+        <div class="header">
+            <h1>💸 Gestión de Gastos y Egresos</h1>
+        </div>
+
+        <div class="main-content">
+            <!-- Estadísticas -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <h3 id="totalExpenses">$0.00</h3>
+                    <p>Total de Gastos</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="monthlyExpenses">$0.00</h3>
+                    <p>Gastos del Mes</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="expenseCount">0</h3>
+                    <p>Número de Gastos</p>
+                </div>
+            </div>
+
+            <!-- Formulario para registrar gasto -->
+            <div class="form-section">
+                <h2 style="color: #1e3a8a; margin-bottom: 20px;">📝 Registrar Nuevo Gasto</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Descripción del Gasto *</label>
+                        <input type="text" id="description" placeholder="Ej: Compra de balones" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Monto *</label>
+                        <input type="number" id="amount" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categoría *</label>
+                        <select id="category">
+                            <option value="Equipamiento">⚽ Equipamiento Deportivo</option>
+                            <option value="Mantenimiento">🔧 Mantenimiento</option>
+                            <option value="Servicios">💡 Servicios (Luz, Agua, etc.)</option>
+                            <option value="Salarios">💼 Salarios</option>
+                            <option value="Marketing">📢 Marketing y Publicidad</option>
+                            <option value="Transporte">🚌 Transporte</option>
+                            <option value="Alimentación">🍽️ Alimentación</option>
+                            <option value="Administrativo">📋 Gastos Administrativos</option>
+                            <option value="Otro">📦 Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Método de Pago</label>
+                        <select id="paymentMethod">
+                            <option value="Efectivo">💵 Efectivo</option>
+                            <option value="Transferencia">🏦 Transferencia</option>
+                            <option value="Tarjeta">💳 Tarjeta</option>
+                            <option value="Cheque">📝 Cheque</option>
+                            <option value="Otro">🔄 Otro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Referencia / Número de Factura</label>
+                    <input type="text" id="reference" placeholder="Ej: Factura #12345">
+                </div>
+
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="observations" rows="3" placeholder="Detalles adicionales del gasto..."></textarea>
+                </div>
+
+                <button class="btn btn-success" onclick="registerExpense()" style="width: 100%; padding: 15px; font-size: 1.1em;">
+                    ✅ Registrar Gasto
+                </button>
+            </div>
+
+            <!-- Tabla de gastos -->
+            <div class="table-container">
+                <h2 style="color: #1e3a8a; margin-bottom: 15px;">📊 Historial de Gastos</h2>
+                <div id="expensesTableContainer">
+                    <div class="loading">🔄 Cargando gastos...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allExpenses = [];
+
+        // Cargar datos al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExpenses();
+        });
+
+        // Navigation functions
+        function navigateTo(section) {
+            try {
+                switch(section) {
+                    case 'dashboard':
+                        google.script.run.showMainDashboard();
+                        break;
+                    case 'players':
+                        google.script.run.showPlayersManager();
+                        break;
+                    case 'families':
+                        google.script.run.showFamilyGroupsManager();
+                        break;
+                    case 'financial':
+                        google.script.run.showFinancialManager();
+                        break;
+                    case 'expenses':
+                        // Already in expenses
+                        break;
+                    case 'approvals':
+                        google.script.run.showApprovalsManager();
+                        break;
+                    case 'tournaments':
+                        google.script.run.showTournamentManager();
+                        break;
+                    case 'historic':
+                        google.script.run.showHistoricPlayersManager();
+                        break;
+                    case 'config':
+                        google.script.run.showSystemConfig();
+                        break;
+                    default:
+                        console.log('Sección no reconocida:', section);
+                }
+            } catch (error) {
+                console.error('Error en navegación:', error);
+            }
+        }
+
+        
+        // Global Loading Functions
+        function showLoading(message = 'Cargando...') {
+            const loading = document.getElementById('globalLoading');
+            const loadingText = loading.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'none';
+        }
+        function closeWindow() {
+            google.script.host.close();
+        }
+
+        // Cargar todos los gastos
+        function loadExpenses() {
+            
+            google.script.run
+                .withSuccessHandler(function(expenses) {
+                    allExpenses = expenses || [];
+                    updateStats();
+                    renderExpensesTable();
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error cargando gastos:', error);
+                    document.getElementById('expensesTableContainer').innerHTML = 
+                        '<p style="color: #ef4444; text-align: center;">Error cargando gastos: ' + error.toString() + '</p>';
+                })
+                .getAllExpenses();
+        }
+
+        // Actualizar estadísticas
+        function updateStats() {
+            const total = allExpenses.reduce((sum, exp) => sum + parseFloat(exp.Monto || 0), 0);
+            
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            const monthly = allExpenses.filter(exp => {
+                const expDate = new Date(exp.Fecha);
+                return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+            }).reduce((sum, exp) => sum + parseFloat(exp.Monto || 0), 0);
+            
+            document.getElementById('totalExpenses').textContent = '$' + total.toFixed(2);
+            document.getElementById('monthlyExpenses').textContent = '$' + monthly.toFixed(2);
+            document.getElementById('expenseCount').textContent = allExpenses.length;
+        }
+
+        // Renderizar tabla de gastos
+        function renderExpensesTable() {
+            if (allExpenses.length === 0) {
+                document.getElementById('expensesTableContainer').innerHTML = 
+                    '<p style="text-align: center; color: #6b7280; padding: 40px;">No hay gastos registrados</p>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Monto</th>
+                            <th>Método</th>
+                            <th>Referencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Ordenar por fecha (más reciente primero)
+            const sorted = [...allExpenses].sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+
+            sorted.forEach(expense => {
+                const fecha = new Date(expense.Fecha).toLocaleDateString('es-ES');
+                const monto = parseFloat(expense.Monto || 0).toFixed(2);
+                
+                html += `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td><strong>${expense.Descripción}</strong></td>
+                        <td><span style="background: #eff6ff; color: #3b82f6; padding: 4px 8px; border-radius: 12px; font-size: 0.85em;">${expense.Categoría}</span></td>
+                        <td style="font-weight: 700; color: #ef4444;">$${monto}</td>
+                        <td>${expense['Método de Pago']}</td>
+                        <td>${expense.Referencia || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('expensesTableContainer').innerHTML = html;
+        }
+
+        // Registrar nuevo gasto
+        function registerExpense() {
+            const description = document.getElementById('description').value.trim();
+            const amount = document.getElementById('amount').value;
+            const category = document.getElementById('category').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const reference = document.getElementById('reference').value.trim();
+            const observations = document.getElementById('observations').value.trim();
+
+            if (!description) {
+                alert('❌ Por favor ingresa una descripción del gasto');
+                return;
+            }
+
+            if (!amount || parseFloat(amount) <= 0) {
+                alert('❌ Por favor ingresa un monto válido');
+                return;
+            }
+
+            const expenseData = {
+                description: description,
+                amount: parseFloat(amount),
+                category: category,
+                paymentMethod: paymentMethod,
+                reference: reference,
+                observations: observations
+            };
+
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    
+                    if (result.success) {
+                        alert(`✅ Gasto registrado exitosamente\n\nMonto: $${result.amount}\nID: ${result.expenseId}`);
+                        
+                        // Limpiar formulario
+                        document.getElementById('description').value = '';
+                        document.getElementById('amount').value = '';
+                        document.getElementById('reference').value = '';
+                        document.getElementById('observations').value = '';
+                        
+                        // Recargar gastos
+                        loadExpenses();
+                    } else {
+                        alert('❌ Error: ' + result.message);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error:', error);
+                    alert('❌ Error registrando gasto: ' + error.toString());
+                })
+                .registerExpense(expenseData);
+        }
+    </script>
+</body>
+</html>
+

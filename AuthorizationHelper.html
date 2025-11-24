@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autorización Requerida - SUAREZ ACADEMY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        h1 {
+            color: #1e3a8a;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            color: #6b7280;
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .steps {
+            text-align: left;
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .steps h3 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .step-number {
+            background: #1e3a8a;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            color: #374151;
+            flex: 1;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+        }
+
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .warning strong {
+            color: #d97706;
+        }
+
+    /* Global Loading Overlay - Balón de Fútbol */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    .football-loader {
+        font-size: 80px;
+        animation: spin-football 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin-football {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #1e3a8a;
+    }
+    </style>
+</head>
+<body>
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay" id="globalLoading">
+        <div class="loading-content">
+            <div class="football-loader">⚽</div>
+            <div class="loading-text">Cargando...</div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="icon">🔐</div>
+        <h1>Autorización Requerida</h1>
+        
+        <div class="message">
+            Para usar el <strong>Sistema de Gestión de SUAREZ ACADEMY</strong>, 
+            necesitas autorizar el acceso desde este dispositivo/navegador.
+        </div>
+
+        <div class="steps">
+            <h3>📋 Pasos para Autorizar:</h3>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-text">
+                    Haz clic en el botón "Solicitar Autorización" abajo
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                    Cuando aparezca la ventana de Google, haz clic en "Revisar Permisos"
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">
+                    Selecciona tu cuenta de Google
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-text">
+                    Revisa los permisos y haz clic en "Permitir"
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-text">
+                    Recarga la página (Ctrl+R o Cmd+R)
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="requestAuthorization()">
+            🔐 Solicitar Autorización
+        </button>
+        
+        <button class="btn btn-secondary" onclick="closeWindow()">
+            ❌ Cerrar
+        </button>
+
+        <div class="warning">
+            <strong>⚠️ Importante:</strong> Solo necesitas hacer esto UNA VEZ desde cada computadora o navegador. 
+            Después de autorizar, el sistema funcionará normalmente.
+        </div>
+    </div>
+
+    <script>
+        
+        // Global Loading Functions
+        function showLoading(message = 'Cargando...') {
+            const loading = document.getElementById('globalLoading');
+            const loadingText = loading.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'none';
+        }
+        function requestAuthorization() {
+            try {
+                console.log('Solicitando autorización desde helper...');
+                
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('Autorización completada:', result);
+                        alert('✅ Autorización completada!\n\nPor favor, recarga la página (Ctrl+R o Cmd+R) y vuelve a intentar.');
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error en autorización:', error);
+                        alert('⚠️ PASOS PARA AUTORIZAR:\n\n' +
+                              '1. Aparecerá una ventana de Google\n' +
+                              '2. Haz clic en "Revisar Permisos"\n' +
+                              '3. Selecciona tu cuenta\n' +
+                              '4. Haz clic en "Permitir"\n' +
+                              '5. Recarga esta página\n\n' +
+                              'Si ya aceptaste los permisos, simplemente recarga la página.');
+                    })
+                    .requestAuthorization();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function closeWindow() {
+            try {
+                google.script.host.close();
+            } catch (error) {
+                window.close();
+            }
+        }
+    </script>
+</body>
+</html>
+

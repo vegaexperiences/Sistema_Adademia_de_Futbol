@@ -1,0 +1,2655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUAREZ ACADEMY - Gestión de Jugadores</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navegación Superior */
+        .top-navigation {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .nav-logo .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: 0.9em;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .nav-item:hover {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+            .nav-item.active::before {
+                content: '📍 ';
+            }
+
+            .nav-item.close-btn {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                border: 2px solid #ef4444;
+            }
+
+            .nav-item.close-btn:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            }
+
+            /* Responsive para menú */
+            @media (max-width: 1200px) {
+                .nav-menu {
+                    gap: 6px;
+                }
+                
+                .nav-item {
+                    padding: 5px 10px;
+                    font-size: 0.85em;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .nav-menu {
+                    gap: 4px;
+                    flex-wrap: wrap;
+                }
+                
+                .nav-item {
+                    padding: 4px 8px;
+                    font-size: 0.8em;
+                    border-radius: 4px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .nav-menu {
+                    flex-direction: column;
+                    gap: 4px;
+                    align-items: center;
+                }
+                
+                .nav-item {
+                    width: 100%;
+                    max-width: 200px;
+                    text-align: center;
+                    padding: 6px 12px;
+                }
+            }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #fbbf24;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-item h3 {
+            font-size: 1.8em;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-item p {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .players-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .players-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .players-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .players-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Estilos de resaltado para filas */
+        /* 🔴 ROJO - Jugadores morosos (MÁXIMA PRIORIDAD) */
+        .player-row-overdue {
+            background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 50%, #fee2e2 100%) !important;
+            border: 3px solid #ef4444 !important;
+            border-left: 8px solid #dc2626 !important;
+            animation: pulseRed 2s ease-in-out infinite;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+        }
+        
+        .player-row-overdue td {
+            padding: 16px 10px !important;
+            font-weight: 500;
+        }
+
+        .player-row-overdue:hover {
+            background: linear-gradient(135deg, #fecaca 0%, #f87171 50%, #fecaca 100%) !important;
+            border-color: #dc2626 !important;
+            border-left-color: #b91c1c !important;
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4) !important;
+        }
+        
+        /* 🟡 AMARILLO - Jugadores becados o con descuento */
+        .player-row-highlight {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fef3c7 100%) !important;
+            border-left: 6px solid #f59e0b !important;
+            animation: pulseYellow 3s ease-in-out infinite;
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2) !important;
+        }
+        
+        .player-row-highlight td {
+            font-weight: 500;
+        }
+        
+        .player-row-highlight:hover {
+            background: linear-gradient(135deg, #fde68a 0%, #fcd34d 50%, #fde68a 100%) !important;
+            border-left-color: #d97706 !important;
+            transform: scale(1.01);
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3) !important;
+        }
+        
+        /* 🔵 AZUL - Jugadores con mensualidad personalizada */
+        .player-row-custom-fee {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #dbeafe 100%) !important;
+            border-left: 6px solid #3b82f6 !important;
+            animation: pulseBlue 3s ease-in-out infinite;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        .player-row-custom-fee td {
+            font-weight: 500;
+        }
+        
+        .player-row-custom-fee:hover {
+            background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 50%, #bfdbfe 100%) !important;
+            border-left-color: #2563eb !important;
+            transform: scale(1.01);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* 🟢 VERDE - Jugadores de torneo */
+        .player-row-tournament {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 50%, #dcfce7 100%) !important;
+            border-left: 6px solid #22c55e !important;
+            animation: pulseGreen 3s ease-in-out infinite;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2) !important;
+        }
+        
+        .player-row-tournament td {
+            font-weight: 500;
+        }
+        
+        .player-row-tournament:hover {
+            background: linear-gradient(135deg, #bbf7d0 0%, #86efac 50%, #bbf7d0 100%) !important;
+            border-left-color: #16a34a !important;
+            transform: scale(1.01);
+            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3) !important;
+        }
+        
+        @keyframes subtleVibrate {
+            0%, 100% {
+                transform: translateX(0);
+                opacity: 0.95;
+            }
+            25% {
+                transform: translateX(1px);
+                opacity: 1;
+            }
+            50% {
+                transform: translateX(0);
+                opacity: 0.95;
+            }
+            75% {
+                transform: translateX(-1px);
+                opacity: 1;
+            }
+        }
+        
+        /* 🔴 Animación para morosos (ROJO) - Más fuerte y visible */
+        @keyframes pulseRed {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+            }
+            50% {
+                transform: scale(1.005);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+            }
+        }
+        
+        /* 🟡 Animación para becados (AMARILLO) - Suave */
+        @keyframes pulseYellow {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+            }
+            50% {
+                transform: scale(1.003);
+                box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+            }
+        }
+        
+        /* 🔵 Animación para mensualidad personalizada (AZUL) - Suave */
+        @keyframes pulseBlue {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+            }
+            50% {
+                transform: scale(1.003);
+                box-shadow: 0 3px 8px rgba(59, 130, 246, 0.3);
+            }
+        }
+        
+        /* 🟢 Animación para jugadores de torneo (VERDE) - Suave */
+        @keyframes pulseGreen {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2);
+            }
+            50% {
+                transform: scale(1.003);
+                box-shadow: 0 3px 8px rgba(34, 197, 94, 0.3);
+            }
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .status-inactive {
+            background: #fadbd8;
+            color: #e74c3c;
+        }
+
+        .status-pending {
+            background: #fef9e7;
+            color: #f39c12;
+        }
+
+        .status-scholarship {
+            background: #e8f4fd;
+            color: #3498db;
+        }
+
+        .status-suspended {
+            background: #f4f4f4;
+            color: #7f8c8d;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8em;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            color: #2c3e50;
+            font-size: 1.5em;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #e74c3c;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Global Loading Overlay - Balón de Fútbol */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 50px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .football-loader {
+            font-size: 80px;
+            animation: spin-football 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin-football {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay" id="globalLoading">
+        <div class="loading-content">
+            <div class="football-loader">⚽</div>
+            <div class="loading-text">Cargando...</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Navegación Superior -->
+        <nav class="top-navigation">
+            <div class="nav-logo">
+                <div class="logo-icon">⚽</div>
+                SUAREZ ACADEMY
+            </div>
+                    <div class="nav-menu">
+                        <a href="#" class="nav-item active" onclick="navigateTo('players')">👥 Jugadores</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('families')">👨‍👩‍👧‍👦 Familias</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('financial')">💰 Financiero</a>
+                        <!-- <a href="#" class="nav-item" onclick="navigateTo('expenses')">💸 Gastos</a> -->
+                        <a href="#" class="nav-item" onclick="navigateTo('approvals')">✅ Aprobaciones</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('tournaments')">🏆 Torneos</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('historic')">📜 Histórico</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('config')">⚙️ Config</a>
+                        <a href="#" class="nav-item close-btn" onclick="closeWindow()">❌ Cerrar</a>
+                    </div>
+        </nav>
+
+        <div class="header">
+            <h1>👥 SUAREZ ACADEMY - Gestión de Jugadores</h1>
+        </div>
+
+        <!-- Pestañas de Estado -->
+        <div class="tabs-container" style="background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 15px 20px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+            <div class="tabs" style="display: flex; gap: 10px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">
+                <button class="tab-btn active" onclick="switchTab('active')" id="activeTab" style="padding: 10px 20px; border: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
+                    ✅ Jugadores Activos (<span id="activeCount">0</span>)
+                </button>
+                <button class="tab-btn" onclick="switchTab('retired')" id="retiredTab" style="padding: 10px 20px; border: none; background: #e0e0e0; color: #666; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
+                    🔴 Jugadores Retirados (<span id="retiredCount">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" class="search-box" placeholder="🔍 Buscar por nombre, cédula, teléfono o ID..." autocomplete="off">
+            <select id="stateFilter" class="filter-select">
+                <option value="">Todos los estados</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Suspendido">Suspendido</option>
+            </select>
+            <select id="categoryFilter" class="filter-select">
+                <option value="">Todas las categorías</option>
+                <option value="U-6 M">U-6 M</option>
+                <option value="U-8 M">U-8 M</option>
+                <option value="U-10 M">U-10 M</option>
+                <option value="U-12 M">U-12 M</option>
+                <option value="U-14 M">U-14 M</option>
+                <option value="U-16 M">U-16 M</option>
+                <option value="U-10 F">U-10 F</option>
+                <option value="U-12 F">U-12 F</option>
+                <option value="U-14 F">U-14 F</option>
+                <option value="U-16 F">U-16 F</option>
+                <option value="U-18 F">U-18 F</option>
+            </select>
+            <select id="typeFilter" class="filter-select">
+                <option value="">Todos los tipos</option>
+                <option value="normal">Normal</option>
+                <option value="becado">Becado</option>
+                <option value="torneo">Torneo</option>
+            </select>
+            <button class="btn btn-primary" onclick="openAddPlayerModal()">
+                ➕ Agregar Jugador
+            </button>
+            <button class="btn btn-info" onclick="refreshPlayers()">
+                🔄 Actualizar
+            </button>
+        </div>
+
+        <div class="main-content">
+            <div class="stats-row">
+                <div class="stat-item">
+                    <h3 id="totalPlayers">0</h3>
+                    <p>Total Jugadores</p>
+                </div>
+                <div class="stat-item">
+                    <h3 id="activePlayers">0</h3>
+                    <p>Activos</p>
+                </div>
+                <div class="stat-item">
+                    <h3 id="scholarshipPlayers">0</h3>
+                    <p>Becados</p>
+                </div>
+                <div class="stat-item">
+                    <h3 id="pendingPlayers">0</h3>
+                    <p>Pendientes</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <!-- Indicador de resultados de búsqueda -->
+                <div id="searchResults" style="background: #e0f2fe; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; display: none; border-left: 4px solid #3b82f6;">
+                    <span style="color: #0c4a6e; font-weight: 600;">
+                        🔍 Mostrando <span id="resultsCount">0</span> jugador(es)
+                    </span>
+                    <button onclick="clearSearch()" style="background: #3b82f6; color: white; border: none; padding: 4px 12px; border-radius: 6px; margin-left: 10px; cursor: pointer; font-size: 0.9em;">
+                        ✖ Limpiar búsqueda
+                    </button>
+                </div>
+                
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th>Acciones</th>
+                            <th>Nombre</th>
+                            <th>Cédula</th>
+                            <th>Edad</th>
+                            <th>Categoría</th>
+                            <th>Estado</th>
+                            <th>Tipo</th>
+                            <th>Teléfono</th>
+                            <th>ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersTableBody">
+                        <tr>
+                            <td colspan="9" class="loading">Cargando jugadores...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar jugador -->
+    <div id="playerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Agregar Jugador</h2>
+                <span class="close" onclick="closePlayerModal()">&times;</span>
+            </div>
+            <form id="playerForm">
+                <!-- Información del Jugador -->
+                <h3 style="color: #1e3a8a; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">👤 Información del Jugador</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerName">Nombre *</label>
+                        <input type="text" id="playerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerLastName">Apellidos *</label>
+                        <input type="text" id="playerLastName" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerAge">Edad *</label>
+                        <input type="number" id="playerAge" min="4" max="18" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerBirthdate">Fecha de Nacimiento</label>
+                        <input type="date" id="playerBirthdate">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerCedula">Cédula del Jugador *</label>
+                        <input type="text" id="playerCedula" required placeholder="Ej: E-8-123456">
+                    </div>
+                    <div class="form-group">
+                        <label for="playerGender">Género *</label>
+                        <select id="playerGender" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerPhone">Teléfono del Jugador</label>
+                        <input type="tel" id="playerPhone" placeholder="Ej: 64795352">
+                    </div>
+                    <div class="form-group">
+                        <label for="playerCategory">Categoría *</label>
+                        <select id="playerCategory" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="U-6 M">U-6 M</option>
+                            <option value="U-8 M">ha M</option>
+                            <option value="U-10 M">U-10 M</option>
+                            <option value="U-12 M">U-12 M</option>
+                            <option value="U-14 M">U-14 M</option>
+                            <option value="U-16 M">U-16 M</option>
+                            <option value="U-10 F">U-10 F</option>
+                            <option value="U-12 F">U-12 F</option>
+                            <option value="U-14 F">U-14 F</option>
+                            <option value="U-16 F">U-16 F</option>
+                            <option value="U-18 F">U-18 F</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Información del Tutor -->
+                <h3 style="color: #1e3a8a; margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">👨‍👩‍👧 Información del Tutor</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tutorName">Nombre Completo del Tutor *</label>
+                        <input type="text" id="tutorName" required placeholder="Ej: Juan Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label for="tutorCedula">Cédula del Tutor *</label>
+                        <input type="text" id="tutorCedula" required placeholder="Ej: 8-123-456">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tutorEmail">Email del Tutor *</label>
+                        <input type="email" id="tutorEmail" required placeholder="Ej: tutor@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="tutorPhone">Teléfono del Tutor *</label>
+                        <input type="tel" id="tutorPhone" required placeholder="Ej: 6479-5352">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tutorAddress">Dirección Completa *</label>
+                    <input type="text" id="tutorAddress" required placeholder="Ej: Calle 50, Ciudad de Panamá">
+                </div>
+                
+                <!-- Archivos de Cédula -->
+                <h3 style="color: #1e3a8a; margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">📎 Archivos de Cédula</h3>
+                
+                <div class="form-group">
+                    <label for="playerCedulaFile">Cédula del Jugador (Archivo)</label>
+                    <input type="file" id="playerCedulaFile" accept="image/*,.pdf" style="padding: 8px;">
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Sube una foto o PDF de la cédula del jugador</small>
+                </div>
+                <div class="form-group">
+                    <label for="tutorCedulaFile">Cédula del Tutor (Archivo)</label>
+                    <input type="file" id="tutorCedulaFile" accept="image/*,.pdf" style="padding: 8px;">
+                    <small style="color: #6b7280; display: block; margin-top: 5px;">Sube una foto o PDF de la cédula del tutor</small>
+                </div>
+                
+                <!-- Configuración del Jugador -->
+                <h3 style="color: #1e3a8a; margin: 25px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">⚙️ Configuración</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerState">Estado</label>
+                        <select id="playerState">
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Suspendido">Suspendido</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerType">Tipo</label>
+                        <select id="playerType">
+                            <option value="normal">Normal</option>
+                            <option value="becado">Becado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="playerObservations">Observaciones</label>
+                    <textarea id="playerObservations" rows="3" placeholder="Notas adicionales sobre el jugador..."></textarea>
+                </div>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn" onclick="closePlayerModal()" style="background: #95a5a6; color: white; margin-right: 10px;">
+                        ❌ Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        💾 Guardar Jugador
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Input Genérico -->
+    <div id="inputModal" class="modal" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="inputModalTitle">Entrada de Datos</h2>
+                <span class="close" onclick="closeInputModal()">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <div id="inputModalContent"></div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button onclick="closeInputModal()" class="btn btn-secondary">
+                        ❌ Cancelar
+                    </button>
+                    <button onclick="submitInputModal()" class="btn btn-primary" id="inputModalSubmit">
+                        ✅ Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Unificado para Jugador -->
+    <div id="playerDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2 id="detailsModalTitle">👤 Detalles del Jugador</h2>
+                <span class="close" onclick="closePlayerDetailsModal()">&times;</span>
+            </div>
+            
+            <!-- Pestañas del Modal -->
+            <div style="background: #f3f4f6; padding: 15px 20px; border-bottom: 2px solid #e5e7eb;">
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="switchPlayerTab('info')" id="infoTab" class="player-modal-tab active" style="padding: 10px 20px; border: none; background: #3b82f6; color: white; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
+                        📋 Información
+                    </button>
+                    <button onclick="switchPlayerTab('payments')" id="paymentsTab" class="player-modal-tab" style="padding: 10px 20px; border: none; background: #e5e7eb; color: #6b7280; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
+                        💰 Pagos e Historial
+                    </button>
+                    <button onclick="switchPlayerTab('edit')" id="editTab" class="player-modal-tab" style="padding: 10px 20px; border: none; background: #e5e7eb; color: #6b7280; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
+                        ✏️ Editar Datos
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Contenido de las pestañas -->
+            <div id="playerInfoContent" class="player-tab-content" style="display: block; padding: 20px;">
+                <div class="loading">Cargando información...</div>
+            </div>
+            
+            <div id="playerPaymentsContent" class="player-tab-content" style="display: none; padding: 20px;">
+                <div class="loading">Cargando pagos...</div>
+            </div>
+            
+            <div id="playerEditContent" class="player-tab-content" style="display: none; padding: 20px;">
+                <div class="loading">Cargando formulario...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allPlayers = [];
+        let currentPlayerId = null;
+        let currentTab = 'active'; // 'active' o 'retired'
+        let inputModalCallback = null; // Callback para el modal de input
+
+        // Función de navegación directa - abre nueva ventana directamente
+        function navigateTo(section) {
+            try {
+                // Si ya estamos en la sección, no hacer nada
+                if (section === 'players') {
+                    return;
+                }
+                
+                console.log('Navegando a:', section);
+                
+                // Abrir nueva ventana directamente
+                switch(section) {
+                    case 'dashboard':
+                        google.script.run.showMainDashboard();
+                        break;
+                    case 'families':
+                        google.script.run.showFamilyGroupsManager();
+                        break;
+                    case 'financial':
+                        google.script.run.showFinancialManager();
+                        break;
+                    case 'approvals':
+                        google.script.run.showApprovalsManager();
+                        break;
+                    case 'historic':
+                        google.script.run.showHistoricPlayersManager();
+                        break;
+                    case 'config':
+                        google.script.run.showSystemConfig();
+                        break;
+                }
+            } catch (error) {
+                console.error('Error navegando:', error);
+            }
+        }
+
+        // Función para cerrar ventana
+        function closeWindow() {
+            try {
+                google.script.host.close();
+            } catch (error) {
+                console.error('Error cerrando ventana:', error);
+            }
+        }
+
+        // Hacer las funciones globales para que estén disponibles en todas las ventanas
+        window.navigateTo = navigateTo;
+        window.closeWindow = closeWindow;
+
+        // ========== MODAL DE INPUT GENÉRICO ==========
+        
+        function showInputModal(title, fields, callback) {
+            inputModalCallback = callback;
+            document.getElementById('inputModalTitle').textContent = title;
+            
+            let html = '';
+            fields.forEach(field => {
+                if (field.type === 'info') {
+                    // Campo de información (no editable)
+                    html += `
+                        <div style="margin-bottom: 15px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px;">
+                            <strong style="color: #92400e; display: block; margin-bottom: 8px;">${field.label}</strong>
+                            <div style="color: #78350f; white-space: pre-line; font-size: 0.9em;">${field.value}</div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">
+                                ${field.label}
+                            </label>
+                            ${field.type === 'textarea' 
+                                ? `<textarea id="input_${field.name}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; min-height: 80px;" placeholder="${field.placeholder || ''}">${field.value || ''}</textarea>`
+                                : `<input type="${field.type || 'text'}" id="input_${field.name}" value="${field.value || ''}" placeholder="${field.placeholder || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">`
+                            }
+                        </div>
+                    `;
+                }
+            });
+            
+            document.getElementById('inputModalContent').innerHTML = html;
+            document.getElementById('inputModal').style.display = 'block';
+            
+            // Focus en el primer campo editable
+            setTimeout(() => {
+                const firstInput = document.querySelector('#inputModalContent input:not([type="info"]), #inputModalContent textarea');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
+        
+        function showSuccessMessage(message) {
+            // Crear un toast de éxito
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+                z-index: 10000;
+                font-weight: 600;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function showErrorMessage(message) {
+            // Crear un toast de error
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+                z-index: 10000;
+                font-weight: 600;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+        
+        function closeInputModal() {
+            document.getElementById('inputModal').style.display = 'none';
+            inputModalCallback = null;
+        }
+        
+        function submitInputModal() {
+            if (inputModalCallback) {
+                const inputs = document.querySelectorAll('#inputModalContent input, #inputModalContent textarea');
+                const values = {};
+                inputs.forEach(input => {
+                    const name = input.id.replace('input_', '');
+                    values[name] = input.value;
+                });
+                inputModalCallback(values);
+            }
+            closeInputModal();
+        }
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPlayers();
+            setupEventListeners();
+        });
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', filterPlayers);
+            document.getElementById('stateFilter').addEventListener('change', filterPlayers);
+            document.getElementById('categoryFilter').addEventListener('change', filterPlayers);
+            document.getElementById('typeFilter').addEventListener('change', filterPlayers);
+            
+            document.getElementById('playerForm').addEventListener('submit', savePlayer);
+        }
+
+        // Global Loading Functions
+        function showLoading(message = 'Cargando...') {
+            const loading = document.getElementById('globalLoading');
+            const loadingText = loading.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'none';
+        }
+
+        // Cargar jugadores
+        function loadPlayers() {
+            try {
+                console.log('📡 Solicitando jugadores al servidor...');
+                
+                google.script.run
+                    .withSuccessHandler(function(players) {
+                        console.log('📦 Respuesta recibida del servidor:', players);
+                        console.log('📊 Tipo de respuesta:', typeof players);
+                        console.log('📋 Es array?:', Array.isArray(players));
+                        
+                        if (players === null || players === undefined) {
+                            console.error('❌ Servidor devolvió null/undefined');
+                            showGenericError();
+                            return;
+                        }
+                        
+                        updatePlayersTable(players);
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('❌ Error from server:', error);
+                        console.error('Error completo:', JSON.stringify(error));
+                        
+                        const errorMsg = error.message || error.toString();
+                        
+                        // Detectar error de estructura
+                        if (errorMsg.includes('ESTRUCTURA_INCORRECTA')) {
+                            showStructureError(errorMsg);
+                        } else {
+                            showGenericError();
+                        }
+                    })
+                    .getAllPlayers();
+            } catch (error) {
+                console.error('❌ Error en loadPlayers:', error);
+                showGenericError();
+            }
+        }
+        
+        // Mostrar error específico de estructura
+        function showStructureError(errorMsg) {
+            const errorHtml = `
+                <div style="padding: 40px; text-align: center;">
+                    <div style="font-size: 4em; margin-bottom: 20px;">🔧</div>
+                    <h2 style="color: #f59e0b; margin-bottom: 15px;">Estructura de Columnas Incorrecta</h2>
+                    <p style="font-size: 1.1em; color: #6b7280; margin-bottom: 20px;">
+                        La hoja "Jugadores" existe y tiene <strong>5 jugadores</strong>, pero <strong>faltan 2 columnas importantes</strong>:
+                    </p>
+                    <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px auto; max-width: 500px;">
+                        <h3 style="color: #92400e; margin-top: 0;">❌ Columnas Faltantes</h3>
+                        <ul style="text-align: left; color: #78350f; margin: 10px 0;">
+                            <li><strong>"Email Tutor"</strong> (debe estar después de "Tutor")</li>
+                            <li><strong>"Dirección"</strong> (debe estar después de "Email Tutor")</li>
+                        </ul>
+                    </div>
+                    <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px auto; max-width: 600px;">
+                        <h3 style="color: #065f46; margin-top: 0;">✅ Solución Automática (10 segundos)</h3>
+                        <ol style="text-align: left; color: #047857; margin: 10px 0 20px 20px; font-size: 1.05em;">
+                            <li>Haz clic en "🔧 Arreglar Ahora"</li>
+                            <li>Confirma con "Sí"</li>
+                            <li>Espera 10 segundos</li>
+                            <li>Haz clic en "🔄 Reintentar"</li>
+                        </ol>
+                        <button onclick="google.script.run.runFixStructure();" 
+                                style="background: #10b981; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; margin: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            🔧 Arreglar Ahora
+                        </button>
+                    </div>
+                    <p style="color: #6b7280; font-size: 0.95em; margin-top: 20px;">
+                        ⚠️ <strong>Tus 5 jugadores NO se perderán.</strong> Solo se agregarán las columnas faltantes.
+                    </p>
+                    <button onclick="loadPlayers()" 
+                            style="background: #3b82f6; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-size: 1em; cursor: pointer; margin: 10px;">
+                        🔄 Reintentar Carga
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('playersTableBody').innerHTML = errorHtml;
+        }
+
+        // Actualizar tabla de jugadores
+        function updatePlayersTable(players) {
+            // Validar que players sea un array
+            if (!players || !Array.isArray(players)) {
+                console.error('❌ Error: players no es un array válido:', players);
+                allPlayers = [];
+                showGenericError();
+                return;
+            }
+            
+            // Detectar error de estructura
+            if (players.length === 1 && players[0]._ERROR_TYPE === 'ESTRUCTURA_INCORRECTA') {
+                console.log('❌ Error de estructura detectado:', players[0]);
+                allPlayers = [];
+                showStructureErrorFromData(players[0]);
+                return;
+            }
+            
+            allPlayers = players;
+            filterPlayers();
+            updateStats(players);
+        }
+        
+        // Mostrar error de estructura con datos del servidor
+        function showStructureErrorFromData(errorData) {
+            const playerCount = errorData._PLAYER_COUNT || 5;
+            const errorHtml = `
+                <div style="padding: 40px; text-align: center;">
+                    <div style="font-size: 4em; margin-bottom: 20px;">🔧</div>
+                    <h2 style="color: #f59e0b; margin-bottom: 15px;">Estructura de Columnas Incorrecta</h2>
+                    <p style="font-size: 1.1em; color: #6b7280; margin-bottom: 20px;">
+                        La hoja "Jugadores" existe y tiene <strong>${playerCount} jugadores</strong>, pero <strong>faltan 2 columnas importantes</strong>:
+                    </p>
+                    <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px auto; max-width: 500px;">
+                        <h3 style="color: #92400e; margin-top: 0;">❌ Columnas Faltantes</h3>
+                        <ul style="text-align: left; color: #78350f; margin: 10px 0;">
+                            <li><strong>"Email Tutor"</strong> (debe estar después de "Tutor")</li>
+                            <li><strong>"Dirección"</strong> (debe estar después de "Email Tutor")</li>
+                        </ul>
+                    </div>
+                    <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px auto; max-width: 600px;">
+                        <h3 style="color: #065f46; margin-top: 0;">✅ Solución Automática (10 segundos)</h3>
+                        <ol style="text-align: left; color: #047857; margin: 10px 0 20px 20px; font-size: 1.05em;">
+                            <li>Haz clic en "🔧 Arreglar Ahora"</li>
+                            <li>Confirma con "Sí"</li>
+                            <li>Espera 10 segundos</li>
+                            <li>Haz clic en "🔄 Reintentar"</li>
+                        </ol>
+                        <button onclick="google.script.run.runFixStructure();" 
+                                style="background: #10b981; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; margin: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            🔧 Arreglar Ahora
+                        </button>
+                    </div>
+                    <p style="color: #6b7280; font-size: 0.95em; margin-top: 20px;">
+                        ⚠️ <strong>Tus ${playerCount} jugadores NO se perderán.</strong> Solo se agregarán las columnas faltantes.
+                    </p>
+                    <button onclick="loadPlayers()" 
+                            style="background: #3b82f6; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-size: 1em; cursor: pointer; margin: 10px;">
+                        🔄 Reintentar Carga
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('playersTableBody').innerHTML = errorHtml;
+            updateStats([]);
+        }
+        
+        // Mostrar error genérico
+        function showGenericError() {
+            const errorHtml = `
+                <div style="padding: 40px; text-align: center;">
+                    <div style="font-size: 4em; margin-bottom: 20px;">⚠️</div>
+                    <h2 style="color: #dc2626; margin-bottom: 15px;">Error Cargando Jugadores</h2>
+                    <p style="font-size: 1.1em; color: #6b7280; margin-bottom: 30px;">
+                        No se pudo cargar la hoja de Jugadores. Esto puede suceder si:
+                    </p>
+                    <ul style="text-align: left; max-width: 500px; margin: 0 auto 30px; color: #374151;">
+                        <li>La hoja "Jugadores" no existe</li>
+                        <li>Hay múltiples hojas con nombres similares</li>
+                        <li>La hoja tiene un nombre diferente</li>
+                    </ul>
+                    <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #92400e; margin-top: 0;">🔧 Solución Rápida</h3>
+                        <p style="color: #78350f; margin-bottom: 15px;">Usa el menú de Herramientas para diagnosticar y reparar:</p>
+                        <ol style="text-align: left; max-width: 400px; margin: 0 auto; color: #78350f;">
+                            <li>Ve al menú <strong>"🏆 Academia Fútbol"</strong></li>
+                            <li>Haz clic en <strong>"🔧 Herramientas"</strong></li>
+                            <li>Selecciona <strong>"🩺 Diagnosticar Sistema"</strong></li>
+                            <li>Luego ejecuta <strong>"🔨 Reparar Hoja Jugadores"</strong></li>
+                        </ol>
+                    </div>
+                    <button onclick="google.script.run.runDiagnostics()" 
+                            style="background: #3b82f6; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; margin: 10px;">
+                        🩺 Diagnosticar Ahora
+                    </button>
+                    <button onclick="loadPlayers()" 
+                            style="background: #10b981; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; margin: 10px;">
+                        🔄 Reintentar
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('playersTableBody').innerHTML = errorHtml;
+            updateStats([]);
+        }
+
+        // Actualizar estadísticas
+        function updateStats(players) {
+            // Validar que players sea un array
+            if (!players || !Array.isArray(players)) {
+                console.error('❌ Error en updateStats: players no es válido');
+                document.getElementById('totalPlayers').textContent = '0';
+                document.getElementById('activePlayers').textContent = '0';
+                document.getElementById('scholarshipPlayers').textContent = '0';
+                document.getElementById('pendingPlayers').textContent = '0';
+                return;
+            }
+            
+            const filteredPlayers = players.filter(function(player) {
+                const estado = (player.Estado || '').toLowerCase().trim();
+                return estado !== 'retirado';
+            });
+            
+            const stats = {
+                total: filteredPlayers.length,
+                active: filteredPlayers.filter(p => (p.Estado || '').toLowerCase().trim() === 'activo').length,
+                scholarship: filteredPlayers.filter(p => (p.Tipo || '').toLowerCase().trim() === 'becado').length,
+                pending: filteredPlayers.filter(p => (p.Estado || '').toLowerCase().trim() === 'pendiente').length
+            };
+
+            document.getElementById('totalPlayers').textContent = stats.total;
+            document.getElementById('activePlayers').textContent = stats.active;
+            document.getElementById('scholarshipPlayers').textContent = stats.scholarship;
+            document.getElementById('pendingPlayers').textContent = stats.pending;
+        }
+
+        // Filtrar jugadores
+        function filterPlayers() {
+            try {
+                // Validar que allPlayers sea un array
+                if (!allPlayers || !Array.isArray(allPlayers)) {
+                    console.error('❌ allPlayers no es un array válido:', allPlayers);
+                    allPlayers = [];
+                    renderPlayersTable([]);
+                    return;
+                }
+                
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+                const stateFilter = document.getElementById('stateFilter').value;
+                const categoryFilter = document.getElementById('categoryFilter').value;
+                const typeFilter = document.getElementById('typeFilter').value;
+                
+                console.log('🔍 Filtrando jugadores:', {
+                    searchTerm,
+                    stateFilter,
+                    categoryFilter,
+                    typeFilter,
+                    totalPlayers: allPlayers.length
+                });
+
+                const filteredPlayers = allPlayers.filter(player => {
+                    // Filtrar por estado según la pestaña activa
+                    const estado = (player.Estado || '').toLowerCase();
+                    const matchesTab = (currentTab === 'active') 
+                        ? (estado !== 'retirado') 
+                        : (estado === 'retirado');
+                    
+                    if (!matchesTab) return false;
+                    
+                    // Búsqueda mejorada con manejo de null/undefined
+                    const nombre = (player.Nombre || '').toLowerCase();
+                    const apellidos = (player.Apellidos || '').toLowerCase();
+                    const cedula = String(player.Cédula || '').toLowerCase();
+                    const telefono = String(player.Teléfono || '');
+                    const id = String(player.ID || '').toLowerCase();
+                    
+                    const matchesSearch = !searchTerm || 
+                        nombre.includes(searchTerm) ||
+                        apellidos.includes(searchTerm) ||
+                        cedula.includes(searchTerm) ||
+                        telefono.includes(searchTerm) ||
+                        id.includes(searchTerm) ||
+                        (nombre + ' ' + apellidos).includes(searchTerm); // Búsqueda por nombre completo
+
+                    const matchesState = !stateFilter || player.Estado === stateFilter;
+                    const matchesCategory = !categoryFilter || player.Categoría === categoryFilter;
+                    
+                    // Filtro de tipo mejorado para incluir jugadores de torneo
+                    let matchesType = true;
+                    if (typeFilter) {
+                        if (typeFilter === 'torneo') {
+                            matchesType = (player.ID || '').includes('TORNEO');
+                        } else {
+                            matchesType = player.Tipo === typeFilter;
+                        }
+                    }
+
+                    return matchesSearch && matchesState && matchesCategory && matchesType;
+                });
+                
+                console.log('✅ Jugadores filtrados:', filteredPlayers.length);
+
+                // Mostrar indicador de búsqueda si hay filtros activos
+                const hasActiveFilters = searchTerm || stateFilter || categoryFilter || typeFilter;
+                const searchResultsDiv = document.getElementById('searchResults');
+                const resultsCountSpan = document.getElementById('resultsCount');
+                
+                if (hasActiveFilters) {
+                    searchResultsDiv.style.display = 'block';
+                    resultsCountSpan.textContent = filteredPlayers.length;
+                } else {
+                    searchResultsDiv.style.display = 'none';
+                }
+
+                renderPlayersTable(filteredPlayers);
+                updateTabCounts();
+            } catch (error) {
+                console.error('❌ Error filtrando jugadores:', error);
+                showErrorMessage('Error al filtrar jugadores: ' + error.toString());
+            }
+        }
+        
+        // Limpiar búsqueda y filtros
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('stateFilter').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+            filterPlayers();
+        }
+
+        // Renderizar tabla de jugadores
+        function renderPlayersTable(players) {
+            const tbody = document.getElementById('playersTableBody');
+            
+            if (players.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #7f8c8d;">No se encontraron jugadores</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = players.map((player, index) => {
+                const id = player.ID || '';
+                const nombreCompleto = `${player.Nombre || ''} ${player.Apellidos || ''}`.trim();
+                const cedula = player.Cédula || player['Número de identificación'] || '-';
+                const edad = player.Edad || '-';
+                const categoria = player.Categoría || '-';
+                const estado = player.Estado || 'Activo';
+                const tipo = player.Tipo || 'normal';
+                const descuento = parseInt(player['Descuento %'] || player.descuento || 0);
+                const telefono = player.Teléfono || player.telefono || '-';
+                const tutor = player.Tutor || '-';
+                
+                // Determinar clase de resaltado
+                const esBecado = tipo === 'becado' || descuento > 0;
+                const esTorneo = id.includes('TORNEO');
+                const mensualidadPersonalizada = parseFloat(player['Mensualidad Personalizada'] || 0);
+                
+                // IMPORTANTE: Mensualidad personalizada es CUALQUIER valor entre 1 y 129 (no 130)
+                const tienePersonalizada = mensualidadPersonalizada > 0 && mensualidadPersonalizada < 130;
+                
+                // Determinar clase de fila (prioridad: Moroso > Torneo > Becado > Personalizada)
+                let rowClass = '';
+                const esMoroso = player.Moroso === true;
+                
+                // Debug para los primeros 3 jugadores
+                if (index < 3) {
+                    console.log(`🎨 DEBUG COLORES - ${nombreCompleto}:`, {
+                        tipo: tipo,
+                        descuento: descuento,
+                        esBecado: esBecado,
+                        mensualidadPersonalizada: mensualidadPersonalizada,
+                        tienePersonalizada: tienePersonalizada,
+                        esMoroso: esMoroso
+                    });
+                }
+                
+                if (esMoroso) {
+                    rowClass = 'player-row-overdue'; // 🔴 ROJO para morosos (máxima prioridad)
+                    console.log(`🔴 ROJO aplicado a: ${nombreCompleto}`);
+                } else if (esTorneo) {
+                    rowClass = 'player-row-tournament'; // 🟢 VERDE para jugadores de torneo
+                    console.log(`🟢 VERDE aplicado a: ${nombreCompleto} (jugador de torneo)`);
+                } else if (esBecado) {
+                    rowClass = 'player-row-highlight'; // 🟡 AMARILLO para becados/descuentos
+                    console.log(`🟡 AMARILLO aplicado a: ${nombreCompleto} (tipo=${tipo}, descuento=${descuento}%)`);
+                } else if (tienePersonalizada) {
+                    rowClass = 'player-row-custom-fee'; // 🔵 AZUL para mensualidad personalizada (1-129)
+                    console.log(`🔵 AZUL aplicado a: ${nombreCompleto} (mensualidad=$${mensualidadPersonalizada})`);
+                } else {
+                    console.log(`⚪ SIN COLOR para: ${nombreCompleto} (mensualidad normal $130)`);
+                }
+                
+                return `
+                <tr class="${rowClass}">
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="viewPlayerDetails('${id}')" title="Ver detalles completos">
+                                👁️ Ver
+                            </button>
+                            ${estado.toLowerCase() === 'retirado' 
+                                ? `<button class="btn btn-success btn-sm" onclick="reactivatePlayer('${id}')" title="Reactivar jugador">🟢 Reactivar</button>`
+                                : `<button class="btn btn-danger btn-sm" onclick="retirePlayer('${id}')" title="Retirar del plantel">🔴 Retirar</button>`
+                            }
+                        </div>
+                    </td>
+                    <td>${nombreCompleto}</td>
+                    <td>${cedula}</td>
+                    <td>${edad}</td>
+                    <td>${categoria}</td>
+                    <td><span class="status-badge status-${estado.toLowerCase()}">${estado}</span></td>
+                    <td>${esTorneo ? '🏆 Torneo' : (esBecado ? '🏆 Becado' : '👤 Normal')}${descuento > 0 && descuento < 100 ? ` (${descuento}%)` : ''}</td>
+                    <td>${telefono}</td>
+                    <td><small style="color: #9ca3af; font-size: 0.75em;">${id}</small></td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        // Abrir modal para agregar jugador
+        function openAddPlayerModal() {
+            currentPlayerId = null;
+            document.getElementById('modalTitle').textContent = '➕ Agregar Nuevo Jugador';
+            document.getElementById('playerForm').reset();
+            
+            // Limpiar archivos de entrada
+            document.getElementById('playerCedulaFile').value = '';
+            document.getElementById('tutorCedulaFile').value = '';
+            
+            document.getElementById('playerModal').style.display = 'block';
+        }
+
+        // Editar jugador
+        function editPlayer(playerId) {
+            const player = allPlayers.find(p => p.ID === playerId);
+            if (!player) return;
+
+            currentPlayerId = playerId;
+            document.getElementById('modalTitle').textContent = 'Editar Jugador';
+            
+            // Llenar formulario
+            document.getElementById('playerName').value = player.Nombre || '';
+            document.getElementById('playerLastName').value = player.Apellidos || '';
+            document.getElementById('playerAge').value = player.Edad || '';
+            document.getElementById('playerCedula').value = player.Cédula || '';
+            document.getElementById('playerPhone').value = player.Teléfono || '';
+            document.getElementById('playerCategory').value = player.Categoría || '';
+            document.getElementById('playerState').value = player.Estado || 'Activo';
+            document.getElementById('playerType').value = player.Tipo || 'normal';
+            document.getElementById('playerObservations').value = player.Observaciones || '';
+
+            document.getElementById('playerModal').style.display = 'block';
+        }
+
+        // Guardar jugador
+        function savePlayer(event) {
+            event.preventDefault();
+            
+            // Recopilar datos del jugador
+            const playerData = {
+                name: document.getElementById('playerName').value,
+                lastName: document.getElementById('playerLastName').value,
+                age: parseInt(document.getElementById('playerAge').value),
+                birthdate: document.getElementById('playerBirthdate').value,
+                cedula: document.getElementById('playerCedula').value,
+                gender: document.getElementById('playerGender').value,
+                phone: document.getElementById('playerPhone').value,
+                category: document.getElementById('playerCategory').value,
+                state: document.getElementById('playerState').value,
+                type: document.getElementById('playerType').value,
+                observations: document.getElementById('playerObservations').value,
+                
+                // Información del tutor
+                tutorName: document.getElementById('tutorName').value,
+                tutorCedula: document.getElementById('tutorCedula').value,
+                tutorEmail: document.getElementById('tutorEmail').value,
+                tutorPhone: document.getElementById('tutorPhone').value,
+                tutorAddress: document.getElementById('tutorAddress').value
+            };
+            
+            // Validar campos requeridos
+            if (!playerData.name || !playerData.lastName || !playerData.cedula || !playerData.gender || !playerData.category) {
+                alert('❌ Por favor completa todos los campos obligatorios del jugador');
+                return;
+            }
+            
+            if (!playerData.tutorName || !playerData.tutorCedula || !playerData.tutorEmail || !playerData.tutorPhone || !playerData.tutorAddress) {
+                alert('❌ Por favor completa todos los campos obligatorios del tutor');
+                return;
+            }
+
+            // Procesar archivos de cédula
+            const playerCedulaFile = document.getElementById('playerCedulaFile').files[0];
+            const tutorCedulaFile = document.getElementById('tutorCedulaFile').files[0];
+            
+            try {
+                if (currentPlayerId) {
+                    // Actualizar jugador existente
+                    updateExistingPlayer(playerData, playerCedulaFile, tutorCedulaFile);
+                } else {
+                    // Crear nuevo jugador
+                    createNewPlayer(playerData, playerCedulaFile, tutorCedulaFile);
+                }
+            } catch (error) {
+                showError('Error guardando jugador: ' + error.message);
+            }
+        }
+        
+        function createNewPlayer(playerData, playerCedulaFile, tutorCedulaFile) {
+            console.log('📝 Creando nuevo jugador con archivos:', {
+                player: playerData,
+                hasPlayerFile: !!playerCedulaFile,
+                hasTutorFile: !!tutorCedulaFile
+            });
+            
+            // Si hay archivos, convertirlos a base64 y subirlos
+            if (playerCedulaFile || tutorCedulaFile) {
+                processFilesAndCreatePlayer(playerData, playerCedulaFile, tutorCedulaFile);
+            } else {
+                // Sin archivos, crear directamente
+                showLoading('⚽ Guardando jugador...');
+                
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        hideLoading();
+                        if (result && result.success) {
+                            showSuccessMessage('✅ Jugador creado exitosamente');
+                            closePlayerModal();
+                            loadPlayers();
+                        } else {
+                            showErrorMessage('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        hideLoading();
+                        showErrorMessage('❌ Error: ' + error.toString());
+                    })
+                    .createPlayerWithFullData(playerData);
+            }
+        }
+        
+        function processFilesAndCreatePlayer(playerData, playerCedulaFile, tutorCedulaFile) {
+            const filesToProcess = [];
+            
+            // Función auxiliar para leer archivo como base64
+            function readFileAsBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        resolve({
+                            name: file.name,
+                            mimeType: file.type,
+                            data: e.target.result.split(',')[1] // Obtener solo la parte base64
+                        });
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+            
+            // Preparar promesas de lectura
+            const promises = [];
+            
+            if (playerCedulaFile) {
+                promises.push(readFileAsBase64(playerCedulaFile).then(fileData => {
+                    playerData.playerCedulaFileData = fileData;
+                }));
+            }
+            
+            if (tutorCedulaFile) {
+                promises.push(readFileAsBase64(tutorCedulaFile).then(fileData => {
+                    playerData.tutorCedulaFileData = fileData;
+                }));
+            }
+            
+            // Procesar todos los archivos y luego crear el jugador
+            Promise.all(promises)
+                .then(() => {
+                    console.log('📤 Subiendo jugador con archivos...');
+                    showLoading('⚽ Guardando jugador...');
+                    
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            hideLoading();
+                            if (result && result.success) {
+                                showSuccessMessage('✅ Jugador creado exitosamente con archivos adjuntos');
+                                closePlayerModal();
+                                loadPlayers();
+                            } else {
+                                showErrorMessage('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                            }
+                        })
+                        .withFailureHandler(function(error) {
+                            hideLoading();
+                            showErrorMessage('❌ Error: ' + error.toString());
+                        })
+                        .createPlayerWithFullData(playerData);
+                })
+                .catch(error => {
+                    hideLoading();
+                    showErrorMessage('❌ Error procesando archivos: ' + error.toString());
+                });
+        }
+        
+        function updateExistingPlayer(playerData, playerCedulaFile, tutorCedulaFile) {
+            console.log('✏️ Actualizando jugador existente');
+            
+            showLoading('⚽ Actualizando jugador...');
+            
+            // Por ahora, actualizar sin archivos (podemos agregar esto después)
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    hideLoading();
+                    if (result && result.success) {
+                        showSuccessMessage('✅ Jugador actualizado exitosamente');
+                        closePlayerModal();
+                        loadPlayers();
+                    } else {
+                        showErrorMessage('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    hideLoading();
+                    showErrorMessage('❌ Error: ' + error.toString());
+                })
+                .updatePlayerWithFullData(currentPlayerId, playerData);
+        }
+
+        // Ver detalles del jugador
+        function viewPlayerDetails(playerId) {
+            console.log('👁️ Abriendo detalles completos del jugador:', playerId);
+            currentPlayerId = playerId;
+            
+            const player = allPlayers.find(p => p.ID === playerId);
+            if (!player) {
+                alert('❌ Jugador no encontrado');
+                return;
+            }
+
+            // Actualizar título
+            document.getElementById('detailsModalTitle').textContent = `👤 ${player.Nombre} ${player.Apellidos}`;
+            
+            // Mostrar modal
+            document.getElementById('playerDetailsModal').style.display = 'block';
+            
+            // Cargar pestaña de información por defecto
+            switchPlayerTab('info');
+            loadPlayerInfo(player);
+        }
+        
+        // Cambiar entre pestañas del modal de jugador
+        function switchPlayerTab(tab) {
+            // Actualizar botones
+            const tabs = ['info', 'payments', 'edit'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(t + 'Tab');
+                const content = document.getElementById('player' + t.charAt(0).toUpperCase() + t.slice(1) + 'Content');
+                
+                if (t === tab) {
+                    btn.style.background = '#3b82f6';
+                    btn.style.color = 'white';
+                    content.style.display = 'block';
+                } else {
+                    btn.style.background = '#e5e7eb';
+                    btn.style.color = '#6b7280';
+                    content.style.display = 'none';
+                }
+            });
+            
+            // Cargar contenido según la pestaña
+            if (tab === 'payments' && currentPlayerId) {
+                loadPlayerPayments(currentPlayerId);
+            } else if (tab === 'edit' && currentPlayerId) {
+                loadPlayerEditForm(currentPlayerId);
+            }
+        }
+        
+        // Cargar formulario de edición
+        function loadPlayerEditForm(playerId) {
+            const player = allPlayers.find(p => p.ID === playerId);
+            if (!player) {
+                document.getElementById('playerEditContent').innerHTML = '<p style="color: #ef4444;">Jugador no encontrado</p>';
+                return;
+            }
+            
+            const html = `
+                <div style="background: white; border-radius: 10px;">
+                    <form id="editPlayerForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Nombre</label>
+                            <input type="text" id="edit_nombre" value="${player.Nombre || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Apellidos</label>
+                            <input type="text" id="edit_apellidos" value="${player.Apellidos || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Cédula</label>
+                            <input type="text" id="edit_cedula" value="${player.Cédula || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Teléfono</label>
+                            <input type="text" id="edit_telefono" value="${player.Teléfono || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Tipo</label>
+                            <select id="edit_tipo" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                                <option value="normal" ${player.Tipo === 'normal' ? 'selected' : ''}>Normal</option>
+                                <option value="becado" ${player.Tipo === 'becado' ? 'selected' : ''}>Becado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Descuento %</label>
+                            <input type="number" id="edit_descuento" value="${player['Descuento %'] || 0}" min="0" max="100" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Observaciones</label>
+                            <textarea id="edit_observaciones" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; min-height: 100px; font-family: inherit;">${player.Observaciones || ''}</textarea>
+                        </div>
+                    </form>
+                    
+                    <div style="grid-column: 1 / -1; margin-top: 10px;">
+                        <h4 style="color: #6b7280; font-size: 0.95em; margin: 10px 0 5px 0;">👨‍👩‍👧 Tutor</h4>
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Nombre del Tutor</label>
+                        <input type="text" id="edit_tutor" value="${player.Tutor || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Email del Tutor</label>
+                        <input type="email" id="edit_email_tutor" value="${player['Email Tutor'] || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Teléfono del Tutor</label>
+                        <input type="text" id="edit_telefono_tutor" value="${player['Teléfono Tutor'] || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Cédula del Tutor</label>
+                        <input type="text" id="edit_cedula_tutor" value="${player['Cédula Tutor'] || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Dirección</label>
+                        <input type="text" id="edit_direccion" value="${player.Dirección || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Familia ID</label>
+                        <input type="text" id="edit_familia_id" value="${player['Familia ID'] || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="FAM_<cédula tutor>">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">Método de Pago Preferido</label>
+                        <input type="text" id="edit_metodo_pago" value="${player['Método Pago Preferido'] || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div style="grid-column: 1 / -1; margin-top: 10px;">
+                        <h4 style="color: #6b7280; font-size: 0.95em; margin: 10px 0 5px 0;">📎 Documentos</h4>
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">URL Cédula del Jugador</label>
+                        <input type="text" id="edit_url_cedula_jugador" value="${player['URL Cédula Jugador'] || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="https://drive.google.com/...">
+                    </div>
+                    <div>
+                        <label style="display: block; color: #374151; font-weight: 600; margin-bottom: 8px;">URL Cédula del Tutor</label>
+                        <input type="text" id="edit_url_cedula_tutor" value="${player['URL Cédula Tutor'] || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="https://drive.google.com/...">
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: right; grid-column: 1 / -1;">
+                        <button onclick="savePlayerEdits()" class="btn btn-primary" style="padding: 12px 30px;">
+                            💾 Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('playerEditContent').innerHTML = html;
+        }
+        
+        // Guardar ediciones del jugador
+        function savePlayerEdits() {
+            const editedData = {
+                id: currentPlayerId,
+                nombre: document.getElementById('edit_nombre').value,
+                apellidos: document.getElementById('edit_apellidos').value,
+                cedula: document.getElementById('edit_cedula').value,
+                telefono: document.getElementById('edit_telefono').value,
+                tipo: document.getElementById('edit_tipo').value,
+                descuento: parseFloat(document.getElementById('edit_descuento').value) || 0,
+                observaciones: document.getElementById('edit_observaciones').value,
+                tutor: document.getElementById('edit_tutor') ? document.getElementById('edit_tutor').value : '',
+                emailTutor: document.getElementById('edit_email_tutor') ? document.getElementById('edit_email_tutor').value : '',
+                cedulaTutor: document.getElementById('edit_cedula_tutor') ? document.getElementById('edit_cedula_tutor').value : '',
+                direccion: document.getElementById('edit_direccion') ? document.getElementById('edit_direccion').value : '',
+                familiaId: document.getElementById('edit_familia_id') ? document.getElementById('edit_familia_id').value : '',
+                metodoPago: document.getElementById('edit_metodo_pago') ? document.getElementById('edit_metodo_pago').value : '',
+                urlCedulaJugador: document.getElementById('edit_url_cedula_jugador') ? document.getElementById('edit_url_cedula_jugador').value : '',
+                urlCedulaTutor: document.getElementById('edit_url_cedula_tutor') ? document.getElementById('edit_url_cedula_tutor').value : '',
+                telefonoTutor: document.getElementById('edit_telefono_tutor') ? document.getElementById('edit_telefono_tutor').value : ''
+            };
+            
+            console.log('💾 Guardando ediciones:', editedData);
+            showLoading('⚽ Guardando cambios...');
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    hideLoading();
+                    if (result && result.success) {
+                        showSuccessMessage('✅ Jugador actualizado exitosamente');
+                        loadPlayers();
+                        closePlayerDetailsModal();
+                    } else {
+                        showErrorMessage('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    hideLoading();
+                    showErrorMessage('❌ Error: ' + error.toString());
+                })
+                .updatePlayer(editedData);
+        }
+        
+        // Cargar información del jugador
+        function loadPlayerInfo(player) {
+            // Obtener información de mensualidad del backend para cálculo correcto
+            document.getElementById('playerInfoContent').innerHTML = '<div class="loading">Cargando información...</div>';
+            
+            google.script.run
+                .withSuccessHandler(function(monthlyFeeInfo) {
+                    renderPlayerInfo(player, monthlyFeeInfo);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error obteniendo información de mensualidad:', error);
+                    // Usar valores por defecto si falla
+                    const defaultInfo = {
+                        isCustom: false,
+                        amount: 130,
+                        type: 'individual'
+                    };
+                    renderPlayerInfo(player, defaultInfo);
+                })
+                .getPlayerMonthlyFee(player.ID);
+        }
+        
+        function renderPlayerInfo(player, monthlyFeeInfo) {
+            const tipo = player.Tipo || 'normal';
+            const descuento = parseFloat(player['Descuento %'] || 0);
+            
+            // Calcular mensualidad final considerando descuento si aplica
+            let mensualidadFinal = monthlyFeeInfo ? monthlyFeeInfo.amount : 130;
+            let tipoMensualidad = 'Normal';
+            let colorMensualidad = '#1f2937';
+            
+            if (tipo === 'becado') {
+                mensualidadFinal = 0;
+                tipoMensualidad = 'Becado (100%)';
+                colorMensualidad = '#f59e0b';
+            } else if (monthlyFeeInfo && monthlyFeeInfo.isCustom && monthlyFeeInfo.type === 'personalizada') {
+                mensualidadFinal = monthlyFeeInfo.amount;
+                tipoMensualidad = 'Personalizada';
+                colorMensualidad = '#3b82f6';
+            } else if (monthlyFeeInfo && monthlyFeeInfo.type === 'familiar') {
+                mensualidadFinal = monthlyFeeInfo.amount;
+                tipoMensualidad = 'Familiar';
+                colorMensualidad = '#10b981';
+            } else if (monthlyFeeInfo && monthlyFeeInfo.type === 'individual') {
+                mensualidadFinal = monthlyFeeInfo.amount;
+                tipoMensualidad = 'Individual';
+                colorMensualidad = '#1f2937';
+            }
+            
+            // Aplicar descuento si existe
+            if (descuento > 0 && tipo !== 'becado') {
+                mensualidadFinal = mensualidadFinal * (1 - descuento / 100);
+                tipoMensualidad = `Con descuento (${descuento}%)`;
+                colorMensualidad = '#f59e0b';
+            }
+            
+            const content = `
+                <div style="background: white; border-radius: 10px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px;">
+                        <div style="background: #f9fafb; padding: 20px; border-radius: 10px; border-left: 4px solid #3b82f6;">
+                            <h3 style="color: #1e3a8a; margin-bottom: 15px; font-size: 1.2em;">📋 Información Personal</h3>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">ID:</strong> <span style="color: #1f2937;">${player.ID}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Nombre Completo:</strong> <span style="color: #1f2937;">${player.Nombre} ${player.Apellidos}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Edad:</strong> <span style="color: #1f2937;">${player.Edad} años</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Cédula:</strong> <span style="color: #1f2937;">${player.Cédula}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Teléfono:</strong> <span style="color: #1f2937;">${player.Teléfono || 'No registrado'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Fecha Nacimiento:</strong> <span style="color: #1f2937;">${player['Fecha Nacimiento'] || 'N/A'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Género:</strong> <span style="color: #1f2937;">${player.Género || 'N/A'}</span></p>
+                        </div>
+                        
+                        <div style="background: #f9fafb; padding: 20px; border-radius: 10px; border-left: 4px solid #10b981;">
+                            <h3 style="color: #059669; margin-bottom: 15px; font-size: 1.2em;">⚽ Información Académica</h3>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Categoría:</strong> <span style="color: #1f2937;">${player.Categoría}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Estado:</strong> <span class="status-badge status-${(player.Estado || 'activo').toLowerCase()}">${player.Estado || 'Activo'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Tipo:</strong> <span style="color: #1f2937;">${player.Tipo === 'becado' ? '🏆 Becado' : '👤 Normal'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Descuento:</strong> <span style="color: #1f2937;">${player['Descuento %'] || 0}%</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Fecha Registro:</strong> <span style="color: #1f2937;">${player['Fecha Registro'] || 'N/A'}</span></p>
+                        </div>
+                        
+                        <div style="background: #f9fafb; padding: 20px; border-radius: 10px; border-left: 4px solid #f59e0b;">
+                            <h3 style="color: #d97706; margin-bottom: 15px; font-size: 1.2em;">👨‍👩‍👧 Información del Tutor</h3>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Tutor:</strong> <span style="color: #1f2937;">${player.Tutor || 'No registrado'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Email Tutor:</strong> <span style="color: #1f2937;">${player['Email Tutor'] || 'No registrado'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Teléfono Tutor:</strong> <span style="color: #1f2937;">${player['Teléfono Tutor'] || player.Teléfono || 'No registrado'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Cédula Tutor:</strong> <span style="color: #1f2937;">${player['Cédula Tutor'] || 'No registrado'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Dirección:</strong> <span style="color: #1f2937;">${player.Dirección || 'No registrado'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Familia ID:</strong> <span style="color: #1f2937;">${player['Familia ID'] || 'Sin asignar'}</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Método de Pago:</strong> <span style="color: #1f2937;">${player['Método Pago Preferido'] || 'No especificado'}</span></p>
+                            
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                                <h4 style="color: #6b7280; font-size: 0.95em; margin-bottom: 10px;">📎 Documentos Adjuntos:</h4>
+                                ${player['URL Cédula Jugador'] ? 
+                                    `<p style="margin: 5px 0;">
+                                        <a href="${player['URL Cédula Jugador']}" target="_blank" style="color: #3b82f6; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                                            📄 Ver Cédula del Jugador
+                                        </a>
+                                    </p>` : 
+                                    '<p style="margin: 5px 0; color: #9ca3af; font-size: 0.9em;">📄 Cédula del Jugador: No adjunta</p>'
+                                }
+                                ${player['URL Cédula Tutor'] ? 
+                                    `<p style="margin: 5px 0;">
+                                        <a href="${player['URL Cédula Tutor']}" target="_blank" style="color: #3b82f6; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                                            📄 Ver Cédula del Tutor
+                                        </a>
+                                    </p>` : 
+                                    '<p style="margin: 5px 0; color: #9ca3af; font-size: 0.9em;">📄 Cédula del Tutor: No adjunta</p>'
+                                }
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f9fafb; padding: 20px; border-radius: 10px; border-left: 4px solid #ec4899;">
+                            <h3 style="color: #db2777; margin-bottom: 15px; font-size: 1.2em;">💰 Información Financiera</h3>
+                            <p style="margin: 8px 0;">
+                                <strong style="color: #6b7280;">Mensualidad Actual:</strong> 
+                                <span style="color: ${colorMensualidad}; font-weight: bold; font-size: 1.2em;">$${mensualidadFinal.toFixed(2)}</span>
+                                <span style="color: #9ca3af; font-size: 0.85em; margin-left: 8px;">(${tipoMensualidad})</span>
+                            </p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Descuento Aplicado:</strong> <span style="color: #1f2937;">${player['Descuento %'] || 0}%</span></p>
+                            <p style="margin: 8px 0;"><strong style="color: #6b7280;">Tipo de Jugador:</strong> <span style="color: ${player.Tipo === 'becado' ? '#f59e0b' : '#1f2937'}; font-weight: 600;">${player.Tipo === 'becado' ? '🏆 Becado' : '👤 Normal'}</span></p>
+                            ${player.Observaciones ? `<p style="margin: 15px 0 0 0; padding-top: 15px; border-top: 1px solid #e5e7eb;"><strong style="color: #6b7280;">Observaciones:</strong><br><span style="color: #6b7280; font-size: 0.9em;">${player.Observaciones}</span></p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('playerInfoContent').innerHTML = content;
+        }
+        
+        // Cargar pagos del jugador
+        function loadPlayerPayments(playerId) {
+            document.getElementById('playerPaymentsContent').innerHTML = '<div class="loading">Cargando pagos...</div>';
+            
+            // Obtener información de mensualidad y pagos en paralelo
+            Promise.all([
+                new Promise((resolve, reject) => {
+                    google.script.run
+                        .withSuccessHandler(resolve)
+                        .withFailureHandler(reject)
+                        .getPlayerMonthlyFee(playerId);
+                }),
+                new Promise((resolve, reject) => {
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            if (result && result.success) {
+                                resolve(result);
+                            } else {
+                                reject(new Error(result ? result.message : 'No se pudo cargar el historial'));
+                            }
+                        })
+                        .withFailureHandler(reject)
+                        .getPlayerPaymentHistory(playerId);
+                })
+            ])
+            .then(([monthlyFeeInfo, paymentData]) => {
+                renderPlayerPayments(paymentData, monthlyFeeInfo);
+            })
+            .catch(function(error) {
+                document.getElementById('playerPaymentsContent').innerHTML = 
+                    `<div style="text-align: center; padding: 40px; color: #e74c3c;">
+                        <h3>❌ Error</h3>
+                        <p>${error.toString()}</p>
+                    </div>`;
+            });
+        }
+        
+        // Renderizar pagos del jugador
+        function renderPlayerPayments(data, monthlyFeeInfo) {
+            const player = data.player;
+            const payments = data.payments || [];
+            
+            // Obtener mensualidad correcta
+            let mensualidadActual = 130; // Valor por defecto
+            if (monthlyFeeInfo) {
+                mensualidadActual = monthlyFeeInfo.amount;
+                // Aplicar descuento si existe
+                const descuento = parseFloat(player['Descuento %'] || 0);
+                if (descuento > 0 && player.Tipo !== 'becado') {
+                    mensualidadActual = mensualidadActual * (1 - descuento / 100);
+                }
+            } else if (player.mensualidadPersonalizada) {
+                mensualidadActual = parseFloat(player.mensualidadPersonalizada);
+            }
+            
+            let html = `
+                <div style="background: white; border-radius: 10px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                        <div style="background: #dbeafe; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                            <small style="color: #6b7280; font-weight: 600;">Mensualidad Actual</small>
+                            <h3 style="color: #1e3a8a; margin-top: 5px;">$${mensualidadActual.toFixed(2)}</h3>
+                        </div>
+                        <div style="background: #fee2e2; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                            <small style="color: #6b7280; font-weight: 600;">Total Pendiente</small>
+                            <h3 style="color: #ef4444; margin-top: 5px;">$${(player.totalPendiente || 0).toFixed(2)}</h3>
+                        </div>
+                        <div style="background: #d1fae5; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+                            <small style="color: #6b7280; font-weight: 600;">Total Pagado</small>
+                            <h3 style="color: #10b981; margin-top: 5px;">$${(player.totalPagado || 0).toFixed(2)}</h3>
+                        </div>
+                    </div>
+                    
+                    <h4 style="color: #374151; margin-bottom: 15px;">📋 Historial de Transacciones</h4>
+                    
+                    ${payments.length === 0 ? 
+                        '<p style="text-align: center; color: #9ca3af; padding: 40px;">No hay transacciones registradas</p>' 
+                        : 
+                        `<div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                        <th style="padding: 12px; text-align: left; color: #374151; font-weight: 600;">Fecha</th>
+                                        <th style="padding: 12px; text-align: left; color: #374151; font-weight: 600;">Tipo</th>
+                                        <th style="padding: 12px; text-align: left; color: #374151; font-weight: 600;">Jugador</th>
+                                        <th style="padding: 12px; text-align: right; color: #374151; font-weight: 600;">Monto</th>
+                                        <th style="padding: 12px; text-align: center; color: #374151; font-weight: 600;">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${payments.map(pago => {
+                                        const esPagado = pago.estado === 'Pagado' || String(pago.estado || '').toLowerCase().includes('pagado');
+                                        const colorMonto = esPagado ? '#10b981' : '#ef4444';
+                                        const bgEstado = esPagado ? '#d1fae5' : '#fee2e2';
+                                        const monto = parseFloat(pago.monto) || 0;
+                                        
+                                        // Formatear fecha correctamente
+                                        let fechaFormateada = 'N/A';
+                                        if (pago.fecha) {
+                                            try {
+                                                let fechaObj;
+                                                if (pago.fecha instanceof Date) {
+                                                    fechaObj = pago.fecha;
+                                                } else if (typeof pago.fecha === 'string') {
+                                                    fechaObj = new Date(pago.fecha);
+                                                } else {
+                                                    fechaObj = new Date(pago.fecha);
+                                                }
+                                                
+                                                if (!isNaN(fechaObj.getTime())) {
+                                                    fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric'
+                                                    });
+                                                } else {
+                                                    fechaFormateada = String(pago.fecha);
+                                                }
+                                            } catch (e) {
+                                                fechaFormateada = String(pago.fecha);
+                                            }
+                                        }
+                                        
+                                        // Detectar y corregir tipo de pago
+                                        let tipoPago = String(pago.tipo || '').trim();
+                                        
+                                        // Si el tipo parece ser un nombre (contiene mayúsculas o no es un tipo conocido)
+                                        const tiposConocidos = ['matrícula', 'matricula', 'enrollment', 'mensualidad', 'mensual', 'monthly', 'cuota mensual', 'pago mensual'];
+                                        const tipoLower = tipoPago.toLowerCase();
+                                        const esTipoConocido = tiposConocidos.some(t => tipoLower.includes(t));
+                                        
+                                        // Si contiene el nombre del jugador o no es un tipo conocido, intentar detectar por el contexto
+                                        if (!esTipoConocido || tipoPago.toUpperCase() === tipoPago && tipoPago.length > 3) {
+                                            // Probablemente es un nombre, intentar detectar el tipo por el monto o contexto
+                                            if (monto === parseFloat(mensualidadActual) || Math.abs(monto - parseFloat(mensualidadActual)) < 5) {
+                                                tipoPago = 'Mensualidad';
+                                            } else if (monto === 130 || monto === 80 || monto === 110.50) {
+                                                // Podría ser matrícula o mensualidad
+                                                tipoPago = 'Mensualidad';
+                                            } else {
+                                                tipoPago = 'Pago';
+                                            }
+                                        } else {
+                                            // Normalizar el tipo
+                                            if (tipoLower.includes('matricula') || tipoLower.includes('enrollment')) {
+                                                tipoPago = 'Matrícula';
+                                            } else if (tipoLower.includes('mensualidad') || tipoLower.includes('mensual') || tipoLower.includes('monthly') || tipoLower.includes('cuota mensual')) {
+                                                tipoPago = 'Mensualidad';
+                                            } else {
+                                                tipoPago = tipoPago || 'Pago';
+                                            }
+                                        }
+                                        
+                                        // Obtener nombre del jugador
+                                        const nombreJugador = player.nombre || `${player.Nombre || ''} ${player.Apellidos || ''}`.trim() || 'N/A';
+                                        
+                                        return `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 12px;">${fechaFormateada}</td>
+                                            <td style="padding: 12px;">
+                                                ${tipoPago === 'Matrícula' ? '🎓' : tipoPago === 'Mensualidad' ? '📅' : '💰'} 
+                                                ${tipoPago}
+                                            </td>
+                                            <td style="padding: 12px; color: #6b7280;">${nombreJugador}</td>
+                                            <td style="padding: 12px; text-align: right; color: ${colorMonto}; font-weight: bold;">
+                                                $${monto.toFixed(2)}
+                                            </td>
+                                            <td style="padding: 12px; text-align: center;">
+                                                <span style="background: ${bgEstado}; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">
+                                                    ${esPagado ? '✅ Pagado' : '⏳ Pendiente'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>`
+                    }
+                    
+                    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+                        <h4 style="color: #374151; margin-bottom: 15px;">⚙️ Acciones de Pago</h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button onclick="addManualPayment()" class="btn btn-success">
+                                💵 Registrar Pago Manual
+                            </button>
+                            <button onclick="addExtraCharge()" class="btn btn-warning">
+                                ➕ Agregar Cobro Extra
+                            </button>
+                            <button onclick="updateMonthlyFee()" class="btn btn-info">
+                                📝 Modificar Mensualidad
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('playerPaymentsContent').innerHTML = html;
+        }
+        
+        // Ver historial de pagos (ahora abre el modal unificado en la pestaña de pagos)
+        function viewPaymentHistory(playerId) {
+            try {
+                console.log('💰 Abriendo historial de pagos:', playerId);
+                currentPlayerId = playerId;
+                
+                const player = allPlayers.find(p => p.ID === playerId);
+                if (!player) {
+                    alert('❌ Jugador no encontrado');
+                    return;
+                }
+                
+                // Actualizar título y abrir modal
+                document.getElementById('detailsModalTitle').textContent = `👤 ${player.Nombre} ${player.Apellidos}`;
+                document.getElementById('playerDetailsModal').style.display = 'block';
+                
+                // Cambiar a la pestaña de pagos
+                switchPlayerTab('payments');
+                    
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error abriendo historial: ' + error.message);
+            }
+        }
+        
+        
+        function addManualPayment() {
+            showInputModal('💵 Registrar Pago Manual', [
+                { name: 'amount', label: '💰 Monto del Pago ($)', type: 'number', placeholder: '130.00' },
+                { name: 'method', label: '💳 Método de Pago', type: 'text', placeholder: 'Efectivo, Transferencia, Tarjeta...' },
+                { name: 'reference', label: '📝 Referencia (Opcional)', type: 'text', placeholder: 'Nº de transacción, recibo...' }
+            ], function(values) {
+                const amount = parseFloat(values.amount);
+                const method = values.method || 'Efectivo';
+                const reference = values.reference || '';
+                
+                if (!amount || isNaN(amount)) {
+                    alert('❌ Monto inválido');
+                    return;
+                }
+                
+                console.log('Procesando pago:', { playerId: currentPlayerId, amount, method, reference });
+                
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('Resultado del pago:', result);
+                        if (result && result.success) {
+                            showSuccessMessage('✅ Pago registrado exitosamente');
+                            loadPlayerPayments(currentPlayerId);
+                            loadPlayers();
+                        } else {
+                            showErrorMessage('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        showErrorMessage('❌ Error: ' + error.toString());
+                    })
+                    .registerManualPayment(currentPlayerId, amount, method, reference);
+            });
+        }
+        
+        function addExtraCharge() {
+            showInputModal('➕ Agregar Cobro Extra', [
+                { name: 'description', label: '📝 Descripción del Cobro', type: 'text', placeholder: 'Uniforme, Torneo, Equipo...' },
+                { name: 'amount', label: '💰 Monto ($)', type: 'number', placeholder: '50.00' }
+            ], function(values) {
+                const description = values.description;
+                const amount = parseFloat(values.amount);
+                
+                if (!description) {
+                    alert('❌ Descripción requerida');
+                    return;
+                }
+                
+                if (!amount || isNaN(amount)) {
+                    alert('❌ Monto inválido');
+                    return;
+                }
+                
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result && result.success) {
+                            showSuccessMessage('✅ Cobro agregado exitosamente');
+                            loadPlayerPayments(currentPlayerId);
+                            loadPlayers();
+                        } else {
+                            showErrorMessage('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        showErrorMessage('❌ Error: ' + error.toString());
+                    })
+                    .addExtraChargeToPlayer(currentPlayerId, description, amount);
+            });
+        }
+        
+        function updateMonthlyFee() {
+            showInputModal('📝 Modificar Mensualidad Personalizada', [
+                { name: 'fee', label: '💰 Nueva Mensualidad ($)', type: 'number', placeholder: '130.00', value: '130' }
+            ], function(values) {
+                const newFee = parseFloat(values.fee);
+                
+                if (!newFee || isNaN(newFee)) {
+                    alert('❌ Monto inválido');
+                    return;
+                }
+                
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result && result.success) {
+                            showSuccessMessage('✅ Mensualidad actualizada exitosamente');
+                            loadPlayerPayments(currentPlayerId);
+                            loadPlayers();
+                        } else {
+                            showErrorMessage('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        showErrorMessage('❌ Error: ' + error.toString());
+                    })
+                    .updatePlayerMonthlyFee(currentPlayerId, newFee);
+            });
+        }
+
+        // Activar jugador
+        function activatePlayer(playerId) {
+            if (confirm('¿Está seguro de activar este jugador?')) {
+                try {
+                    google.script.run
+                        .withSuccessHandler(function() {
+                            showSuccess('Jugador activado exitosamente');
+                            loadPlayers();
+                        })
+                        .withFailureHandler(showError)
+                        .activatePlayer(playerId);
+                } catch (error) {
+                    showError('Error activando jugador: ' + error.message);
+                }
+            }
+        }
+
+        // Desactivar jugador
+        function deactivatePlayer(playerId) {
+            if (confirm('¿Está seguro de desactivar este jugador?')) {
+                try {
+                    google.script.run
+                        .withSuccessHandler(function() {
+                            showSuccess('Jugador desactivado exitosamente');
+                            loadPlayers();
+                        })
+                        .withFailureHandler(showError)
+                        .deactivatePlayer(playerId);
+                } catch (error) {
+                    showError('Error desactivando jugador: ' + error.message);
+                }
+            }
+        }
+
+        // Cerrar modales
+        function closePlayerModal() {
+            document.getElementById('playerModal').style.display = 'none';
+        }
+
+        function closePlayerDetailsModal() {
+            document.getElementById('playerDetailsModal').style.display = 'none';
+        }
+
+        // Actualizar jugadores
+        function refreshPlayers() {
+            loadPlayers();
+        }
+
+        // Utilidades
+        function showError(message) {
+            console.error('Error:', message);
+            alert('Error: ' + message);
+        }
+
+        function showSuccess(message) {
+            alert('Éxito: ' + message);
+        }
+
+        // Cerrar modales al hacer clic fuera
+        window.onclick = function(event) {
+            const playerModal = document.getElementById('playerModal');
+            const detailsModal = document.getElementById('playerDetailsModal');
+            const inputModal = document.getElementById('inputModal');
+            
+            if (event.target === playerModal) {
+                closePlayerModal();
+            }
+            if (event.target === detailsModal) {
+                closePlayerDetailsModal();
+            }
+            if (event.target === inputModal) {
+                closeInputModal();
+            }
+        }
+
+        // Cambiar entre pestañas
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Actualizar estilos de pestañas
+            const activeTabBtn = document.getElementById('activeTab');
+            const retiredTabBtn = document.getElementById('retiredTab');
+            
+            if (tab === 'active') {
+                activeTabBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                activeTabBtn.style.color = 'white';
+                retiredTabBtn.style.background = '#e0e0e0';
+                retiredTabBtn.style.color = '#666';
+            } else {
+                activeTabBtn.style.background = '#e0e0e0';
+                activeTabBtn.style.color = '#666';
+                retiredTabBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                retiredTabBtn.style.color = 'white';
+            }
+            
+            // Aplicar filtros
+            filterPlayers();
+        }
+        
+        // Actualizar contadores de pestañas
+        function updateTabCounts() {
+            if (!Array.isArray(allPlayers)) return;
+            
+            const activePlayers = allPlayers.filter(p => (p.Estado || '').toLowerCase() !== 'retirado');
+            const retiredPlayers = allPlayers.filter(p => (p.Estado || '').toLowerCase() === 'retirado');
+            
+            document.getElementById('activeCount').textContent = activePlayers.length;
+            document.getElementById('retiredCount').textContent = retiredPlayers.length;
+        }
+
+        // Función para retirar un jugador del plantel
+        function retirePlayer(playerId) {
+            if (!playerId) {
+                showErrorMessage('❌ ID de jugador no válido');
+                return;
+            }
+            
+            showInputModal('🔴 Retirar Jugador del Plantel', [
+                { name: 'reason', label: '📝 Motivo del Retiro (Opcional)', type: 'textarea', placeholder: 'Ej: Cambio de academia, problemas económicos, lesión...' }
+            ], function(values) {
+                const reason = values.reason || '';
+                
+                console.log(`🔴 Retirando jugador: ${playerId}`);
+                
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('✅ Resultado:', result);
+                        
+                        if (result.success) {
+                            showSuccessMessage(`✅ ${result.message}`);
+                            loadPlayers();
+                        } else {
+                            showErrorMessage(`❌ Error: ${result.message}`);
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('❌ Error:', error);
+                        showErrorMessage('❌ Error al retirar jugador: ' + error.toString());
+                    })
+                    .retirePlayer(playerId, reason);
+            });
+        }
+
+        // Función para reactivar un jugador retirado
+        function reactivatePlayer(playerId) {
+            if (!playerId) {
+                showErrorMessage('❌ ID de jugador no válido');
+                return;
+            }
+            
+            showInputModal('🟢 Reactivar Jugador', [
+                { name: 'reason', label: '📝 Motivo de la Reactivación (Opcional)', type: 'textarea', placeholder: 'Ej: Retorna a la academia, finaliza período de suspensión...' },
+                { name: 'info', label: '⚠️ Importante', type: 'info', value: '• Se cambiará el estado a "Activo"\n• Se cobrará una nueva matrícula ($130)\n• Volverá a recibir cobros mensuales' }
+            ], function(values) {
+                const reason = values.reason || '';
+                
+                console.log(`🟢 Reactivando jugador: ${playerId}`);
+                
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('✅ Resultado:', result);
+                        
+                        if (result.success) {
+                            showSuccessMessage(`✅ ${result.message}\n\n💰 Nueva matrícula de $130 ha sido cargada al jugador.`);
+                            loadPlayers();
+                        } else {
+                            showErrorMessage(`❌ Error: ${result.message}`);
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('❌ Error:', error);
+                        showErrorMessage('❌ Error al reactivar jugador: ' + error.toString());
+                    })
+                    .reactivatePlayer(playerId, reason);
+            });
+        }
+
+    </script>
+</body>
+</html>

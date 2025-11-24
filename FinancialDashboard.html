@@ -1,0 +1,2524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUAREZ ACADEMY - Gestión Financiera</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navegación Superior */
+        .top-navigation {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .nav-logo .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: 0.9em;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .nav-item:hover {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+            .nav-item.active::before {
+                content: '📍 ';
+            }
+
+            .nav-item.close-btn {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                border: 2px solid #ef4444;
+            }
+
+            .nav-item.close-btn:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            }
+
+            /* Responsive para menú */
+            @media (max-width: 1200px) {
+                .nav-menu {
+                    gap: 6px;
+                }
+                
+                .nav-item {
+                    padding: 5px 10px;
+                    font-size: 0.85em;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .nav-menu {
+                    gap: 4px;
+                    flex-wrap: wrap;
+                }
+                
+                .nav-item {
+                    padding: 4px 8px;
+                    font-size: 0.8em;
+                    border-radius: 4px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .nav-menu {
+                    flex-direction: column;
+                    gap: 4px;
+                    align-items: center;
+                }
+                
+                .nav-item {
+                    width: 100%;
+                    max-width: 200px;
+                    text-align: center;
+                    padding: 6px 12px;
+                }
+            }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .stat-card p {
+            color: #7f8c8d;
+            font-size: 1em;
+            font-weight: 500;
+        }
+
+        .stat-card.income { border-left: 5px solid #27ae60; }
+        .stat-card.expenses { border-left: 5px solid #e74c3c; }
+        .stat-card.profit { border-left: 5px solid #3498db; }
+        .stat-card.pending { border-left: 5px solid #f39c12; }
+
+        /* Estados de pago */
+        .status-paid {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .chart-container h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        .chart-canvas {
+            max-height: 300px;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #fbbf24;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-info {
+            background: #06b6d4;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow-x: auto;
+        }
+
+        .table-container h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .financial-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .financial-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .financial-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-paid {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .status-pending {
+            background: #fef9e7;
+            color: #f39c12;
+        }
+
+        .status-overdue {
+            background: #fadbd8;
+            color: #e74c3c;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            color: #2c3e50;
+            font-size: 1.5em;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #e74c3c;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    /* Global Loading Overlay - Balón de Fútbol */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    .football-loader {
+        font-size: 80px;
+        animation: spin-football 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin-football {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #1e3a8a;
+    }
+    </style>
+</head>
+<body>
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay" id="globalLoading">
+        <div class="loading-content">
+            <div class="football-loader">⚽</div>
+            <div class="loading-text">Cargando...</div>
+        </div>
+    </div>
+    <div class="container">
+        <!-- Navegación Superior -->
+        <nav class="top-navigation">
+            <div class="nav-logo">
+                <div class="logo-icon">⚽</div>
+                SUAREZ ACADEMY
+            </div>
+                    <div class="nav-menu">
+                        <a href="#" class="nav-item" onclick="navigateTo('players')">👥 Jugadores</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('families')">👨‍👩‍👧‍👦 Familias</a>
+                        <a href="#" class="nav-item active" onclick="navigateTo('financial')">💰 Financiero</a>
+                        <!-- <a href="#" class="nav-item" onclick="navigateTo('expenses')">💸 Gastos</a> -->
+                        <a href="#" class="nav-item" onclick="navigateTo('approvals')">✅ Aprobaciones</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('tournaments')">🏆 Torneos</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('historic')">📜 Histórico</a>
+                        <a href="#" class="nav-item" onclick="navigateTo('config')">⚙️ Config</a>
+                        <a href="#" class="nav-item close-btn" onclick="closeWindow()">❌ Cerrar</a>
+                    </div>
+        </nav>
+
+        <div class="header">
+            <h1>💰 SUAREZ ACADEMY - Gestión Financiera</h1>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('overview')">📊 Resumen</div>
+            <div class="tab" onclick="switchTab('transactions')">💳 Transacciones</div>
+            <div class="tab" onclick="switchTab('pending')">⏰ Pendientes</div>
+            <div class="tab" onclick="switchTab('reports')">📈 Reportes</div>
+        </div>
+
+        <!-- Tab: Resumen Financiero -->
+        <div id="overview" class="tab-content active">
+            <h3 style="color: #ffffff; margin-bottom: 20px; font-size: 1.3em;">📊 Resumen Financiero</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                <!-- Total Ingresos -->
+                <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 20px; border-radius: 12px; border-left: 5px solid #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <p style="color: #065f46; font-weight: 600; font-size: 0.9em; margin-bottom: 8px;">💰 ENTRADAS (Ingresos)</p>
+                            <h3 id="totalIncome" style="color: #10b981; font-size: 2em; margin: 0;">$0.00</h3>
+                        </div>
+                        <div style="font-size: 3em; opacity: 0.2;">📈</div>
+                    </div>
+                </div>
+                
+                <!-- Total Gastos -->
+                <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); padding: 20px; border-radius: 12px; border-left: 5px solid #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <p style="color: #991b1b; font-weight: 600; font-size: 0.9em; margin-bottom: 8px;">💸 SALIDAS (Gastos)</p>
+                            <h3 id="totalExpenses" style="color: #ef4444; font-size: 2em; margin: 0;">$0.00</h3>
+                        </div>
+                        <div style="font-size: 3em; opacity: 0.2;">📉</div>
+                    </div>
+                </div>
+                
+                <!-- Balance Neto -->
+                <div id="balanceCard" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 20px; border-radius: 12px; border-left: 5px solid #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <p style="color: #1e3a8a; font-weight: 600; font-size: 0.9em; margin-bottom: 8px;">💎 BALANCE NETO</p>
+                            <h3 id="netProfit" style="color: #3b82f6; font-size: 2em; margin: 0;">$0.00</h3>
+                        </div>
+                        <div style="font-size: 3em; opacity: 0.2;">⚖️</div>
+                    </div>
+                </div>
+                
+                <!-- Rentabilidad -->
+                <div id="rentabilidadCard" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 12px; border-left: 5px solid #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <p style="color: #92400e; font-weight: 600; font-size: 0.9em; margin-bottom: 8px;">📊 RENTABILIDAD</p>
+                            <h3 id="rentabilidad" style="color: #f59e0b; font-size: 2em; margin: 0;">0%</h3>
+                        </div>
+                        <div style="font-size: 3em; opacity: 0.2;">💹</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comparativo Visual -->
+            <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
+                <h4 style="color: #374151; margin-bottom: 15px; text-align: center;">📈 Comparativo Ingresos vs Gastos</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center;">
+                    <!-- Barra de Ingresos -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #10b981; font-weight: 600;">Ingresos</span>
+                            <span id="ingresosPercentage" style="color: #10b981; font-weight: 600;">0%</span>
+                        </div>
+                        <div style="background: #e5e7eb; height: 30px; border-radius: 15px; overflow: hidden;">
+                            <div id="ingresosBar" style="background: linear-gradient(90deg, #10b981 0%, #059669 100%); height: 100%; width: 0%; transition: width 1s ease;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Barra de Gastos -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #ef4444; font-weight: 600;">Gastos</span>
+                            <span id="gastosPercentage" style="color: #ef4444; font-weight: 600;">0%</span>
+                        </div>
+                        <div style="background: #e5e7eb; height: 30px; border-radius: 15px; overflow: hidden;">
+                            <div id="gastosBar" style="background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%); height: 100%; width: 0%; transition: width 1s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Indicador de Salud Financiera -->
+                <div id="healthIndicator" style="margin-top: 25px; padding: 20px; border-radius: 10px; text-align: center;">
+                    <p style="font-size: 1.1em; font-weight: 600; margin: 0;"></p>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>📈 Ingresos vs Gastos</h3>
+                    <canvas id="incomeExpenseChart" class="chart-canvas"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>💰 Ingresos por Tipo</h3>
+                    <canvas id="incomeByTypeChart" class="chart-canvas"></canvas>
+                </div>
+            </div>
+
+            <div class="actions-grid">
+                <button class="btn btn-success" onclick="openPaymentModal()">
+                    💳 Registrar Pago
+                </button>
+                <button class="btn btn-danger" onclick="openExpenseModal()">
+                    💸 Registrar Gasto
+                </button>
+                <button class="btn btn-warning" onclick="generateMonthlyPayments()">
+                    📅 Generar Pagos Mensuales
+                </button>
+                <button class="btn btn-info" onclick="refreshFinancialData()">
+                    🔄 Actualizar
+                </button>
+            </div>
+            
+            <!-- Sección de Gestión de Gastos -->
+            <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); margin-top: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: #374151; margin: 0;">💸 Gestión de Gastos</h3>
+                    <button class="btn btn-danger" onclick="openExpenseModal()" style="padding: 10px 20px;">
+                        ➕ Nuevo Gasto
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="financial-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Descripción</th>
+                                <th>Categoría</th>
+                                <th>Monto</th>
+                                <th>Método</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentTransactionsTableBody">
+                            <tr>
+                                <td colspan="6" class="loading">Cargando gastos recientes...</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); font-weight: bold; border-top: 3px solid #10b981;">
+                                <td colspan="3" style="text-align: right; padding: 15px; font-size: 1.05em; color: #047857;">💰 TOTAL INGRESOS:</td>
+                                <td id="recentIncomeTotal" style="color: #047857; font-size: 1.15em; padding: 15px;">$0.00</td>
+                                <td colspan="2"></td>
+                            </tr>
+                            <tr style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); font-weight: bold; border-top: 3px solid #ef4444;">
+                                <td colspan="3" style="text-align: right; padding: 15px; font-size: 1.05em; color: #991b1b;">💸 TOTAL GASTOS:</td>
+                                <td id="recentExpensesTotal" style="color: #ef4444; font-size: 1.15em; padding: 15px;">$0.00</td>
+                                <td colspan="2"></td>
+                            </tr>
+                            <tr style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); font-weight: bold; border-top: 3px solid #2563eb;">
+                                <td colspan="3" style="text-align: right; padding: 15px; font-size: 1.05em; color: #1e3a8a;">⚖️ BALANCE NETO:</td>
+                                <td id="recentNetTotal" style="color: #2563eb; font-size: 1.15em; padding: 15px;">$0.00</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Transacciones (Ingresos + Gastos) -->
+        <div id="transactions" class="tab-content">
+            <div class="table-container">
+                <h3>💳 Todas las Transacciones (Ingresos y Gastos)</h3>
+                
+                <!-- Filtros -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <select id="transactionTypeFilter" onchange="filterTransactions()" style="padding: 8px 15px; border-radius: 8px; border: 2px solid #d1d5db; background: white; cursor: pointer;">
+                        <option value="">Todos los tipos</option>
+                        <option value="ingreso">💰 Solo Ingresos</option>
+                        <option value="gasto">💸 Solo Gastos</option>
+                    </select>
+                    
+                    <input type="month" id="transactionMonthFilter" onchange="filterTransactions()" style="padding: 8px 15px; border-radius: 8px; border: 2px solid #d1d5db; background: white; cursor: pointer;">
+                    
+                    <button onclick="clearTransactionFilters()" style="padding: 8px 15px; border-radius: 8px; border: 2px solid #3b82f6; background: #3b82f6; color: white; cursor: pointer; font-weight: 600;">
+                        ✖ Limpiar Filtros
+                    </button>
+                </div>
+                
+                <table class="financial-table">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Descripción / Jugador</th>
+                            <th>Concepto</th>
+                            <th>Monto</th>
+                            <th>Fecha</th>
+                            <th>Método/Categoría</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        <tr>
+                            <td colspan="7" class="loading">Cargando transacciones...</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); font-weight: bold; border-top: 3px solid #6b7280;">
+                            <td colspan="2" style="text-align: right; padding: 15px; font-size: 1.1em; color: #1f2937;">📊 TOTALES:</td>
+                            <td colspan="1" style="padding: 15px;">
+                                <div style="color: #10b981; font-size: 1em;">💰 Ingresos: <span id="footerTotalIncome">$0.00</span></div>
+                                <div style="color: #ef4444; font-size: 1em;">💸 Gastos: <span id="footerTotalExpenses">$0.00</span></div>
+                            </td>
+                            <td colspan="1" style="padding: 15px;">
+                                <div style="color: #3b82f6; font-size: 1.1em; font-weight: bold;">⚖️ Balance: <span id="footerNetBalance">$0.00</span></div>
+                            </td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Pendientes (Pagos y Gastos Recurrentes) -->
+        <div id="pending" class="tab-content">
+            <h3 style="color: #ffffff; margin-bottom: 20px; font-size: 1.3em;">⏰ Gastos y Pagos Recurrentes Programados</h3>
+            
+            <!-- Botón para agregar nuevo gasto recurrente -->
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-danger" onclick="openRecurringExpenseModal()" style="padding: 12px 25px;">
+                    ➕ Nuevo Gasto Recurrente
+                </button>
+            </div>
+            
+            <!-- Gastos Recurrentes Programados -->
+            <div class="table-container">
+                <h3>💸 Gastos Recurrentes Configurados</h3>
+                <table class="financial-table">
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Monto</th>
+                            <th>Frecuencia</th>
+                            <th>Día del Mes</th>
+                            <th>Próxima Ejecución</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recurringExpensesTableBody">
+                        <tr>
+                            <td colspan="8" class="loading">Cargando gastos recurrentes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Gastos Pendientes de Confirmación -->
+            <div class="table-container" style="margin-top: 30px;">
+                <h3>⏰ Gastos Pendientes de Confirmación</h3>
+                <table class="financial-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha Generada</th>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Monto</th>
+                            <th>Método Pago</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingExpensesTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Cargando gastos pendientes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Reportes -->
+        <div id="reports" class="tab-content">
+            <div class="actions-grid">
+                <button class="btn btn-primary" onclick="generateMonthlyReport()">
+                    📊 Reporte Mensual
+                </button>
+                <button class="btn btn-info" onclick="generateYearlyReport()">
+                    📈 Reporte Anual
+                </button>
+                <button class="btn btn-success" onclick="exportFinancialData()">
+                    📤 Exportar Datos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para registrar pago -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💳 Registrar Pago</h2>
+                <span class="close" onclick="closePaymentModal()">&times;</span>
+            </div>
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label for="paymentPlayer">Jugador *</label>
+                    <select id="paymentPlayer" required>
+                        <option value="">Seleccionar jugador...</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="paymentType">Tipo de Pago *</label>
+                        <select id="paymentType" required>
+                            <option value="Mensualidad">Mensualidad</option>
+                            <option value="Matrícula">Matrícula</option>
+                            <option value="Torneo">Torneo</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentAmount">Monto *</label>
+                        <input type="number" id="paymentAmount" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="paymentDate">Fecha *</label>
+                        <input type="date" id="paymentDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentMethod">Método de Pago</label>
+                        <select id="paymentMethod">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Tarjeta">Tarjeta</option>
+                            <option value="Cheque">Cheque</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="paymentReference">Referencia</label>
+                    <input type="text" id="paymentReference" placeholder="Número de referencia o comprobante">
+                </div>
+                <div class="form-group">
+                    <label for="paymentObservations">Observaciones</label>
+                    <textarea id="paymentObservations" rows="3"></textarea>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn" onclick="closePaymentModal()" style="background: #95a5a6; color: white; margin-right: 10px;">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        Registrar Pago
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para registrar gasto -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💸 Registrar Gasto</h2>
+                <span class="close" onclick="closeExpenseModal()">&times;</span>
+            </div>
+            <form id="expenseForm">
+                <div class="form-group">
+                    <label for="expenseDescription">Descripción *</label>
+                    <input type="text" id="expenseDescription" required placeholder="Descripción del gasto">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expenseAmount">Monto *</label>
+                        <input type="number" id="expenseAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseCategory">Categoría *</label>
+                        <select id="expenseCategory" required>
+                            <option value="">Seleccionar categoría...</option>
+                            <option value="Equipamiento">Equipamiento</option>
+                            <option value="Mantenimiento">Mantenimiento</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Servicios">Servicios</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expenseDate">Fecha *</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseMethod">Método de Pago</label>
+                        <select id="expenseMethod">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia">Transferencia</option>
+                            <option value="Tarjeta">Tarjeta</option>
+                            <option value="Cheque">Cheque</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="expenseObservations">Observaciones</label>
+                    <textarea id="expenseObservations" rows="3"></textarea>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn" onclick="closeExpenseModal()" style="background: #95a5a6; color: white; margin-right: 10px;">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        Registrar Gasto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para crear gasto recurrente -->
+    <div id="recurringExpenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔄 Crear Gasto Recurrente</h2>
+                <span class="close" onclick="closeRecurringExpenseModal()">&times;</span>
+            </div>
+            <form id="recurringExpenseForm">
+                <div class="form-group">
+                    <label for="recExpenseDescription">Descripción *</label>
+                    <input type="text" id="recExpenseDescription" required placeholder="Ej: Arriendo del campo">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recExpenseAmount">Monto *</label>
+                        <input type="number" id="recExpenseAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="recExpenseCategory">Categoría *</label>
+                        <select id="recExpenseCategory" required>
+                            <option value="">Seleccionar categoría...</option>
+                            <option value="Arriendo">Arriendo</option>
+                            <option value="Equipamiento">Equipamiento</option>
+                            <option value="Mantenimiento">Mantenimiento</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Servicios">Servicios</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recExpenseFrequency">Frecuencia *</label>
+                        <select id="recExpenseFrequency" required>
+                            <option value="monthly">Mensual</option>
+                            <option value="biweekly">Quincenal</option>
+                            <option value="weekly">Semanal</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="recExpenseDayOfMonth">Día del Mes *</label>
+                        <input type="number" id="recExpenseDayOfMonth" min="1" max="31" required placeholder="Ej: 1, 5, 15">
+                        <small style="color: #6b7280; font-size: 0.85em;">Día en que se generará el gasto automáticamente</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="recExpenseMethod">Método de Pago *</label>
+                    <select id="recExpenseMethod" required>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Tarjeta">Tarjeta</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="recExpenseObservations">Observaciones</label>
+                    <textarea id="recExpenseObservations" rows="3" placeholder="Notas adicionales sobre este gasto recurrente"></textarea>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn" onclick="closeRecurringExpenseModal()" style="background: #95a5a6; color: white; margin-right: 10px;">
+                        ❌ Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        💾 Crear Gasto Recurrente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let incomeExpenseChart, incomeByTypeChart;
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, function(char) {
+                const entities = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                };
+                return entities[char] || char;
+            });
+        }
+
+        // Inicializar página
+        // Función de navegación directa - abre nueva ventana directamente
+        function navigateTo(section) {
+            try {
+                // Si ya estamos en la sección, no hacer nada
+                if (section === 'financial') {
+                    return;
+                }
+                
+                console.log('Navegando a:', section);
+                
+                // Abrir nueva ventana directamente
+                switch(section) {
+                    case 'dashboard':
+                        google.script.run.showMainDashboard();
+                        break;
+                    case 'players':
+                        google.script.run.showPlayersManager();
+                        break;
+                    case 'families':
+                        google.script.run.showFamilyGroupsManager();
+                        break;
+                    case 'approvals':
+                        google.script.run.showApprovalsManager();
+                        break;
+                    case 'historic':
+                        google.script.run.showHistoricPlayersManager();
+                        break;
+                    case 'config':
+                        google.script.run.showSystemConfig();
+                        break;
+                }
+            } catch (error) {
+                console.error('Error navegando:', error);
+            }
+        }
+
+        // Función para cerrar ventana
+        
+        // Global Loading Functions
+        function showLoading(message = 'Cargando...') {
+            const loading = document.getElementById('globalLoading');
+            const loadingText = loading.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'none';
+        }
+        function closeWindow() {
+            try {
+                google.script.host.close();
+            } catch (error) {
+                console.error('Error cerrando ventana:', error);
+            }
+        }
+
+        // Hacer las funciones globales para que estén disponibles en todas las ventanas
+        window.navigateTo = navigateTo;
+        window.closeWindow = closeWindow;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Primero asegurar que las hojas financieras existan
+            ensureFinancialSheets();
+            // Luego cargar datos
+            loadFinancialData();
+            initializeCharts();
+            setupEventListeners();
+            
+            // Cargar gastos recientes en el resumen
+            loadRecentExpenses();
+        });
+        
+        // Asegurar que las hojas financieras existan
+        function ensureFinancialSheets() {
+            try {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('✅ Hojas financieras verificadas:', result);
+                        if (result && result.createdSheets && result.createdSheets.length > 0) {
+                            console.log('📝 Hojas creadas:', result.createdSheets.join(', '));
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.log('⚠️ No se pudieron verificar hojas financieras:', error);
+                    })
+                    .ensureFinancialSheetsExist();
+            } catch (error) {
+                console.log('⚠️ Error al verificar hojas:', error);
+            }
+        }
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            document.getElementById('paymentForm').addEventListener('submit', savePayment);
+            document.getElementById('expenseForm').addEventListener('submit', saveExpense);
+            
+            // Establecer fecha actual por defecto
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('paymentDate').value = today;
+            document.getElementById('expenseDate').value = today;
+        }
+
+        // Cambiar tab
+        function switchTab(tabName) {
+            // Ocultar todos los tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remover clase active de todos los tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Mostrar tab seleccionado
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activar tab en la navegación
+            event.target.classList.add('active');
+            
+            // Cargar datos específicos del tab
+            switch(tabName) {
+                case 'transactions':
+                    loadAllTransactions();
+                    break;
+                case 'pending':
+                    loadRecurringExpenses();
+                    loadPendingExpenses();
+                    break;
+                case 'overview':
+                    loadRecentExpenses();
+                    break;
+            }
+        }
+
+        // Cargar datos financieros
+        function loadFinancialData() {
+            try {
+                console.log('Cargando datos financieros...');
+                
+                // Inicializar campos con 0 mientras se cargan los datos
+                document.getElementById('totalIncome').textContent = '$0.00';
+                document.getElementById('totalExpenses').textContent = '$0.00';
+                document.getElementById('netProfit').textContent = '$0.00';
+                document.getElementById('rentabilidad').textContent = '0%';
+                
+                // Cargar todos los pagos y gastos para el resumen detallado
+                loadAllDataForSummary();
+                
+                // También cargar resumen financiero básico para las gráficas
+                google.script.run
+                    .withSuccessHandler(function(data) {
+                        console.log('Resumen financiero básico recibido:', data);
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error obteniendo resumen financiero:', error);
+                    })
+                    .getFinancialSummary('current_month');
+
+                // Cargar datos de gráficas
+                google.script.run
+                    .withSuccessHandler(function(data) {
+                        console.log('Datos de gráficas recibidos:', data);
+                        updateCharts(data);
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error obteniendo datos de gráficas:', error);
+                    })
+                    .getFinancialChartData('last_6_months');
+
+                // Cargar jugadores para el formulario de pagos
+                loadPlayersForPayment();
+
+            } catch (error) {
+                console.error('Error en loadFinancialData:', error);
+            }
+        }
+        
+        // Cargar todos los datos para el resumen detallado
+        function loadAllDataForSummary() {
+            console.log('📊 Cargando datos completos para resumen...');
+            
+            let totalIngresos = 0;
+            let totalGastos = 0;
+            
+                    // Cargar pagos
+            google.script.run
+                .withSuccessHandler(function(payments) {
+                    console.log('📥 Pagos recibidos:', payments ? payments.length : 0, 'registros');
+                    console.log('📋 Datos completos de pagos:', payments);
+                    
+                    if (payments && payments.length > 0) {
+                        totalIngresos = payments.reduce((sum, payment) => {
+                            const monto = parseFloat(payment.Monto) || 0;
+                            const estado = payment.Estado || '';
+                            console.log('💰 Pago:', payment['ID Pago'], 'Monto:', monto, 'Estado:', estado);
+                            return sum + (estado === 'Pagado' ? monto : 0);
+                        }, 0);
+                    }
+                    
+                    console.log('✅ Total ingresos calculado:', totalIngresos);
+                    
+                    // Ahora cargar gastos
+                    google.script.run
+                        .withSuccessHandler(function(expenses) {
+                            console.log('📥 Gastos recibidos:', expenses ? expenses.length : 0, 'registros');
+                            
+                            if (expenses && expenses.length > 0) {
+                                totalGastos = expenses.reduce((sum, expense) => {
+                                    const monto = parseFloat(expense.Monto) || 0;
+                                    console.log('💸 Gasto:', expense['ID Gasto'], 'Monto:', monto);
+                                    return sum + monto;
+                                }, 0);
+                            }
+                            
+                            console.log('✅ Total gastos calculado:', totalGastos);
+                            
+                            // Actualizar resumen completo
+                            updateOverviewSummary(totalIngresos, totalGastos);
+                        })
+                        .withFailureHandler(function(error) {
+                            console.error('❌ Error cargando gastos:', error);
+                            // Actualizar solo con ingresos
+                            updateOverviewSummary(totalIngresos, 0);
+                        })
+                        .getAllExpenses();
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error cargando pagos:', error);
+                    // Si falla, actualizar con 0s
+                    updateOverviewSummary(0, 0);
+                })
+                .getAllPayments();
+        }
+        
+        // Actualizar resumen de la pestaña Overview
+        function updateOverviewSummary(totalIngresos, totalGastos) {
+            console.log('📊 Actualizando resumen de overview:', { totalIngresos, totalGastos });
+            
+            // Calcular balance y rentabilidad
+            const balanceNeto = totalIngresos - totalGastos;
+            const rentabilidad = totalIngresos > 0 ? ((balanceNeto / totalIngresos) * 100) : 0;
+            
+            // Actualizar valores principales
+            document.getElementById('totalIncome').textContent = '$' + totalIngresos.toFixed(2);
+            document.getElementById('totalExpenses').textContent = '$' + totalGastos.toFixed(2);
+            document.getElementById('netProfit').textContent = '$' + balanceNeto.toFixed(2);
+            document.getElementById('rentabilidad').textContent = rentabilidad.toFixed(1) + '%';
+            
+            console.log('💰 Campos actualizados:', {
+                ingresos: '$' + totalIngresos.toFixed(2),
+                gastos: '$' + totalGastos.toFixed(2),
+                balance: '$' + balanceNeto.toFixed(2),
+                rentabilidad: rentabilidad.toFixed(1) + '%'
+            });
+            
+            // Actualizar colores del balance según si es positivo o negativo
+            const balanceCard = document.getElementById('balanceCard');
+            const balanceElement = document.getElementById('netProfit');
+            
+            if (balanceNeto >= 0) {
+                balanceCard.style.background = 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)';
+                balanceCard.style.borderLeftColor = '#10b981';
+                balanceElement.style.color = '#10b981';
+            } else {
+                balanceCard.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
+                balanceCard.style.borderLeftColor = '#ef4444';
+                balanceElement.style.color = '#ef4444';
+            }
+            
+            // Actualizar color de rentabilidad
+            const rentabilidadCard = document.getElementById('rentabilidadCard');
+            const rentabilidadElement = document.getElementById('rentabilidad');
+            
+            if (rentabilidad >= 50) {
+                rentabilidadCard.style.background = 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)';
+                rentabilidadCard.style.borderLeftColor = '#10b981';
+                rentabilidadElement.style.color = '#10b981';
+            } else if (rentabilidad >= 0) {
+                rentabilidadCard.style.background = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+                rentabilidadCard.style.borderLeftColor = '#f59e0b';
+                rentabilidadElement.style.color = '#f59e0b';
+            } else {
+                rentabilidadCard.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
+                rentabilidadCard.style.borderLeftColor = '#ef4444';
+                rentabilidadElement.style.color = '#ef4444';
+            }
+            
+            // Calcular porcentajes para barras comparativas
+            const total = totalIngresos + totalGastos;
+            const ingresosPercent = total > 0 ? (totalIngresos / total) * 100 : 0;
+            const gastosPercent = total > 0 ? (totalGastos / total) * 100 : 0;
+            
+            // Actualizar barras con animación
+            setTimeout(() => {
+                document.getElementById('ingresosBar').style.width = ingresosPercent + '%';
+                document.getElementById('gastosBar').style.width = gastosPercent + '%';
+                document.getElementById('ingresosPercentage').textContent = ingresosPercent.toFixed(1) + '%';
+                document.getElementById('gastosPercentage').textContent = gastosPercent.toFixed(1) + '%';
+            }, 300);
+            
+            // Indicador de salud financiera
+            const healthIndicator = document.getElementById('healthIndicator');
+            let healthMessage = '';
+            let healthColor = '';
+            
+            if (balanceNeto > totalIngresos * 0.3) {
+                healthMessage = '🟢 EXCELENTE - Alta rentabilidad y flujo de caja saludable';
+                healthColor = '#d1fae5';
+            } else if (balanceNeto > 0) {
+                healthMessage = '🟡 BUENO - Balance positivo con margen de mejora';
+                healthColor = '#fef3c7';
+            } else if (balanceNeto === 0) {
+                healthMessage = '🔵 EQUILIBRADO - Ingresos iguales a gastos';
+                healthColor = '#dbeafe';
+            } else {
+                healthMessage = '🔴 ALERTA - Gastos superan los ingresos';
+                healthColor = '#fee2e2';
+            }
+            
+            healthIndicator.style.background = healthColor;
+            healthIndicator.querySelector('p').textContent = healthMessage;
+            
+            console.log('✅ Resumen de overview actualizado');
+        }
+
+        // Actualizar resumen financiero
+        function updateFinancialSummary(data) {
+            console.log('Actualizando resumen financiero:', data);
+            
+            if (data) {
+                // Asegurar que los valores sean números válidos
+                const totalIncome = typeof data.totalIncome === 'number' ? data.totalIncome : 0;
+                const totalExpenses = typeof data.totalExpenses === 'number' ? data.totalExpenses : 0;
+                const netProfit = typeof data.netProfit === 'number' ? data.netProfit : (totalIncome - totalExpenses);
+                
+                console.log('✅ Datos financieros procesados:', {
+                    totalIncome: totalIncome,
+                    totalExpenses: totalExpenses,
+                    netProfit: netProfit
+                });
+                
+                document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+                document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
+                document.getElementById('netProfit').textContent = formatCurrency(netProfit);
+                
+                // Cambiar color según ganancia
+                const profitElement = document.getElementById('netProfit').parentElement;
+                if (netProfit >= 0) {
+                    profitElement.style.borderLeftColor = '#27ae60';
+                } else {
+                    profitElement.style.borderLeftColor = '#e74c3c';
+                }
+                
+                console.log('✅ Contadores financieros actualizados exitosamente');
+                
+                // Mostrar mensaje informativo si no hay movimientos
+                if (totalIncome === 0 && totalExpenses === 0) {
+                    showInfoMessage('💡 Sistema inicializado. Los datos financieros se actualizarán cuando registres pagos y gastos.');
+                }
+            } else {
+                console.error('❌ No se recibieron datos financieros (data es null/undefined)');
+                // No mostrar error si simplemente no hay datos, solo inicializar en $0
+                document.getElementById('totalIncome').textContent = formatCurrency(0);
+                document.getElementById('totalExpenses').textContent = formatCurrency(0);
+                document.getElementById('netProfit').textContent = formatCurrency(0);
+            }
+        }
+        
+        // Mostrar mensaje informativo
+        function showInfoMessage(message) {
+            // Remover mensajes anteriores
+            const existingInfo = document.querySelectorAll('.info-message');
+            existingInfo.forEach(info => info.remove());
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'info-message';
+            infoDiv.style.cssText = `
+                background: #e0f2fe;
+                color: #0c4a6e;
+                padding: 15px;
+                border-radius: 10px;
+                margin: 20px 0;
+                border: 1px solid #7dd3fc;
+                text-align: center;
+                font-weight: 500;
+            `;
+            infoDiv.textContent = message;
+            const container = document.querySelector('.container');
+            const firstStatGrid = document.querySelector('.stats-grid');
+            if (container && firstStatGrid) {
+                container.insertBefore(infoDiv, firstStatGrid);
+            }
+            
+            // Auto-ocultar después de 6 segundos
+            setTimeout(() => infoDiv.remove(), 6000);
+        }
+
+        // Inicializar gráficas
+        function initializeCharts() {
+            // Gráfica de ingresos vs gastos
+            const incomeExpenseCtx = document.getElementById('incomeExpenseChart').getContext('2d');
+            incomeExpenseChart = new Chart(incomeExpenseCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Ingresos',
+                        data: [],
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Gastos',
+                        data: [],
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfica de ingresos por tipo
+            const incomeByTypeCtx = document.getElementById('incomeByTypeChart').getContext('2d');
+            incomeByTypeChart = new Chart(incomeByTypeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#3498db', '#e74c3c', '#f39c12', '#27ae60',
+                            '#9b59b6', '#1abc9c', '#34495e', '#e67e22'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actualizar gráficas
+        function updateCharts(data) {
+            console.log('🎨 Actualizando gráficas con datos:', data);
+            
+            // Actualizar gráfica de ingresos vs gastos
+            if (data && incomeExpenseChart) {
+                incomeExpenseChart.data.labels = data.months || [];
+                incomeExpenseChart.data.datasets[0].data = data.income || [];
+                incomeExpenseChart.data.datasets[1].data = data.expenses || [];
+                incomeExpenseChart.update();
+                console.log('✅ Gráfica de ingresos/gastos actualizada');
+            }
+            
+            // Actualizar gráfica de ingresos por tipo (pie chart)
+            if (data && incomeByTypeChart && data.incomeByType) {
+                const types = data.incomeByType;
+                const labels = [];
+                const values = [];
+                
+                // Mapear los tipos de ingreso
+                if (types.enrollment && types.enrollment > 0) {
+                    labels.push('Matrículas');
+                    values.push(types.enrollment);
+                }
+                if (types.monthly && types.monthly > 0) {
+                    labels.push('Mensualidades');
+                    values.push(types.monthly);
+                }
+                if (types.extraCharge && types.extraCharge > 0) {
+                    labels.push('Cobros Extra');
+                    values.push(types.extraCharge);
+                }
+                if (types.other && types.other > 0) {
+                    labels.push('Otros');
+                    values.push(types.other);
+                }
+                
+                console.log('💰 Ingresos por tipo:', { labels, values });
+                
+                incomeByTypeChart.data.labels = labels;
+                incomeByTypeChart.data.datasets[0].data = values;
+                incomeByTypeChart.update();
+                console.log('✅ Gráfica de ingresos por tipo actualizada');
+            } else if (incomeByTypeChart) {
+                // Si no hay datos, mostrar vacío
+                console.log('⚠️ No hay datos de incomeByType');
+                incomeByTypeChart.data.labels = ['Sin datos'];
+                incomeByTypeChart.data.datasets[0].data = [1];
+                incomeByTypeChart.update();
+            }
+        }
+
+        // Actualizar gráficas desde el servidor
+        function updateChartsFromServer() {
+            try {
+                console.log('Actualizando gráficas desde el servidor...');
+                google.script.run
+                    .withSuccessHandler(function(data) {
+                        console.log('Datos de gráficas recibidos:', data);
+                        updateCharts(data);
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error obteniendo datos de gráficas:', error);
+                        showError('Error actualizando gráficas: ' + error.toString());
+                    })
+                    .getFinancialChartData('last_6_months');
+            } catch (error) {
+                console.error('Error en updateChartsFromServer:', error);
+                showError('Error actualizando gráficas: ' + error.message);
+            }
+        }
+
+        // Cargar jugadores para formulario de pagos
+        function loadPlayersForPayment() {
+            try {
+                google.script.run
+                    .withSuccessHandler(function(players) {
+                        const select = document.getElementById('paymentPlayer');
+                        select.innerHTML = '<option value="">Seleccionar jugador...</option>';
+                        
+                        players.forEach(player => {
+                            if (player.Estado === 'Activo') {
+                                const option = document.createElement('option');
+                                option.value = player.ID;
+                                option.textContent = `${player.Nombre} ${player.Apellidos} - ${player.Categoría}`;
+                                select.appendChild(option);
+                            }
+                        });
+                    })
+                    .withFailureHandler(showError)
+                    .getAllPlayers();
+            } catch (error) {
+                showError('Error cargando jugadores: ' + error.message);
+            }
+        }
+
+        // Abrir modal de pago
+        function openPaymentModal() {
+            document.getElementById('paymentModal').style.display = 'block';
+        }
+
+        // Cerrar modal de pago
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            document.getElementById('paymentForm').reset();
+        }
+
+        // Guardar pago
+        function savePayment(event) {
+            event.preventDefault();
+            
+            const paymentData = {
+                playerId: document.getElementById('paymentPlayer').value,
+                type: document.getElementById('paymentType').value,
+                amount: parseFloat(document.getElementById('paymentAmount').value),
+                date: document.getElementById('paymentDate').value,
+                method: document.getElementById('paymentMethod').value,
+                reference: document.getElementById('paymentReference').value,
+                observations: document.getElementById('paymentObservations').value,
+                state: 'Pagado'
+            };
+
+            try {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('Pago registrado exitosamente:', result);
+                        showSuccess('Pago registrado exitosamente');
+                        closePaymentModal();
+                        
+                        // Limpiar formulario
+                        document.getElementById('paymentForm').reset();
+                        
+                        // Actualizar datos financieros y gráficas
+                        console.log('Actualizando datos financieros...');
+                        loadFinancialData();
+                        
+                        // Actualizar tab de pagos si está activo
+                        if (document.getElementById('payments').classList.contains('active')) {
+                            loadPayments();
+                        }
+                        
+                        // Forzar actualización de gráficas
+                        setTimeout(() => {
+                            console.log('Forzando actualización de gráficas...');
+                            updateChartsFromServer();
+                        }, 1000);
+                        
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error registrando pago:', error);
+                        showError('Error registrando pago: ' + error.toString());
+                    })
+                    .recordPayment(paymentData);
+            } catch (error) {
+                console.error('Error en savePayment:', error);
+                showError('Error registrando pago: ' + error.message);
+            }
+        }
+
+        // Abrir modal de gasto
+        function openExpenseModal() {
+            document.getElementById('expenseModal').style.display = 'block';
+        }
+
+        // Cerrar modal de gasto
+        function closeExpenseModal() {
+            document.getElementById('expenseModal').style.display = 'none';
+            document.getElementById('expenseForm').reset();
+        }
+
+        // Guardar gasto
+        function saveExpense(event) {
+            event.preventDefault();
+            
+            const expenseData = {
+                description: document.getElementById('expenseDescription').value,
+                amount: parseFloat(document.getElementById('expenseAmount').value),
+                date: document.getElementById('expenseDate').value,
+                category: document.getElementById('expenseCategory').value,
+                method: document.getElementById('expenseMethod').value,
+                observations: document.getElementById('expenseObservations').value
+            };
+
+            try {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('Gasto registrado exitosamente:', result);
+                        showSuccess('Gasto registrado exitosamente');
+                        closeExpenseModal();
+                        
+                        // Limpiar formulario
+                        document.getElementById('expenseForm').reset();
+                        
+                        // Actualizar datos financieros y gráficas
+                        console.log('Actualizando datos financieros...');
+                        loadFinancialData();
+                        
+                        // Actualizar tab de gastos si está activo
+                        if (document.getElementById('expenses').classList.contains('active')) {
+                            loadExpenses();
+                        }
+                        
+                        // Forzar actualización de gráficas
+                        setTimeout(() => {
+                            console.log('Forzando actualización de gráficas...');
+                            updateChartsFromServer();
+                        }, 1000);
+                        
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error registrando gasto:', error);
+                        showError('Error registrando gasto: ' + error.toString());
+                    })
+                    .recordExpense(expenseData);
+            } catch (error) {
+                console.error('Error en saveExpense:', error);
+                showError('Error registrando gasto: ' + error.message);
+            }
+        }
+
+        // Cargar pagos
+        function loadPayments() {
+            console.log('💳 Cargando pagos...');
+            document.getElementById('paymentsTableBody').innerHTML = '<tr><td colspan="7" class="loading">Cargando pagos...</td></tr>';
+            
+            google.script.run
+                .withSuccessHandler(function(payments) {
+                    console.log('📥 Pagos recibidos:', payments);
+                    renderPayments(payments);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error cargando pagos:', error);
+                    document.getElementById('paymentsTableBody').innerHTML = 
+                        '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #e74c3c;">Error cargando pagos: ' + error.toString() + '</td></tr>';
+                })
+                .getAllPayments();
+        }
+        
+        function renderPayments(payments) {
+            const tbody = document.getElementById('paymentsTableBody');
+            
+            if (!payments || payments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">No hay pagos registrados</td></tr>';
+                document.getElementById('totalPaymentsAmount').textContent = '$0.00';
+                return;
+            }
+            
+            let totalIngresos = 0;
+            
+            tbody.innerHTML = payments.map(payment => {
+                const fecha = payment.Fecha ? new Date(payment.Fecha).toLocaleDateString('es-ES') : 'N/A';
+                const monto = parseFloat(payment.Monto) || 0;
+                const estado = payment.Estado || 'Pendiente';
+                const estadoClass = estado === 'Pagado' ? 'status-paid' : 'status-pending';
+                
+                // Sumar al total solo si está pagado
+                if (estado === 'Pagado') {
+                    totalIngresos += monto;
+                }
+                
+                return `
+                    <tr>
+                        <td>${payment['ID Pago'] || payment.ID || 'N/A'}</td>
+                        <td>${payment['Jugador Nombre'] || payment['Jugador ID'] || 'N/A'}</td>
+                        <td>${payment.Tipo || 'N/A'}</td>
+                        <td style="font-weight: bold; color: ${estado === 'Pagado' ? '#10b981' : '#ef4444'};">
+                            $${monto.toFixed(2)}
+                        </td>
+                        <td>${fecha}</td>
+                        <td><span class="${estadoClass}">${estado}</span></td>
+                        <td>${payment['Método Pago'] || payment.Método || 'N/A'}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Actualizar total
+            document.getElementById('totalPaymentsAmount').textContent = '$' + totalIngresos.toFixed(2);
+            
+            console.log('✅ Tabla de pagos renderizada con', payments.length, 'registros');
+            console.log('💰 Total ingresos (pagados):', '$' + totalIngresos.toFixed(2));
+        }
+        
+
+        // Cargar gastos
+        function loadExpenses() {
+            console.log('💸 Cargando gastos...');
+            document.getElementById('expensesTableBody').innerHTML = '<tr><td colspan="6" class="loading">Cargando gastos...</td></tr>';
+            
+            google.script.run
+                .withSuccessHandler(function(expenses) {
+                    console.log('📥 Gastos recibidos:', expenses);
+                    renderExpenses(expenses);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error cargando gastos:', error);
+                    document.getElementById('expensesTableBody').innerHTML = 
+                        '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #e74c3c;">Error cargando gastos: ' + error.toString() + '</td></tr>';
+                })
+                .getAllExpenses();
+        }
+        
+        function renderExpenses(expenses) {
+            const tbody = document.getElementById('expensesTableBody');
+            
+            if (!expenses || expenses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">No hay gastos registrados</td></tr>';
+                document.getElementById('totalExpensesAmount').textContent = '$0.00';
+                return;
+            }
+            
+            let totalGastos = 0;
+            
+            tbody.innerHTML = expenses.map(expense => {
+                const fecha = expense.Fecha ? new Date(expense.Fecha).toLocaleDateString('es-ES') : 'N/A';
+                const monto = parseFloat(expense.Monto) || 0;
+                
+                // Sumar al total
+                totalGastos += monto;
+                
+                return `
+                    <tr>
+                        <td>${expense['ID Gasto'] || expense.ID || 'N/A'}</td>
+                        <td>${expense.Descripción || 'N/A'}</td>
+                        <td style="font-weight: bold; color: #ef4444;">$${monto.toFixed(2)}</td>
+                        <td>${fecha}</td>
+                        <td>${expense.Categoría || 'Otro'}</td>
+                        <td>${expense['Método de Pago'] || expense.Método || 'N/A'}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Actualizar total
+            document.getElementById('totalExpensesAmount').textContent = '$' + totalGastos.toFixed(2);
+            
+            console.log('✅ Tabla de gastos renderizada con', expenses.length, 'registros');
+            console.log('💸 Total gastos:', '$' + totalGastos.toFixed(2));
+        }
+
+        // Cargar pagos pendientes
+        function loadPendingPayments() {
+            try {
+                google.script.run
+                    .withSuccessHandler(function(playersWithPending) {
+                        const tbody = document.getElementById('pendingTableBody');
+                        
+                        if (playersWithPending.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #7f8c8d;">No hay pagos pendientes</td></tr>';
+                            return;
+                        }
+
+                        tbody.innerHTML = playersWithPending.map(item => {
+                            const player = item.player;
+                            const account = item.accountStatus;
+                            
+                            return `
+                                <tr>
+                                    <td>${player.Nombre} ${player.Apellidos}</td>
+                                    <td>${player.Categoría}</td>
+                                    <td>${formatCurrency(account.expectedAmount)}</td>
+                                    <td>${formatCurrency(account.paidAmount)}</td>
+                                    <td>${formatCurrency(account.pendingAmount)}</td>
+                                    <td><span class="status-badge ${account.isUpToDate ? 'status-paid' : 'status-pending'}">${account.isUpToDate ? 'Al día' : 'Pendiente'}</span></td>
+                                </tr>
+                            `;
+                        }).join('');
+                    })
+                    .withFailureHandler(showError)
+                    .getPlayersWithPendingPayments();
+            } catch (error) {
+                showError('Error cargando pagos pendientes: ' + error.message);
+            }
+        }
+
+        // Generar pagos mensuales
+        function generateMonthlyPayments() {
+            if (confirm('¿Está seguro de generar los pagos mensuales para todos los jugadores activos?')) {
+                try {
+                    google.script.run
+                        .withSuccessHandler(function(count) {
+                            showSuccess(`${count} pagos mensuales generados exitosamente`);
+                            loadFinancialData();
+                        })
+                        .withFailureHandler(showError)
+                        .generateMonthlyPayments();
+                } catch (error) {
+                    showError('Error generando pagos mensuales: ' + error.message);
+                }
+            }
+        }
+
+        // Generar reporte mensual
+        function generateMonthlyReport() {
+            alert('Función de reporte mensual en desarrollo');
+        }
+
+        // Generar reporte anual
+        function generateYearlyReport() {
+            alert('Función de reporte anual en desarrollo');
+        }
+
+        // Exportar datos financieros
+        function exportFinancialData() {
+            alert('Función de exportación en desarrollo');
+        }
+
+        // Actualizar datos financieros
+        function refreshFinancialData() {
+            loadFinancialData();
+        }
+
+        // Cargar todas las transacciones (Ingresos + Gastos)
+        function loadAllTransactions() {
+            console.log('💳 Cargando todas las transacciones...');
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    console.log('✅ Transacciones cargadas:', result);
+                    renderAllTransactions(result.payments, result.expenses);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error cargando transacciones:', error);
+                    document.getElementById('transactionsTableBody').innerHTML = '<tr><td colspan="7" style="color: #ef4444;">Error cargando transacciones</td></tr>';
+                })
+                .getAllTransactions();
+        }
+        
+        // Renderizar todas las transacciones
+        function renderAllTransactions(payments, expenses) {
+            const tbody = document.getElementById('transactionsTableBody');
+            
+            // Combinar pagos y gastos
+            const allTransactions = [];
+            
+            // Agregar pagos como ingresos
+            if (payments && payments.length > 0) {
+                payments.forEach(p => {
+                    allTransactions.push({
+                        tipo: 'ingreso',
+                        descripcion: p.jugador || 'N/A',
+                        concepto: p.tipo || 'Pago',
+                        monto: parseFloat(p.monto) || 0,
+                        fecha: p.fecha || '',
+                        metodo: p.metodo || 'N/A',
+                        estado: p.estado || 'Pagado'
+                    });
+                });
+            }
+            
+            // Agregar gastos
+            if (expenses && expenses.length > 0) {
+                expenses.forEach(e => {
+                    allTransactions.push({
+                        tipo: 'gasto',
+                        descripcion: e.descripcion || 'N/A',
+                        concepto: e.categoria || 'Gasto',
+                        monto: parseFloat(e.monto) || 0,
+                        fecha: e.fecha || '',
+                        metodo: e.metodoPago || 'N/A',
+                        estado: 'Procesado'
+                    });
+                });
+            }
+            
+            // Ordenar por fecha (más reciente primero)
+            allTransactions.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            
+            // Calcular totales
+            let totalIngresos = 0;
+            let totalGastos = 0;
+            
+            // Renderizar tabla
+            if (allTransactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #6b7280;">No hay transacciones registradas</td></tr>';
+            } else {
+                tbody.innerHTML = allTransactions.map(t => {
+                    const esIngreso = t.tipo === 'ingreso';
+                    
+                    if (esIngreso) {
+                        totalIngresos += t.monto;
+                    } else {
+                        totalGastos += t.monto;
+                    }
+                    
+                    const tipoStyle = esIngreso 
+                        ? 'background: #d1fae5; color: #065f46; padding: 6px 12px; border-radius: 8px; font-weight: 600;'
+                        : 'background: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 8px; font-weight: 600;';
+                    
+                    const montoStyle = esIngreso ? 'color: #10b981;' : 'color: #ef4444;';
+                    
+                    return `
+                        <tr>
+                            <td><span style="${tipoStyle}">${esIngreso ? '💰 Ingreso' : '💸 Gasto'}</span></td>
+                            <td>${t.descripcion}</td>
+                            <td>${t.concepto}</td>
+                            <td style="${montoStyle} font-weight: 600;">${formatCurrency(t.monto)}</td>
+                            <td>${t.fecha}</td>
+                            <td>${t.metodo}</td>
+                            <td><span class="status-paid">${t.estado}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            // Actualizar totales del footer
+            document.getElementById('footerTotalIncome').textContent = formatCurrency(totalIngresos);
+            document.getElementById('footerTotalExpenses').textContent = formatCurrency(totalGastos);
+            document.getElementById('footerNetBalance').textContent = formatCurrency(totalIngresos - totalGastos);
+        }
+        
+        // Filtrar transacciones
+        function filterTransactions() {
+            const tipoFiltro = document.getElementById('transactionTypeFilter').value;
+            const mesFiltro = document.getElementById('transactionMonthFilter').value;
+            
+            const rows = document.querySelectorAll('#transactionsTableBody tr');
+            
+            rows.forEach(row => {
+                let mostrar = true;
+                
+                // Filtrar por tipo
+                if (tipoFiltro) {
+                    const esIngreso = row.innerHTML.includes('💰 Ingreso');
+                    if (tipoFiltro === 'ingreso' && !esIngreso) mostrar = false;
+                    if (tipoFiltro === 'gasto' && esIngreso) mostrar = false;
+                }
+                
+                // Filtrar por mes
+                if (mesFiltro && mostrar) {
+                    const fechaCell = row.cells[4];
+                    if (fechaCell) {
+                        const fecha = fechaCell.textContent;
+                        if (!fecha.includes(mesFiltro)) mostrar = false;
+                    }
+                }
+                
+                row.style.display = mostrar ? '' : 'none';
+            });
+        }
+        
+        // Limpiar filtros de transacciones
+        function clearTransactionFilters() {
+            document.getElementById('transactionTypeFilter').value = '';
+            document.getElementById('transactionMonthFilter').value = '';
+            
+            const rows = document.querySelectorAll('#transactionsTableBody tr');
+            rows.forEach(row => row.style.display = '');
+        }
+        
+        // Cargar movimientos recientes para el resumen
+        function loadRecentExpenses() {
+            console.log('💼 Cargando movimientos financieros recientes...');
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    console.log('✅ Movimientos financieros recientes cargados:', result);
+                    renderRecentExpenses(result);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error cargando movimientos financieros recientes:', error);
+                    document.getElementById('recentTransactionsTableBody').innerHTML = '<tr><td colspan="6" style="color: #ef4444;">Error cargando movimientos</td></tr>';
+                    document.getElementById('recentIncomeTotal').textContent = formatCurrency(0);
+                    document.getElementById('recentExpensesTotal').textContent = formatCurrency(0);
+                    document.getElementById('recentNetTotal').textContent = formatCurrency(0);
+                })
+                .getRecentFinancialMovements();
+        }
+        
+        // Renderizar movimientos recientes (ingresos y gastos)
+        function renderRecentExpenses(response) {
+            const tbody = document.getElementById('recentTransactionsTableBody');
+            const movements = response && Array.isArray(response.movements) ? response.movements : [];
+
+            if (!movements || movements.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #6b7280;">No hay movimientos registrados</td></tr>';
+                document.getElementById('recentIncomeTotal').textContent = formatCurrency(0);
+                document.getElementById('recentExpensesTotal').textContent = formatCurrency(0);
+                document.getElementById('recentNetTotal').textContent = formatCurrency(0);
+                return;
+            }
+
+            let incomeTotal = 0;
+            let expenseTotal = 0;
+
+            tbody.innerHTML = movements.map(movement => {
+                const isIncome = String(movement.tipo || '').toLowerCase() === 'income';
+                const amount = Math.abs(parseFloat(movement.monto) || 0);
+
+                if (isIncome) {
+                    incomeTotal += amount;
+                } else {
+                    expenseTotal += amount;
+                }
+
+                const formattedAmount = formatCurrency(amount);
+                const signedAmount = `${isIncome ? '+' : '-'}${formattedAmount}`;
+
+                const badgeStyle = isIncome
+                    ? 'background: #dcfce7; color: #0f766e; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600;'
+                    : 'background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600;';
+
+                const amountStyle = isIncome
+                    ? 'color: #10b981; font-weight: 600;'
+                    : 'color: #ef4444; font-weight: 600;';
+
+                const categoria = escapeHtml(movement.categoria || (isIncome ? 'Ingreso' : 'Gasto'));
+                const descripcion = escapeHtml(movement.descripcion || (isIncome ? 'Ingreso registrado' : 'Gasto registrado'));
+                const metodo = escapeHtml(movement.metodoPago || (isIncome ? 'Sistema Automático' : 'No especificado'));
+                const fecha = escapeHtml(movement.fecha || 'N/A');
+
+                const canDelete = movement.puedeEliminar !== false && movement.id;
+                const actionHtml = canDelete
+                    ? `<button onclick="deleteFinancialMovement('${movement.id}', '${movement.tipo}')" class="btn btn-danger btn-sm" title="Eliminar movimiento">🗑️</button>`
+                    : '<span style="color: #9ca3af;">—</span>';
+
+                return `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td>${descripcion}</td>
+                        <td><span style="${badgeStyle}">${categoria}</span></td>
+                        <td style="${amountStyle}">${signedAmount}</td>
+                        <td>${metodo}</td>
+                        <td>${actionHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (response && response.totals) {
+                if (!isNaN(parseFloat(response.totals.income))) {
+                    incomeTotal = parseFloat(response.totals.income);
+                }
+                if (!isNaN(parseFloat(response.totals.expense))) {
+                    expenseTotal = parseFloat(response.totals.expense);
+                }
+            }
+
+            document.getElementById('recentIncomeTotal').textContent = formatCurrency(incomeTotal);
+            document.getElementById('recentExpensesTotal').textContent = formatCurrency(expenseTotal);
+            document.getElementById('recentNetTotal').textContent = formatCurrency(incomeTotal - expenseTotal);
+        }
+        
+        // Eliminar movimiento financiero (ingreso o gasto)
+        function deleteFinancialMovement(movementId, movementType) {
+            if (!movementId) {
+                showError('ID de movimiento no válido');
+                return;
+            }
+
+            const typeLabel = movementType === 'income' ? 'este ingreso' : 'este gasto';
+            if (!confirm(`¿Estás seguro de que deseas eliminar ${typeLabel}? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showSuccess(result.message || 'Movimiento eliminado correctamente');
+                        loadRecentExpenses();
+                        refreshFinancialData();
+                    } else {
+                        const message = result && result.message ? result.message : 'No se pudo eliminar el movimiento';
+                        showError(message);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    showError('Error eliminando movimiento: ' + error.toString());
+                })
+                .deleteFinancialMovement(movementId, movementType);
+        }
+        
+        // ========== GASTOS RECURRENTES ==========
+        
+        // Abrir modal de gasto recurrente
+        function openRecurringExpenseModal() {
+            document.getElementById('recurringExpenseForm').reset();
+            document.getElementById('recurringExpenseModal').style.display = 'block';
+        }
+        
+        // Cerrar modal de gasto recurrente
+        function closeRecurringExpenseModal() {
+            document.getElementById('recurringExpenseModal').style.display = 'none';
+        }
+        
+        // Cargar gastos recurrentes
+        function loadRecurringExpenses() {
+            console.log('🔄 Cargando gastos recurrentes...');
+            
+            google.script.run
+                .withSuccessHandler(function(recurring) {
+                    console.log('✅ Gastos recurrentes cargados:', recurring);
+                    renderRecurringExpenses(recurring);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error cargando gastos recurrentes:', error);
+                    document.getElementById('recurringExpensesTableBody').innerHTML = '<tr><td colspan="8" style="color: #ef4444;">Error cargando gastos recurrentes</td></tr>';
+                })
+                .getRecurringExpenses();
+        }
+        
+        // Renderizar gastos recurrentes
+        function renderRecurringExpenses(recurring) {
+            const tbody = document.getElementById('recurringExpensesTableBody');
+            
+            if (!recurring || recurring.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #6b7280;">No hay gastos recurrentes configurados</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = recurring.map(rec => {
+                const frecuenciaText = rec.frecuencia === 'monthly' ? 'Mensual' : 
+                                      rec.frecuencia === 'biweekly' ? 'Quincenal' : 'Semanal';
+                const estadoBadge = rec.activo ? 
+                    '<span style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">✅ Activo</span>' :
+                    '<span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">⏸️ Inactivo</span>';
+                
+                return `
+                    <tr>
+                        <td>${rec.descripcion}</td>
+                        <td><span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">${rec.categoria}</span></td>
+                        <td style="color: #ef4444; font-weight: 600;">${formatCurrency(rec.monto)}</td>
+                        <td>${frecuenciaText}</td>
+                        <td style="text-align: center;">Día ${rec.diaMes}</td>
+                        <td>${rec.proximaEjecucion || 'N/A'}</td>
+                        <td>${estadoBadge}</td>
+                        <td>
+                            <button onclick="toggleRecurringExpense('${rec.id}')" class="btn btn-warning btn-sm" title="${rec.activo ? 'Desactivar' : 'Activar'}">
+                                ${rec.activo ? '⏸️' : '▶️'}
+                            </button>
+                            <button onclick="deleteRecurringExpense('${rec.id}')" class="btn btn-danger btn-sm" title="Eliminar">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Cargar gastos pendientes de confirmación
+        function loadPendingExpenses() {
+            console.log('⏰ Cargando gastos pendientes...');
+            
+            google.script.run
+                .withSuccessHandler(function(pending) {
+                    console.log('✅ Gastos pendientes cargados:', pending);
+                    renderPendingExpenses(pending);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Error cargando gastos pendientes:', error);
+                    document.getElementById('pendingExpensesTableBody').innerHTML = '<tr><td colspan="6" style="color: #ef4444;">Error cargando gastos pendientes</td></tr>';
+                })
+                .getPendingExpenses();
+        }
+        
+        // Renderizar gastos pendientes
+        function renderPendingExpenses(pending) {
+            const tbody = document.getElementById('pendingExpensesTableBody');
+            
+            if (!pending || pending.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #6b7280;">No hay gastos pendientes de confirmación</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = pending.map(pend => {
+                return `
+                    <tr style="background: #fef3c7;">
+                        <td>${pend.fechaGenerada}</td>
+                        <td>${pend.descripcion}</td>
+                        <td><span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600;">${pend.categoria}</span></td>
+                        <td style="color: #ef4444; font-weight: 600;">${formatCurrency(pend.monto)}</td>
+                        <td>${pend.metodoPago}</td>
+                        <td>
+                            <button onclick="confirmPendingExpense('${pend.id}')" class="btn btn-success btn-sm" title="Confirmar gasto">
+                                ✅ Confirmar
+                            </button>
+                            <button onclick="rejectPendingExpense('${pend.id}')" class="btn btn-danger btn-sm" title="Rechazar">
+                                ❌ Rechazar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Crear gasto recurrente
+        document.getElementById('recurringExpenseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const recurringData = {
+                descripcion: document.getElementById('recExpenseDescription').value,
+                monto: parseFloat(document.getElementById('recExpenseAmount').value),
+                categoria: document.getElementById('recExpenseCategory').value,
+                frecuencia: document.getElementById('recExpenseFrequency').value,
+                diaMes: parseInt(document.getElementById('recExpenseDayOfMonth').value),
+                metodoPago: document.getElementById('recExpenseMethod').value,
+                observaciones: document.getElementById('recExpenseObservations').value
+            };
+            
+            console.log('💾 Creando gasto recurrente:', recurringData);
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showSuccess('✅ Gasto recurrente creado exitosamente');
+                        closeRecurringExpenseModal();
+                        loadRecurringExpenses();
+                    } else {
+                        showError('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                    }
+                })
+                .withFailureHandler(showError)
+                .createRecurringExpense(recurringData);
+        });
+        
+        // Activar/Desactivar gasto recurrente
+        function toggleRecurringExpense(id) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showSuccess('✅ Estado actualizado');
+                        loadRecurringExpenses();
+                    } else {
+                        showError('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                    }
+                })
+                .withFailureHandler(showError)
+                .toggleRecurringExpense(id);
+        }
+        
+        // Eliminar gasto recurrente
+        function deleteRecurringExpense(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este gasto recurrente?')) return;
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showSuccess('✅ Gasto recurrente eliminado');
+                        loadRecurringExpenses();
+                    } else {
+                        showError('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                    }
+                })
+                .withFailureHandler(showError)
+                .deleteRecurringExpense(id);
+        }
+        
+        // Confirmar gasto pendiente
+        function confirmPendingExpense(id) {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showSuccess('✅ Gasto confirmado y registrado');
+                        loadPendingExpenses();
+                        loadRecentExpenses();
+                        refreshFinancialData();
+                    } else {
+                        showError('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                    }
+                })
+                .withFailureHandler(showError)
+                .confirmPendingExpense(id);
+        }
+        
+        // Rechazar gasto pendiente
+        function rejectPendingExpense(id) {
+            if (!confirm('¿Estás seguro de que deseas rechazar este gasto?')) return;
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result && result.success) {
+                        showSuccess('✅ Gasto rechazado');
+                        loadPendingExpenses();
+                    } else {
+                        showError('❌ Error: ' + (result ? result.message : 'Desconocido'));
+                    }
+                })
+                .withFailureHandler(showError)
+                .rejectPendingExpense(id);
+        }
+
+        // Utilidades
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        function showError(message) {
+            console.error('❌ Error:', message);
+            
+            // Solo mostrar error si es un error real (no solo datos vacíos)
+            if (message && message.toString().indexOf('undefined') === -1 && message.toString().indexOf('No se pudieron cargar') === -1) {
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                    color: white;
+                    padding: 15px 25px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+                    z-index: 10000;
+                    font-weight: 600;
+                    max-width: 400px;
+                `;
+                errorDiv.innerHTML = `<strong>⚠️ Error</strong><br>${message.toString()}`;
+                document.body.appendChild(errorDiv);
+                
+                // Auto-ocultar después de 6 segundos
+                setTimeout(() => errorDiv.remove(), 6000);
+            }
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+                z-index: 10000;
+                font-weight: 600;
+            `;
+            successDiv.textContent = '✅ ' + message;
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        // Cerrar modales al hacer clic fuera
+        window.onclick = function(event) {
+            const paymentModal = document.getElementById('paymentModal');
+            const expenseModal = document.getElementById('expenseModal');
+            
+            if (event.target === paymentModal) {
+                closePaymentModal();
+            }
+            if (event.target === expenseModal) {
+                closeExpenseModal();
+            }
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUAREZ ACADEMY - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navegación Superior */
+        .top-navigation {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+
+        .nav-logo .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #1e3a8a;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: 0.9em;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .nav-item:hover {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+        }
+
+            .nav-item.active::before {
+                content: '📍 ';
+            }
+
+            .nav-item.close-btn {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                border: 2px solid #ef4444;
+            }
+
+            .nav-item.close-btn:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            }
+
+            /* Responsive para menú */
+            @media (max-width: 1200px) {
+                .nav-menu {
+                    gap: 6px;
+                }
+                
+                .nav-item {
+                    padding: 5px 10px;
+                    font-size: 0.85em;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .nav-menu {
+                    gap: 4px;
+                    flex-wrap: wrap;
+                }
+                
+                .nav-item {
+                    padding: 4px 8px;
+                    font-size: 0.8em;
+                    border-radius: 4px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .nav-menu {
+                    flex-direction: column;
+                    gap: 4px;
+                    align-items: center;
+                }
+                
+                .nav-item {
+                    width: 100%;
+                    max-width: 200px;
+                    text-align: center;
+                    padding: 6px 12px;
+                }
+            }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-fallback::before {
+            content: '⚽';
+            font-size: 2.5em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            background: linear-gradient(45deg, #fbbf24, #f59e0b);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .academy-title {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .academy-title h1 {
+            color: #1e3a8a;
+            font-size: 2.8em;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .academy-title .subtitle {
+            color: #fbbf24;
+            font-size: 1.2em;
+            font-style: italic;
+            font-weight: 600;
+            margin-top: -5px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .academy-title .year {
+            color: #6b7280;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .header p {
+            text-align: center;
+            color: #6b7280;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(30, 58, 138, 0.2);
+            border-color: #3b82f6;
+        }
+
+        .stat-card h3 {
+            color: #1e3a8a;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card p {
+            color: #6b7280;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .stat-card.income { border-left: 5px solid #10b981; }
+        .stat-card.expenses { border-left: 5px solid #ef4444; }
+        .stat-card.profit { border-left: 5px solid #3b82f6; }
+        .stat-card.players { border-left: 5px solid #fbbf24; }
+        .stat-card.families { border-left: 5px solid #f59e0b; }
+        .stat-card.pending { border-left: 5px solid #ef4444; }
+        .stat-card.scholarships { border-left: 5px solid #06b6d4; }
+        .stat-card.monthly-fee { border-left: 5px solid #84cc16; }
+        .stat-card.enrollment { border-left: 5px solid #ec4899; }
+        .stat-card.retention { border-left: 5px solid #6366f1; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .chart-container h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        .chart-canvas {
+            max-height: 300px;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(30, 58, 138, 0.2);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4);
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+        }
+
+        .recent-activity {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .recent-activity h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.2em;
+        }
+
+        .activity-icon.payment { background: #d5f4e6; color: #27ae60; }
+        .activity-icon.player { background: #fef9e7; color: #f39c12; }
+        .activity-icon.expense { background: #fadbd8; color: #e74c3c; }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-content h4 {
+            color: #2c3e50;
+            font-size: 0.9em;
+            margin-bottom: 2px;
+        }
+
+        .activity-content p {
+            color: #7f8c8d;
+            font-size: 0.8em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+            
+        .header h1 {
+            font-size: 2em;
+        }
+    }
+
+    /* Estilos para Modal de Histórico */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        margin: 2% auto;
+        padding: 0;
+        border: none;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 1200px;
+        max-height: 90vh;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+
+    .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: opacity 0.3s ease;
+    }
+
+    .close:hover {
+        opacity: 0.7;
+    }
+
+    .modal-body {
+        padding: 30px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        padding: 20px 30px;
+        background: #f8fafc;
+        border-top: 1px solid #e5e7eb;
+        text-align: right;
+    }
+
+    .historic-stats {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+    }
+
+    .historic-stats h4 {
+        margin: 0 0 10px 0;
+        font-size: 1.2em;
+    }
+
+    .historic-table-container {
+        overflow-x: auto;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .historic-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .historic-table th {
+        background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+        color: white;
+        padding: 15px 12px;
+        text-align: left;
+        font-weight: bold;
+        font-size: 0.9em;
+    }
+
+    .historic-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.9em;
+    }
+
+    .historic-table tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .historic-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #6b7280;
+        font-style: italic;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #3b82f6;
+        font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 95%;
+            margin: 5% auto;
+        }
+        
+        .modal-header, .modal-body, .modal-footer {
+            padding: 15px;
+        }
+        
+        .historic-table {
+            font-size: 0.8em;
+        }
+        
+        .historic-table th,
+        .historic-table td {
+            padding: 8px;
+        }
+    }
+
+    /* Global Loading Overlay - Balón de Fútbol */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        text-align: center;
+    }
+
+    .football-loader {
+        font-size: 80px;
+        animation: spin-football 1s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin-football {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #1e3a8a;
+    }
+    </style>
+</head>
+<body>
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay" id="globalLoading">
+        <div class="loading-content">
+            <div class="football-loader">⚽</div>
+            <div class="loading-text">Cargando...</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Navegación Superior -->
+        <nav class="top-navigation">
+            <div class="nav-logo">
+                <div class="logo-icon">⚽</div>
+                SUAREZ ACADEMY
+            </div>
+                <div class="nav-menu">
+                    <a href="#" class="nav-item" onclick="navigateTo('players')">👥 Jugadores</a>
+                    <a href="#" class="nav-item" onclick="navigateTo('families')">👨‍👩‍👧‍👦 Familias</a>
+                    <a href="#" class="nav-item" onclick="navigateTo('financial')">💰 Financiero</a>
+                    <!-- <a href="#" class="nav-item" onclick="navigateTo('expenses')">💸 Gastos</a> -->
+                    <a href="#" class="nav-item" onclick="navigateTo('approvals')">✅ Aprobaciones</a>
+                    <a href="#" class="nav-item" onclick="navigateTo('tournaments')">🏆 Torneos</a>
+                    <a href="#" class="nav-item" onclick="navigateTo('historic')">📜 Histórico</a>
+                    <a href="#" class="nav-item" onclick="navigateTo('config')">⚙️ Config</a>
+                    <a href="#" class="nav-item close-btn" onclick="closeWindow()">❌ Cerrar</a>
+                </div>
+        </nav>
+
+        <div class="header">
+            <div class="logo-container">
+                <div class="logo" id="mainLogo">
+                    <div class="logo-fallback" id="logoFallback"></div>
+                    <img id="customLogo" src="" alt="Logo Personalizado" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: 50%;">
+                </div>
+                <div class="academy-title">
+                    <h1 id="academyName">SUAREZ</h1>
+                    <div class="subtitle" id="academySubtitle">ACADEMY</div>
+                    <div class="year" id="academyYear">2018</div>
+                </div>
+            </div>
+            <p>Panel de control integral del sistema de gestión</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card income">
+                <h3 id="totalIncome">$0</h3>
+                <p>Ingresos del Mes</p>
+            </div>
+            <div class="stat-card expenses">
+                <h3 id="totalExpenses">$0</h3>
+                <p>Gastos del Mes</p>
+            </div>
+            <div class="stat-card profit">
+                <h3 id="netProfit">$0</h3>
+                <p>Ganancia Neta</p>
+            </div>
+            <div class="stat-card players">
+                <h3 id="totalPlayers">0</h3>
+                <p>Jugadores Activos</p>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>📈 Ingresos vs Gastos</h3>
+                <canvas id="incomeExpenseChart" class="chart-canvas"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>👥 Población por Categoría</h3>
+                <canvas id="populationChart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Métricas Adicionales -->
+        <div class="stats-grid">
+            <div class="stat-card families">
+                <h3 id="totalFamilies">0</h3>
+                <p>Grupos Familiares</p>
+            </div>
+            <div class="stat-card pending">
+                <h3 id="pendingApprovals">0</h3>
+                <p>Aprobaciones Pendientes</p>
+            </div>
+            <div class="stat-card scholarships">
+                <h3 id="scholarshipPlayers">0</h3>
+                <p>Jugadores Becados</p>
+            </div>
+            <div class="stat-card monthly-fee">
+                <h3 id="averageMonthlyFee">$0</h3>
+                <p>Mensualidad Promedio</p>
+            </div>
+            <div class="stat-card enrollment">
+                <h3 id="totalEnrollments">0</h3>
+                <p>Matrículas del Mes</p>
+            </div>
+            <div class="stat-card retention">
+                <h3 id="retentionRate">0%</h3>
+                <p>Tasa de Retención</p>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="actions-grid">
+            <button class="action-btn" onclick="refreshDashboard()">
+                🔄 Actualizar Dashboard
+            </button>
+            <!-- Botón Generar Reporte oculto
+            <button class="action-btn" onclick="generateReport()">
+                📊 Generar Reporte
+            </button>
+            -->
+        </div>
+
+        <div class="recent-activity">
+            <h3>📋 Actividad Reciente</h3>
+            <div id="recentActivity">
+                <div class="loading">Cargando actividad reciente...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let incomeExpenseChart, populationChart;
+
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Primero asegurar que las hojas financieras existan
+            ensureFinancialSheets();
+            // Luego cargar datos
+            loadDashboardData();
+            loadAdditionalMetrics();
+            loadRecentActivity();
+            initializeCharts();
+            loadLogoConfig();
+        });
+        
+        // Asegurar que las hojas financieras existan
+        function ensureFinancialSheets() {
+            try {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        console.log('✅ Hojas financieras verificadas:', result);
+                        if (result && result.createdSheets && result.createdSheets.length > 0) {
+                            console.log('📝 Hojas creadas:', result.createdSheets.join(', '));
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.log('⚠️ No se pudieron verificar hojas financieras:', error);
+                    })
+                    .ensureFinancialSheetsExist();
+            } catch (error) {
+                console.log('⚠️ Error al verificar hojas:', error);
+            }
+        }
+
+        // Global Loading Functions
+        function showLoading(message = 'Cargando...') {
+            const loading = document.getElementById('globalLoading');
+            const loadingText = loading.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loading.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('globalLoading');
+            loading.style.display = 'none';
+        }
+
+        // Cargar datos del dashboard
+        function loadDashboardData() {
+            try {
+                // Cargar resumen financiero
+                google.script.run
+                    .withSuccessHandler(updateFinancialSummary)
+                    .withFailureHandler(showError)
+                    .getFinancialSummary('current_month');
+
+                // Cargar estadísticas de jugadores
+                google.script.run
+                    .withSuccessHandler(updatePlayerStats)
+                    .withFailureHandler(showError)
+                    .getPlayerStatistics();
+
+                // Cargar datos de gráficas
+                google.script.run
+                    .withSuccessHandler(updateCharts)
+                    .withFailureHandler(showError)
+                    .getFinancialChartData('last_6_months');
+
+                // Cargar población de jugadores
+                google.script.run
+                    .withSuccessHandler(updatePopulationChart)
+                    .withFailureHandler(showError)
+                    .getPlayerPopulationChartData();
+
+                // Cargar actividad reciente
+                loadRecentActivity();
+
+            } catch (error) {
+                showError('Error cargando datos del dashboard: ' + error.message);
+            }
+        }
+
+        // Actualizar resumen financiero
+        function updateFinancialSummary(data) {
+            console.log('Datos financieros recibidos en Dashboard:', data);
+            console.log('Tipo de datos:', typeof data);
+            console.log('Total de ingresos:', data ? data.totalIncome : 'undefined');
+            console.log('Total de gastos:', data ? data.totalExpenses : 'undefined');
+            console.log('Ganancia neta:', data ? data.netProfit : 'undefined');
+            
+            if (data) {
+                // Asegurar que los valores sean números válidos
+                const totalIncome = typeof data.totalIncome === 'number' ? data.totalIncome : 0;
+                const totalExpenses = typeof data.totalExpenses === 'number' ? data.totalExpenses : 0;
+                const netProfit = typeof data.netProfit === 'number' ? data.netProfit : (totalIncome - totalExpenses);
+                
+                document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+                document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
+                document.getElementById('netProfit').textContent = formatCurrency(netProfit);
+                
+                // Cambiar color según ganancia
+                const profitElement = document.getElementById('netProfit').parentElement;
+                if (netProfit >= 0) {
+                    profitElement.style.borderLeftColor = '#27ae60';
+                } else {
+                    profitElement.style.borderLeftColor = '#e74c3c';
+                }
+                
+                console.log('✅ Contadores financieros actualizados exitosamente');
+                console.log('Ingresos:', formatCurrency(totalIncome));
+                console.log('Gastos:', formatCurrency(totalExpenses));
+                console.log('Ganancia:', formatCurrency(netProfit));
+                
+                // Mostrar mensaje informativo si no hay movimientos
+                if (totalIncome === 0 && totalExpenses === 0) {
+                    showInfoMessage('💡 Sistema inicializado. Los datos financieros se actualizarán cuando registres pagos y gastos.');
+                }
+            } else {
+                console.error('❌ No se recibieron datos financieros (data es null/undefined)');
+                // No mostrar error si simplemente no hay datos, solo inicializar en $0
+                document.getElementById('totalIncome').textContent = formatCurrency(0);
+                document.getElementById('totalExpenses').textContent = formatCurrency(0);
+                document.getElementById('netProfit').textContent = formatCurrency(0);
+            }
+        }
+        
+        // Mostrar mensaje informativo
+        function showInfoMessage(message) {
+            // Remover mensajes anteriores
+            const existingInfo = document.querySelectorAll('.info-message');
+            existingInfo.forEach(info => info.remove());
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'info-message';
+            infoDiv.style.cssText = `
+                background: #e0f2fe;
+                color: #0c4a6e;
+                padding: 15px;
+                border-radius: 10px;
+                margin: 20px 0;
+                border: 1px solid #7dd3fc;
+                text-align: center;
+                font-weight: 500;
+            `;
+            infoDiv.textContent = message;
+            document.querySelector('.container').insertBefore(infoDiv, document.querySelector('.stats-grid'));
+            
+            // Auto-ocultar después de 6 segundos
+            setTimeout(() => infoDiv.remove(), 6000);
+        }
+
+        // Actualizar estadísticas de jugadores
+        function updatePlayerStats(data) {
+            if (data) {
+                document.getElementById('totalPlayers').textContent = data.active;
+            }
+        }
+
+        // Inicializar gráficas
+        function initializeCharts() {
+            // Gráfica de ingresos vs gastos
+            const incomeExpenseCtx = document.getElementById('incomeExpenseChart').getContext('2d');
+            incomeExpenseChart = new Chart(incomeExpenseCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Ingresos',
+                        data: [],
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Gastos',
+                        data: [],
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfica de población
+            const populationCtx = document.getElementById('populationChart').getContext('2d');
+            populationChart = new Chart(populationCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#3498db', '#e74c3c', '#f39c12', '#27ae60',
+                            '#9b59b6', '#1abc9c', '#34495e', '#e67e22'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actualizar gráficas
+        function updateCharts(data) {
+            if (data && incomeExpenseChart) {
+                incomeExpenseChart.data.labels = data.months;
+                incomeExpenseChart.data.datasets[0].data = data.income;
+                incomeExpenseChart.data.datasets[1].data = data.expenses;
+                incomeExpenseChart.update();
+            }
+        }
+
+        // Actualizar gráfica de población
+        function updatePopulationChart(data) {
+            if (data && populationChart) {
+                populationChart.data.labels = data.categories;
+                populationChart.data.datasets[0].data = data.counts;
+                populationChart.update();
+            }
+        }
+
+        // Cargar actividad reciente
+        function loadRecentActivity() {
+            const activityContainer = document.getElementById('recentActivity');
+            activityContainer.innerHTML = '<div class="loading">Cargando actividad reciente...</div>';
+
+            // Cargar datos reales desde el servidor
+            google.script.run
+                .withSuccessHandler(function(activities) {
+                    if (!activities || activities.length === 0) {
+                        activityContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #9ca3af;">No hay actividad reciente</div>';
+                        return;
+                    }
+
+                    activityContainer.innerHTML = '';
+
+                    activities.forEach(activity => {
+                        const activityItem = document.createElement('div');
+                        activityItem.className = 'activity-item';
+                        activityItem.innerHTML = `
+                            <div class="activity-icon ${activity.icon}">
+                                ${activity.emoji}
+                            </div>
+                            <div class="activity-content">
+                                <h4>${activity.title}</h4>
+                                <p>${activity.description} - ${activity.time}</p>
+                            </div>
+                        `;
+                        activityContainer.appendChild(activityItem);
+                    });
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error cargando actividad reciente:', error);
+                    activityContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Error cargando actividad: ' + error.toString() + '</div>';
+                })
+                .getRecentActivity();
+        }
+
+        // Funciones de navegación
+        // Funciones para cargar métricas adicionales
+        function loadAdditionalMetrics() {
+            try {
+                // Cargar grupos familiares
+                google.script.run
+                    .withSuccessHandler(function(families) {
+                        document.getElementById('totalFamilies').textContent = families ? families.length : 0;
+                    })
+                    .withFailureHandler(function(error) {
+                        console.log('Error cargando familias:', error);
+                    })
+                    .getFamilyGroups();
+
+                // Cargar aprobaciones pendientes
+                google.script.run
+                    .withSuccessHandler(function(approvals) {
+                        document.getElementById('pendingApprovals').textContent = approvals ? approvals.length : 0;
+                    })
+                    .withFailureHandler(function(error) {
+                        console.log('Error cargando aprobaciones:', error);
+                    })
+                    .getPendingApprovalsData();
+
+                // Cargar estadísticas adicionales
+                google.script.run
+                    .withSuccessHandler(updateAdditionalStats)
+                    .withFailureHandler(function(error) {
+                        console.log('Error cargando estadísticas adicionales:', error);
+                    })
+                    .getAdditionalDashboardStats();
+            } catch (error) {
+                console.log('Error cargando métricas adicionales:', error);
+            }
+        }
+
+        function updateAdditionalStats(stats) {
+            if (stats) {
+                document.getElementById('scholarshipPlayers').textContent = stats.scholarshipPlayers || 0;
+                document.getElementById('averageMonthlyFee').textContent = formatCurrency(stats.averageMonthlyFee || 0);
+                document.getElementById('totalEnrollments').textContent = stats.totalEnrollments || 0;
+                document.getElementById('retentionRate').textContent = (stats.retentionRate || 0) + '%';
+            }
+        }
+
+        function refreshDashboard() {
+            loadDashboardData();
+            loadAdditionalMetrics();
+        }
+
+        function generateReport() {
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    alert('Reporte generado exitosamente');
+                })
+                .withFailureHandler(showError)
+                .generateReports();
+        }
+
+        // Utilidades
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        function showError(error) {
+            console.error('❌ Error:', error);
+            
+            // Remover errores anteriores
+            const existingErrors = document.querySelectorAll('.error');
+            existingErrors.forEach(err => err.remove());
+            
+            // Solo mostrar error si es un error real (no solo datos vacíos)
+            if (error && error.toString().indexOf('undefined') === -1) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.innerHTML = `
+                    <strong>⚠️ Error</strong><br>
+                    ${error.toString()}
+                    <br><br>
+                    <small>💡 Sugerencia: Asegúrate de que las hojas "Pagos" y "Gastos" existan en el sistema.</small>
+                `;
+                document.querySelector('.container').insertBefore(errorDiv, document.querySelector('.stats-grid'));
+                
+                // Auto-ocultar después de 8 segundos
+                setTimeout(() => errorDiv.remove(), 8000);
+            }
+        }
+
+        // Cargar configuración del logo
+        function loadLogoConfig() {
+            try {
+                // Cargar configuración del logo
+                google.script.run
+                    .withSuccessHandler(function(config) {
+                        if (config) {
+                            // Actualizar texto del logo
+                            document.getElementById('academyName').textContent = config.academyName || 'SUAREZ';
+                            document.getElementById('academySubtitle').textContent = config.academySubtitle || 'ACADEMY';
+                            document.getElementById('academyYear').textContent = config.academyYear || '2018';
+                            
+                            // Actualizar colores
+                            document.getElementById('academyName').style.color = config.primaryColor || '#1e3a8a';
+                            document.getElementById('academySubtitle').style.color = config.accentColor || '#fbbf24';
+                            document.querySelector('.logo').style.background = `linear-gradient(135deg, ${config.primaryColor || '#1e3a8a'} 0%, ${config.secondaryColor || '#3b82f6'} 100%)`;
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.log('Error cargando configuración del logo:', error);
+                    })
+                    .getLogoConfig();
+
+                // Cargar logo personalizado
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result && result.success) {
+                            const customLogo = document.getElementById('customLogo');
+                            const logoFallback = document.getElementById('logoFallback');
+                            
+                            customLogo.src = result.data;
+                            customLogo.style.display = 'block';
+                            logoFallback.style.display = 'none';
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.log('No hay logo personalizado o error cargándolo:', error);
+                    })
+                    .getCustomLogo();
+
+            } catch (error) {
+                console.log('Error en carga de configuración:', error);
+            }
+        }
+
+        // Función de navegación directa - abre nueva ventana directamente
+        function navigateTo(section) {
+            try {
+                // Si ya estamos en la sección, no hacer nada
+                if (section === 'dashboard') {
+                    return;
+                }
+                
+                console.log('Navegando a:', section);
+                
+                // Abrir nueva ventana directamente
+                switch(section) {
+                    case 'players':
+                        google.script.run.showPlayersManager();
+                        break;
+                    case 'families':
+                        google.script.run.showFamilyGroupsManager();
+                        break;
+                    case 'financial':
+                        google.script.run.showFinancialManager();
+                        break;
+                    case 'approvals':
+                        google.script.run.showApprovalsManager();
+                        break;
+                    case 'historic':
+                        google.script.run.showHistoricPlayersManager();
+                        break;
+                    case 'config':
+                        google.script.run.showSystemConfig();
+                        break;
+                }
+            } catch (error) {
+                console.error('Error navegando:', error);
+            }
+        }
+
+        // Función para cerrar ventana
+        function closeWindow() {
+            try {
+                google.script.host.close();
+            } catch (error) {
+                console.error('Error cerrando ventana:', error);
+            }
+        }
+
+        // Modal de Histórico
+        function showHistoricModal() {
+            const modal = document.getElementById('historicModal');
+            modal.style.display = 'block';
+            loadHistoricData();
+        }
+
+        function closeHistoricModal() {
+            document.getElementById('historicModal').style.display = 'none';
+        }
+
+        function loadHistoricData() {
+            try {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.success) {
+                            displayHistoricData(result.data);
+                        } else {
+                            showError('Error cargando histórico: ' + result.message);
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        console.error('Error cargando histórico:', error);
+                        showError('Error cargando histórico: ' + error.toString());
+                    })
+                    .getHistoricData();
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error: ' + error.toString());
+            }
+        }
+
+        function displayHistoricData(data) {
+            const container = document.getElementById('historicContent');
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="no-data">No hay datos históricos disponibles</div>';
+                return;
+            }
+
+            let html = '<div class="historic-stats">';
+            html += `<h4>📊 Resumen del Histórico</h4>`;
+            html += `<p>Total de registros: <strong>${data.length}</strong></p>`;
+            html += '</div>';
+
+            html += '<div class="historic-table-container">';
+            html += '<table class="historic-table">';
+            html += '<thead>';
+            html += '<tr>';
+            html += '<th>ID</th>';
+            html += '<th>Nombre</th>';
+            html += '<th>Acción</th>';
+            html += '<th>Estado</th>';
+            html += '<th>Fecha</th>';
+            html += '<th>Motivo Rechazo</th>';
+            html += '</tr>';
+            html += '</thead>';
+            html += '<tbody>';
+
+            data.forEach(record => {
+                const actionColor = record.accion === 'RECHAZADO' ? '#ef4444' : 
+                                   record.accion === 'APROBADO_BECADO' ? '#f59e0b' : '#10b981';
+                
+                html += '<tr>';
+                html += `<td>${record.id || ''}</td>`;
+                html += `<td>${record.nombre || ''}</td>`;
+                html += `<td><span style="color: ${actionColor}; font-weight: bold;">${record.accion || ''}</span></td>`;
+                html += `<td>${record.estado || ''}</td>`;
+                html += `<td>${record.fecha || ''}</td>`;
+                html += `<td>${record.motivo_rechazo || 'N/A'}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            html += '</table>';
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // Hacer las funciones globales para que estén disponibles en todas las ventanas
+        window.navigateTo = navigateTo;
+        window.closeWindow = closeWindow;
+        window.showHistoricModal = showHistoricModal;
+        window.closeHistoricModal = closeHistoricModal;
+    </script>
+
+    <!-- Modal de Histórico -->
+    <div id="historicModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 Histórico de Jugadores</h2>
+                <span class="close" onclick="closeHistoricModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="historicContent">
+                    <div class="loading">Cargando datos históricos...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeHistoricModal()" class="btn btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

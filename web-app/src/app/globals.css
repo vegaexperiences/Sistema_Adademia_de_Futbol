@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --text-primary: #111827;   /* gray-900 */
+    --text-secondary: #1f2937; /* gray-800 */
+    --text-tertiary: #374151;  /* gray-700 */
+  }
+  
+  .dark {
+    --text-primary: #f3f4f6;   /* gray-100 */
+    --text-secondary: #d1d5db; /* gray-300 */
+    --text-tertiary: #9ca3af;  /* gray-400 */
+  }
+  
+  * {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+  
+  body {
+    @apply transition-colors duration-300;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color-scheme: light dark;
+  }
+  
+  /* Dark mode background */
+  .dark body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
+  }
+  
+  /* Override text colors for better contrast in light mode */
+  .text-gray-900:not(.dark *) {
+    color: #111827 !important; /* gray-900 - Softer than pure black */
+  }
+
+  .text-gray-700:not(.dark *) {
+    color: #374151 !important; /* gray-700 */
+  }
+  
+  .text-gray-600:not(.dark *) {
+    color: #4b5563 !important; /* gray-600 */
+  }
+  
+  .text-gray-500:not(.dark *) {
+    color: #6b7280 !important; /* gray-500 */
+  }
+  
+  .text-gray-400:not(.dark *) {
+    color: #9ca3af !important; /* gray-400 */
+  }
+  
+  .text-gray-300:not(.dark *) {
+    color: #d1d5db !important; /* gray-300 */
+  }
+  
+  .text-gray-200:not(.dark *) {
+    color: #e5e7eb !important; /* gray-200 */
+  }
+
+  /* Force white backgrounds in light mode */
+  html:not(.dark) input, 
+  html:not(.dark) select, 
+  html:not(.dark) textarea {
+    background-color: #ffffff !important;
+    color: #1f2937 !important; /* gray-800 */
+    border-color: #e5e7eb; /* gray-200 */
+  }
+
+
+}
+
+@layer utilities {
+  /* Glass effect for cards */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20;
+  }
+  
+  .dark .glass-card {
+    @apply bg-gray-800/90 border-gray-700/50 shadow-gray-900/50;
+  }
+  
+  /* Purple gradient for active states */
+  .gradient-purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  /* Blue gradient for primary buttons */
+  .gradient-blue {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  }
+  
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+/* Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300/50 dark:bg-gray-600/50;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400/70 dark:bg-gray-500/70;
+}
