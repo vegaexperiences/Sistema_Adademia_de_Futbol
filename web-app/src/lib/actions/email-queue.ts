@@ -314,16 +314,32 @@ async function getBrevoAccountStats() {
     // Try to get account information
     const accountInfo = await brevoAccount.getAccount();
     
+    // Log the full response to understand the structure
+    console.log('Brevo account info response:', JSON.stringify(accountInfo, null, 2));
+    
     // Brevo account info may include plan limits and usage
-    // Note: The exact structure depends on Brevo's API response
+    // The response structure can vary, so we check multiple possible fields
+    const response = accountInfo as any;
+    
+    // Try different possible field names for remaining emails
+    const remainingEmails = 
+      response.emailCredits || 
+      response.remainingEmails || 
+      response.credits?.email || 
+      response.plan?.emailCredits ||
+      response.plan?.remainingEmails ||
+      null;
+    
     return {
-      planType: (accountInfo as any).planType,
-      credits: (accountInfo as any).credits,
-      // Some Brevo accounts show remaining emails in the response
-      remainingEmails: (accountInfo as any).emailCredits || null,
+      planType: response.planType || response.plan?.type || null,
+      credits: response.credits || null,
+      remainingEmails: remainingEmails,
     };
   } catch (error) {
     console.warn('Could not fetch Brevo account stats:', error);
+    if (error instanceof Error) {
+      console.warn('Error details:', error.message, error.stack);
+    }
     return null;
   }
 }
