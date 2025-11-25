@@ -28,17 +28,23 @@ export default function PlayersList({ players, initialView = 'active' }: Players
   const [retiringId, setRetiringId] = useState<string | null>(null);
   const router = useRouter();
   
+  // Count only approved players (exclude Pending - they're in approvals section)
   const activeCount = players?.filter(p => p.status === 'Active').length || 0;
   const scholarshipCount = players?.filter(p => p.status === 'Scholarship').length || 0;
-  const pendingCount = players?.filter(p => p.status === 'Pending').length || 0;
   const rejectedCount = players?.filter(p => p.status === 'Rejected').length || 0;
 
   // Filter players based on view and search
+  // Note: Pending players should NEVER appear here - they only appear in approvals
   const filteredPlayers = players?.filter(player => {
+    // Always exclude Pending players from the players list
+    if (player.status === 'Pending') {
+      return false;
+    }
+    
     // Filter by view
     if (view === 'active') {
-      // Show Active, Scholarship, and Pending
-      if (!['Active', 'Scholarship', 'Pending'].includes(player.status)) {
+      // Show only Active and Scholarship (no Pending)
+      if (!['Active', 'Scholarship'].includes(player.status)) {
         return false;
       }
     } else if (view === 'retired') {
@@ -114,7 +120,7 @@ export default function PlayersList({ players, initialView = 'active' }: Players
                 : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
             }`}
           >
-            Activos ({activeCount + scholarshipCount + pendingCount})
+            Activos ({activeCount + scholarshipCount})
           </button>
           <button
             onClick={() => setView('retired')}
@@ -130,7 +136,7 @@ export default function PlayersList({ players, initialView = 'active' }: Players
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-card p-6 hover:shadow-xl transition-all duration-300">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl" style={{
@@ -155,20 +161,6 @@ export default function PlayersList({ players, initialView = 'active' }: Players
             <div>
               <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Becados</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{scholarshipCount}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card p-6 hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-            }}>
-              <Calendar className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingCount}</p>
             </div>
           </div>
         </div>
