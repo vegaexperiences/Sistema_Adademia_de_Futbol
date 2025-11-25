@@ -8,6 +8,7 @@ export async function getPlayers() {
   const { data, error } = await supabase
     .from('players')
     .select('*, families(name, tutor_name, tutor_email)')
+    .in('status', ['Active', 'Scholarship']) // Solo jugadores aprobados o becados
     .order('created_at', { ascending: false });
 
   if (error) {
