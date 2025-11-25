@@ -435,7 +435,7 @@ export async function getQueueStatus() {
     pending: pending || 0,
     sent: sent || 0,
     failed: failed || 0,
-    todaySent: finalTodaySent,
+    todaySent: actualTodaySent, // Use Brevo stats if available, otherwise use DB count
     dailyLimit: DAILY_LIMIT,
     remainingToday: actualRemainingToday,
     // Include Brevo stats for debugging
