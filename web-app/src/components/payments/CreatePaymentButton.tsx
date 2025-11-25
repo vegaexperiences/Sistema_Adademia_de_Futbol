@@ -9,6 +9,7 @@ interface Player {
   first_name: string;
   last_name: string;
   status: string;
+  category?: string | null;
 }
 
 interface CreatePaymentButtonProps {

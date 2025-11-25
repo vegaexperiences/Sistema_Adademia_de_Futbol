@@ -10,6 +10,7 @@ interface Player {
   first_name: string;
   last_name: string;
   status: string;
+  category?: string | null;
 }
 
 interface CreatePaymentModalProps {
@@ -119,7 +120,8 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
               <option value="">Selecciona un jugador</option>
               {eligiblePlayers.map((player) => (
                 <option key={player.id} value={player.id}>
-                  {player.first_name} {player.last_name} 
+                  {player.first_name} {player.last_name}
+                  {player.category ? ` - ${player.category}` : ''}
                   {player.status === 'Scholarship' ? ' (Becado)' : ''}
                 </option>
               ))}
