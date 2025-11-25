@@ -29,7 +29,9 @@ export default async function ApprovalsPage({
   searchParams?: SearchParams | Promise<SearchParams | undefined>;
 }) {
   const resolvedSearchParams =
-    typeof searchParams?.then === 'function' ? await searchParams : searchParams;
+    searchParams && typeof (searchParams as Promise<SearchParams | undefined>).then === 'function'
+      ? await searchParams
+      : (searchParams as SearchParams | undefined);
   const pendingPlayers = await getPendingPlayers();
   const pendingTournaments = await getPendingTournamentRegistrations();
   const supabase = await createClient();
