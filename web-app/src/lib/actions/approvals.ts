@@ -32,40 +32,43 @@ export async function getPendingPlayers() {
 }
 
 export async function approvePlayer(playerId: string, type: 'Active' | 'Scholarship') {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  // Get player data with family info including tutor email
-  const { data: player, error: playerError } = await supabase
-    .from('players')
-    .select('*, families(id, tutor_name, tutor_email)')
-    .eq('id', playerId)
-    .single();
+    // Get player data with family info including tutor email
+    const { data: player, error: playerError } = await supabase
+      .from('players')
+      .select('*, families(id, tutor_name, tutor_email)')
+      .eq('id', playerId)
+      .single();
 
-  if (playerError || !player) {
-    return { error: 'Error al obtener datos del jugador' };
-  }
+    if (playerError || !player) {
+      console.error('Error fetching player:', playerError);
+      return { error: `Error al obtener datos del jugador: ${playerError?.message || 'Jugador no encontrado'}` };
+    }
 
-  const updateData: any = {
-    status: type === 'Scholarship' ? 'Scholarship' : 'Active',
-  };
+    const updateData: any = {
+      status: type === 'Scholarship' ? 'Scholarship' : 'Active',
+    };
 
-  if (type === 'Scholarship') {
-    updateData.discount_percent = 100;
-    updateData.notes = 'Becado aprobado desde panel de control';
-  }
+    if (type === 'Scholarship') {
+      updateData.discount_percent = 100;
+      updateData.notes = 'Becado aprobado desde panel de control';
+    }
 
-  // Update player status
-  const { error: updateError } = await supabase
-    .from('players')
-    .update(updateData)
-    .eq('id', playerId);
+    // Update player status
+    const { error: updateError } = await supabase
+      .from('players')
+      .update(updateData)
+      .eq('id', playerId);
 
-  if (updateError) {
-    return { error: 'Error al aprobar jugador' };
-  }
+    if (updateError) {
+      console.error('Error updating player status:', updateError);
+      return { error: `Error al actualizar el estado del jugador: ${updateError.message}` };
+    }
 
-  // Register enrollment payment (only for regular approvals)
-  if (type === 'Active') {
+    // Register enrollment payment (only for regular approvals)
+    if (type === 'Active') {
     const { data: settings } = await supabase.from('settings').select('*');
     const settingsMap =
       settings?.reduce((acc: Record<string, number>, s: any) => {
@@ -87,6 +90,7 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
 
     if (paymentError) {
       console.error('Error creating enrollment payment:', paymentError);
+      // Continue even if payment creation fails, but log it
     }
 
     // Calculate monthly fee for email
@@ -142,10 +146,14 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
     }
   }
 
-  revalidatePath('/dashboard/approvals');
-  revalidatePath('/dashboard/players');
-  revalidatePath('/dashboard/finances');
-  return { success: true };
+    revalidatePath('/dashboard/approvals');
+    revalidatePath('/dashboard/players');
+    revalidatePath('/dashboard/finances');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Unexpected error in approvePlayer:', error);
+    return { error: `Error inesperado: ${error.message || 'Error desconocido'}` };
+  }
 }
 
 export async function rejectPlayer(playerId: string) {

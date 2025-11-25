@@ -24,27 +24,36 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
     startTransition(async () => {
       try {
         const result = await action();
-        if (result.error) {
+        console.log('Action result:', result);
+        if (result?.error) {
           setStatus('error');
           setMessage(result.error);
           setTimeout(() => {
             setStatus('idle');
             setMessage('');
-          }, 3000);
-        } else {
+          }, 5000);
+        } else if (result?.success || !result?.error) {
           setStatus('success');
           setMessage(type === 'active' ? 'Jugador aprobado como Normal' : type === 'scholarship' ? 'Jugador aprobado como Becado' : 'Jugador rechazado');
           setTimeout(() => {
             router.refresh();
           }, 1500);
+        } else {
+          setStatus('error');
+          setMessage('Error desconocido al procesar la solicitud');
+          setTimeout(() => {
+            setStatus('idle');
+            setMessage('');
+          }, 5000);
         }
       } catch (error: any) {
+        console.error('Error in handleAction:', error);
         setStatus('error');
-        setMessage(error.message || 'Error al procesar la solicitud');
+        setMessage(error?.message || error?.toString() || 'Error al procesar la solicitud');
         setTimeout(() => {
           setStatus('idle');
           setMessage('');
-        }, 3000);
+        }, 5000);
       }
     });
   };
