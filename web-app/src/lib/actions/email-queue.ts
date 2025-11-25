@@ -41,12 +41,18 @@ export async function queueEmail(
   }
   
   // Use production URL for logo - must be publicly accessible
+  // Ensure it's a full HTTPS URL for email clients
   const defaultLogoUrl =
     process.env.NEXT_PUBLIC_LOGO_URL ||
     'https://sistema-adademia-de-futbol-tura.vercel.app/logo.png';
 
+  // Ensure logoUrl is always a full HTTPS URL
+  const logoUrl = defaultLogoUrl.startsWith('http')
+    ? defaultLogoUrl
+    : `https://${defaultLogoUrl.replace(/^\/+/, '')}`;
+
   const mergedVariables = {
-    logoUrl: defaultLogoUrl,
+    logoUrl: logoUrl,
     ...variables,
   };
 
@@ -54,11 +60,26 @@ export async function queueEmail(
   let htmlContent = template.html_template;
   let subject = template.subject;
 
+  // Log for debugging (only in development)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Replacing logoUrl in template:', logoUrl);
+    console.log('Template before replacement contains logoUrl:', htmlContent.includes('{{logoUrl}}'));
+  }
+
+  // Replace all variables - escape special regex characters
   Object.entries(mergedVariables).forEach(([key, value]) => {
-    const regex = new RegExp(`{{${key}}}`, 'g');
+    // Escape special regex characters in the key
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Match {{key}} pattern
+    const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g');
     htmlContent = htmlContent.replace(regex, String(value));
     subject = subject.replace(regex, String(value));
   });
+
+  // Verify replacement worked (only in development)
+  if (process.env.NODE_ENV !== 'production' && htmlContent.includes('{{logoUrl}}')) {
+    console.warn('⚠️ logoUrl was not replaced in template! Template may be missing the variable.');
+  }
   
   // Queue the email
   const { error } = await supabase
@@ -234,6 +255,30 @@ export async function processEmailQueue() {
   return { success: true, sent, failed, total: emails.length };
 }
 
+/**
+ * Get Brevo account statistics to sync with real email counts
+ */
+async function getBrevoAccountStats() {
+  try {
+    const { brevoAccount } = await import('@/lib/brevo/client');
+    
+    // Try to get account information
+    const accountInfo = await brevoAccount.getAccount();
+    
+    // Brevo account info may include plan limits and usage
+    // Note: The exact structure depends on Brevo's API response
+    return {
+      planType: (accountInfo as any).planType,
+      credits: (accountInfo as any).credits,
+      // Some Brevo accounts show remaining emails in the response
+      remainingEmails: (accountInfo as any).emailCredits || null,
+    };
+  } catch (error) {
+    console.warn('Could not fetch Brevo account stats:', error);
+    return null;
+  }
+}
+
 export async function getQueueStatus() {
   const supabase = await createClient();
   
@@ -265,13 +310,39 @@ export async function getQueueStatus() {
     .gte('sent_at', todayStart)
     .lte('sent_at', todayEnd);
   
+  // Try to get Brevo account stats for real-time sync
+  const brevoStats = await getBrevoAccountStats();
+  
+  // Calculate remaining based on Brevo's actual count if available
+  // Brevo shows "289 / 300 Marketing & Transactional emails left"
+  // This means: 300 - 289 = 11 emails sent today
+  // So: remaining = 289, sentToday = 11
+  let actualTodaySent = todaySent || 0;
+  let actualRemainingToday = Math.max(0, DAILY_LIMIT - actualTodaySent);
+  
+  // If we can get Brevo stats, use them as the source of truth
+  // Note: We'll need to calculate from remaining emails
+  // If Brevo says 289 remaining out of 300, that means 11 were sent
+  if (brevoStats?.remainingEmails !== null && brevoStats?.remainingEmails !== undefined) {
+    // Brevo shows remaining, so: sent = limit - remaining
+    const brevoSentToday = Math.max(0, DAILY_LIMIT - brevoStats.remainingEmails);
+    // Use Brevo's count as it's the source of truth
+    actualTodaySent = brevoSentToday;
+    actualRemainingToday = brevoStats.remainingEmails;
+  }
+  
   return {
     pending: pending || 0,
     sent: sent || 0,
     failed: failed || 0,
-    todaySent: todaySent || 0,
+    todaySent: actualTodaySent,
     dailyLimit: DAILY_LIMIT,
-    remainingToday: Math.max(0, DAILY_LIMIT - (todaySent || 0))
+    remainingToday: actualRemainingToday,
+    // Include Brevo stats for debugging
+    brevoStats: brevoStats ? {
+      remainingEmails: brevoStats.remainingEmails,
+      planType: brevoStats.planType,
+    } : null,
   };
 }
 
