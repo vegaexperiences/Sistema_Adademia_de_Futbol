@@ -80,19 +80,40 @@ export async function POST(request: Request) {
         break;
 
       case 'delivered':
-        const { data: deliveredEmail, error: deliveredError } = await supabase
+        // Try brevo_email_id first, then resend_email_id as fallback
+        let deliveredEmail = null;
+        let deliveredError = null;
+        
+        // Try brevo_email_id
+        const { data: brevoDelivered, error: brevoError } = await supabase
           .from('email_queue')
           .update({ delivered_at: new Date().toISOString() })
           .eq('brevo_email_id', messageId)
           .select('id')
           .single();
         
+        if (brevoError && (brevoError.message?.includes('brevo_email_id') || brevoError.code === '42703')) {
+          // Column doesn't exist, try resend_email_id
+          const { data: resendDelivered, error: resendError } = await supabase
+            .from('email_queue')
+            .update({ delivered_at: new Date().toISOString() })
+            .eq('resend_email_id', messageId)
+            .select('id')
+            .single();
+          
+          deliveredEmail = resendDelivered;
+          deliveredError = resendError;
+        } else {
+          deliveredEmail = brevoDelivered;
+          deliveredError = brevoError;
+        }
+        
         if (deliveredError || !deliveredEmail) {
-          // Try to find by partial match (in case format differs)
+          // Try to find by partial match using resend_email_id
           const { data: partialMatch } = await supabase
             .from('email_queue')
-            .select('id, brevo_email_id')
-            .like('brevo_email_id', `%${messageId.split('@')[0]}%`)
+            .select('id, resend_email_id, brevo_email_id')
+            .or(`resend_email_id.ilike.%${messageId.split('@')[0]}%,brevo_email_id.ilike.%${messageId.split('@')[0]}%`)
             .limit(1)
             .single();
           
@@ -103,7 +124,7 @@ export async function POST(request: Request) {
               .eq('id', partialMatch.id);
             console.log(`Email delivered (partial match): ${messageId} (email_queue id: ${partialMatch.id})`);
           } else {
-            console.warn(`Could not find email with brevo_email_id: ${messageId}`, deliveredError);
+            console.warn(`Could not find email with messageId: ${messageId}`, deliveredError);
           }
         } else {
           console.log(`Email delivered: ${messageId} (email_queue id: ${deliveredEmail.id})`);
@@ -113,19 +134,39 @@ export async function POST(request: Request) {
       case 'opened':
       case 'unique_opened':
         // unique_opened is the same as opened - first time email is opened
-        const { data: openedEmail, error: openedError } = await supabase
+        // Try brevo_email_id first, then resend_email_id as fallback
+        let openedEmail = null;
+        let openedError = null;
+        
+        const { data: brevoOpened, error: brevoOpenedErr } = await supabase
           .from('email_queue')
           .update({ opened_at: new Date().toISOString() })
           .eq('brevo_email_id', messageId)
           .select('id')
           .single();
         
+        if (brevoOpenedErr && (brevoOpenedErr.message?.includes('brevo_email_id') || brevoOpenedErr.code === '42703')) {
+          // Column doesn't exist, try resend_email_id
+          const { data: resendOpened, error: resendOpenedErr } = await supabase
+            .from('email_queue')
+            .update({ opened_at: new Date().toISOString() })
+            .eq('resend_email_id', messageId)
+            .select('id')
+            .single();
+          
+          openedEmail = resendOpened;
+          openedError = resendOpenedErr;
+        } else {
+          openedEmail = brevoOpened;
+          openedError = brevoOpenedErr;
+        }
+        
         if (openedError || !openedEmail) {
-          // Try to find by partial match
+          // Try to find by partial match using resend_email_id
           const { data: partialMatch } = await supabase
             .from('email_queue')
-            .select('id, brevo_email_id')
-            .like('brevo_email_id', `%${messageId.split('@')[0]}%`)
+            .select('id, resend_email_id, brevo_email_id')
+            .or(`resend_email_id.ilike.%${messageId.split('@')[0]}%,brevo_email_id.ilike.%${messageId.split('@')[0]}%`)
             .limit(1)
             .single();
           
@@ -136,7 +177,7 @@ export async function POST(request: Request) {
               .eq('id', partialMatch.id);
             console.log(`Email opened (partial match): ${messageId} (email_queue id: ${partialMatch.id})`);
           } else {
-            console.warn(`Could not find email with brevo_email_id: ${messageId}`, openedError);
+            console.warn(`Could not find email with messageId: ${messageId}`, openedError);
           }
         } else {
           console.log(`Email opened: ${messageId} (email_queue id: ${openedEmail.id})`);
@@ -144,15 +185,35 @@ export async function POST(request: Request) {
         break;
 
       case 'click':
-        const { data: clickedEmail, error: clickedError } = await supabase
+        // Try brevo_email_id first, then resend_email_id as fallback
+        let clickedEmail = null;
+        let clickedError = null;
+        
+        const { data: brevoClicked, error: brevoClickedErr } = await supabase
           .from('email_queue')
           .update({ clicked_at: new Date().toISOString() })
           .eq('brevo_email_id', messageId)
           .select('id')
           .single();
         
+        if (brevoClickedErr && (brevoClickedErr.message?.includes('brevo_email_id') || brevoClickedErr.code === '42703')) {
+          // Column doesn't exist, try resend_email_id
+          const { data: resendClicked, error: resendClickedErr } = await supabase
+            .from('email_queue')
+            .update({ clicked_at: new Date().toISOString() })
+            .eq('resend_email_id', messageId)
+            .select('id')
+            .single();
+          
+          clickedEmail = resendClicked;
+          clickedError = resendClickedErr;
+        } else {
+          clickedEmail = brevoClicked;
+          clickedError = brevoClickedErr;
+        }
+        
         if (clickedError || !clickedEmail) {
-          console.warn(`Could not find email with brevo_email_id: ${messageId}`, clickedError);
+          console.warn(`Could not find email with messageId: ${messageId}`, clickedError);
         } else {
           console.log(`Email link clicked: ${messageId} (email_queue id: ${clickedEmail.id})`);
         }
@@ -161,7 +222,8 @@ export async function POST(request: Request) {
       case 'bounce':
       case 'hardBounce':
       case 'softBounce':
-        await supabase
+        // Try brevo_email_id first, then resend_email_id
+        let bounceResult = await supabase
           .from('email_queue')
           .update({ 
             bounced_at: new Date().toISOString(),
@@ -169,29 +231,61 @@ export async function POST(request: Request) {
             error_message: eventData.reason || eventData['reason'] || 'Email bounced'
           })
           .eq('brevo_email_id', messageId);
+        
+        if (bounceResult.error && (bounceResult.error.message?.includes('brevo_email_id') || bounceResult.error.code === '42703')) {
+          bounceResult = await supabase
+            .from('email_queue')
+            .update({ 
+              bounced_at: new Date().toISOString(),
+              status: 'failed',
+              error_message: eventData.reason || eventData['reason'] || 'Email bounced'
+            })
+            .eq('resend_email_id', messageId);
+        }
         console.log(`Email bounced: ${messageId}`);
         break;
 
       case 'spam':
-        // Mark as spam
-        await supabase
+        // Mark as spam - try brevo_email_id first, then resend_email_id
+        let spamResult = await supabase
           .from('email_queue')
           .update({ 
             status: 'failed',
             error_message: 'Marked as spam'
           })
           .eq('brevo_email_id', messageId);
+        
+        if (spamResult.error && (spamResult.error.message?.includes('brevo_email_id') || spamResult.error.code === '42703')) {
+          spamResult = await supabase
+            .from('email_queue')
+            .update({ 
+              status: 'failed',
+              error_message: 'Marked as spam'
+            })
+            .eq('resend_email_id', messageId);
+        }
         console.log(`Email marked as spam: ${messageId}`);
         break;
 
       case 'blocked':
-        await supabase
+        // Try brevo_email_id first, then resend_email_id
+        let blockedResult = await supabase
           .from('email_queue')
           .update({ 
             status: 'failed',
             error_message: 'Email blocked'
           })
           .eq('brevo_email_id', messageId);
+        
+        if (blockedResult.error && (blockedResult.error.message?.includes('brevo_email_id') || blockedResult.error.code === '42703')) {
+          blockedResult = await supabase
+            .from('email_queue')
+            .update({ 
+              status: 'failed',
+              error_message: 'Email blocked'
+            })
+            .eq('resend_email_id', messageId);
+        }
         console.log(`Email blocked: ${messageId}`);
         break;
 

@@ -104,16 +104,17 @@ export default async function EmailsPage() {
   const todayEnd = `${today}T23:59:59.999Z`;
   
   // Get ALL emails in the queue for debugging (not just sent)
+  // Use resend_email_id as fallback since brevo_email_id might not exist yet
   const { data: allEmails, count: totalEmails, error: allEmailsError } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id, status, created_at, scheduled_for, to_email', { count: 'exact' })
+    .select('id, subject, sent_at, resend_email_id, brevo_email_id, status, created_at, scheduled_for, to_email', { count: 'exact' })
     .order('created_at', { ascending: false })
     .limit(20);
   
   // Get all sent emails with their sent_at dates for debugging
   const { data: sentEmails, error: sentEmailsError } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id, status, created_at, scheduled_for, to_email')
+    .select('id, subject, sent_at, resend_email_id, brevo_email_id, status, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
     .order('created_at', { ascending: false })
     .limit(10);
@@ -121,7 +122,7 @@ export default async function EmailsPage() {
   // Get emails sent today for debugging
   const { data: todayEmails, error: todayEmailsError } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for, to_email')
+    .select('id, subject, sent_at, resend_email_id, brevo_email_id, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
     .not('sent_at', 'is', null)
     .gte('sent_at', todayStart)
@@ -130,7 +131,7 @@ export default async function EmailsPage() {
   // Also get emails with status='sent' but sent_at is null (data issue)
   const { data: sentWithoutDate, error: sentWithoutDateError } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for, to_email')
+    .select('id, subject, sent_at, resend_email_id, brevo_email_id, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
     .is('sent_at', null)
     .limit(10);

@@ -231,20 +231,48 @@ export async function processEmailQueue() {
       console.log(`Email sent via Brevo - messageId: ${messageId}, email_queue id: ${email.id}`);
       
       // Update with Brevo message ID and sent_at timestamp
+      // Try brevo_email_id first, fallback to resend_email_id if column doesn't exist
       const sentAt = new Date().toISOString();
-      const { error: updateError } = await supabase
-        .from('email_queue')
-        .update({
-          status: 'sent',
-          sent_at: sentAt,
-          brevo_email_id: messageId || null
-        })
-        .eq('id', email.id);
+      const updateData: any = {
+        status: 'sent',
+        sent_at: sentAt,
+      };
       
-      if (updateError) {
-        console.error('Error updating email_queue with brevo_email_id:', updateError);
-      } else {
-        console.log(`Email queue updated successfully - brevo_email_id: ${messageId}`);
+      // Try to update with brevo_email_id, but handle case where column doesn't exist
+      try {
+        const { error: updateError } = await supabase
+          .from('email_queue')
+          .update({
+            ...updateData,
+            brevo_email_id: messageId || null
+          })
+          .eq('id', email.id);
+        
+        if (updateError) {
+          // If brevo_email_id column doesn't exist, try resend_email_id
+          if (updateError.message?.includes('brevo_email_id') || updateError.code === '42703') {
+            console.log('brevo_email_id column not found, using resend_email_id as fallback');
+            const { error: fallbackError } = await supabase
+              .from('email_queue')
+              .update({
+                ...updateData,
+                resend_email_id: messageId || null
+              })
+              .eq('id', email.id);
+            
+            if (fallbackError) {
+              console.error('Error updating email_queue with resend_email_id:', fallbackError);
+            } else {
+              console.log(`Email queue updated successfully - resend_email_id: ${messageId}`);
+            }
+          } else {
+            console.error('Error updating email_queue:', updateError);
+          }
+        } else {
+          console.log(`Email queue updated successfully - brevo_email_id: ${messageId}`);
+        }
+      } catch (err: any) {
+        console.error('Unexpected error updating email_queue:', err);
       }
       
       // Update player monthly statement timestamp if applicable
