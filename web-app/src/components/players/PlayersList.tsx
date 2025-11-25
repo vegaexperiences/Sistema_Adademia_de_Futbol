@@ -317,7 +317,7 @@ export default function PlayersList({ players, initialView = 'active' }: Players
                   </div>
                 </div>
               </div>
-            </Link>
+            </div>
           ))
         ) : (
           <div className="glass-card p-12 text-center">
