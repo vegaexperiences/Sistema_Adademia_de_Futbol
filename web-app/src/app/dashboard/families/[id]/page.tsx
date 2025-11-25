@@ -281,6 +281,7 @@ export default async function FamilyProfilePage({
             <CreatePaymentButton 
               players={approvedPlayers} 
               familyName={family.tutor_name || 'Familia'}
+              tutorEmail={family.tutor_email || null}
             />
           )}
         </div>

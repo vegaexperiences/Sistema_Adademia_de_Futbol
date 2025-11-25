@@ -11,15 +11,18 @@ interface Player {
   last_name: string;
   status: string;
   category?: string | null;
+  family_id?: string | null;
+  tutor_email?: string | null;
 }
 
 interface CreatePaymentModalProps {
   players: Player[];
   familyName: string;
+  tutorEmail?: string | null;
   onClose: () => void;
 }
 
-export function CreatePaymentModal({ players, familyName, onClose }: CreatePaymentModalProps) {
+export function CreatePaymentModal({ players, familyName, tutorEmail, onClose }: CreatePaymentModalProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
@@ -101,9 +104,6 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
 
   const handlePagueloFacilSuccess = async (transactionId: string, response: any) => {
     try {
-      // Get selected player info for email
-      const selectedPlayer = eligiblePlayers.find(p => p.id === selectedPlayerId);
-      
       await createPayment({
         player_id: selectedPlayerId,
         amount: parseFloat(formData.amount),
@@ -343,7 +343,7 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
         <PagueloFacilCheckout
           amount={parseFloat(formData.amount)}
           description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.first_name || ''} ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.last_name || ''}`}
-          email={eligiblePlayers.find(p => p.id === selectedPlayerId)?.id ? 'tutor@example.com' : ''} // TODO: Get tutor email
+          email={tutorEmail || eligiblePlayers.find(p => p.id === selectedPlayerId)?.tutor_email || ''}
           orderId={`payment-${selectedPlayerId}-${Date.now()}`}
           apiKey={pagueloFacilConfig.apiKey}
           cclw={pagueloFacilConfig.cclw}

@@ -15,9 +15,10 @@ interface Player {
 interface CreatePaymentButtonProps {
   players: Player[];
   familyName: string;
+  tutorEmail?: string | null;
 }
 
-export function CreatePaymentButton({ players, familyName }: CreatePaymentButtonProps) {
+export function CreatePaymentButton({ players, familyName, tutorEmail }: CreatePaymentButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -38,6 +39,7 @@ export function CreatePaymentButton({ players, familyName }: CreatePaymentButton
         <CreatePaymentModal
           players={players}
           familyName={familyName}
+          tutorEmail={tutorEmail}
           onClose={() => setIsOpen(false)}
         />
       )}
