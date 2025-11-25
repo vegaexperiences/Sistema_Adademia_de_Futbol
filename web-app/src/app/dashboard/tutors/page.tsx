@@ -5,7 +5,7 @@ export default async function TutorsPage() {
   const supabase = await createClient();
   
   // Get all players with tutor info (both from families and individual)
-  const { data: players } = await supabase
+  const { data: players, error: playersError } = await supabase
     .from('players')
     .select(`
       id,
@@ -25,9 +25,55 @@ export default async function TutorsPage() {
         secondary_email
       )
     `);
+
+  if (playersError) {
+    console.error('Error fetching players:', playersError);
+  }
+
+  // Also get all families directly to ensure we show family tutors even without players
+  const { data: families, error: familiesError } = await supabase
+    .from('families')
+    .select(`
+      id,
+      tutor_name,
+      tutor_email,
+      tutor_phone,
+      tutor_cedula,
+      tutor_cedula_url,
+      secondary_email,
+      players (id)
+    `);
+
+  if (familiesError) {
+    console.error('Error fetching families:', familiesError);
+  }
   
   // Get unique tutors by cedula, email, or name (as fallback identifiers)
   const tutorsMap = new Map<string, any>();
+
+  // First, add tutors from families
+  families?.forEach(family => {
+    if (family.tutor_name || family.tutor_email) {
+      const tutorKey = family.tutor_cedula || family.tutor_email || family.tutor_name;
+      if (tutorKey) {
+        const playerIds = Array.isArray(family.players) 
+          ? family.players.map((p: any) => p.id)
+          : [];
+        
+        tutorsMap.set(tutorKey, {
+          name: family.tutor_name || null,
+          email: family.tutor_email || null,
+          secondary_email: family.secondary_email || null,
+          phone: family.tutor_phone || null,
+          cedula: family.tutor_cedula || null,
+          cedula_url: family.tutor_cedula_url || null,
+          playerIds: playerIds,
+          type: 'Family' as const,
+          familyId: family.id
+        });
+      }
+    }
+  });
   
   players?.forEach(player => {
     let tutorKey: string | null = null;
@@ -76,6 +122,11 @@ export default async function TutorsPage() {
         if (!existing.playerIds.includes(player.id)) {
           existing.playerIds.push(player.id);
         }
+        // Update tutor info from player if family info is missing
+        if (!existing.name && tutorData.name) existing.name = tutorData.name;
+        if (!existing.email && tutorData.email) existing.email = tutorData.email;
+        if (!existing.phone && tutorData.phone) existing.phone = tutorData.phone;
+        if (!existing.cedula && tutorData.cedula) existing.cedula = tutorData.cedula;
       } else {
         tutorData.playerIds = [player.id];
         tutorsMap.set(tutorKey, tutorData);
