@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
+import { revalidatePath } from 'next/cache';
 
 // Brevo webhook events
 // https://developers.brevo.com/docs/webhooks-2
+
+// GET method for webhook URL validation
+export async function GET() {
+  return NextResponse.json({ 
+    status: 'ok', 
+    message: 'Brevo webhook endpoint is active',
+    timestamp: new Date().toISOString()
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -131,6 +141,9 @@ export async function POST(request: Request) {
         console.log(`Unhandled webhook event: ${event} for message ${messageId}`);
     }
     }
+
+    // Revalidate email settings page to update counters
+    revalidatePath('/dashboard/settings/emails');
 
     return NextResponse.json({ received: true, processed });
   } catch (error: any) {

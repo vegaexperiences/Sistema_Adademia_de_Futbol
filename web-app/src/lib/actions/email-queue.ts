@@ -40,11 +40,10 @@ export async function queueEmail(
     return { error: 'Template not found' };
   }
   
+  // Use production URL for logo - must be publicly accessible
   const defaultLogoUrl =
     process.env.NEXT_PUBLIC_LOGO_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}/logo.png`
-      : `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/logo.png`);
+    'https://sistema-adademia-de-futbol-tura.vercel.app/logo.png';
 
   const mergedVariables = {
     logoUrl: defaultLogoUrl,
