@@ -314,25 +314,34 @@ async function getBrevoAccountStats() {
     // Try to get account information
     const accountInfo = await brevoAccount.getAccount();
     
-    // Log the full response to understand the structure
-    console.log('Brevo account info response:', JSON.stringify(accountInfo, null, 2));
+    // Brevo SDK returns { response, body } structure
+    // The actual data is in the body property
+    const response = accountInfo as any;
+    const body = response.body || response;
+    
+    // Log the body to understand the structure (but limit size to avoid huge logs)
+    const bodyStr = JSON.stringify(body, null, 2);
+    if (bodyStr.length < 1000) {
+      console.log('Brevo account info body:', bodyStr);
+    } else {
+      console.log('Brevo account info body (truncated):', bodyStr.substring(0, 1000) + '...');
+    }
     
     // Brevo account info may include plan limits and usage
     // The response structure can vary, so we check multiple possible fields
-    const response = accountInfo as any;
-    
     // Try different possible field names for remaining emails
     const remainingEmails = 
-      response.emailCredits || 
-      response.remainingEmails || 
-      response.credits?.email || 
-      response.plan?.emailCredits ||
-      response.plan?.remainingEmails ||
+      body.emailCredits || 
+      body.remainingEmails || 
+      body.credits?.email || 
+      body.plan?.emailCredits ||
+      body.plan?.remainingEmails ||
+      body.plan?.emailLimit ||
       null;
     
     return {
-      planType: response.planType || response.plan?.type || null,
-      credits: response.credits || null,
+      planType: body.planType || body.plan?.type || null,
+      credits: body.credits || null,
       remainingEmails: remainingEmails,
     };
   } catch (error) {

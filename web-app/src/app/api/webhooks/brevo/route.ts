@@ -84,49 +84,72 @@ export async function POST(request: Request) {
         let deliveredEmail = null;
         let deliveredError = null;
         
-        // Try brevo_email_id
+        // First try exact match with brevo_email_id
         const { data: brevoDelivered, error: brevoError } = await supabase
           .from('email_queue')
           .update({ delivered_at: new Date().toISOString() })
           .eq('brevo_email_id', messageId)
-          .select('id')
+          .select('id, brevo_email_id')
           .single();
         
-        if (brevoError && (brevoError.message?.includes('brevo_email_id') || brevoError.code === '42703')) {
-          // Column doesn't exist, try resend_email_id
+        if (brevoError || !brevoDelivered) {
+          // Try resend_email_id as fallback (for old emails)
           const { data: resendDelivered, error: resendError } = await supabase
             .from('email_queue')
             .update({ delivered_at: new Date().toISOString() })
             .eq('resend_email_id', messageId)
-            .select('id')
+            .select('id, resend_email_id')
             .single();
           
-          deliveredEmail = resendDelivered;
-          deliveredError = resendError;
-        } else {
-          deliveredEmail = brevoDelivered;
-          deliveredError = brevoError;
-        }
-        
-        if (deliveredError || !deliveredEmail) {
-          // Try to find by partial match using resend_email_id
-          const { data: partialMatch } = await supabase
-            .from('email_queue')
-            .select('id, resend_email_id, brevo_email_id')
-            .or(`resend_email_id.ilike.%${messageId.split('@')[0]}%,brevo_email_id.ilike.%${messageId.split('@')[0]}%`)
-            .limit(1)
-            .single();
-          
-          if (partialMatch) {
-            await supabase
-              .from('email_queue')
-              .update({ delivered_at: new Date().toISOString() })
-              .eq('id', partialMatch.id);
-            console.log(`Email delivered (partial match): ${messageId} (email_queue id: ${partialMatch.id})`);
+          if (resendDelivered && !resendError) {
+            deliveredEmail = resendDelivered;
+            console.log(`Email delivered (resend_email_id): ${messageId} (email_queue id: ${deliveredEmail.id})`);
           } else {
-            console.warn(`Could not find email with messageId: ${messageId}`, deliveredError);
+            // Try partial match - Brevo messageId might have extra info
+            const messageIdBase = messageId.split('@')[0] || messageId.split('<')[0] || messageId;
+            const { data: partialMatches } = await supabase
+              .from('email_queue')
+              .select('id, brevo_email_id, resend_email_id')
+              .or(`brevo_email_id.ilike.%${messageIdBase}%,resend_email_id.ilike.%${messageIdBase}%`)
+              .limit(5);
+            
+            if (partialMatches && partialMatches.length > 0) {
+              // Update the first match
+              const match = partialMatches[0];
+              await supabase
+                .from('email_queue')
+                .update({ delivered_at: new Date().toISOString() })
+                .eq('id', match.id);
+              console.log(`Email delivered (partial match): ${messageId} -> ${match.brevo_email_id || match.resend_email_id} (email_queue id: ${match.id})`);
+            } else {
+              // Last resort: try to find by to_email if we have it in the webhook
+              const toEmail = eventData.email || eventData['email'] || eventData.to;
+              if (toEmail) {
+                const { data: emailMatch } = await supabase
+                  .from('email_queue')
+                  .select('id, to_email')
+                  .eq('to_email', toEmail)
+                  .eq('status', 'sent')
+                  .order('sent_at', { ascending: false })
+                  .limit(1)
+                  .single();
+                
+                if (emailMatch) {
+                  await supabase
+                    .from('email_queue')
+                    .update({ delivered_at: new Date().toISOString() })
+                    .eq('id', emailMatch.id);
+                  console.log(`Email delivered (by email match): ${messageId} -> ${toEmail} (email_queue id: ${emailMatch.id})`);
+                } else {
+                  console.warn(`Could not find email with messageId: ${messageId} or email: ${toEmail}`);
+                }
+              } else {
+                console.warn(`Could not find email with messageId: ${messageId} (no email address in webhook)`);
+              }
+            }
           }
         } else {
+          deliveredEmail = brevoDelivered;
           console.log(`Email delivered: ${messageId} (email_queue id: ${deliveredEmail.id})`);
         }
         break;
@@ -138,48 +161,72 @@ export async function POST(request: Request) {
         let openedEmail = null;
         let openedError = null;
         
+        // First try exact match with brevo_email_id
         const { data: brevoOpened, error: brevoOpenedErr } = await supabase
           .from('email_queue')
           .update({ opened_at: new Date().toISOString() })
           .eq('brevo_email_id', messageId)
-          .select('id')
+          .select('id, brevo_email_id')
           .single();
         
-        if (brevoOpenedErr && (brevoOpenedErr.message?.includes('brevo_email_id') || brevoOpenedErr.code === '42703')) {
-          // Column doesn't exist, try resend_email_id
+        if (brevoOpenedErr || !brevoOpened) {
+          // Try resend_email_id as fallback (for old emails)
           const { data: resendOpened, error: resendOpenedErr } = await supabase
             .from('email_queue')
             .update({ opened_at: new Date().toISOString() })
             .eq('resend_email_id', messageId)
-            .select('id')
+            .select('id, resend_email_id')
             .single();
           
-          openedEmail = resendOpened;
-          openedError = resendOpenedErr;
-        } else {
-          openedEmail = brevoOpened;
-          openedError = brevoOpenedErr;
-        }
-        
-        if (openedError || !openedEmail) {
-          // Try to find by partial match using resend_email_id
-          const { data: partialMatch } = await supabase
-            .from('email_queue')
-            .select('id, resend_email_id, brevo_email_id')
-            .or(`resend_email_id.ilike.%${messageId.split('@')[0]}%,brevo_email_id.ilike.%${messageId.split('@')[0]}%`)
-            .limit(1)
-            .single();
-          
-          if (partialMatch) {
-            await supabase
-              .from('email_queue')
-              .update({ opened_at: new Date().toISOString() })
-              .eq('id', partialMatch.id);
-            console.log(`Email opened (partial match): ${messageId} (email_queue id: ${partialMatch.id})`);
+          if (resendOpened && !resendOpenedErr) {
+            openedEmail = resendOpened;
+            console.log(`Email opened (resend_email_id): ${messageId} (email_queue id: ${openedEmail.id})`);
           } else {
-            console.warn(`Could not find email with messageId: ${messageId}`, openedError);
+            // Try partial match - Brevo messageId might have extra info
+            const messageIdBase = messageId.split('@')[0] || messageId.split('<')[0] || messageId;
+            const { data: partialMatches } = await supabase
+              .from('email_queue')
+              .select('id, brevo_email_id, resend_email_id')
+              .or(`brevo_email_id.ilike.%${messageIdBase}%,resend_email_id.ilike.%${messageIdBase}%`)
+              .limit(5);
+            
+            if (partialMatches && partialMatches.length > 0) {
+              // Update the first match
+              const match = partialMatches[0];
+              await supabase
+                .from('email_queue')
+                .update({ opened_at: new Date().toISOString() })
+                .eq('id', match.id);
+              console.log(`Email opened (partial match): ${messageId} -> ${match.brevo_email_id || match.resend_email_id} (email_queue id: ${match.id})`);
+            } else {
+              // Last resort: try to find by to_email if we have it in the webhook
+              const toEmail = eventData.email || eventData['email'] || eventData.to;
+              if (toEmail) {
+                const { data: emailMatch } = await supabase
+                  .from('email_queue')
+                  .select('id, to_email')
+                  .eq('to_email', toEmail)
+                  .eq('status', 'sent')
+                  .order('sent_at', { ascending: false })
+                  .limit(1)
+                  .single();
+                
+                if (emailMatch) {
+                  await supabase
+                    .from('email_queue')
+                    .update({ opened_at: new Date().toISOString() })
+                    .eq('id', emailMatch.id);
+                  console.log(`Email opened (by email match): ${messageId} -> ${toEmail} (email_queue id: ${emailMatch.id})`);
+                } else {
+                  console.warn(`Could not find email with messageId: ${messageId} or email: ${toEmail}`);
+                }
+              } else {
+                console.warn(`Could not find email with messageId: ${messageId} (no email address in webhook)`);
+              }
+            }
           }
         } else {
+          openedEmail = brevoOpened;
           console.log(`Email opened: ${messageId} (email_queue id: ${openedEmail.id})`);
         }
         break;
