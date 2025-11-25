@@ -25,6 +25,10 @@ export default async function PlayerProfilePage({
     .select(`
       *,
       families (
+        tutor_name,
+        tutor_email,
+        tutor_phone,
+        tutor_cedula,
         tutor_cedula_url
       )
     `)
@@ -145,7 +149,9 @@ export default async function PlayerProfilePage({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500">
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">👤 Nombre</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{player.tutor_name || 'Sin información'}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">
+              {player.families?.tutor_name || player.tutor_name || 'Sin información'}
+            </p>
           </div>
 
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border-l-4 border-blue-500">
@@ -153,7 +159,9 @@ export default async function PlayerProfilePage({
               <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email</p>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{player.tutor_email || 'Sin email'}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">
+              {player.families?.tutor_email || player.tutor_email || 'Sin email'}
+            </p>
           </div>
 
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
@@ -161,12 +169,16 @@ export default async function PlayerProfilePage({
               <Phone className="h-4 w-4 text-green-600 dark:text-green-400" />
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Teléfono</p>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{player.tutor_phone || 'Sin teléfono'}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">
+              {player.families?.tutor_phone || player.tutor_phone || 'Sin teléfono'}
+            </p>
           </div>
 
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border-l-4 border-purple-500">
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">🆔 Cédula Tutor</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{player.tutor_cedula || 'Sin cédula'}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">
+              {player.families?.tutor_cedula || player.tutor_cedula || 'Sin cédula'}
+            </p>
           </div>
         </div>
       </div>

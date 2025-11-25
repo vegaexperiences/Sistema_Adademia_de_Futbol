@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { brevo, SendSmtpEmail } from '@/lib/brevo/client';
 import { enrollmentSchema } from '@/lib/validations/enrollment';
 
 export async function POST(request: Request) {
@@ -150,41 +149,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // 5. Send Email
-    if (process.env.BREVO_API_KEY) {
-      const { generateEnrollmentEmail } = await import('@/lib/email/enrollment-template');
+    // 5. Send Email using queue system
+    try {
+      const { queueEmail } = await import('@/lib/actions/email-queue');
+      const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
       
-      // Get logo URL from public folder (deployed URLs will use the deployed domain)
-      const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || 'https://cdn-icons-png.flaticon.com/512/1857/1857924.png';
-      
-      const emailHtml = generateEnrollmentEmail(
-        logoUrl,
-        data.tutorName,
-        data.players,
-        totalAmount,
-        data.paymentMethod
-      );
-
-      const sendSmtpEmail: SendSmtpEmail = {
-        sender: { name: 'Suarez Academy', email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' },
-        to: [{ email: data.tutorEmail }],
-        subject: 'Confirmación de Matrícula - Suarez Academy',
-        htmlContent: emailHtml,
-      };
-
-      const emailResponse = await brevo.sendTransacEmail(sendSmtpEmail);
-
-      // Brevo returns { response, body } where body contains the messageId
-      const messageId = emailResponse.body?.messageId || (emailResponse as any).messageId;
-
-      // Log email send for daily counter with Brevo email ID
-      const { logEmailSent } = await import('@/lib/actions/email-log');
-      await logEmailSent(
-        data.tutorEmail, 
-        'Confirmación de Matrícula - Suarez Academy', 
-        'enrollment',
-        messageId || null
-      );
+      await queueEmail('pre_enrollment', data.tutorEmail, {
+        tutorName: data.tutorName,
+        playerNames: playerNames,
+        amount: totalAmount.toFixed(2),
+        paymentMethod: data.paymentMethod,
+      });
+    } catch (emailError) {
+      console.error('Error queuing enrollment confirmation email:', emailError);
+      // Don't fail the enrollment if email fails, but log it
     }
 
     return NextResponse.json({ success: true, familyId: familyId });
