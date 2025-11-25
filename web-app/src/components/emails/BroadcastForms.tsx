@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { useMemo, type ReactNode } from 'react';
+import { useActionState, useMemo, type ReactNode } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Send, Megaphone, Users } from 'lucide-react';
 
 type FormState = {
@@ -20,8 +20,8 @@ export function BroadcastForms({
   sendTournamentAction,
   sendGeneralAction,
 }: BroadcastFormsProps) {
-  const [tournamentState, tournamentAction] = useFormState(sendTournamentAction, initialState);
-  const [generalState, generalAction] = useFormState(sendGeneralAction, initialState);
+  const [tournamentState, tournamentAction] = useActionState(sendTournamentAction, initialState);
+  const [generalState, generalAction] = useActionState(sendGeneralAction, initialState);
 
   const audienceOptions = useMemo(
     () => [
