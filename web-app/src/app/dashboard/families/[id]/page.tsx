@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getPlayersPayments } from '@/lib/actions/payments';
 import PaymentHistory from '@/components/payments/PaymentHistory';
 import { CreatePaymentButton } from '@/components/payments/CreatePaymentButton';
+import { getPlayerCategory } from '@/lib/utils/player-category';
 
 export default async function FamilyProfilePage({ 
   params 
@@ -26,9 +27,21 @@ export default async function FamilyProfilePage({
   }
 
   // Filter to only show approved players (Active or Scholarship)
-  const approvedPlayers = family.players?.filter((p: any) => 
+  // Also calculate/ensure category is set for each player
+  const approvedPlayers = (family.players?.filter((p: any) => 
     p.status === 'Active' || p.status === 'Scholarship'
-  ) || [];
+  ) || []).map((p: any) => {
+    // If category is missing or is 'Pendiente', calculate it from birth date
+    if (!p.category || p.category === 'Pendiente') {
+      if (p.birth_date && p.gender) {
+        const genderForCategory = p.gender === 'M' ? 'Masculino' : 'Femenino';
+        p.category = getPlayerCategory(p.birth_date, genderForCategory);
+      } else {
+        p.category = null;
+      }
+    }
+    return p;
+  });
 
   const playerCount = approvedPlayers.length;
   const activeCount = approvedPlayers.filter((p: any) => p.status === 'Active').length;
