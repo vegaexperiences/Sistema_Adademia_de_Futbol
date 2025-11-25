@@ -236,6 +236,22 @@ export interface TutorRecipient {
   tutorName: string | null;
 }
 
+type PlayerWithFamily = {
+  id: string;
+  family_id: string | null;
+  status: string;
+  families:
+    | {
+        tutor_email: string | null;
+        tutor_name: string | null;
+      }
+    | Array<{
+        tutor_email: string | null;
+        tutor_name: string | null;
+      }>
+    | null;
+};
+
 export async function getTutorRecipientsByStatuses(statuses: string[]): Promise<TutorRecipient[]> {
   if (!statuses.length) return [];
 
@@ -254,14 +270,15 @@ export async function getTutorRecipientsByStatuses(statuses: string[]): Promise<
 
   const dedup = new Map<string, TutorRecipient>();
 
-  data.forEach((player) => {
-    const email = player.families?.tutor_email?.toLowerCase();
+  (data as PlayerWithFamily[]).forEach((player) => {
+    const family = Array.isArray(player.families) ? player.families[0] : player.families;
+    const email = family?.tutor_email?.toLowerCase();
     if (!email) return;
 
     if (!dedup.has(email)) {
       dedup.set(email, {
         email,
-        tutorName: player.families?.tutor_name || 'Familia Suarez',
+        tutorName: family?.tutor_name || 'Familia Suarez',
       });
     }
   });

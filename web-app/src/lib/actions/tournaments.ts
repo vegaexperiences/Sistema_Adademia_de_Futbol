@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { queueEmail } from '@/lib/actions/email-queue';
 
 export async function getTournaments() {
   const supabase = await createClient();
@@ -115,6 +116,12 @@ export async function registerTeam(data: {
 }) {
   const supabase = await createClient();
   
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('id, name, start_date, location')
+    .eq('id', data.tournament_id)
+    .single();
+  
   const { error } = await supabase
     .from('tournament_registrations')
     .insert([{
@@ -125,4 +132,117 @@ export async function registerTeam(data: {
 
   if (error) throw error;
   revalidatePath('/dashboard/tournaments');
+  revalidatePath('/dashboard/approvals');
+
+  if (tournament) {
+    try {
+      await queueEmail('tournament_registration_received', data.coach_email, {
+        coachName: data.coach_name,
+        teamName: data.team_name,
+        tournamentName: tournament.name,
+        tournamentDate: tournament.start_date
+          ? new Date(tournament.start_date).toLocaleDateString('es-ES')
+          : '',
+        tournamentLocation: tournament.location || 'Por confirmar',
+        category: data.category,
+      });
+    } catch (err) {
+      console.error('Error sending registration confirmation:', err);
+    }
+  }
+}
+
+export async function getPendingTournamentRegistrations() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('tournament_registrations')
+    .select(`
+      *,
+      tournaments:tournament_id (
+        name,
+        start_date,
+        end_date,
+        location
+      )
+    `)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching tournament registrations:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function approveTournamentRegistration(id: string) {
+  const supabase = await createClient();
+
+  const { data: registration, error } = await supabase
+    .from('tournament_registrations')
+    .select(`
+      *,
+      tournaments:tournament_id (
+        name,
+        start_date,
+        location
+      )
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error || !registration) {
+    console.error('Error fetching registration for approval:', error);
+    return { error: 'Registro no encontrado' };
+  }
+
+  const { error: updateError } = await supabase
+    .from('tournament_registrations')
+    .update({ status: 'approved' })
+    .eq('id', id);
+
+  if (updateError) {
+    console.error('Error approving registration:', updateError);
+    return { error: 'No se pudo aprobar el registro' };
+  }
+
+  try {
+    await queueEmail('tournament_registration_approved', registration.coach_email, {
+      coachName: registration.coach_name,
+      teamName: registration.team_name,
+      tournamentName: registration.tournaments?.name || 'Torneo',
+      tournamentDate: registration.tournaments?.start_date
+        ? new Date(registration.tournaments.start_date).toLocaleDateString('es-ES')
+        : '',
+      tournamentLocation: registration.tournaments?.location || 'Por confirmar',
+      category: registration.category,
+      nextSteps: 'Confirma asistencia y presenta tus comprobantes el día del evento.',
+    });
+  } catch (err) {
+    console.error('Error sending approval email:', err);
+  }
+
+  revalidatePath('/dashboard/approvals');
+  revalidatePath('/dashboard/tournaments');
+  return { success: true };
+}
+
+export async function rejectTournamentRegistration(id: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('tournament_registrations')
+    .update({ status: 'rejected' })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error rejecting registration:', error);
+    return { error: 'No se pudo rechazar el registro' };
+  }
+
+  revalidatePath('/dashboard/approvals');
+  revalidatePath('/dashboard/tournaments');
+  return { success: true };
 }
