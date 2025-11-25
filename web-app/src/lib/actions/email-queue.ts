@@ -319,13 +319,10 @@ async function getBrevoAccountStats() {
     const response = accountInfo as any;
     const body = response.body || response;
     
-    // Log the body to understand the structure (but limit size to avoid huge logs)
-    const bodyStr = JSON.stringify(body, null, 2);
-    if (bodyStr.length < 1000) {
-      console.log('Brevo account info body:', bodyStr);
-    } else {
-      console.log('Brevo account info body (truncated):', bodyStr.substring(0, 1000) + '...');
-    }
+    // Log the full body to understand the structure
+    // This helps us find the correct field for remaining emails
+    console.log('Brevo account info full body:', JSON.stringify(body, null, 2));
+    console.log('Brevo account info body keys:', Object.keys(body || {}));
     
     // Brevo account info may include plan limits and usage
     // The response structure can vary, so we check multiple possible fields
