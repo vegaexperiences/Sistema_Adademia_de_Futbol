@@ -119,6 +119,7 @@ export default async function EmailsPage() {
     .limit(10);
   
   // Get emails sent today for debugging
+  // Use date_trunc to ensure we're comparing dates correctly, regardless of timestamp precision
   const { data: todayEmails, error: todayEmailsError } = await supabase
     .from('email_queue')
     .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for, to_email')

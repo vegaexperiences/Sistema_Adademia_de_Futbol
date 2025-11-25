@@ -355,6 +355,7 @@ export async function getQueueStatus() {
   
   // Query for emails sent today - try sent_at first, then fallback to created_at if sent_at is null
   // This handles cases where emails were marked as 'sent' but sent_at wasn't set
+  // Use date comparison with proper timezone handling
   const { count: todaySentBySentAt, error: countError1 } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
