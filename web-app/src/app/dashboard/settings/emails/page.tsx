@@ -1,7 +1,95 @@
 import { getEmailTemplates } from '@/lib/actions/email-templates';
-import { getQueueStatus, processEmailQueue } from '@/lib/actions/email-queue';
+import { BroadcastForms } from '@/components/emails/BroadcastForms';
+import {
+  getQueueStatus,
+  processEmailQueue,
+  queueBatchEmails,
+  getTutorRecipientsByStatuses,
+} from '@/lib/actions/email-queue';
 import { Mail, Send, Clock, CheckCircle, XCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
+
+type FormState = {
+  ok?: boolean;
+  message?: string;
+};
+
+const audienceMap: Record<string, string[]> = {
+  active: ['Active', 'Scholarship'],
+  retired: ['Rejected'],
+  all: ['Active', 'Scholarship', 'Rejected'],
+};
+
+async function sendTournamentEmail(_: FormState, formData: FormData): Promise<FormState> {
+  'use server';
+  const tournamentName = formData.get('tournamentName')?.toString().trim();
+  const tournamentDate = formData.get('tournamentDate')?.toString();
+  const tournamentLocation = formData.get('tournamentLocation')?.toString().trim();
+  const additionalInfo = formData.get('additionalInfo')?.toString().trim() || '¡Te esperamos!';
+  const audience = formData.get('audience')?.toString() || 'active';
+
+  if (!tournamentName || !tournamentDate || !tournamentLocation) {
+    return { ok: false, message: 'Completa todos los campos del torneo.' };
+  }
+
+  const statuses = audienceMap[audience] || audienceMap.active;
+  const recipients = await getTutorRecipientsByStatuses(statuses);
+
+  if (!recipients.length) {
+    return { ok: false, message: 'No hay destinatarios con ese estado.' };
+  }
+
+  await queueBatchEmails(
+    'tournament_announcement',
+    recipients.map((recipient) => ({
+      email: recipient.email,
+      variables: {
+        tutorName: recipient.tutorName || 'Familia Suarez',
+        tournamentName,
+        tournamentDate: new Date(tournamentDate).toLocaleDateString('es-ES'),
+        tournamentLocation,
+        additionalInfo,
+      },
+    }))
+  );
+
+  revalidatePath('/dashboard/settings/emails');
+  return { ok: true, message: `Se encolaron ${recipients.length} correos.` };
+}
+
+async function sendGeneralBroadcast(_: FormState, formData: FormData): Promise<FormState> {
+  'use server';
+  const subject = formData.get('subject')?.toString().trim();
+  const message = formData.get('message')?.toString().trim();
+  const audience = formData.get('audience')?.toString() || 'active';
+
+  if (!subject || !message) {
+    return { ok: false, message: 'Asunto y mensaje son obligatorios.' };
+  }
+
+  const statuses = audienceMap[audience] || audienceMap.active;
+  const recipients = await getTutorRecipientsByStatuses(statuses);
+
+  if (!recipients.length) {
+    return { ok: false, message: 'No hay destinatarios con ese estado.' };
+  }
+
+  await queueBatchEmails(
+    'general_broadcast',
+    recipients.map((recipient) => ({
+      email: recipient.email,
+      variables: {
+        tutorName: recipient.tutorName || 'Familia Suarez',
+        customSubject: subject,
+        messageBody: message,
+      },
+    }))
+  );
+
+  revalidatePath('/dashboard/settings/emails');
+  return { ok: true, message: `Se encolaron ${recipients.length} correos.` };
+}
 
 export default async function EmailsPage() {
   const templates = await getEmailTemplates();
@@ -140,13 +228,19 @@ export default async function EmailsPage() {
         </div>
       </div>
 
+      {/* Broadcast Forms */}
+      <BroadcastForms
+        sendTournamentAction={sendTournamentEmail}
+        sendGeneralAction={sendGeneralBroadcast}
+      />
+
       {/* Info Card */}
       <div className="glass-card p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
         <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2">ℹ️ Información Importante</h3>
         <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-          <li>• Límite diario: <strong>98 correos</strong></li>
-          <li>• Los correos en cola se enviarán automáticamente respetando el límite</li>
-          <li>• Si hay más de 98 correos, se distribuirán en varios días</li>
+          <li>• Límite diario: <strong>300 correos</strong></li>
+          <li>• La cola se procesa automáticamente respetando ese tope diario</li>
+          <li>• Si hay más de 300 correos, se distribuyen en los días siguientes</li>
           <li>• Puedes procesar la cola manualmente con el botón superior</li>
         </ul>
       </div>

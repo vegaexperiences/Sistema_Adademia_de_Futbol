@@ -230,3 +230,41 @@ export async function getQueueStatus() {
     remainingToday: Math.max(0, DAILY_LIMIT - (todaySent || 0))
   };
 }
+
+export interface TutorRecipient {
+  email: string;
+  tutorName: string | null;
+}
+
+export async function getTutorRecipientsByStatuses(statuses: string[]): Promise<TutorRecipient[]> {
+  if (!statuses.length) return [];
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('players')
+    .select('id, family_id, status, families ( tutor_email, tutor_name )')
+    .in('status', statuses)
+    .not('family_id', 'is', null);
+
+  if (error || !data) {
+    console.error('Error fetching tutor recipients:', error);
+    return [];
+  }
+
+  const dedup = new Map<string, TutorRecipient>();
+
+  data.forEach((player) => {
+    const email = player.families?.tutor_email?.toLowerCase();
+    if (!email) return;
+
+    if (!dedup.has(email)) {
+      dedup.set(email, {
+        email,
+        tutorName: player.families?.tutor_name || 'Familia Suarez',
+      });
+    }
+  });
+
+  return Array.from(dedup.values());
+}
