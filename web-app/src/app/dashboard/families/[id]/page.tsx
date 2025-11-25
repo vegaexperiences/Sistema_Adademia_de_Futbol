@@ -182,24 +182,34 @@ export default async function FamilyProfilePage({
                 className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border-l-4 border-purple-500 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                      {player.first_name} {player.last_name}
-                    </p>
-                    <div className="flex gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">
+                        {player.first_name} {player.last_name}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 items-center">
                       {player.category && (
-                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
+                          background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                          color: '#1e3a8a'
+                        }}>
                           📚 {player.category}
                         </span>
                       )}
                       {player.gender && (
-                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
+                          background: player.gender === 'M' 
+                            ? 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)'
+                            : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
+                          color: player.gender === 'M' ? '#5b21b6' : '#be185d'
+                        }}>
                           {player.gender === 'M' ? '👦' : '👧'} {player.gender === 'M' ? 'Masculino' : 'Femenino'}
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
+                  <span className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ml-4" style={{
                     background: player.status === 'Active' 
                       ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
                       : player.status === 'Scholarship'
