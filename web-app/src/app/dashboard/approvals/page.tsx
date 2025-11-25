@@ -1,14 +1,11 @@
-import { getPendingPlayers, approvePlayer, rejectPlayer } from '@/lib/actions/approvals';
-import {
-  getPendingTournamentRegistrations,
-  approveTournamentRegistration,
-  rejectTournamentRegistration,
-} from '@/lib/actions/tournaments';
+import { getPendingPlayers } from '@/lib/actions/approvals';
+import { getPendingTournamentRegistrations } from '@/lib/actions/tournaments';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { CheckCircle, XCircle, GraduationCap, Trophy } from 'lucide-react';
+import { CheckCircle, Trophy } from 'lucide-react';
 import { getPlayerCategory, getCategoryColor } from '@/lib/utils/player-category';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
+import { PlayerApprovalButtons, TournamentApprovalButtons } from '@/components/approvals/ApprovalButtons';
 
 type PendingPlayer = Awaited<ReturnType<typeof getPendingPlayers>>[number];
 type TournamentRegistration = Awaited<ReturnType<typeof getPendingTournamentRegistrations>>[number];
@@ -260,63 +257,7 @@ function PlayerApprovals({
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-center gap-3 lg:min-w-[200px]">
-                  <form
-                    action={async () => {
-                      'use server';
-                      await approvePlayer(player.id, 'Active');
-                    }}
-                  >
-                    <button
-                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                      style={{
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
-                      }}
-                    >
-                      <CheckCircle size={20} />
-                      Aprobar Normal
-                    </button>
-                  </form>
-
-                  <form
-                    action={async () => {
-                      'use server';
-                      await approvePlayer(player.id, 'Scholarship');
-                    }}
-                  >
-                    <button
-                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                      style={{
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
-                      }}
-                    >
-                      <GraduationCap size={20} />
-                      Aprobar Becado
-                    </button>
-                  </form>
-
-                  <form
-                    action={async () => {
-                      'use server';
-                      await rejectPlayer(player.id);
-                    }}
-                  >
-                    <button
-                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                      style={{
-                        background: 'white',
-                        color: '#ef4444',
-                        border: '2px solid #ef4444',
-                        boxShadow: '0 4px 15px rgba(239, 68, 68, 0.2)',
-                      }}
-                    >
-                      <XCircle size={20} />
-                      Rechazar
-                    </button>
-                  </form>
-                </div>
+                <PlayerApprovalButtons playerId={player.id} />
               </div>
             </div>
           ))}
@@ -384,32 +325,7 @@ function TournamentApprovals({ registrations }: { registrations: TournamentRegis
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-3">
-                  <form
-                    className="flex-1"
-                    action={async () => {
-                      'use server';
-                      await approveTournamentRegistration(registration.id);
-                    }}
-                  >
-                    <button className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)' }}>
-                      <CheckCircle size={20} />
-                      Aprobar
-                    </button>
-                  </form>
-                  <form
-                    className="flex-1"
-                    action={async () => {
-                      'use server';
-                      await rejectTournamentRegistration(registration.id);
-                    }}
-                  >
-                    <button className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{ background: 'white', color: '#ef4444', border: '2px solid #ef4444', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.2)' }}>
-                      <XCircle size={20} />
-                      Rechazar
-                    </button>
-                  </form>
-                </div>
+                <TournamentApprovalButtons registrationId={registration.id} />
               </div>
             </div>
           ))}
