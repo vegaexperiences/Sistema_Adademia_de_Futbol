@@ -28,7 +28,8 @@ export default async function TutorProfilePage({
         tutor_email,
         tutor_phone,
         tutor_cedula,
-        tutor_cedula_url
+        tutor_cedula_url,
+        secondary_email
       )
     `);
   
@@ -58,7 +59,7 @@ export default async function TutorProfilePage({
             id: family.id,
             name: family.tutor_name,
             email: family.tutor_email,
-            secondary_email: (family as any).secondary_email || null, // Optional field
+            secondary_email: family.secondary_email || null,
             phone: family.tutor_phone,
             cedula: family.tutor_cedula,
             cedula_url: family.tutor_cedula_url,
