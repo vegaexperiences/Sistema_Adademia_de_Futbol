@@ -1,4 +1,4 @@
-import { getPendingPlayers, approvePlayer, rejectPlayer, getPendingPayments, approvePayment, rejectPayment } from '@/lib/actions/approvals';
+import { getPendingPlayers, approvePlayer, rejectPlayer } from '@/lib/actions/approvals';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { CheckCircle, XCircle, Clock, GraduationCap } from 'lucide-react'; // GraduationCap is still used for "Aprobar Becado"
@@ -7,7 +7,14 @@ import { DocumentPreview } from '@/components/ui/DocumentPreview';
 
 export default async function ApprovalsPage() {
   const pendingPlayers = await getPendingPlayers();
-  const pendingPayments = await getPendingPayments();
+  
+  // Get pending payments to associate with players
+  const supabase = await createClient();
+  const { data: pendingPayments } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('status', 'Pending Approval')
+    .order('created_at', { ascending: false });
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -16,14 +23,11 @@ export default async function ApprovalsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Aprobaciones Pendientes</h1>
-            <p className="text-gray-600 dark:text-gray-400">Revisa y aprueba solicitudes y pagos pendientes</p>
+            <p className="text-gray-600 dark:text-gray-400">Revisa y aprueba solicitudes de matrícula pendientes</p>
           </div>
           <div className="flex gap-3">
             <span className="px-4 py-2 rounded-full text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg">
-              {pendingPlayers.length} Jugadores
-            </span>
-            <span className="px-4 py-2 rounded-full text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg">
-              {pendingPayments.length} Pagos
+              {pendingPlayers.length} Solicitudes Pendientes
             </span>
           </div>
         </div>
@@ -131,8 +135,8 @@ export default async function ApprovalsPage() {
                             const backUrl = player.cedula_back_url || (player.notes ? JSON.parse(player.notes).doc_back : null);
                             const tutorUrl = player.families?.tutor_cedula_url || (player.notes ? JSON.parse(player.notes).tutor_doc : null);
 
-                            // Get payment proofs for this player
-                            const playerPayments = pendingPayments.filter((p: any) => 
+                            // Get payment proofs for this player (including enrollment payments)
+                            const playerPayments = (pendingPayments || []).filter((p: any) => 
                               p.player_id === player.id && p.proof_url
                             );
 
@@ -229,83 +233,6 @@ export default async function ApprovalsPage() {
                         boxShadow: '0 4px 15px rgba(239, 68, 68, 0.2)'
                       }}>
                         <XCircle size={20} />
-                        Rechazar
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Pending Payments Section */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600">💳</span>
-          Pagos Pendientes
-        </h2>
-
-        {pendingPayments.length === 0 ? (
-          <div className="glass-card p-8 text-center">
-            <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">No hay pagos pendientes de aprobación.</p>
-          </div>
-        ) : (
-          <div className="grid gap-6">
-            {pendingPayments.map((payment: any) => (
-              <div key={payment.id} className="glass-card p-6 hover:shadow-2xl transition-all duration-300 animate-slide-up">
-                <div className="flex flex-col lg:flex-row gap-6">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                          {payment.type} - ${payment.amount}
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">
-                          {new Date(payment.created_at).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        </p>
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                        {payment.method}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
-                        <p className="text-xs font-semibold text-gray-500 mb-1">NOTAS</p>
-                        <p className="text-gray-900 dark:text-white font-medium">{payment.notes || 'Sin notas'}</p>
-                      </div>
-                      {payment.proof_url && (
-                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl flex items-center justify-between">
-                          <div>
-                            <p className="text-xs font-semibold text-gray-500 mb-1">COMPROBANTE</p>
-                            <p className="text-gray-900 dark:text-white font-medium truncate max-w-[150px]">{payment.proof_url}</p>
-                          </div>
-                          <DocumentPreview url={payment.proof_url} title="Comprobante de Pago" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col justify-center gap-3 lg:min-w-[180px]">
-                    <form action={async () => {
-                      'use server';
-                      await approvePayment(payment.id);
-                    }}>
-                      <button className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-white transition-all hover:scale-105 bg-green-600 hover:bg-green-700 shadow-md">
-                        <CheckCircle size={18} />
-                        Aprobar Pago
-                      </button>
-                    </form>
-
-                    <form action={async () => {
-                      'use server';
-                      await rejectPayment(payment.id);
-                    }}>
-                      <button className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-red-600 transition-all hover:scale-105 bg-white border border-red-200 hover:bg-red-50 shadow-sm">
-                        <XCircle size={18} />
                         Rechazar
                       </button>
                     </form>
