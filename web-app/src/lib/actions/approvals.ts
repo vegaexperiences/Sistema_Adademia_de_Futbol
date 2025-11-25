@@ -92,107 +92,117 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
     }
 
     // Manage family creation/removal based on approved players count
-    if (tutorCedula) {
-      // Count approved players (Active or Scholarship) with same tutor_cedula
-      const { data: approvedPlayers, error: countError } = await supabase
+    // Strategy: Use family_id if player already has one, otherwise find by tutor_cedula through families
+    let approvedPlayers: any[] = [];
+    let familyId: string | null = null;
+
+    if (player.family_id) {
+      // Player already has a family_id, check all players in that family
+      familyId = player.family_id;
+      const { data: familyPlayers } = await supabase
         .from('players')
-        .select(`
-          id,
-          family_id,
-          families!inner(tutor_cedula)
-        `)
-        .eq('families.tutor_cedula', tutorCedula)
+        .select('id, status')
+        .eq('family_id', familyId)
         .in('status', ['Active', 'Scholarship']);
 
-      if (!countError && approvedPlayers) {
-        const approvedCount = approvedPlayers.length;
+      if (familyPlayers) {
+        approvedPlayers = familyPlayers;
+      }
+    } else if (tutorCedula) {
+      // Player doesn't have family_id, but we have tutor_cedula
+      // Find all families with this tutor_cedula, then find all approved players in those families
+      const { data: families } = await supabase
+        .from('families')
+        .select('id')
+        .eq('tutor_cedula', tutorCedula);
 
-        if (approvedCount >= 2) {
-          // Create or ensure family exists with 2+ approved players
-          const { data: existingFamily } = await supabase
-            .from('families')
-            .select('id')
-            .eq('tutor_cedula', tutorCedula)
-            .single();
+      if (families && families.length > 0) {
+        const familyIds = families.map(f => f.id);
+        const { data: players } = await supabase
+          .from('players')
+          .select('id, status, family_id')
+          .in('family_id', familyIds)
+          .in('status', ['Active', 'Scholarship']);
 
-          let familyId: string;
-          
-          if (existingFamily) {
-            familyId = existingFamily.id;
-          } else {
-            // Create new family
-            const tutorName = Array.isArray(player.families)
-              ? player.families[0]?.tutor_name || 'Tutor'
-              : player.families?.tutor_name || 'Tutor';
-            const tutorEmail = Array.isArray(player.families)
-              ? player.families[0]?.tutor_email || null
-              : player.families?.tutor_email || null;
-            const tutorPhone = Array.isArray(player.families)
-              ? player.families[0]?.tutor_phone || null
-              : (player.families as any)?.tutor_phone || null;
+        if (players) {
+          approvedPlayers = players;
+          familyId = families[0].id; // Use first family found
+        }
+      }
+    }
 
-            const { data: newFamily, error: familyError } = await supabase
-              .from('families')
-              .insert({
-                name: `Familia ${tutorName.split(' ')[1] || tutorName}`,
-                tutor_name: tutorName,
-                tutor_cedula: tutorCedula,
-                tutor_email: tutorEmail,
-                tutor_phone: tutorPhone,
-              })
-              .select()
-              .single();
+    const approvedCount = approvedPlayers.length;
 
-            if (familyError) {
-              console.error('Error creating family:', familyError);
-            } else {
-              familyId = newFamily.id;
-            }
-          }
+    if (approvedCount >= 2) {
+      // Create or ensure family exists with 2+ approved players
+      if (!familyId && tutorCedula) {
+        // No family exists, create one
+        const tutorName = Array.isArray(player.families)
+          ? player.families[0]?.tutor_name || 'Tutor'
+          : player.families?.tutor_name || 'Tutor';
+        const tutorEmail = Array.isArray(player.families)
+          ? player.families[0]?.tutor_email || null
+          : player.families?.tutor_email || null;
+        const tutorPhone = Array.isArray(player.families)
+          ? player.families[0]?.tutor_phone || null
+          : (player.families as any)?.tutor_phone || null;
 
-          // Update all approved players with same tutor_cedula to have family_id
-          if (familyId) {
-            const playerIds = approvedPlayers.map(p => p.id);
-            await supabase
-              .from('players')
-              .update({ family_id: familyId })
-              .in('id', playerIds);
-          }
-        } else {
-          // If only 1 approved player, remove family_id and delete family if exists
+        const { data: newFamily, error: familyError } = await supabase
+          .from('families')
+          .insert({
+            name: `Familia ${tutorName.split(' ')[1] || tutorName}`,
+            tutor_name: tutorName,
+            tutor_cedula: tutorCedula,
+            tutor_email: tutorEmail,
+            tutor_phone: tutorPhone,
+          })
+          .select()
+          .single();
+
+        if (!familyError && newFamily) {
+          familyId = newFamily.id;
+        }
+      }
+
+      // Update all approved players to have family_id
+      if (familyId) {
+        const playerIds = approvedPlayers.map(p => p.id);
+        // Also include the current player if not in the list
+        if (!playerIds.includes(playerId)) {
+          playerIds.push(playerId);
+        }
+        await supabase
+          .from('players')
+          .update({ family_id: familyId })
+          .in('id', playerIds);
+      }
+    } else {
+      // If less than 2 approved players, remove family_id and delete family if exists
+      await supabase
+        .from('players')
+        .update({ family_id: null })
+        .eq('id', playerId);
+
+      if (familyId) {
+        // Check if family still has 2+ approved players
+        const { data: remainingPlayers } = await supabase
+          .from('players')
+          .select('id')
+          .eq('family_id', familyId)
+          .in('status', ['Active', 'Scholarship']);
+
+        if (!remainingPlayers || remainingPlayers.length < 2) {
+          // Remove family_id from all players linked to this family
           await supabase
             .from('players')
             .update({ family_id: null })
-            .eq('id', playerId);
+            .eq('family_id', familyId);
 
-          // Delete family if it exists and has no approved players
-          const { data: familyToCheck } = await supabase
+          // Delete the family
+          await supabase
             .from('families')
-            .select('id')
-            .eq('tutor_cedula', tutorCedula)
-            .single();
-
-          if (familyToCheck) {
-            const { data: familyPlayers } = await supabase
-              .from('players')
-              .select('id')
-              .eq('family_id', familyToCheck.id)
-              .in('status', ['Active', 'Scholarship']);
-
-            if (!familyPlayers || familyPlayers.length < 2) {
-              // Remove family_id from all players linked to this family
-              await supabase
-                .from('players')
-                .update({ family_id: null })
-                .eq('family_id', familyToCheck.id);
-
-              // Delete the family
-              await supabase
-                .from('families')
-                .delete()
-                .eq('id', familyToCheck.id);
-            }
-          }
+            .delete()
+            .eq('id', familyId);
         }
       }
     }
