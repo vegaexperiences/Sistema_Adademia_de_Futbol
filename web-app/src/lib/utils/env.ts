@@ -2,11 +2,7 @@
  * Validates required environment variables on application startup
  */
 export function validateEnv() {
-  const requiredEnvVars = [
-    'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-    'BREVO_API_KEY',
-  ];
+  const requiredEnvVars = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
   const missing: string[] = [];
 
@@ -23,7 +19,11 @@ export function validateEnv() {
     );
   }
 
-  // Validate optional but recommended vars
+  // Optional but recommended vars
+  if (!process.env.BREVO_API_KEY) {
+    console.warn('⚠️  BREVO_API_KEY no está configurada. Los envíos de correo fallarán hasta que se agregue.');
+  }
+
   if (!process.env.BREVO_FROM_EMAIL) {
     console.warn('⚠️  BREVO_FROM_EMAIL no está configurada. Se usará un email por defecto.');
   }
