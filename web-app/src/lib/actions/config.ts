@@ -12,6 +12,7 @@ export type SystemConfig = {
     yappy: boolean;
     transfer: boolean;
     proof: boolean;
+    paguelofacil: boolean;
   };
 };
 
@@ -33,6 +34,7 @@ export async function getPublicSystemConfig(): Promise<SystemConfig> {
       yappy: true,
       transfer: true,
       proof: false,
+      paguelofacil: true,
     },
   };
 

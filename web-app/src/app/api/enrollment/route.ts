@@ -110,6 +110,8 @@ export async function POST(request: Request) {
                           data.paymentMethod === 'Transferencia' || 
                           data.paymentMethod === 'Yappy') 
                           ? 'Pending Approval' 
+                          : data.paymentMethod === 'PagueloFacil'
+                          ? 'Paid' // PagueloFacil payments are immediate
                           : 'Pending';
 
     // Insert payment record linked to the first player (primary)

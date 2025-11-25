@@ -4,6 +4,7 @@ import { CheckCircle, Upload, FileText, X, Loader2 } from 'lucide-react';
 import { SystemConfig } from '@/lib/actions/config';
 import { useRef, useState } from 'react';
 import { uploadFile } from '@/lib/utils/file-upload';
+import { PagueloFacilCheckout } from '@/components/payments/PagueloFacilCheckout';
 
 interface PaymentStepProps {
   data: any;
@@ -17,6 +18,8 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showPagueloFacilCheckout, setShowPagueloFacilCheckout] = useState(false);
+  const [pagueloFacilConfig, setPagueloFacilConfig] = useState<{ apiKey: string; cclw: string; sandbox: boolean } | null>(null);
 
   const handlePaymentSelection = (method: string) => {
     updateData({ paymentMethod: method });
@@ -128,9 +131,27 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Sube una foto o captura del pago.</p>
             </div>
           )}
+
+          {/* PagueloFacil */}
+          {config.paymentMethods.paguelofacil && (
+            <div 
+              className={`border rounded-xl p-4 cursor-pointer transition-all ${
+                data.paymentMethod === 'PagueloFacil' 
+                  ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 ring-2 ring-cyan-500 ring-opacity-50' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-cyan-400 bg-white dark:bg-gray-800'
+              }`}
+              onClick={() => handlePaymentSelection('PagueloFacil')}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-lg text-cyan-600 dark:text-cyan-400">💳 Paguelo Fácil</span>
+                {data.paymentMethod === 'PagueloFacil' && <CheckCircle className="text-cyan-600 dark:text-cyan-400 h-6 w-6" />}
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Pago seguro con tarjeta de crédito/débito.</p>
+            </div>
+          )}
         </div>
 
-        {/* File Upload Section for Proof */}
+        {/* File Upload Section for Proof - Not needed for PagueloFacil */}
         {(data.paymentMethod === 'Comprobante' || data.paymentMethod === 'Transferencia' || data.paymentMethod === 'Yappy') && (
           <div className="mt-4 animate-fade-in">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -207,7 +228,27 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
         </button>
         <button
           type="button"
-          onClick={onSubmit}
+          onClick={async () => {
+            // If PagueloFacil is selected, open checkout instead of submitting
+            if (data.paymentMethod === 'PagueloFacil') {
+              try {
+                const response = await fetch('/api/payments/paguelofacil');
+                const result = await response.json();
+                
+                if (result.success && result.config) {
+                  setPagueloFacilConfig(result.config);
+                  setShowPagueloFacilCheckout(true);
+                } else {
+                  alert('Error al inicializar Paguelo Fácil. Por favor intenta con otro método de pago.');
+                }
+              } catch (err: any) {
+                alert('Error al inicializar Paguelo Fácil: ' + (err.message || 'Error desconocido'));
+              }
+            } else {
+              // For other methods, proceed with normal submission
+              onSubmit();
+            }
+          }}
           disabled={!data.paymentMethod || (['Comprobante', 'Transferencia', 'Yappy'].includes(data.paymentMethod) && !data.paymentProofFile)}
           className={`px-6 py-2 rounded-lg font-bold transition-all shadow-md hover:scale-105 duration-300 ${
             !data.paymentMethod || (['Comprobante', 'Transferencia', 'Yappy'].includes(data.paymentMethod) && !data.paymentProofFile)
@@ -215,9 +256,36 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               : 'bg-primary text-white hover:bg-primary/90 hover:shadow-lg'
           }`}
         >
-          Pagar y Finalizar
+          {data.paymentMethod === 'PagueloFacil' ? 'Continuar con Paguelo Fácil' : 'Pagar y Finalizar'}
         </button>
       </div>
+
+      {/* PagueloFacil Checkout Modal */}
+      {showPagueloFacilCheckout && pagueloFacilConfig && (
+        <PagueloFacilCheckout
+          amount={totalAmount}
+          description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
+          email={data.tutorEmail}
+          orderId={`enrollment-${Date.now()}`}
+          apiKey={pagueloFacilConfig.apiKey}
+          cclw={pagueloFacilConfig.cclw}
+          sandbox={pagueloFacilConfig.sandbox}
+          onSuccess={async (transactionId: string, response: any) => {
+            // Mark payment as complete and submit enrollment
+            updateData({ 
+              paymentProofFile: `paguelofacil:${transactionId}` // Store transaction ID as proof
+            });
+            setShowPagueloFacilCheckout(false);
+            // Submit the enrollment form
+            onSubmit();
+          }}
+          onError={(errorMsg: string) => {
+            alert('Error en Paguelo Fácil: ' + errorMsg);
+            setShowPagueloFacilCheckout(false);
+          }}
+          onClose={() => setShowPagueloFacilCheckout(false)}
+        />
+      )}
     </div>
   );
 }
