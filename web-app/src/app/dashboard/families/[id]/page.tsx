@@ -6,6 +6,7 @@ import { getPlayersPayments } from '@/lib/actions/payments';
 import PaymentHistory from '@/components/payments/PaymentHistory';
 import { CreatePaymentButton } from '@/components/payments/CreatePaymentButton';
 import { getPlayerCategory } from '@/lib/utils/player-category';
+import { AddSecondaryEmailButton } from '@/components/tutors/AddSecondaryEmailButton';
 
 export default async function FamilyProfilePage({ 
   params 
@@ -21,8 +22,14 @@ export default async function FamilyProfilePage({
     .select('*, players(*)')
     .eq('id', id)
     .single();
+  
+  // Ensure secondary_email is included in family data
+  const familyWithSecondaryEmail = family ? {
+    ...family,
+    secondary_email: (family as any).secondary_email || null
+  } : null;
 
-  if (!family) {
+  if (!family || !familyWithSecondaryEmail) {
     notFound();
   }
 
@@ -147,10 +154,16 @@ export default async function FamilyProfilePage({
 
       {/* Tutor Info */}
       <div className="glass-card p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <User className="h-6 w-6" />
-          Información del Tutor
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <User className="h-6 w-6" />
+            Información del Tutor
+          </h2>
+          <AddSecondaryEmailButton 
+            familyId={family.id} 
+            currentSecondaryEmail={familyWithSecondaryEmail.secondary_email}
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500">
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">👤 Nombre Completo</p>
@@ -165,17 +178,27 @@ export default async function FamilyProfilePage({
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border-l-4 border-blue-500">
             <div className="flex items-center gap-2 mb-1">
               <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email</p>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email Principal</p>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{family.tutor_email}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">{family.tutor_email || 'Sin email'}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
+          {familyWithSecondaryEmail.secondary_email && (
+            <div className="bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 p-4 rounded-xl border-l-4 border-cyan-500">
+              <div className="flex items-center gap-2 mb-1">
+                <Mail className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email Secundario</p>
+              </div>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{familyWithSecondaryEmail.secondary_email}</p>
+            </div>
+          )}
+
+          <div className={`bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500 ${familyWithSecondaryEmail.secondary_email ? '' : 'md:col-span-2'}`}>
             <div className="flex items-center gap-2 mb-1">
               <Phone className="h-4 w-4 text-green-600 dark:text-green-400" />
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Teléfono</p>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{family.tutor_phone}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">{family.tutor_phone || 'Sin teléfono'}</p>
           </div>
         </div>
       </div>
