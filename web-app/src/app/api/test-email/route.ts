@@ -1,6 +1,7 @@
 import { brevo, SendSmtpEmail } from '@/lib/brevo/client';
 import { logEmailSent } from '@/lib/actions/email-log';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
 
     // Log email send for counter tracking with Brevo ID
     await logEmailSent(to, subject, `test_${templateName}`, messageId || null);
+    revalidatePath('/dashboard/settings/emails');
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

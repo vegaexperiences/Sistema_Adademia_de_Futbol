@@ -47,7 +47,11 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
   const [fields, setFields] = useState(getEditableFields());
 
   const getPreviewHtml = () => {
-    const logoUrl = '/logo.png';
+    const logoUrl =
+      process.env.NEXT_PUBLIC_LOGO_URL ||
+      (typeof window !== 'undefined'
+        ? `${window.location.origin}/logo.png`
+        : 'https://sistema-adademia-de-futbol-tura.vercel.app/logo.png');
     const name = template.name;
     
     if (name === 'pre_enrollment') {

@@ -18,7 +18,7 @@ export interface QueuedEmail {
   created_at: string;
 }
 
-const DAILY_LIMIT = 98;
+const DAILY_LIMIT = 300;
 
 export async function queueEmail(
   templateName: string,
@@ -40,14 +40,25 @@ export async function queueEmail(
     return { error: 'Template not found' };
   }
   
+  const defaultLogoUrl =
+    process.env.NEXT_PUBLIC_LOGO_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}/logo.png`
+      : `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/logo.png`);
+
+  const mergedVariables = {
+    logoUrl: defaultLogoUrl,
+    ...variables,
+  };
+
   // Replace variables in template
   let htmlContent = template.html_template;
   let subject = template.subject;
-  
-  Object.keys(variables).forEach(key => {
+
+  Object.entries(mergedVariables).forEach(([key, value]) => {
     const regex = new RegExp(`{{${key}}}`, 'g');
-    htmlContent = htmlContent.replace(regex, variables[key]);
-    subject = subject.replace(regex, variables[key]);
+    htmlContent = htmlContent.replace(regex, String(value));
+    subject = subject.replace(regex, String(value));
   });
   
   // Queue the email
