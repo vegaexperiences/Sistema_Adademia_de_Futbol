@@ -374,7 +374,9 @@ export default async function EmailsPage() {
                   No hay correos en la base de datos (count: {totalEmails ?? 'N/A'})
                   {allEmailsError && (
                     <span className="block mt-2 text-xs">
-                      Error: {allEmailsError instanceof Error ? allEmailsError.message : String(allEmailsError)}
+                      Error: {typeof allEmailsError === 'object' && allEmailsError !== null && 'message' in allEmailsError 
+                        ? String((allEmailsError as any).message) 
+                        : String(allEmailsError)}
                     </span>
                   )}
                 </p>
