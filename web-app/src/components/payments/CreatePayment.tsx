@@ -16,7 +16,7 @@ export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess
   const [formData, setFormData] = useState({
     amount: suggestedAmount.toString(),
     payment_type: 'monthly' as 'enrollment' | 'monthly' | 'custom',
-    payment_method: 'cash' as 'cash' | 'transfer' | 'yappy' | 'card' | 'other',
+    payment_method: 'cash' as 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'other',
     payment_date: new Date().toISOString().split('T')[0],
     month_year: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
     notes: ''
@@ -146,6 +146,7 @@ export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess
                     <option value="cash">Efectivo</option>
                     <option value="transfer">Transferencia</option>
                     <option value="yappy">Yappy</option>
+                    <option value="paguelofacil">Paguelo Fácil</option>
                     <option value="card">Tarjeta</option>
                     <option value="other">Otro</option>
                   </select>

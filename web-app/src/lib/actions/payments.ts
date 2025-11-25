@@ -8,7 +8,7 @@ export interface Payment {
   player_id: string;
   amount: number;
   payment_type: 'enrollment' | 'monthly' | 'custom';
-  payment_method?: 'cash' | 'transfer' | 'yappy' | 'card' | 'other';
+  payment_method?: 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'other';
   payment_date: string;
   month_year?: string;
   notes?: string;

@@ -26,13 +26,15 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
   const [formData, setFormData] = useState({
     amount: '',
     payment_type: 'monthly' as 'enrollment' | 'monthly' | 'custom',
-    payment_method: 'cash' as 'cash' | 'transfer' | 'yappy' | 'card' | 'other',
+    payment_method: 'cash' as 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'other',
     payment_date: new Date().toISOString().split('T')[0],
     month_year: '',
     notes: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showPagueloFacilCheckout, setShowPagueloFacilCheckout] = useState(false);
+  const [pagueloFacilConfig, setPagueloFacilConfig] = useState<{ apiKey: string; cclw: string; sandbox: boolean } | null>(null);
 
   // Filter to only show Active and Scholarship players
   const eligiblePlayers = players.filter(p => 
@@ -54,6 +56,26 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
       return;
     }
 
+    // If PagueloFacil is selected, open checkout
+    if (formData.payment_method === 'paguelofacil') {
+      try {
+        // Get PagueloFacil config
+        const response = await fetch('/api/payments/paguelofacil');
+        const data = await response.json();
+        
+        if (data.success && data.config) {
+          setPagueloFacilConfig(data.config);
+          setShowPagueloFacilCheckout(true);
+        } else {
+          setError('Error al inicializar Paguelo Fácil. Por favor intenta con otro método de pago.');
+        }
+      } catch (err: any) {
+        setError('Error al inicializar Paguelo Fácil: ' + (err.message || 'Error desconocido'));
+      }
+      return;
+    }
+
+    // For other payment methods, proceed directly
     startTransition(async () => {
       try {
         await createPayment({
@@ -75,6 +97,38 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
         setError(err.message || 'Error al crear el pago');
       }
     });
+  };
+
+  const handlePagueloFacilSuccess = async (transactionId: string, response: any) => {
+    try {
+      // Get selected player info for email
+      const selectedPlayer = eligiblePlayers.find(p => p.id === selectedPlayerId);
+      
+      await createPayment({
+        player_id: selectedPlayerId,
+        amount: parseFloat(formData.amount),
+        payment_type: formData.payment_type,
+        payment_method: 'paguelofacil',
+        payment_date: new Date().toISOString().split('T')[0],
+        month_year: formData.payment_type === 'monthly' ? formData.month_year : undefined,
+        notes: `Pago procesado con Paguelo Fácil. Transaction ID: ${transactionId}. ${formData.notes || ''}`,
+      });
+
+      setShowPagueloFacilCheckout(false);
+      setSuccess(true);
+      setTimeout(() => {
+        router.refresh();
+        onClose();
+      }, 1500);
+    } catch (err: any) {
+      setError('Error al registrar el pago: ' + (err.message || 'Error desconocido'));
+      setShowPagueloFacilCheckout(false);
+    }
+  };
+
+  const handlePagueloFacilError = (errorMsg: string) => {
+    setError('Error en Paguelo Fácil: ' + errorMsg);
+    setShowPagueloFacilCheckout(false);
   };
 
   return (
@@ -195,6 +249,7 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
               <option value="cash">Efectivo</option>
               <option value="transfer">Transferencia</option>
               <option value="yappy">Yappy</option>
+              <option value="paguelofacil">Paguelo Fácil</option>
               <option value="card">Tarjeta</option>
               <option value="other">Otro</option>
             </select>
@@ -282,6 +337,22 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
         </form>
         </div>
       </div>
+
+      {/* PagueloFacil Checkout Modal */}
+      {showPagueloFacilCheckout && pagueloFacilConfig && (
+        <PagueloFacilCheckout
+          amount={parseFloat(formData.amount)}
+          description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.first_name || ''} ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.last_name || ''}`}
+          email={eligiblePlayers.find(p => p.id === selectedPlayerId)?.id ? 'tutor@example.com' : ''} // TODO: Get tutor email
+          orderId={`payment-${selectedPlayerId}-${Date.now()}`}
+          apiKey={pagueloFacilConfig.apiKey}
+          cclw={pagueloFacilConfig.cclw}
+          sandbox={pagueloFacilConfig.sandbox}
+          onSuccess={handlePagueloFacilSuccess}
+          onError={handlePagueloFacilError}
+          onClose={() => setShowPagueloFacilCheckout(false)}
+        />
+      )}
     </div>
   );
 }
