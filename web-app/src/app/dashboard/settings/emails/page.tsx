@@ -1,12 +1,12 @@
 import { getEmailTemplates } from '@/lib/actions/email-templates';
 import { BroadcastForms } from '@/components/emails/BroadcastForms';
+import { ProcessQueueButton } from '@/components/emails/ProcessQueueButton';
 import {
   getQueueStatus,
-  processEmailQueue,
   queueBatchEmails,
   getTutorRecipientsByStatuses,
 } from '@/lib/actions/email-queue';
-import { Mail, Send, Clock, CheckCircle, XCircle, Zap } from 'lucide-react';
+import { Mail, Clock, CheckCircle, XCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 
@@ -95,11 +95,6 @@ export default async function EmailsPage() {
   const templates = await getEmailTemplates();
   const queueStatus = await getQueueStatus();
 
-  async function runQueue() {
-    'use server';
-    await processEmailQueue();
-  }
-
   return (
     <div className="space-y-6 animate-fade-in p-6">
       {/* Header */}
@@ -171,17 +166,10 @@ export default async function EmailsPage() {
       </div>
 
       {/* Process Queue Button */}
-      {queueStatus.pending > 0 && queueStatus.remainingToday > 0 && (
-        <form action={runQueue}>
-          <button
-            type="submit"
-            className="w-full glass-card p-4 hover:shadow-xl transition-all flex items-center justify-center gap-3 text-lg font-bold text-blue-600 dark:text-blue-400"
-          >
-            <Send size={24} />
-            Procesar Cola de Correos ({Math.min(queueStatus.pending, queueStatus.remainingToday)} correos)
-          </button>
-        </form>
-      )}
+      <ProcessQueueButton 
+        pending={queueStatus.pending} 
+        remainingToday={queueStatus.remainingToday} 
+      />
 
       {/* Templates List */}
       <div className="glass-card p-6">
