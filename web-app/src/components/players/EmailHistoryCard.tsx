@@ -59,10 +59,16 @@ export function EmailHistoryCard({ emails }: EmailHistoryCardProps) {
                     minute: '2-digit'
                   })}</span>
                 </div>
+              ) : email.status === 'sent' ? (
+                // Status is 'sent' but sent_at is null - this is a data issue
+                <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+                  <Clock size={14} />
+                  <span>Enviado (sin fecha)</span>
+                </div>
               ) : (
                 <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
                   <Clock size={14} />
-                  <span>Programado</span>
+                  <span>Estado: {email.status}</span>
                 </div>
               )}
 

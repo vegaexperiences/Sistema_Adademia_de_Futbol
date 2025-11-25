@@ -41,17 +41,26 @@ export async function getPlayerEmailHistory(playerId: string): Promise<PlayerEma
   }
   
   // Get all emails sent to this tutor's email
+  // Include all statuses but prioritize sent emails
   const { data: emails, error } = await supabase
     .from('email_queue')
-    .select('*')
+    .select('id, subject, to_email, sent_at, delivered_at, opened_at, bounced_at, clicked_at, status, brevo_email_id, created_at')
     .eq('to_email', family.tutor_email)
-    .eq('status', 'sent')
-    .order('sent_at', { ascending: false })
+    .in('status', ['sent', 'pending', 'failed']) // Include all statuses for debugging
+    .order('created_at', { ascending: false }) // Order by creation date, not sent_at (which can be null)
     .limit(50); // Last 50 emails
   
   if (error) {
     console.error('Error fetching player emails:', error);
     return [];
+  }
+  
+  // Log for debugging
+  console.log(`Found ${emails?.length || 0} emails for tutor ${family.tutor_email}`);
+  if (emails && emails.length > 0) {
+    emails.forEach((email: any) => {
+      console.log(`Email ${email.id}: status=${email.status}, sent_at=${email.sent_at}, subject=${email.subject}`);
+    });
   }
   
   return emails as PlayerEmail[];

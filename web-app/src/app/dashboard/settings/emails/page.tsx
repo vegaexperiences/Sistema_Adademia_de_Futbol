@@ -94,6 +94,31 @@ async function sendGeneralBroadcast(_: FormState, formData: FormData): Promise<F
 export default async function EmailsPage() {
   const templates = await getEmailTemplates();
   const queueStatus = await getQueueStatus();
+  
+  // Debug: Get raw email data to see what's happening
+  const { createClient } = await import('@/lib/supabase/server');
+  const supabase = await createClient();
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const todayStart = `${today}T00:00:00.000Z`;
+  const todayEnd = `${today}T23:59:59.999Z`;
+  
+  // Get all sent emails with their sent_at dates for debugging
+  const { data: sentEmails } = await supabase
+    .from('email_queue')
+    .select('id, subject, sent_at, brevo_email_id, status, created_at')
+    .eq('status', 'sent')
+    .order('sent_at', { ascending: false })
+    .limit(10);
+  
+  // Get emails sent today for debugging
+  const { data: todayEmails } = await supabase
+    .from('email_queue')
+    .select('id, subject, sent_at, brevo_email_id')
+    .eq('status', 'sent')
+    .not('sent_at', 'is', null)
+    .gte('sent_at', todayStart)
+    .lte('sent_at', todayEnd);
 
   return (
     <div className="space-y-6 animate-fade-in p-6">
@@ -221,6 +246,61 @@ export default async function EmailsPage() {
         sendTournamentAction={sendTournamentEmail}
         sendGeneralAction={sendGeneralBroadcast}
       />
+
+      {/* Debug Panel */}
+      <details className="glass-card p-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+        <summary className="font-bold text-yellow-900 dark:text-yellow-100 cursor-pointer">
+          🔍 Panel de Debug (Click para expandir)
+        </summary>
+        <div className="mt-4 space-y-4 text-sm">
+          <div>
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">Estado de la Cola:</h4>
+            <pre className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto text-xs">
+              {JSON.stringify(queueStatus, null, 2)}
+            </pre>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">Rango de Fechas para "Hoy":</h4>
+            <div className="bg-white dark:bg-gray-800 p-3 rounded">
+              <p><strong>Fecha de hoy:</strong> {today}</p>
+              <p><strong>Inicio:</strong> {todayStart}</p>
+              <p><strong>Fin:</strong> {todayEnd}</p>
+              <p><strong>Hora actual (UTC):</strong> {now.toISOString()}</p>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+              Correos Encontrados Hoy ({todayEmails?.length || 0}):
+            </h4>
+            {todayEmails && todayEmails.length > 0 ? (
+              <div className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto max-h-48">
+                <pre className="text-xs">
+                  {JSON.stringify(todayEmails, null, 2)}
+                </pre>
+              </div>
+            ) : (
+              <p className="text-yellow-800 dark:text-yellow-200">No se encontraron correos enviados hoy</p>
+            )}
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+              Últimos 10 Correos Enviados:
+            </h4>
+            {sentEmails && sentEmails.length > 0 ? (
+              <div className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto max-h-64">
+                <pre className="text-xs">
+                  {JSON.stringify(sentEmails, null, 2)}
+                </pre>
+              </div>
+            ) : (
+              <p className="text-yellow-800 dark:text-yellow-200">No hay correos enviados</p>
+            )}
+          </div>
+        </div>
+      </details>
 
       {/* Info Card */}
       <div className="glass-card p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
