@@ -21,8 +21,7 @@ export default async function TutorsPage() {
         tutor_email,
         tutor_phone,
         tutor_cedula,
-        tutor_cedula_url,
-        secondary_email
+        tutor_cedula_url
       )
     `);
 
@@ -40,7 +39,6 @@ export default async function TutorsPage() {
       tutor_phone,
       tutor_cedula,
       tutor_cedula_url,
-      secondary_email,
       players (id)
     `);
 
@@ -71,7 +69,7 @@ export default async function TutorsPage() {
         tutorsMap.set(tutorKey, {
           name: family.tutor_name || 'Sin nombre',
           email: family.tutor_email || null,
-          secondary_email: family.secondary_email || null,
+          secondary_email: (family as any).secondary_email || null, // Optional field
           phone: family.tutor_phone || null,
           cedula: family.tutor_cedula || null,
           cedula_url: family.tutor_cedula_url || null,
@@ -96,7 +94,7 @@ export default async function TutorsPage() {
         tutorData = {
           name: family?.tutor_name || null,
           email: family?.tutor_email || null,
-          secondary_email: family?.secondary_email || null,
+          secondary_email: (family as any)?.secondary_email || null, // Optional field
           phone: family?.tutor_phone || null,
           cedula: family?.tutor_cedula || null,
           cedula_url: family?.tutor_cedula_url || null,
