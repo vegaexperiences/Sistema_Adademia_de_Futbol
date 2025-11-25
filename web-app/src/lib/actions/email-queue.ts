@@ -327,14 +327,34 @@ async function getBrevoAccountStats() {
     // Brevo account info may include plan limits and usage
     // The response structure can vary, so we check multiple possible fields
     // Try different possible field names for remaining emails
+    // Note: Brevo's getAccount() API may not return email credits directly
+    // We need to check all possible nested structures
     const remainingEmails = 
       body.emailCredits || 
       body.remainingEmails || 
       body.credits?.email || 
+      body.credits?.transactional ||
       body.plan?.emailCredits ||
       body.plan?.remainingEmails ||
       body.plan?.emailLimit ||
+      body.plan?.credits?.email ||
+      body.plan?.credits?.transactional ||
+      body.planInfo?.emailCredits ||
+      body.planInfo?.remainingEmails ||
+      body.planInfo?.emailLimit ||
+      body.planInfo?.credits?.email ||
+      body.planInfo?.credits?.transactional ||
       null;
+    
+    // If we still don't have remainingEmails, log all nested objects for debugging
+    if (!remainingEmails) {
+      console.log('⚠️ Could not find remainingEmails in Brevo response. Available fields:', {
+        topLevel: Object.keys(body || {}),
+        plan: body.plan ? Object.keys(body.plan) : null,
+        credits: body.credits ? Object.keys(body.credits) : null,
+        planInfo: body.planInfo ? Object.keys(body.planInfo) : null,
+      });
+    }
     
     return {
       planType: body.planType || body.plan?.type || null,
