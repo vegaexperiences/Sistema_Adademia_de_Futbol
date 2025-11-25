@@ -4,5 +4,11 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "outputDirectory": ".next",
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/cron/process-emails",
+      "schedule": "0 9 * * *"
+    }
+  ]
 }

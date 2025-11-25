@@ -5,10 +5,16 @@ import { NextResponse } from 'next/server';
 // Example cron: 0 9 * * * (every day at 9 AM)
 export async function GET(request: Request) {
   try {
-    // Verify this is a legitimate cron call (optional but recommended)
+    // Verify this is a legitimate cron call
+    // Vercel Cron sends 'x-vercel-signature' header, or use Authorization header
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const vercelSignature = request.headers.get('x-vercel-signature');
+    
+    // Allow Vercel Cron (has signature) or manual calls with CRON_SECRET
+    if (process.env.CRON_SECRET) {
+      if (!vercelSignature && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     const result = await processEmailQueue();
