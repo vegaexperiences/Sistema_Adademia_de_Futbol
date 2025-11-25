@@ -47,21 +47,29 @@ export default async function TutorsPage() {
   if (familiesError) {
     console.error('Error fetching families:', familiesError);
   }
+
+  console.log('Tutors Page Debug:', {
+    playersCount: players?.length || 0,
+    familiesCount: families?.length || 0,
+    firstFamily: families?.[0],
+    firstPlayer: players?.[0]
+  });
   
   // Get unique tutors by cedula, email, or name (as fallback identifiers)
   const tutorsMap = new Map<string, any>();
 
   // First, add tutors from families
   families?.forEach(family => {
-    if (family.tutor_name || family.tutor_email) {
-      const tutorKey = family.tutor_cedula || family.tutor_email || family.tutor_name;
+    // Accept families if they have tutor_name OR tutor_email OR tutor_cedula
+    if (family.tutor_name || family.tutor_email || family.tutor_cedula) {
+      const tutorKey = family.tutor_cedula || family.tutor_email || family.tutor_name || `family-${family.id}`;
       if (tutorKey) {
         const playerIds = Array.isArray(family.players) 
           ? family.players.map((p: any) => p.id)
-          : [];
+          : (family.players?.id ? [family.players.id] : []);
         
         tutorsMap.set(tutorKey, {
-          name: family.tutor_name || null,
+          name: family.tutor_name || 'Sin nombre',
           email: family.tutor_email || null,
           secondary_email: family.secondary_email || null,
           phone: family.tutor_phone || null,
@@ -139,6 +147,8 @@ export default async function TutorsPage() {
     ...tutor,
     playerCount: tutor.playerIds.length
   }));
+
+  console.log('Tutors found:', tutors.length, tutors);
 
   return <TutorsList tutors={tutors} />;
 }
