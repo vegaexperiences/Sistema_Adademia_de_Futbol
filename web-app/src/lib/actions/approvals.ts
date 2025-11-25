@@ -14,7 +14,8 @@ export async function getPendingPlayers() {
         name,
         tutor_name,
         tutor_email,
-        tutor_phone
+        tutor_phone,
+        tutor_cedula_url
       )
     `)
     .eq('status', 'Pending')

@@ -123,7 +123,7 @@ export default async function ApprovalsPage() {
                     {/* Documents */}
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">📄 Documentos</p>
-                      <div className="flex gap-2 flex-wrap">
+                      <div className="space-y-3">
                         {(() => {
                           try {
                             // Check new columns first, then fallback to notes for backward compatibility
@@ -131,12 +131,53 @@ export default async function ApprovalsPage() {
                             const backUrl = player.cedula_back_url || (player.notes ? JSON.parse(player.notes).doc_back : null);
                             const tutorUrl = player.families?.tutor_cedula_url || (player.notes ? JSON.parse(player.notes).tutor_doc : null);
 
+                            // Get payment proofs for this player
+                            const playerPayments = pendingPayments.filter((p: any) => 
+                              p.player_id === player.id && p.proof_url
+                            );
+
+                            const hasDocuments = frontUrl || backUrl || tutorUrl || playerPayments.length > 0;
+
                             return (
                               <>
-                                {frontUrl && <DocumentPreview url={frontUrl} title="Cédula Jugador (Frente)" />}
-                                {backUrl && <DocumentPreview url={backUrl} title="Cédula Jugador (Reverso)" />}
-                                {tutorUrl && <DocumentPreview url={tutorUrl} title="Cédula Tutor" />}
-                                {!frontUrl && !backUrl && !tutorUrl && (
+                                {/* Player Documents */}
+                                {(frontUrl || backUrl) && (
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">👤 Documentos del Jugador</p>
+                                    <div className="flex gap-2 flex-wrap">
+                                      {frontUrl && <DocumentPreview url={frontUrl} title="Cédula Jugador (Frente)" />}
+                                      {backUrl && <DocumentPreview url={backUrl} title="Cédula Jugador (Reverso)" />}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Tutor Documents */}
+                                {tutorUrl && (
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">👨‍👩‍👧‍👦 Documentos del Tutor</p>
+                                    <div className="flex gap-2 flex-wrap">
+                                      <DocumentPreview url={tutorUrl} title="Cédula Tutor" />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Payment Proofs */}
+                                {playerPayments.length > 0 && (
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">💳 Comprobantes de Pago</p>
+                                    <div className="flex gap-2 flex-wrap">
+                                      {playerPayments.map((payment: any, idx: number) => (
+                                        <DocumentPreview 
+                                          key={payment.id} 
+                                          url={payment.proof_url} 
+                                          title={`Comprobante de Pago - ${payment.type} (${idx + 1})`} 
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {!hasDocuments && (
                                   <span className="text-gray-500 text-sm">Sin documentos adjuntos</span>
                                 )}
                               </>
