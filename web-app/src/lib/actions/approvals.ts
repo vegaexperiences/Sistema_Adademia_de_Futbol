@@ -81,10 +81,9 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
     const { error: paymentError } = await supabase.from('payments').insert({
       player_id: playerId,
       amount: enrollmentFee,
-      type: 'Matrícula',
-      status: 'Paid',
-      method: 'Manual',
-      payment_date: now.toISOString(),
+      payment_type: 'enrollment', // Use payment_type to match PaymentHistory filter
+      payment_method: 'cash', // Default method for enrollment
+      payment_date: now.toISOString().split('T')[0], // Use date format (YYYY-MM-DD)
       notes: `Matrícula confirmada al aprobar jugador. Monto: $${enrollmentFee.toFixed(2)}`,
     });
 
