@@ -20,8 +20,11 @@ export async function POST(request: Request) {
 
     const emailResponse = await brevo.sendTransacEmail(sendSmtpEmail);
 
+    // Brevo returns { response, body } where body contains the messageId
+    const messageId = emailResponse.body?.messageId || (emailResponse as any).messageId;
+
     // Log email send for counter tracking with Brevo ID
-    await logEmailSent(to, subject, `test_${templateName}`, emailResponse.messageId || null);
+    await logEmailSent(to, subject, `test_${templateName}`, messageId || null);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

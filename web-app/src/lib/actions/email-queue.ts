@@ -141,13 +141,16 @@ export async function processEmailQueue() {
 
       const result = await brevo.sendTransacEmail(sendSmtpEmail);
       
+      // Brevo returns { response, body } where body contains the messageId
+      const messageId = result.body?.messageId || (result as any).messageId;
+      
       // Mark as sent with Brevo message ID
       await supabase
         .from('email_queue')
         .update({
           status: 'sent',
           sent_at: new Date().toISOString(),
-          brevo_email_id: result.messageId || null
+          brevo_email_id: messageId || null
         })
         .eq('id', email.id);
       

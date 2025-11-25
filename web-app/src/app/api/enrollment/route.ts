@@ -174,13 +174,16 @@ export async function POST(request: Request) {
 
       const emailResponse = await brevo.sendTransacEmail(sendSmtpEmail);
 
+      // Brevo returns { response, body } where body contains the messageId
+      const messageId = emailResponse.body?.messageId || (emailResponse as any).messageId;
+
       // Log email send for daily counter with Brevo email ID
       const { logEmailSent } = await import('@/lib/actions/email-log');
       await logEmailSent(
         data.tutorEmail, 
         'Confirmación de Matrícula - Suarez Academy', 
         'enrollment',
-        emailResponse.messageId || null
+        messageId || null
       );
     }
 

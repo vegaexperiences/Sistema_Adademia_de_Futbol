@@ -24,7 +24,9 @@ async function sendTestEmail() {
 
     const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
     console.log('✅ Email enviado exitosamente!');
-    console.log('Message ID:', result.messageId);
+    // Brevo returns { response, body } where body contains the messageId
+    const messageId = result.body?.messageId || (result as any).messageId;
+    console.log('Message ID:', messageId);
   } catch (error: any) {
     console.error('❌ Error enviando email:', error);
     if (error.response) {
