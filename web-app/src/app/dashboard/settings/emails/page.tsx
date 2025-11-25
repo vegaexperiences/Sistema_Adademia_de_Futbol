@@ -104,14 +104,14 @@ export default async function EmailsPage() {
   const todayEnd = `${today}T23:59:59.999Z`;
   
   // Get ALL emails in the queue for debugging (not just sent)
-  const { data: allEmails, count: totalEmails } = await supabase
+  const { data: allEmails, count: totalEmails, error: allEmailsError } = await supabase
     .from('email_queue')
     .select('id, subject, sent_at, brevo_email_id, status, created_at, scheduled_for, to_email', { count: 'exact' })
     .order('created_at', { ascending: false })
     .limit(20);
   
   // Get all sent emails with their sent_at dates for debugging
-  const { data: sentEmails } = await supabase
+  const { data: sentEmails, error: sentEmailsError } = await supabase
     .from('email_queue')
     .select('id, subject, sent_at, brevo_email_id, status, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
@@ -119,7 +119,7 @@ export default async function EmailsPage() {
     .limit(10);
   
   // Get emails sent today for debugging
-  const { data: todayEmails } = await supabase
+  const { data: todayEmails, error: todayEmailsError } = await supabase
     .from('email_queue')
     .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
@@ -128,28 +128,60 @@ export default async function EmailsPage() {
     .lte('sent_at', todayEnd);
   
   // Also get emails with status='sent' but sent_at is null (data issue)
-  const { data: sentWithoutDate } = await supabase
+  const { data: sentWithoutDate, error: sentWithoutDateError } = await supabase
     .from('email_queue')
     .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
     .is('sent_at', null)
     .limit(10);
   
-  // Count by status
-  const { count: pendingCount } = await supabase
+  // Count by status - with error handling
+  const { count: pendingCount, error: pendingError } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'pending');
   
-  const { count: sentCount } = await supabase
+  const { count: sentCount, error: sentError } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'sent');
   
-  const { count: failedCount } = await supabase
+  const { count: failedCount, error: failedError } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'failed');
+  
+  // Try a simple test query without filters
+  const { data: testQueryData, error: testQueryError, count: testQueryCount } = await supabase
+    .from('email_queue')
+    .select('*', { count: 'exact' })
+    .limit(5);
+  
+  // Log errors for debugging
+  const errors = {
+    allEmails: allEmailsError,
+    sentEmails: sentEmailsError,
+    todayEmails: todayEmailsError,
+    sentWithoutDate: sentWithoutDateError,
+    pending: pendingError,
+    sent: sentError,
+    failed: failedError,
+    testQuery: testQueryError,
+  };
+  
+  const hasErrors = Object.values(errors).some(err => err !== null);
+  
+  // Log to console for server-side debugging
+  console.log('=== EMAIL DEBUG INFO ===');
+  console.log('Test query count:', testQueryCount);
+  console.log('Test query error:', testQueryError);
+  console.log('Test query data length:', testQueryData?.length || 0);
+  console.log('All emails count:', totalEmails);
+  console.log('All emails error:', allEmailsError);
+  console.log('All emails data length:', allEmails?.length || 0);
+  console.log('Sent count:', sentCount);
+  console.log('Sent error:', sentError);
+  console.log('========================');
 
   return (
     <div className="space-y-6 animate-fade-in p-6">
@@ -296,25 +328,78 @@ export default async function EmailsPage() {
               📊 Conteo Real en Base de Datos:
             </h4>
             <div className="bg-white dark:bg-gray-800 p-3 rounded">
-              <p><strong>Total correos:</strong> {totalEmails || 0}</p>
-              <p><strong>Pendientes:</strong> {pendingCount || 0}</p>
-              <p><strong>Enviados:</strong> {sentCount || 0}</p>
-              <p><strong>Fallidos:</strong> {failedCount || 0}</p>
+              <p><strong>Total correos:</strong> {totalEmails ?? 'N/A'} {allEmailsError && <span className="text-red-600">(Error: {allEmailsError.message})</span>}</p>
+              <p><strong>Pendientes:</strong> {pendingCount ?? 'N/A'} {pendingError && <span className="text-red-600">(Error: {pendingError.message})</span>}</p>
+              <p><strong>Enviados:</strong> {sentCount ?? 'N/A'} {sentError && <span className="text-red-600">(Error: {sentError.message})</span>}</p>
+              <p><strong>Fallidos:</strong> {failedCount ?? 'N/A'} {failedError && <span className="text-red-600">(Error: {failedError.message})</span>}</p>
             </div>
           </div>
+          
+          {hasErrors && (
+            <div>
+              <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2">
+                ⚠️ Errores en Queries:
+              </h4>
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                <pre className="text-xs text-red-800 dark:text-red-200 overflow-auto">
+                  {JSON.stringify(errors, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
           
           <div>
             <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
               📧 Últimos 20 Correos en la Base de Datos (Todos los Estados):
             </h4>
-            {allEmails && allEmails.length > 0 ? (
+            {allEmailsError ? (
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                <p className="text-red-800 dark:text-red-200 text-xs">
+                  <strong>Error al obtener correos:</strong> {allEmailsError.message}
+                  <br />
+                  <strong>Código:</strong> {allEmailsError.code}
+                  <br />
+                  <strong>Detalles:</strong> {JSON.stringify(allEmailsError, null, 2)}
+                </p>
+              </div>
+            ) : allEmails && allEmails.length > 0 ? (
               <div className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto max-h-64">
                 <pre className="text-xs">
                   {JSON.stringify(allEmails, null, 2)}
                 </pre>
               </div>
             ) : (
-              <p className="text-yellow-800 dark:text-yellow-200">No hay correos en la base de datos</p>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-200 dark:border-yellow-800">
+                <p className="text-yellow-800 dark:text-yellow-200">
+                  No hay correos en la base de datos (count: {totalEmails ?? 'N/A'})
+                  {allEmailsError && <span className="block mt-2 text-xs">Error: {allEmailsError.message}</span>}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+              🔍 Query Directo sin Filtros (Prueba):
+            </h4>
+            {testQueryError ? (
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                <p className="text-red-800 dark:text-red-200 text-xs">
+                  <strong>Error:</strong> {testQueryError.message}
+                  <br />
+                  <strong>Código:</strong> {testQueryError.code}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 p-3 rounded">
+                <p><strong>Count:</strong> {testQueryCount ?? 'N/A'}</p>
+                <p><strong>Data encontrados:</strong> {testQueryData?.length || 0}</p>
+                {testQueryData && testQueryData.length > 0 && (
+                  <pre className="text-xs mt-2 overflow-auto max-h-32">
+                    {JSON.stringify(testQueryData, null, 2)}
+                  </pre>
+                )}
+              </div>
             )}
           </div>
           
