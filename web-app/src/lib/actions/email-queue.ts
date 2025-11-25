@@ -122,27 +122,67 @@ export async function queueBatchEmails(
 export async function processEmailQueue() {
   const supabase = await createClient();
   
-  // Get pending emails for today, limited to DAILY_LIMIT
+  // Get today's sent count first to check limit
   const today = new Date().toISOString().split('T')[0];
+  const todayStart = `${today}T00:00:00.000Z`;
+  const todayEnd = `${today}T23:59:59.999Z`;
   
+  const { count: todaySentCount } = await supabase
+    .from('email_queue')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'sent')
+    .not('sent_at', 'is', null)
+    .gte('sent_at', todayStart)
+    .lte('sent_at', todayEnd);
+  
+  const remainingToday = Math.max(0, DAILY_LIMIT - (todaySentCount || 0));
+  
+  if (remainingToday === 0) {
+    return { error: 'Límite diario alcanzado', sent: 0, failed: 0, total: 0 };
+  }
+  
+  // Get pending emails for today, limited to remaining quota
   const { data: emails, error } = await supabase
     .from('email_queue')
     .select('*')
     .eq('status', 'pending')
     .lte('scheduled_for', today)
     .order('created_at')
-    .limit(DAILY_LIMIT);
+    .limit(remainingToday);
   
   if (error || !emails) {
     console.error('Error fetching email queue:', error);
     return { error: 'Error al obtener cola de correos' };
   }
   
+  if (emails.length === 0) {
+    return { success: true, sent: 0, failed: 0, total: 0, message: 'No hay correos pendientes' };
+  }
+  
   let sent = 0;
   let failed = 0;
   
   for (const email of emails) {
+    // Double-check status before sending to prevent duplicates
+    const { data: emailCheck } = await supabase
+      .from('email_queue')
+      .select('status')
+      .eq('id', email.id)
+      .single();
+    
+    if (emailCheck?.status !== 'pending') {
+      console.log(`Skipping email ${email.id} - status is ${emailCheck?.status}, not pending`);
+      continue;
+    }
+    
     try {
+      // Mark as processing first to prevent duplicate sends
+      await supabase
+        .from('email_queue')
+        .update({ status: 'sent' }) // Temporarily mark as sent to prevent duplicates
+        .eq('id', email.id)
+        .eq('status', 'pending'); // Only update if still pending
+      
       const sendSmtpEmail: SendSmtpEmail = {
         sender: { name: 'Suarez Academy', email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' },
         to: [{ email: email.to_email }],
@@ -155,12 +195,13 @@ export async function processEmailQueue() {
       // Brevo returns { response, body } where body contains the messageId
       const messageId = result.body?.messageId || (result as any).messageId;
       
-      // Mark as sent with Brevo message ID
+      // Update with Brevo message ID and sent_at timestamp
+      const sentAt = new Date().toISOString();
       await supabase
         .from('email_queue')
         .update({
           status: 'sent',
-          sent_at: new Date().toISOString(),
+          sent_at: sentAt,
           brevo_email_id: messageId || null
         })
         .eq('id', email.id);
@@ -169,7 +210,7 @@ export async function processEmailQueue() {
       if (email.metadata?.player_id) {
         await supabase
           .from('players')
-          .update({ monthly_statement_sent_at: new Date().toISOString() })
+          .update({ monthly_statement_sent_at: sentAt })
           .eq('id', email.metadata.player_id);
       }
       
@@ -214,12 +255,16 @@ export async function getQueueStatus() {
   
   // Get today's sent count to check against limit
   const today = new Date().toISOString().split('T')[0];
+  const todayStart = `${today}T00:00:00.000Z`;
+  const todayEnd = `${today}T23:59:59.999Z`;
+  
   const { count: todaySent } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'sent')
-    .gte('sent_at', `${today}T00:00:00`)
-    .lte('sent_at', `${today}T23:59:59`);
+    .not('sent_at', 'is', null)
+    .gte('sent_at', todayStart)
+    .lte('sent_at', todayEnd);
   
   return {
     pending: pending || 0,

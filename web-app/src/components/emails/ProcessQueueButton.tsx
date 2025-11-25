@@ -18,6 +18,8 @@ export function ProcessQueueButton({ pending, remainingToday }: ProcessQueueButt
   const router = useRouter();
 
   const handleProcess = () => {
+    if (isPending) return; // Prevent multiple clicks
+    
     setStatus('idle');
     setMessage('');
     
@@ -31,6 +33,7 @@ export function ProcessQueueButton({ pending, remainingToday }: ProcessQueueButt
           setTimeout(() => {
             setStatus('idle');
             setMessage('');
+            router.refresh();
           }, 5000);
         } else if (result?.success) {
           setStatus('success');
@@ -49,6 +52,7 @@ export function ProcessQueueButton({ pending, remainingToday }: ProcessQueueButt
           setTimeout(() => {
             setStatus('idle');
             setMessage('');
+            router.refresh();
           }, 5000);
         }
       } catch (error: any) {
@@ -58,6 +62,7 @@ export function ProcessQueueButton({ pending, remainingToday }: ProcessQueueButt
         setTimeout(() => {
           setStatus('idle');
           setMessage('');
+          router.refresh();
         }, 5000);
       }
     });

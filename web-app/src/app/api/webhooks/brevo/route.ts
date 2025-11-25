@@ -25,10 +25,20 @@ export async function POST(request: Request) {
     }
 
     const data = JSON.parse(body);
-    const { event, 'message-id': messageId, ...eventData } = data;
+    console.log('Brevo webhook received:', JSON.stringify(data, null, 2));
+    
+    // Brevo webhook format can vary - handle both formats
+    const event = data.event || data['event'];
+    const messageId = data['message-id'] || data.messageId || data['message_id'];
+    const eventData = data;
 
     if (!messageId) {
-      console.warn('No message-id in webhook data');
+      console.warn('No message-id in webhook data:', data);
+      return NextResponse.json({ received: true });
+    }
+    
+    if (!event) {
+      console.warn('No event in webhook data:', data);
       return NextResponse.json({ received: true });
     }
 
