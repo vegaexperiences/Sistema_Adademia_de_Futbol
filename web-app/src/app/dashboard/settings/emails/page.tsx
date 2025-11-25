@@ -372,7 +372,11 @@ export default async function EmailsPage() {
               <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-200 dark:border-yellow-800">
                 <p className="text-yellow-800 dark:text-yellow-200">
                   No hay correos en la base de datos (count: {totalEmails ?? 'N/A'})
-                  {allEmailsError && <span className="block mt-2 text-xs">Error: {allEmailsError.message}</span>}
+                  {allEmailsError && (
+                    <span className="block mt-2 text-xs">
+                      Error: {allEmailsError instanceof Error ? allEmailsError.message : String(allEmailsError)}
+                    </span>
+                  )}
                 </p>
               </div>
             )}
