@@ -35,16 +35,40 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
   try {
   const supabase = await createClient();
 
-    // Get player data with family info including tutor email
+    // Get player data with family info including tutor email and cedula
     const { data: player, error: playerError } = await supabase
       .from('players')
-      .select('*, families(id, tutor_name, tutor_email)')
+      .select('*, families(id, tutor_name, tutor_email, tutor_cedula)')
       .eq('id', playerId)
       .single();
 
     if (playerError || !player) {
       console.error('Error fetching player:', playerError);
       return { error: `Error al obtener datos del jugador: ${playerError?.message || 'Jugador no encontrado'}` };
+    }
+
+    // Get tutor cedula from family or player notes (fallback)
+    let tutorCedula: string | null = null;
+    if (Array.isArray(player.families)) {
+      tutorCedula = player.families[0]?.tutor_cedula || null;
+    } else if (player.families) {
+      tutorCedula = player.families.tutor_cedula || null;
+    }
+    
+    // If no cedula in family, try to get from players with same family_id
+    if (!tutorCedula && player.family_id) {
+      const { data: familyPlayers } = await supabase
+        .from('players')
+        .select('families(tutor_cedula)')
+        .eq('family_id', player.family_id)
+        .limit(1)
+        .single();
+      
+      if (familyPlayers?.families) {
+        tutorCedula = Array.isArray(familyPlayers.families) 
+          ? familyPlayers.families[0]?.tutor_cedula || null
+          : familyPlayers.families.tutor_cedula || null;
+      }
     }
 
   const updateData: any = {
@@ -65,6 +89,112 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
     if (updateError) {
       console.error('Error updating player status:', updateError);
       return { error: `Error al actualizar el estado del jugador: ${updateError.message}` };
+    }
+
+    // Manage family creation/removal based on approved players count
+    if (tutorCedula) {
+      // Count approved players (Active or Scholarship) with same tutor_cedula
+      const { data: approvedPlayers, error: countError } = await supabase
+        .from('players')
+        .select(`
+          id,
+          family_id,
+          families!inner(tutor_cedula)
+        `)
+        .eq('families.tutor_cedula', tutorCedula)
+        .in('status', ['Active', 'Scholarship']);
+
+      if (!countError && approvedPlayers) {
+        const approvedCount = approvedPlayers.length;
+
+        if (approvedCount >= 2) {
+          // Create or ensure family exists with 2+ approved players
+          const { data: existingFamily } = await supabase
+            .from('families')
+            .select('id')
+            .eq('tutor_cedula', tutorCedula)
+            .single();
+
+          let familyId: string;
+          
+          if (existingFamily) {
+            familyId = existingFamily.id;
+          } else {
+            // Create new family
+            const tutorName = Array.isArray(player.families)
+              ? player.families[0]?.tutor_name || 'Tutor'
+              : player.families?.tutor_name || 'Tutor';
+            const tutorEmail = Array.isArray(player.families)
+              ? player.families[0]?.tutor_email || null
+              : player.families?.tutor_email || null;
+            const tutorPhone = Array.isArray(player.families)
+              ? player.families[0]?.tutor_phone || null
+              : (player.families as any)?.tutor_phone || null;
+
+            const { data: newFamily, error: familyError } = await supabase
+              .from('families')
+              .insert({
+                name: `Familia ${tutorName.split(' ')[1] || tutorName}`,
+                tutor_name: tutorName,
+                tutor_cedula: tutorCedula,
+                tutor_email: tutorEmail,
+                tutor_phone: tutorPhone,
+              })
+              .select()
+              .single();
+
+            if (familyError) {
+              console.error('Error creating family:', familyError);
+            } else {
+              familyId = newFamily.id;
+            }
+          }
+
+          // Update all approved players with same tutor_cedula to have family_id
+          if (familyId) {
+            const playerIds = approvedPlayers.map(p => p.id);
+            await supabase
+              .from('players')
+              .update({ family_id: familyId })
+              .in('id', playerIds);
+          }
+        } else {
+          // If only 1 approved player, remove family_id and delete family if exists
+          await supabase
+            .from('players')
+            .update({ family_id: null })
+            .eq('id', playerId);
+
+          // Delete family if it exists and has no approved players
+          const { data: familyToCheck } = await supabase
+            .from('families')
+            .select('id')
+            .eq('tutor_cedula', tutorCedula)
+            .single();
+
+          if (familyToCheck) {
+            const { data: familyPlayers } = await supabase
+              .from('players')
+              .select('id')
+              .eq('family_id', familyToCheck.id)
+              .in('status', ['Active', 'Scholarship']);
+
+            if (!familyPlayers || familyPlayers.length < 2) {
+              // Remove family_id from all players linked to this family
+              await supabase
+                .from('players')
+                .update({ family_id: null })
+                .eq('family_id', familyToCheck.id);
+
+              // Delete the family
+              await supabase
+                .from('families')
+                .delete()
+                .eq('id', familyToCheck.id);
+            }
+          }
+        }
+      }
     }
 
     // Register enrollment payment (only for regular approvals)
