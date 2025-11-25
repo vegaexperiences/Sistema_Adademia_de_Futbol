@@ -77,27 +77,48 @@ export async function POST(request: Request) {
         break;
 
       case 'delivered':
-        await supabase
+        const { data: deliveredEmail, error: deliveredError } = await supabase
           .from('email_queue')
           .update({ delivered_at: new Date().toISOString() })
-          .eq('brevo_email_id', messageId);
-        console.log(`Email delivered: ${messageId}`);
+          .eq('brevo_email_id', messageId)
+          .select('id')
+          .single();
+        
+        if (deliveredError || !deliveredEmail) {
+          console.warn(`Could not find email with brevo_email_id: ${messageId}`, deliveredError);
+        } else {
+          console.log(`Email delivered: ${messageId} (email_queue id: ${deliveredEmail.id})`);
+        }
         break;
 
       case 'opened':
-        await supabase
+        const { data: openedEmail, error: openedError } = await supabase
           .from('email_queue')
           .update({ opened_at: new Date().toISOString() })
-          .eq('brevo_email_id', messageId);
-        console.log(`Email opened: ${messageId}`);
+          .eq('brevo_email_id', messageId)
+          .select('id')
+          .single();
+        
+        if (openedError || !openedEmail) {
+          console.warn(`Could not find email with brevo_email_id: ${messageId}`, openedError);
+        } else {
+          console.log(`Email opened: ${messageId} (email_queue id: ${openedEmail.id})`);
+        }
         break;
 
       case 'click':
-        await supabase
+        const { data: clickedEmail, error: clickedError } = await supabase
           .from('email_queue')
           .update({ clicked_at: new Date().toISOString() })
-          .eq('brevo_email_id', messageId);
-        console.log(`Email link clicked: ${messageId}`);
+          .eq('brevo_email_id', messageId)
+          .select('id')
+          .single();
+        
+        if (clickedError || !clickedEmail) {
+          console.warn(`Could not find email with brevo_email_id: ${messageId}`, clickedError);
+        } else {
+          console.log(`Email link clicked: ${messageId} (email_queue id: ${clickedEmail.id})`);
+        }
         break;
 
       case 'bounce':

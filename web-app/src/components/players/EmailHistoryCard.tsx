@@ -49,15 +49,22 @@ export function EmailHistoryCard({ emails }: EmailHistoryCardProps) {
             {/* Timestamps and Status */}
             <div className="flex flex-wrap gap-3 text-sm">
               {/* Sent */}
-              <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                <Clock size={14} />
-                <span>Enviado: {new Date(email.sent_at).toLocaleString('es-ES', {
-                  day: '2-digit',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</span>
-              </div>
+              {email.sent_at ? (
+                <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                  <Clock size={14} />
+                  <span>Enviado: {new Date(email.sent_at).toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
+                  <Clock size={14} />
+                  <span>Programado</span>
+                </div>
+              )}
 
               {/* Delivered */}
               {email.delivered_at && (

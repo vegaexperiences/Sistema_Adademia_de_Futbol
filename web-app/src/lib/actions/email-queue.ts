@@ -82,6 +82,12 @@ export async function queueEmail(
   }
   
   // Queue the email
+  // scheduled_for should be a DATE (not TIMESTAMPTZ), so we extract just the date part
+  const scheduledDate = scheduledFor || new Date();
+  const scheduledDateOnly = scheduledDate instanceof Date 
+    ? scheduledDate.toISOString().split('T')[0]
+    : scheduledDate;
+  
   const { error } = await supabase
     .from('email_queue')
     .insert({
@@ -89,7 +95,7 @@ export async function queueEmail(
       to_email: recipientEmail,
       subject,
       html_content: htmlContent,
-      scheduled_for: scheduledFor || new Date(),
+      scheduled_for: scheduledDateOnly,
       metadata: variables
     });
   
@@ -298,17 +304,24 @@ export async function getQueueStatus() {
     .eq('status', 'failed');
   
   // Get today's sent count to check against limit
-  const today = new Date().toISOString().split('T')[0];
+  // Use UTC date to ensure consistency
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
   const todayStart = `${today}T00:00:00.000Z`;
   const todayEnd = `${today}T23:59:59.999Z`;
   
-  const { count: todaySent } = await supabase
+  // Query for emails sent today - sent_at must be a valid timestamp
+  const { count: todaySent, error: countError } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'sent')
     .not('sent_at', 'is', null)
     .gte('sent_at', todayStart)
     .lte('sent_at', todayEnd);
+  
+  if (countError) {
+    console.error('Error counting today\'s emails:', countError);
+  }
   
   // Try to get Brevo account stats for real-time sync
   const brevoStats = await getBrevoAccountStats();
