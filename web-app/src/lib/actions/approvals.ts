@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { queueEmail } from '@/lib/actions/email-queue';
 
 export async function getPendingPlayers() {
   const supabase = await createClient();
@@ -32,10 +33,10 @@ export async function getPendingPlayers() {
 export async function approvePlayer(playerId: string, type: 'Active' | 'Scholarship') {
   const supabase = await createClient();
 
-  // Get player data first to calculate monthly fee
+  // Get player data with family info including tutor email
   const { data: player, error: playerError } = await supabase
     .from('players')
-    .select('*, families(id)')
+    .select('*, families(id, tutor_name, tutor_email)')
     .eq('id', playerId)
     .single();
 
@@ -85,6 +86,58 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
 
     if (paymentError) {
       console.error('Error creating enrollment payment:', paymentError);
+    }
+
+    // Calculate monthly fee for email
+    let monthlyFee = settingsMap['price_monthly'] || 130;
+    
+    // Check for custom fee
+    if (player.custom_monthly_fee !== null && player.custom_monthly_fee !== undefined) {
+      monthlyFee = player.custom_monthly_fee;
+    } else {
+      // Check if part of family with 2+ players
+      const familyFee = settingsMap['price_monthly_family'] || 110.50;
+      const familyId = Array.isArray(player.families) 
+        ? player.families[0]?.id 
+        : player.families?.id;
+      
+      if (familyId) {
+        const { data: familyPlayers } = await supabase
+          .from('players')
+          .select('id')
+          .eq('family_id', familyId)
+          .in('status', ['Active', 'Scholarship'])
+          .order('created_at');
+        
+        if (familyPlayers && familyPlayers.length >= 2) {
+          const playerIndex = familyPlayers.findIndex(p => p.id === playerId);
+          if (playerIndex >= 1) {
+            monthlyFee = familyFee;
+          }
+        }
+      }
+    }
+
+    // Send acceptance email with monthly fee
+    const tutorEmail = Array.isArray(player.families) 
+      ? player.families[0]?.tutor_email 
+      : player.families?.tutor_email;
+    const tutorName = Array.isArray(player.families)
+      ? player.families[0]?.tutor_name || 'Familia'
+      : player.families?.tutor_name || 'Familia';
+    const playerName = `${player.first_name} ${player.last_name}`;
+
+    if (tutorEmail) {
+      try {
+        await queueEmail('player_accepted', tutorEmail, {
+          tutorName,
+          playerNames: playerName,
+          monthlyFee: monthlyFee.toFixed(2),
+        });
+      } catch (emailError) {
+        console.error('Error queuing acceptance email:', emailError);
+        // Don't fail the approval if email fails
+      }
     }
   }
 
