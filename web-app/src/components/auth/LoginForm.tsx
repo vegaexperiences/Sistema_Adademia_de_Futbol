@@ -60,6 +60,17 @@ export function LoginForm() {
         </div>
       )}
 
+      <div className="flex items-center justify-end">
+        <div className="text-sm">
+          <a
+            href="/auth/forgot-password"
+            className="font-medium text-primary hover:text-primary/80"
+          >
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
+      </div>
+
       <div>
         <button
           type="submit"
