@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 export async function getPlayers() {
   const supabase = await createClient();
   // Get all players (including rejected/retired) - they should never be deleted
+  // Include payment_status and custom_monthly_fee for card coloring
   const { data, error } = await supabase
     .from('players')
     .select('*, families(name, tutor_name, tutor_email)')

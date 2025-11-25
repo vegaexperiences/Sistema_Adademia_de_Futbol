@@ -15,6 +15,8 @@ interface Player {
   gender: string;
   category: string | null;
   status: string;
+  payment_status?: string | null;
+  custom_monthly_fee?: number | null;
 }
 
 interface PlayersListProps {
@@ -211,10 +213,29 @@ export default function PlayersList({ players, initialView = 'active' }: Players
       {/* Players Grid */}
       <div className="grid gap-6">
         {filteredPlayers && filteredPlayers.length > 0 ? (
-          filteredPlayers.map((player) => (
+          filteredPlayers.map((player) => {
+            // Determine card color based on player status
+            let cardGradient = 'from-white to-gray-50 dark:from-gray-800 dark:to-gray-900'; // Default
+            let cardBorder = 'border-gray-200 dark:border-gray-700'; // Default
+            
+            if (player.status === 'Scholarship') {
+              // Yellow for scholarship players
+              cardGradient = 'from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20';
+              cardBorder = 'border-yellow-300 dark:border-yellow-700';
+            } else if (player.payment_status === 'overdue') {
+              // Red for overdue players
+              cardGradient = 'from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20';
+              cardBorder = 'border-red-300 dark:border-red-700';
+            } else if (player.custom_monthly_fee !== null && player.custom_monthly_fee !== undefined) {
+              // Light blue/cyan for players with custom fee
+              cardGradient = 'from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20';
+              cardBorder = 'border-cyan-300 dark:border-cyan-700';
+            }
+            
+            return (
             <div 
               key={player.id} 
-              className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up"
+              className={`glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up bg-gradient-to-br ${cardGradient} border-l-4 ${cardBorder}`}
             >
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Player Info */}
@@ -310,7 +331,8 @@ export default function PlayersList({ players, initialView = 'active' }: Players
                 </div>
               </div>
             </div>
-          ))
+            );
+          })
         ) : (
           <div className="glass-card p-12 text-center">
             <User className="mx-auto h-16 w-16 text-gray-400 mb-4" />
