@@ -24,28 +24,43 @@ export async function POST(request: Request) {
       }
     }
 
-    const data = JSON.parse(body);
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (e) {
+      console.error('Invalid JSON in webhook body:', e);
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+    
     console.log('Brevo webhook received:', JSON.stringify(data, null, 2));
     
     // Brevo webhook format can vary - handle both formats
-    const event = data.event || data['event'];
-    const messageId = data['message-id'] || data.messageId || data['message_id'];
-    const eventData = data;
-
-    if (!messageId) {
-      console.warn('No message-id in webhook data:', data);
-      return NextResponse.json({ received: true });
-    }
+    // Format 1: { event: 'delivered', 'message-id': 'xxx', ... }
+    // Format 2: { event: 'delivered', messageId: 'xxx', ... }
+    // Format 3: Array of events: [{ event: 'delivered', 'message-id': 'xxx' }, ...]
+    let events = Array.isArray(data) ? data : [data];
     
-    if (!event) {
-      console.warn('No event in webhook data:', data);
-      return NextResponse.json({ received: true });
-    }
-
     const supabase = await createClient();
+    let processed = 0;
+    
+    for (const eventData of events) {
+      const event = eventData.event || eventData['event'];
+      const messageId = eventData['message-id'] || eventData.messageId || eventData['message_id'] || eventData.message_id;
 
-    // Update email_queue based on event type
-    switch (event) {
+      if (!messageId) {
+        console.warn('No message-id in webhook event:', eventData);
+        continue;
+      }
+      
+      if (!event) {
+        console.warn('No event in webhook data:', eventData);
+        continue;
+      }
+      
+      processed++;
+
+      // Update email_queue based on event type
+      switch (event) {
       case 'sent':
         // Email was sent successfully
         console.log(`Email sent: ${messageId}`);
@@ -83,7 +98,7 @@ export async function POST(request: Request) {
           .update({ 
             bounced_at: new Date().toISOString(),
             status: 'failed',
-            error_message: eventData.reason || 'Email bounced'
+            error_message: eventData.reason || eventData['reason'] || 'Email bounced'
           })
           .eq('brevo_email_id', messageId);
         console.log(`Email bounced: ${messageId}`);
@@ -113,10 +128,11 @@ export async function POST(request: Request) {
         break;
 
       default:
-        console.log(`Unhandled webhook event: ${event}`);
+        console.log(`Unhandled webhook event: ${event} for message ${messageId}`);
+    }
     }
 
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ received: true, processed });
   } catch (error: any) {
     console.error('Webhook error:', error);
     return NextResponse.json(
