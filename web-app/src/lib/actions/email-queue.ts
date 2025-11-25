@@ -325,9 +325,9 @@ export async function getQueueStatus() {
   const todayStart = `${today}T00:00:00.000Z`;
   const todayEnd = `${today}T23:59:59.999Z`;
   
-  // Query for emails sent today - sent_at must be a valid timestamp
-  // Use a more reliable query that handles timezone issues
-  const { count: todaySent, error: countError } = await supabase
+  // Query for emails sent today - try sent_at first, then fallback to created_at if sent_at is null
+  // This handles cases where emails were marked as 'sent' but sent_at wasn't set
+  const { count: todaySentBySentAt, error: countError1 } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'sent')
@@ -335,10 +335,21 @@ export async function getQueueStatus() {
     .gte('sent_at', todayStart)
     .lte('sent_at', todayEnd);
   
-  if (countError) {
-    console.error('Error counting today\'s emails:', countError);
+  // Also count emails with status='sent' but sent_at is null, using created_at as fallback
+  const { count: todaySentByCreatedAt, error: countError2 } = await supabase
+    .from('email_queue')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'sent')
+    .is('sent_at', null)
+    .gte('created_at', todayStart)
+    .lte('created_at', todayEnd);
+  
+  const todaySent = (todaySentBySentAt || 0) + (todaySentByCreatedAt || 0);
+  
+  if (countError1 || countError2) {
+    console.error('Error counting today\'s emails:', countError1 || countError2);
   } else {
-    console.log(`Today's email count: ${todaySent || 0} (from ${todayStart} to ${todayEnd})`);
+    console.log(`Today's email count: ${todaySent} (${todaySentBySentAt || 0} by sent_at, ${todaySentByCreatedAt || 0} by created_at fallback)`);
   }
   
   // Try to get Brevo account stats for real-time sync
