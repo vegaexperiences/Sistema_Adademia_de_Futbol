@@ -7,7 +7,7 @@ export async function logEmailSent(
   to: string, 
   subject: string, 
   context: string = 'direct',
-  resendEmailId: string | null = null
+  brevoEmailId: string | null = null
 ) {
   const supabase = await createClient();
   
@@ -20,7 +20,7 @@ export async function logEmailSent(
       status: 'sent',
       sent_at: new Date().toISOString(),
       scheduled_for: new Date().toISOString().split('T')[0],
-      resend_email_id: resendEmailId,
+      brevo_email_id: brevoEmailId,
       metadata: { context }
     });
   

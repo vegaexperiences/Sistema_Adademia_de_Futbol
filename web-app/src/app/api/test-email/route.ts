@@ -1,4 +1,4 @@
-import { resend } from '@/lib/resend/client';
+import { brevo, SendSmtpEmail } from '@/lib/brevo/client';
 import { logEmailSent } from '@/lib/actions/email-log';
 import { NextResponse } from 'next/server';
 
@@ -11,15 +11,17 @@ export async function POST(request: Request) {
     }
 
     // Send test email
-    const emailResponse = await resend.emails.send({
-      from: 'Suarez Academy <onboarding@resend.dev>',
-      to: [to],
+    const sendSmtpEmail: SendSmtpEmail = {
+      sender: { name: 'Suarez Academy', email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' },
+      to: [{ email: to }],
       subject: `[PRUEBA] ${subject}`,
-      html,
-    });
+      htmlContent: html,
+    };
 
-    // Log email send for counter tracking with Resend ID
-    await logEmailSent(to, subject, `test_${templateName}`, emailResponse.data?.id || null);
+    const emailResponse = await brevo.sendTransacEmail(sendSmtpEmail);
+
+    // Log email send for counter tracking with Brevo ID
+    await logEmailSent(to, subject, `test_${templateName}`, emailResponse.messageId || null);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

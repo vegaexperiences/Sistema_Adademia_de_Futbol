@@ -1,39 +1,35 @@
-import { Resend } from 'resend';
-import { generateEnrollmentEmail } from '../src/lib/email/enrollment-template';
+import * as brevo from '@getbrevo/brevo';
 import * as dotenv from 'dotenv';
 
-// Load env vars
-dotenv.config({ path: '.env.local' });
+dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
 async function sendTestEmail() {
   try {
-    console.log('Sending test email...');
-    
-    const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || 'https://example.com/logo.png';
+    const sendSmtpEmail: brevo.SendSmtpEmail = {
+      sender: { 
+        name: 'Suarez Academy', 
+        email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' 
+      },
+      to: [{ email: process.env.TEST_EMAIL || 'test@example.com' }],
+      subject: 'Email de Prueba - Suarez Academy',
+      htmlContent: `
+        <h1>Email de Prueba</h1>
+        <p>Este es un email de prueba desde Suarez Academy usando Brevo.</p>
+        <p>Si recibes este email, la configuración de Brevo está funcionando correctamente.</p>
+      `,
+    };
 
-    const emailHtml = generateEnrollmentEmail(
-      logoUrl,
-      'Javier Vallejo',
-      [
-        { firstName: 'Lionel', lastName: 'Messi', category: 'U-10 M' },
-        { firstName: 'Cristiano', lastName: 'Ronaldo', category: 'U-12 M' }
-      ],
-      260.00,
-      'Yappy'
-    );
-
-    const data = await resend.emails.send({
-      from: 'Suarez Academy <onboarding@resend.dev>',
-      to: ['vegaexperiences@gmail.com'],
-      subject: 'TEST: Confirmación de Matrícula - Suarez Academy',
-      html: emailHtml,
-    });
-
-    console.log('Email sent successfully:', data);
-  } catch (error) {
-    console.error('Error sending email:', error);
+    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log('✅ Email enviado exitosamente!');
+    console.log('Message ID:', result.messageId);
+  } catch (error: any) {
+    console.error('❌ Error enviando email:', error);
+    if (error.response) {
+      console.error('Response:', error.response.body);
+    }
   }
 }
 

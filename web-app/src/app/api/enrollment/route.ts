@@ -1,10 +1,25 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { resend } from '@/lib/resend/client';
+import { brevo, SendSmtpEmail } from '@/lib/brevo/client';
+import { enrollmentSchema } from '@/lib/validations/enrollment';
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
+    const body = await request.json();
+    
+    // Validate input data
+    const validationResult = enrollmentSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Datos inválidos', 
+          details: validationResult.error.flatten().fieldErrors 
+        },
+        { status: 400 }
+      );
+    }
+    
+    const data = validationResult.data;
     const supabase = await createClient();
 
     // 1. Check if Family exists or Create new
@@ -78,25 +93,65 @@ export async function POST(request: Request) {
     const count = data.players.length;
     const totalAmount = baseRate * count; // No discount for enrollment
 
-    // 4. Create Payment Record (Pending)
-    const { error: paymentError } = await supabase
+    // Get created player IDs
+    const { data: createdPlayers, error: fetchPlayersError } = await supabase
+      .from('players')
+      .select('id')
+      .eq('family_id', familyId)
+      .order('created_at', { ascending: false })
+      .limit(count);
+
+    if (fetchPlayersError || !createdPlayers || createdPlayers.length !== count) {
+      throw new Error('Error al obtener los jugadores creados');
+    }
+
+    // 4. Create Payment Records - one per player or one combined
+    // Using combined approach: one payment for all players in enrollment
+    const paymentStatus = (data.paymentMethod === 'Comprobante' || 
+                          data.paymentMethod === 'Transferencia' || 
+                          data.paymentMethod === 'Yappy') 
+                          ? 'Pending Approval' 
+                          : 'Pending';
+
+    // Insert payment record linked to the first player (primary)
+    const { data: payment, error: paymentError } = await supabase
       .from('payments')
       .insert({
+        player_id: createdPlayers[0].id, // Link to first player
         amount: totalAmount,
         type: 'Matrícula',
-        status: (data.paymentMethod === 'Comprobante' || data.paymentMethod === 'Transferencia' || data.paymentMethod === 'Yappy') ? 'Pending Approval' : 'Pending',
+        status: paymentStatus,
         method: data.paymentMethod,
-        notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}`,
+        notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}. Jugadores: ${createdPlayers.map(p => p.id).join(', ')}`,
         proof_url: data.paymentProofFile,
-      });
+      })
+      .select()
+      .single();
 
     if (paymentError) {
       console.error('Payment record error:', paymentError);
-      throw paymentError; // Throw to catch block
+      throw paymentError;
+    }
+
+    // If multiple players, create additional payment records for tracking
+    if (count > 1) {
+      for (let i = 1; i < createdPlayers.length; i++) {
+        await supabase
+          .from('payments')
+          .insert({
+            player_id: createdPlayers[i].id,
+            amount: 0, // No additional charge, already included in main payment
+            type: 'Matrícula',
+            status: paymentStatus,
+            method: data.paymentMethod,
+            notes: `Matrícula compartida (pago principal registrado en jugador principal). Tutor: ${data.tutorName}`,
+            proof_url: data.paymentProofFile,
+          });
+      }
     }
 
     // 5. Send Email
-    if (process.env.RESEND_API_KEY) {
+    if (process.env.BREVO_API_KEY) {
       const { generateEnrollmentEmail } = await import('@/lib/email/enrollment-template');
       
       // Get logo URL from public folder (deployed URLs will use the deployed domain)
@@ -110,28 +165,37 @@ export async function POST(request: Request) {
         data.paymentMethod
       );
 
-      const emailResponse = await resend.emails.send({
-        from: 'Suarez Academy <onboarding@resend.dev>',
-        to: [data.tutorEmail],
+      const sendSmtpEmail: SendSmtpEmail = {
+        sender: { name: 'Suarez Academy', email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' },
+        to: [{ email: data.tutorEmail }],
         subject: 'Confirmación de Matrícula - Suarez Academy',
-        html: emailHtml,
-      });
+        htmlContent: emailHtml,
+      };
 
-      // Log email send for daily counter with Resend email ID
+      const emailResponse = await brevo.sendTransacEmail(sendSmtpEmail);
+
+      // Log email send for daily counter with Brevo email ID
       const { logEmailSent } = await import('@/lib/actions/email-log');
       await logEmailSent(
         data.tutorEmail, 
         'Confirmación de Matrícula - Suarez Academy', 
         'enrollment',
-        emailResponse.data?.id || null
+        emailResponse.messageId || null
       );
     }
 
     return NextResponse.json({ success: true, familyId: familyId });
   } catch (error: any) {
     console.error('Enrollment error:', error);
+    
+    // Don't expose internal error details to client in production
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
     return NextResponse.json(
-      { error: 'Error processing enrollment', details: error.message || JSON.stringify(error) },
+      { 
+        error: 'Error procesando la matrícula',
+        ...(isDevelopment && { details: error.message || JSON.stringify(error) })
+      },
       { status: 500 }
     );
   }

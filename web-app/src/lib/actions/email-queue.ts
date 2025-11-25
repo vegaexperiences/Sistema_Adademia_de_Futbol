@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { resend } from '@/lib/resend/client';
+import { brevo, SendSmtpEmail } from '@/lib/brevo/client';
 
 export interface QueuedEmail {
   id: string;
@@ -132,19 +132,22 @@ export async function processEmailQueue() {
   
   for (const email of emails) {
     try {
-      await resend.emails.send({
-        from: 'Suarez Academy <onboarding@resend.dev>',
-        to: [email.to_email],
+      const sendSmtpEmail: SendSmtpEmail = {
+        sender: { name: 'Suarez Academy', email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' },
+        to: [{ email: email.to_email }],
         subject: email.subject,
-        html: email.html_content,
-      });
+        htmlContent: email.html_content,
+      };
+
+      const result = await brevo.sendTransacEmail(sendSmtpEmail);
       
-      // Mark as sent
+      // Mark as sent with Brevo message ID
       await supabase
         .from('email_queue')
         .update({
           status: 'sent',
-          sent_at: new Date().toISOString()
+          sent_at: new Date().toISOString(),
+          brevo_email_id: result.messageId || null
         })
         .eq('id', email.id);
       

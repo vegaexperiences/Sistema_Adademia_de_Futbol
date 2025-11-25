@@ -12,7 +12,7 @@ export interface PlayerEmail {
   bounced_at: string | null;
   clicked_at: string | null;
   status: string;
-  resend_email_id: string | null;
+  brevo_email_id: string | null;
 }
 
 export async function getPlayerEmailHistory(playerId: string): Promise<PlayerEmail[]> {
