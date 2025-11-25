@@ -77,9 +77,19 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="glass-card p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <DollarSign className="h-6 w-6 text-green-600" />
             Registrar Pago - Familia {familyName}
@@ -92,7 +102,8 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="overflow-y-auto flex-1 p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
           {/* Player Selection */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -267,6 +278,7 @@ export function CreatePaymentModal({ players, familyName, onClose }: CreatePayme
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
