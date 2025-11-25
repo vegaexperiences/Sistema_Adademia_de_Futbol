@@ -4,6 +4,7 @@ import { Users, Mail, Phone, User, DollarSign, CreditCard, ArrowLeft, FileText }
 import Link from 'next/link';
 import { getPlayersPayments } from '@/lib/actions/payments';
 import PaymentHistory from '@/components/payments/PaymentHistory';
+import { CreatePaymentButton } from '@/components/payments/CreatePaymentButton';
 
 export default async function FamilyProfilePage({ 
   params 
@@ -225,10 +226,18 @@ export default async function FamilyProfilePage({
 
       {/* Payment History */}
       <div className="glass-card p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <CreditCard className="h-6 w-6" />
-          Historial de Pagos Familiar
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <CreditCard className="h-6 w-6" />
+            Gestión de Pagos
+          </h2>
+          {approvedPlayers.length > 0 && (
+            <CreatePaymentButton 
+              players={approvedPlayers} 
+              familyName={family.tutor_name || 'Familia'}
+            />
+          )}
+        </div>
         
         {playerCount > 1 && (
           <div className="mb-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500">
