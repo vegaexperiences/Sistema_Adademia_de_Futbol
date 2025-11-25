@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Search, Filter, User, Calendar, GraduationCap, CheckCircle } from 'lucide-react';
+import { Users, Search, Filter, User, Calendar, GraduationCap, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { retirePlayer } from '@/lib/actions/players';
 
 interface Player {
   id: string;
@@ -15,24 +17,72 @@ interface Player {
   status: string;
 }
 
-export default function PlayersPage({ players }: { players: Player[] }) {
+interface PlayersListProps {
+  players: Player[];
+  initialView?: 'active' | 'retired';
+}
+
+export default function PlayersList({ players, initialView = 'active' }: PlayersListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [view, setView] = useState<'active' | 'retired'>(initialView);
+  const [retiringId, setRetiringId] = useState<string | null>(null);
+  const router = useRouter();
   
   const activeCount = players?.filter(p => p.status === 'Active').length || 0;
   const scholarshipCount = players?.filter(p => p.status === 'Scholarship').length || 0;
   const pendingCount = players?.filter(p => p.status === 'Pending').length || 0;
+  const rejectedCount = players?.filter(p => p.status === 'Rejected').length || 0;
 
-  // Filter players based on search
+  // Filter players based on view and search
   const filteredPlayers = players?.filter(player => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      player.first_name?.toLowerCase().includes(search) ||
-      player.last_name?.toLowerCase().includes(search) ||
-      player.cedula?.toLowerCase().includes(search) ||
-      `${player.first_name} ${player.last_name}`.toLowerCase().includes(search)
-    );
+    // Filter by view
+    if (view === 'active') {
+      // Show Active, Scholarship, and Pending
+      if (!['Active', 'Scholarship', 'Pending'].includes(player.status)) {
+        return false;
+      }
+    } else if (view === 'retired') {
+      // Show only Rejected/Retired
+      if (player.status !== 'Rejected') {
+        return false;
+      }
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      return (
+        player.first_name?.toLowerCase().includes(search) ||
+        player.last_name?.toLowerCase().includes(search) ||
+        player.cedula?.toLowerCase().includes(search) ||
+        `${player.first_name} ${player.last_name}`.toLowerCase().includes(search)
+      );
+    }
+    
+    return true;
   }) || [];
+
+  const handleRetirePlayer = async (playerId: string, playerName: string) => {
+    if (!confirm(`¿Estás seguro de que deseas retirar a ${playerName}? Esta acción cambiará su estado a "Retirado" pero no se borrará de la plataforma.`)) {
+      return;
+    }
+    
+    setRetiringId(playerId);
+    try {
+      const result = await retirePlayer(playerId);
+      if (result.error) {
+        alert(`Error: ${result.error}`);
+      } else {
+        alert(result.message || 'Jugador retirado exitosamente');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error retiring player:', error);
+      alert('Error al retirar jugador');
+    } finally {
+      setRetiringId(null);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -53,8 +103,34 @@ export default function PlayersPage({ players }: { players: Player[] }) {
         </p>
       </div>
 
+      {/* Tabs */}
+      <div className="glass-card p-4">
+        <div className="flex gap-3">
+          <button
+            onClick={() => setView('active')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all border ${
+              view === 'active'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg border-transparent'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            Activos ({activeCount + scholarshipCount + pendingCount})
+          </button>
+          <button
+            onClick={() => setView('retired')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all border ${
+              view === 'retired'
+                ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg border-transparent'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            Retirados/No Aprobados ({rejectedCount})
+          </button>
+        </div>
+      </div>
+
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-6 hover:shadow-xl transition-all duration-300">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl" style={{
@@ -96,6 +172,20 @@ export default function PlayersPage({ players }: { players: Player[] }) {
             </div>
           </div>
         </div>
+
+        <div className="glass-card p-6 hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl" style={{
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            }}>
+              <XCircle className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Retirados</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{rejectedCount}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search & Filters */}
@@ -130,19 +220,20 @@ export default function PlayersPage({ players }: { players: Player[] }) {
       <div className="grid gap-6">
         {filteredPlayers && filteredPlayers.length > 0 ? (
           filteredPlayers.map((player) => (
-            <Link 
+            <div 
               key={player.id} 
-              href={`/dashboard/players/${player.id}`}
-              className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up cursor-pointer"
+              className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up"
             >
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Player Info */}
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        {player.first_name} {player.last_name}
-                      </h3>
+                    <div className="flex-1">
+                      <Link href={`/dashboard/players/${player.id}`}>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">
+                          {player.first_name} {player.last_name}
+                        </h3>
+                      </Link>
                       <div className="flex gap-2 flex-wrap">
                         {player.category && (
                           <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
