@@ -42,7 +42,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
     
-    console.log('Brevo webhook received:', JSON.stringify(data, null, 2));
+    console.log('📧 Brevo webhook received:', JSON.stringify(data, null, 2));
+    console.log('📧 Webhook signature:', signature ? 'present' : 'missing');
+    console.log('📧 Webhook secret configured:', webhookSecret ? 'yes' : 'no');
     
     // Brevo webhook format can vary - handle both formats
     // Format 1: { event: 'delivered', 'message-id': 'xxx', ... }
@@ -123,28 +125,53 @@ export async function POST(request: Request) {
               console.log(`Email delivered (partial match): ${messageId} -> ${match.brevo_email_id || match.resend_email_id} (email_queue id: ${match.id})`);
             } else {
               // Last resort: try to find by to_email if we have it in the webhook
+              // Also try to match by date (within last 7 days) to find recent emails
               const toEmail = eventData.email || eventData['email'] || eventData.to;
+              const eventDate = eventData.date || eventData['date'] || eventData.timestamp;
+              
               if (toEmail) {
-                const { data: emailMatch } = await supabase
+                // First try exact match with most recent email
+                let { data: emailMatch } = await supabase
                   .from('email_queue')
-                  .select('id, to_email')
+                  .select('id, to_email, sent_at, brevo_email_id')
                   .eq('to_email', toEmail)
                   .eq('status', 'sent')
                   .order('sent_at', { ascending: false })
                   .limit(1)
                   .single();
                 
+                // If no exact match, try to find emails sent in the last 7 days
+                if (!emailMatch) {
+                  const sevenDaysAgo = new Date();
+                  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                  
+                  const { data: recentEmails } = await supabase
+                    .from('email_queue')
+                    .select('id, to_email, sent_at, brevo_email_id')
+                    .eq('to_email', toEmail)
+                    .eq('status', 'sent')
+                    .gte('sent_at', sevenDaysAgo.toISOString())
+                    .order('sent_at', { ascending: false })
+                    .limit(5);
+                  
+                  if (recentEmails && recentEmails.length > 0) {
+                    // Use the most recent one
+                    emailMatch = recentEmails[0];
+                    console.log(`Found ${recentEmails.length} recent emails for ${toEmail}, using most recent`);
+                  }
+                }
+                
                 if (emailMatch) {
                   await supabase
                     .from('email_queue')
                     .update({ delivered_at: new Date().toISOString() })
                     .eq('id', emailMatch.id);
-                  console.log(`Email delivered (by email match): ${messageId} -> ${toEmail} (email_queue id: ${emailMatch.id})`);
+                  console.log(`Email delivered (by email match): ${messageId} -> ${toEmail} (email_queue id: ${emailMatch.id}, sent_at: ${emailMatch.sent_at})`);
                 } else {
-                  console.warn(`Could not find email with messageId: ${messageId} or email: ${toEmail}`);
+                  console.warn(`Could not find email with messageId: ${messageId} or email: ${toEmail}. Webhook data:`, JSON.stringify(eventData, null, 2));
                 }
               } else {
-                console.warn(`Could not find email with messageId: ${messageId} (no email address in webhook)`);
+                console.warn(`Could not find email with messageId: ${messageId} (no email address in webhook). Full event:`, JSON.stringify(eventData, null, 2));
               }
             }
           }
@@ -198,32 +225,57 @@ export async function POST(request: Request) {
                 .update({ opened_at: new Date().toISOString() })
                 .eq('id', match.id);
               console.log(`Email opened (partial match): ${messageId} -> ${match.brevo_email_id || match.resend_email_id} (email_queue id: ${match.id})`);
-            } else {
-              // Last resort: try to find by to_email if we have it in the webhook
-              const toEmail = eventData.email || eventData['email'] || eventData.to;
-              if (toEmail) {
-                const { data: emailMatch } = await supabase
-                  .from('email_queue')
-                  .select('id, to_email')
-                  .eq('to_email', toEmail)
-                  .eq('status', 'sent')
-                  .order('sent_at', { ascending: false })
-                  .limit(1)
-                  .single();
-                
-                if (emailMatch) {
-                  await supabase
-                    .from('email_queue')
-                    .update({ opened_at: new Date().toISOString() })
-                    .eq('id', emailMatch.id);
-                  console.log(`Email opened (by email match): ${messageId} -> ${toEmail} (email_queue id: ${emailMatch.id})`);
-                } else {
-                  console.warn(`Could not find email with messageId: ${messageId} or email: ${toEmail}`);
-                }
               } else {
-                console.warn(`Could not find email with messageId: ${messageId} (no email address in webhook)`);
+                // Last resort: try to find by to_email if we have it in the webhook
+                // Also try to match by date (within last 7 days) to find recent emails
+                const toEmail = eventData.email || eventData['email'] || eventData.to;
+                const eventDate = eventData.date || eventData['date'] || eventData.timestamp;
+                
+                if (toEmail) {
+                  // First try exact match with most recent email
+                  let { data: emailMatch } = await supabase
+                    .from('email_queue')
+                    .select('id, to_email, sent_at, brevo_email_id')
+                    .eq('to_email', toEmail)
+                    .eq('status', 'sent')
+                    .order('sent_at', { ascending: false })
+                    .limit(1)
+                    .single();
+                  
+                  // If no exact match, try to find emails sent in the last 7 days
+                  if (!emailMatch) {
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    
+                    const { data: recentEmails } = await supabase
+                      .from('email_queue')
+                      .select('id, to_email, sent_at, brevo_email_id')
+                      .eq('to_email', toEmail)
+                      .eq('status', 'sent')
+                      .gte('sent_at', sevenDaysAgo.toISOString())
+                      .order('sent_at', { ascending: false })
+                      .limit(5);
+                    
+                    if (recentEmails && recentEmails.length > 0) {
+                      // Use the most recent one
+                      emailMatch = recentEmails[0];
+                      console.log(`Found ${recentEmails.length} recent emails for ${toEmail}, using most recent`);
+                    }
+                  }
+                  
+                  if (emailMatch) {
+                    await supabase
+                      .from('email_queue')
+                      .update({ opened_at: new Date().toISOString() })
+                      .eq('id', emailMatch.id);
+                    console.log(`Email opened (by email match): ${messageId} -> ${toEmail} (email_queue id: ${emailMatch.id}, sent_at: ${emailMatch.sent_at})`);
+                  } else {
+                    console.warn(`Could not find email with messageId: ${messageId} or email: ${toEmail}. Webhook data:`, JSON.stringify(eventData, null, 2));
+                  }
+                } else {
+                  console.warn(`Could not find email with messageId: ${messageId} (no email address in webhook). Full event:`, JSON.stringify(eventData, null, 2));
+                }
               }
-            }
           }
         } else {
           openedEmail = brevoOpened;
