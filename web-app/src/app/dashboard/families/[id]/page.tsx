@@ -24,12 +24,17 @@ export default async function FamilyProfilePage({
     notFound();
   }
 
-  const playerCount = family.players?.length || 0;
-  const activeCount = family.players?.filter((p: any) => p.status === 'Active').length || 0;
-  const scholarshipCount = family.players?.filter((p: any) => p.status === 'Scholarship').length || 0;
+  // Filter to only show approved players (Active or Scholarship)
+  const approvedPlayers = family.players?.filter((p: any) => 
+    p.status === 'Active' || p.status === 'Scholarship'
+  ) || [];
+
+  const playerCount = approvedPlayers.length;
+  const activeCount = approvedPlayers.filter((p: any) => p.status === 'Active').length;
+  const scholarshipCount = approvedPlayers.filter((p: any) => p.status === 'Scholarship').length;
   
-  // Get all payments for family players
-  const playerIds = family.players?.map((p: any) => p.id) || [];
+  // Get all payments for approved family players only
+  const playerIds = approvedPlayers.map((p: any) => p.id);
   const payments = await getPlayersPayments(playerIds);
   
   // Calculate total paid
@@ -168,8 +173,8 @@ export default async function FamilyProfilePage({
           Jugadores de la Familia
         </h2>
         <div className="grid gap-4">
-          {family.players && family.players.length > 0 ? (
-            family.players.map((player: any) => (
+          {approvedPlayers && approvedPlayers.length > 0 ? (
+            approvedPlayers.map((player: any) => (
               <Link
                 key={player.id}
                 href={`/dashboard/players/${player.id}`}

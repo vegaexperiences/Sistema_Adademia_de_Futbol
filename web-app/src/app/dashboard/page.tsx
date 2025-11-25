@@ -5,14 +5,22 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   
   // Get stats
-  const { data: players } = await supabase.from('players').select('status');
-  const { data: families } = await supabase.from('families').select('id');
+  const { data: players } = await supabase.from('players').select('status, family_id');
+  const { data: families } = await supabase.from('families').select('id, players(status)');
   
-  const totalPlayers = players?.length || 0;
+  // Only count approved players (Active or Scholarship) for total
+  const totalPlayers = players?.filter(p => p.status === 'Active' || p.status === 'Scholarship').length || 0;
   const activePlayers = players?.filter(p => p.status === 'Active').length || 0;
   const pendingPlayers = players?.filter(p => p.status === 'Pending').length || 0;
   const scholarships = players?.filter(p => p.status === 'Scholarship').length || 0;
-  const totalFamilies = families?.length || 0;
+  
+  // Only count families with at least one approved player
+  const totalFamilies = families?.filter(family => {
+    const approvedPlayers = family.players?.filter((p: any) => 
+      p.status === 'Active' || p.status === 'Scholarship'
+    ) || [];
+    return approvedPlayers.length > 0;
+  }).length || 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
