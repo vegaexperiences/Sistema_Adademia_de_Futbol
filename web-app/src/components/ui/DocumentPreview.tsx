@@ -1,3 +1,5 @@
+'use client';
+
 import { Eye, ExternalLink, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,6 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react';
 
 interface DocumentPreviewProps {
   url: string;
@@ -14,6 +18,111 @@ interface DocumentPreviewProps {
 }
 
 export function DocumentPreview({ url, title }: DocumentPreviewProps) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!url) {
+      setLoading(false);
+      return;
+    }
+
+    const processUrl = async () => {
+      try {
+        // If it's already a full URL (http/https), use it directly
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          setImageUrl(url);
+          setLoading(false);
+          return;
+        }
+
+        // If it starts with /, it's a local path (public folder)
+        if (url.startsWith('/')) {
+          setImageUrl(url);
+          setLoading(false);
+          return;
+        }
+
+        // If it's a Supabase Storage path (contains /storage/ or storage.v1)
+        if (url.includes('/storage/') || url.includes('storage.v1')) {
+          const supabase = createClient();
+          
+          // Extract bucket and path from Supabase Storage URL
+          let bucket = 'documents'; // default bucket
+          let path = url;
+
+          // Try to extract bucket from full Supabase Storage URL
+          if (url.includes('/storage/v1/object/public/')) {
+            const match = url.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+)/);
+            if (match) {
+              bucket = match[1];
+              path = match[2];
+            }
+          } else if (url.includes('storage.v1.supabase.co')) {
+            // Handle Supabase Storage URL format
+            const match = url.match(/\/object\/public\/([^\/]+)\/(.+)/);
+            if (match) {
+              bucket = match[1];
+              path = match[2];
+            }
+          } else {
+            // Assume format: bucket/path
+            const parts = url.split('/');
+            if (parts.length > 1) {
+              bucket = parts[0];
+              path = parts.slice(1).join('/');
+            }
+          }
+
+          // Get public URL from Supabase Storage
+          const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+          setImageUrl(data.publicUrl);
+          setLoading(false);
+          return;
+        }
+
+        // If it's just a filename (no slashes, no http), try multiple sources
+        if (!url.includes('/') && !url.includes('\\')) {
+          // First try: Supabase Storage documents bucket
+          try {
+            const supabase = createClient();
+            const { data } = supabase.storage.from('documents').getPublicUrl(url);
+            // Test if the URL is accessible
+            const testImg = new Image();
+            testImg.onload = () => {
+              setImageUrl(data.publicUrl);
+              setLoading(false);
+            };
+            testImg.onerror = () => {
+              // If Supabase Storage fails, try public folder
+              setImageUrl(`/${url}`);
+              setLoading(false);
+            };
+            testImg.src = data.publicUrl;
+            return;
+          } catch (err) {
+            // Fallback to public folder
+            setImageUrl(`/${url}`);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Default: use as-is (might be a relative path)
+        setImageUrl(url);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error processing image URL:', err);
+        // Last resort: try as public folder file
+        setImageUrl(url.startsWith('/') ? url : `/${url}`);
+        setLoading(false);
+      }
+    };
+
+    processUrl();
+  }, [url]);
+
   if (!url) return null;
 
   // Helper to convert Google Drive view links to preview/embed links if possible
@@ -29,9 +138,10 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
     return url;
   };
 
-  const embedUrl = getEmbedUrl(url);
-  const isGoogleDrive = url.includes('drive.google.com');
-  const isImage = url.match(/\.(jpeg|jpg|gif|png)$/) != null;
+  const finalUrl = imageUrl || url;
+  const embedUrl = getEmbedUrl(finalUrl);
+  const isGoogleDrive = finalUrl.includes('drive.google.com');
+  const isImage = finalUrl.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null || imageUrl != null;
 
   return (
     <Dialog>
@@ -46,7 +156,31 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
           <DialogTitle className="text-gray-900 dark:text-white">{title}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 w-full h-full min-h-[400px] bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden relative">
-          {isGoogleDrive ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <p className="text-gray-600 dark:text-gray-400">Cargando imagen...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 p-6">
+              <FileText size={48} className="text-gray-400" />
+              <div className="text-center">
+                <p className="text-gray-900 dark:text-white font-medium mb-2">Error al cargar la imagen</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                  No se pudo cargar la imagen. Verifica que el archivo exista.
+                </p>
+                <p className="text-gray-500 dark:text-gray-500 text-xs mb-2">URL: {url}</p>
+                {finalUrl && finalUrl !== url && (
+                  <a href={finalUrl} target="_blank" rel="noopener noreferrer">
+                    <Button>
+                      <ExternalLink size={16} className="mr-2" />
+                      Intentar abrir directamente
+                    </Button>
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : isGoogleDrive ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 p-6">
               <FileText size={48} className="text-gray-400" />
               <div className="text-center">
@@ -54,7 +188,7 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                   Para ver este documento, el propietario debe compartirlo públicamente.
                 </p>
-                <a href={url} target="_blank" rel="noopener noreferrer">
+                <a href={finalUrl} target="_blank" rel="noopener noreferrer">
                   <Button>
                     <ExternalLink size={16} className="mr-2" />
                     Abrir en Google Drive
@@ -63,12 +197,18 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
               </div>
             </div>
           ) : isImage ? (
-            <img src={url} alt={title} className="w-full h-full object-contain" />
+            <img 
+              src={finalUrl} 
+              alt={title} 
+              className="w-full h-full object-contain"
+              onError={() => setError(true)}
+              onLoad={() => setLoading(false)}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <FileText size={48} className="text-gray-400" />
               <p className="text-gray-900 dark:text-white">Este documento no se puede previsualizar aquí.</p>
-              <a href={url} target="_blank" rel="noopener noreferrer">
+              <a href={finalUrl} target="_blank" rel="noopener noreferrer">
                 <Button>
                   <ExternalLink size={16} className="mr-2" />
                   Abrir en nueva pestaña
