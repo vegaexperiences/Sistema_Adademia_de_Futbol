@@ -23,7 +23,13 @@ type SearchParams = {
   view?: string;
 };
 
-export default async function ApprovalsPage({ searchParams }: { searchParams?: SearchParams }) {
+export default async function ApprovalsPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams | Promise<SearchParams | undefined>;
+}) {
+  const resolvedSearchParams =
+    typeof searchParams?.then === 'function' ? await searchParams : searchParams;
   const pendingPlayers = await getPendingPlayers();
   const pendingTournaments = await getPendingTournamentRegistrations();
   const supabase = await createClient();
@@ -36,7 +42,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams?: S
     ? (pendingPaymentsData as PendingPayment[])
     : [];
 
-  const view = searchParams?.view === 'tournaments' ? 'tournaments' : 'players';
+  const view = resolvedSearchParams?.view === 'tournaments' ? 'tournaments' : 'players';
   const tabs = [
     { id: 'players', label: 'Solicitudes de Matrícula', count: pendingPlayers.length },
     { id: 'tournaments', label: 'Torneos', count: pendingTournaments.length },
