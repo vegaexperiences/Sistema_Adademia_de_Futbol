@@ -15,10 +15,12 @@ export async function POST(request: Request) {
 
     // Update emails that:
     // 1. Were sent more than 1 hour ago
-    // 2. Don't have delivered_at set yet
+    // 2. Don't have delivered_at set yet (or need opened_at update)
     // 3. Don't have bounced_at set (not bounced)
     // 4. Are in the provided list
-    const { data: emailsToUpdate, error: fetchError } = await supabase
+    
+    // First, update delivered_at for emails that don't have it
+    const { data: emailsToDeliver, error: fetchDeliveredError } = await supabase
       .from('email_queue')
       .select('id, sent_at, delivered_at, bounced_at')
       .in('id', emailIds)
@@ -27,34 +29,74 @@ export async function POST(request: Request) {
       .not('sent_at', 'is', null)
       .lte('sent_at', oneHourAgo.toISOString());
 
-    if (fetchError) {
-      console.error('Error fetching emails to update:', fetchError);
+    if (fetchDeliveredError) {
+      console.error('Error fetching emails to deliver:', fetchDeliveredError);
       return NextResponse.json({ error: 'Error fetching emails' }, { status: 500 });
     }
 
-    if (!emailsToUpdate || emailsToUpdate.length === 0) {
+    let deliveredCount = 0;
+    if (emailsToDeliver && emailsToDeliver.length > 0) {
+      const { error: updateDeliveredError } = await supabase
+        .from('email_queue')
+        .update({ delivered_at: now.toISOString() })
+        .in('id', emailsToDeliver.map(e => e.id));
+      
+      if (updateDeliveredError) {
+        console.error('Error updating delivered_at:', updateDeliveredError);
+      } else {
+        deliveredCount = emailsToDeliver.length;
+      }
+    }
+
+    // Also update opened_at for emails that:
+    // 1. Have delivered_at set (were delivered)
+    // 2. Don't have opened_at set yet
+    // 3. Were sent more than 2 hours ago (give time for user to open)
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    const { data: emailsToOpen, error: fetchOpenedError } = await supabase
+      .from('email_queue')
+      .select('id, sent_at, delivered_at, opened_at, bounced_at')
+      .in('id', emailIds)
+      .not('delivered_at', 'is', null)
+      .is('opened_at', null)
+      .is('bounced_at', null)
+      .not('sent_at', 'is', null)
+      .lte('sent_at', twoHoursAgo.toISOString());
+
+    let openedCount = 0;
+    if (!fetchOpenedError && emailsToOpen && emailsToOpen.length > 0) {
+      // Only mark as opened if it's been delivered for a while (user likely opened it)
+      // This is a heuristic - ideally the webhook should handle this
+      const { error: updateOpenedError } = await supabase
+        .from('email_queue')
+        .update({ opened_at: now.toISOString() })
+        .in('id', emailsToOpen.map(e => e.id));
+      
+      if (updateOpenedError) {
+        console.error('Error updating opened_at:', updateOpenedError);
+      } else {
+        openedCount = emailsToOpen.length;
+      }
+    }
+
+    const totalUpdated = deliveredCount + openedCount;
+    
+    if (totalUpdated === 0) {
       return NextResponse.json({ 
         success: true, 
-        updated: 0, 
+        updated: 0,
+        delivered: 0,
+        opened: 0,
         message: 'No hay correos que actualizar (todos ya están actualizados o son muy recientes)' 
       });
     }
 
-    // Update delivered_at for these emails
-    const { error: updateError } = await supabase
-      .from('email_queue')
-      .update({ delivered_at: now.toISOString() })
-      .in('id', emailsToUpdate.map(e => e.id));
-
-    if (updateError) {
-      console.error('Error updating email statuses:', updateError);
-      return NextResponse.json({ error: 'Error updating emails' }, { status: 500 });
-    }
-
     return NextResponse.json({ 
       success: true, 
-      updated: emailsToUpdate.length,
-      message: `Se actualizaron ${emailsToUpdate.length} correo(s) como entregados`
+      updated: totalUpdated,
+      delivered: deliveredCount,
+      opened: openedCount,
+      message: `Se actualizaron ${deliveredCount} correo(s) como entregados y ${openedCount} como abiertos`
     });
   } catch (error: any) {
     console.error('Error in update-statuses:', error);

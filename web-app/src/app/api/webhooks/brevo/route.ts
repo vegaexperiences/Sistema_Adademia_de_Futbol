@@ -45,6 +45,8 @@ export async function POST(request: Request) {
     console.log('📧 Brevo webhook received:', JSON.stringify(data, null, 2));
     console.log('📧 Webhook signature:', signature ? 'present' : 'missing');
     console.log('📧 Webhook secret configured:', webhookSecret ? 'yes' : 'no');
+    console.log('📧 Webhook URL:', request.url);
+    console.log('📧 Webhook headers:', Object.fromEntries(request.headers.entries()));
     
     // Brevo webhook format can vary - handle both formats
     // Format 1: { event: 'delivered', 'message-id': 'xxx', ... }
