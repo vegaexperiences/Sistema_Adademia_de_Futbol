@@ -186,7 +186,7 @@ function PlayerApprovals({
                       {player.families?.tutor_name || player.tutor_name || 'Sin información'}
                     </p>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
-                      📧 {player.families?.tutor_email || player.tutor_email || 'Sin email'} • 📱{' '}
+                      🆔 {player.families?.tutor_cedula || 'Sin cédula'} • 📧 {player.families?.tutor_email || player.tutor_email || 'Sin email'} • 📱{' '}
                       {player.families?.tutor_phone || player.tutor_phone || 'Sin teléfono'}
                     </p>
                   </div>

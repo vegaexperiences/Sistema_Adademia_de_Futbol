@@ -16,6 +16,7 @@ export async function getPendingPlayers() {
         tutor_name,
         tutor_email,
         tutor_phone,
+        tutor_cedula,
         tutor_cedula_url
       )
     `)
