@@ -229,7 +229,8 @@ function TestEmailSender({ templateName, previewHtml, subject }: {
 }) {
   const [testEmail, setTestEmail] = useState('');
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<{ success?: boolean; message?: string } | null>(null);
+  const [result, setResult] = useState<{ success?: boolean; message?: string; details?: any; status?: number } | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   const handleSendTest = async () => {
     if (!testEmail || !testEmail.includes('@')) {
@@ -257,14 +258,26 @@ function TestEmailSender({ templateName, previewHtml, subject }: {
       if (response.ok) {
         setResult({ success: true, message: '✅ Correo de prueba enviado exitosamente!' });
         setTestEmail('');
+        setShowDetails(false);
         
         // Refresh page after 2 seconds to update counters
         setTimeout(() => window.location.reload(), 2000);
       } else {
-        setResult({ success: false, message: `❌ Error: ${data.error}` });
+        setResult({ 
+          success: false, 
+          message: `❌ Error ${response.status}: ${data.error || 'No se pudo enviar el correo'}`,
+          details: data.details || data,
+          status: response.status
+        });
+        setShowDetails(true);
       }
     } catch (error) {
-      setResult({ success: false, message: '❌ Error al enviar correo' });
+      setResult({ 
+        success: false, 
+        message: '❌ Error al enviar correo',
+        details: error instanceof Error ? { message: error.message, stack: error.stack } : error
+      });
+      setShowDetails(true);
     } finally {
       setSending(false);
     }
@@ -299,9 +312,28 @@ function TestEmailSender({ templateName, previewHtml, subject }: {
       </div>
 
       {result && (
-        <p className={`mt-3 text-sm font-medium ${result.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-          {result.message}
-        </p>
+        <div className="mt-3 text-sm">
+          <p className={`font-medium ${result.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            {result.message}
+          </p>
+
+          {result.details && (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="text-xs font-semibold text-purple-700 dark:text-purple-300 underline"
+              >
+                {showDetails ? 'Ocultar detalles de depuración' : 'Mostrar detalles de depuración'}
+              </button>
+              {showDetails && (
+                <pre className="mt-2 text-xs bg-white/70 dark:bg-gray-900/60 border border-purple-200 dark:border-purple-800 rounded-lg p-3 text-purple-900 dark:text-purple-100 overflow-auto max-h-48">
+                  {JSON.stringify(result.details, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
