@@ -1,6 +1,9 @@
-import { CheckCircle, Upload, FileText, X } from 'lucide-react';
+'use client';
+
+import { CheckCircle, Upload, FileText, X, Loader2 } from 'lucide-react';
 import { SystemConfig } from '@/lib/actions/config';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { uploadFile } from '@/lib/utils/file-upload';
 
 interface PaymentStepProps {
   data: any;
@@ -12,28 +15,56 @@ interface PaymentStepProps {
 
 export function PaymentStep({ data, updateData, onBack, onSubmit, config }: PaymentStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handlePaymentSelection = (method: string) => {
     updateData({ paymentMethod: method });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Mock upload - in real app, upload to storage and get URL
-      updateData({ paymentProofFile: file.name });
+    if (!file) return;
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('El archivo es demasiado grande. Máximo 5MB.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const path = `payments/proofs/${data.tutorCedula || 'payment'}`;
+      const result = await uploadFile(file, path);
+
+      if (result.error) {
+        setUploadError(result.error);
+        setUploading(false);
+        return;
+      }
+
+      if (result.url) {
+        updateData({ paymentProofFile: result.url });
+      }
+    } catch (error: any) {
+      setUploadError(error.message || 'Error al subir el archivo');
+    } finally {
+      setUploading(false);
     }
   };
 
   const removeFile = () => {
     updateData({ paymentProofFile: '' });
+    setUploadError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const basePrice = config.prices.enrollment;
-  const totalAmount = basePrice * data.players.length; // No discount for enrollment
+  const totalAmount = basePrice * data.players.length;
 
   return (
     <div className="space-y-6">
@@ -108,40 +139,59 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
             
             {!data.paymentProofFile ? (
               <div 
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-purple-500 dark:hover:border-purple-400 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-800/50"
-                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors ${
+                  uploading 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-gray-300 dark:border-gray-600 hover:border-purple-500 dark:hover:border-purple-400 bg-gray-50 dark:bg-gray-800/50 cursor-pointer'
+                }`}
+                onClick={() => !uploading && fileInputRef.current?.click()}
               >
-                <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Clic para subir imagen
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  JPG, PNG o PDF (Max 5MB)
-                </p>
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      Subiendo archivo...
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      Clic para subir imagen
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      JPG, PNG o PDF (Max 5MB)
+                    </p>
+                  </>
+                )}
                 <input 
                   type="file" 
                   ref={fileInputRef}
                   className="hidden" 
                   accept="image/*,application/pdf"
                   onChange={handleFileChange}
+                  disabled={uploading}
                 />
               </div>
             ) : (
-              <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate max-w-[200px]">
-                    {data.paymentProofFile}
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Comprobante subido correctamente
                   </span>
                 </div>
                 <button 
                   type="button"
                   onClick={removeFile}
-                  className="p-1 hover:bg-purple-100 dark:hover:bg-purple-800 rounded-full text-gray-500 hover:text-red-500 transition-colors"
+                  className="p-1 hover:bg-green-100 dark:hover:bg-green-800 rounded-full text-gray-500 hover:text-red-500 transition-colors"
                 >
                   <X size={16} />
                 </button>
               </div>
+            )}
+            {uploadError && (
+              <p className="mt-2 text-sm text-red-500">{uploadError}</p>
             )}
           </div>
         )}
