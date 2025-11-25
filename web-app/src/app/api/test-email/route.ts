@@ -28,10 +28,22 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Test email error:', error);
+    // Brevo errors include HTTP status + body with details
+    const brevoStatus = error?.response?.status;
+    const brevoBody = error?.response?.body;
+
+    console.error('Test email error:', {
+      message: error?.message,
+      status: brevoStatus,
+      body: brevoBody,
+    });
+
     return NextResponse.json(
-      { error: error.message || 'Failed to send test email' },
-      { status: 500 }
+      {
+        error: brevoBody?.message || error.message || 'Failed to send test email',
+        details: brevoBody || null,
+      },
+      { status: brevoStatus || 500 }
     );
   }
 }
