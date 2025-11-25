@@ -128,6 +128,24 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   </select>
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Cédula
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                    value={player.cedula || ''}
+                    onChange={(e) => updatePlayer(index, { cedula: e.target.value })}
+                    placeholder="Ej. 8-123-456"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         ))}

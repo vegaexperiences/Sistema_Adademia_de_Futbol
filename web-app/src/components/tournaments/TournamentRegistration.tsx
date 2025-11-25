@@ -20,6 +20,7 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
     coach_name: '',
     coach_email: '',
     coach_phone: '',
+    coach_cedula: '',
     category: tournament.categories[0] || ''
   });
 
@@ -61,6 +62,7 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
               coach_name: '',
               coach_email: '',
               coach_phone: '',
+              coach_cedula: '',
               category: tournament.categories[0] || ''
             });
           }}
@@ -122,6 +124,25 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              Cédula del Entrenador/Representante
+            </label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                required
+                value={formData.coach_cedula}
+                onChange={(e) => setFormData({ ...formData, coach_cedula: e.target.value })}
+                placeholder="Ej. 8-123-456"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
               Teléfono de Contacto
             </label>
             <div className="relative">
@@ -136,9 +157,6 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
               />
             </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
               Correo Electrónico
@@ -155,24 +173,25 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-              Categoría
-            </label>
-            <div className="relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <select
-                required
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none"
-              >
-                <option value="" disabled>Selecciona una categoría</option>
-                {tournament.categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            Categoría
+          </label>
+          <div className="relative">
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <select
+              required
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none"
+            >
+              <option value="" disabled>Selecciona una categoría</option>
+              {tournament.categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
           </div>
         </div>
 

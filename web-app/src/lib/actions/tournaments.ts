@@ -112,6 +112,7 @@ export async function registerTeam(data: {
   coach_name: string;
   coach_email: string;
   coach_phone: string;
+  coach_cedula?: string;
   category: string;
 }) {
   const supabase = await createClient();
