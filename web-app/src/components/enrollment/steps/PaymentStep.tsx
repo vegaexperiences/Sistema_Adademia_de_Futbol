@@ -155,13 +155,13 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                   </>
                 ) : (
                   <>
-                    <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      Clic para subir imagen
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      JPG, PNG o PDF (Max 5MB)
-                    </p>
+                <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  Clic para subir imagen
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  JPG, PNG o PDF (Max 5MB)
+                </p>
                   </>
                 )}
                 <input 

@@ -219,11 +219,20 @@ export async function processEmailQueue() {
       const result = await brevo.sendTransacEmail(sendSmtpEmail);
       
       // Brevo returns { response, body } where body contains the messageId
-      const messageId = result.body?.messageId || (result as any).messageId;
+      // The messageId format from Brevo API is usually just the ID, but webhooks send it with angle brackets
+      // We'll store it as-is and handle both formats in the webhook
+      let messageId = result.body?.messageId || (result as any).messageId;
+      
+      // Clean messageId - remove angle brackets if present and trim
+      if (messageId) {
+        messageId = messageId.replace(/^<|>$/g, '').trim();
+      }
+      
+      console.log(`Email sent via Brevo - messageId: ${messageId}, email_queue id: ${email.id}`);
       
       // Update with Brevo message ID and sent_at timestamp
       const sentAt = new Date().toISOString();
-      await supabase
+      const { error: updateError } = await supabase
         .from('email_queue')
         .update({
           status: 'sent',
@@ -231,6 +240,12 @@ export async function processEmailQueue() {
           brevo_email_id: messageId || null
         })
         .eq('id', email.id);
+      
+      if (updateError) {
+        console.error('Error updating email_queue with brevo_email_id:', updateError);
+      } else {
+        console.log(`Email queue updated successfully - brevo_email_id: ${messageId}`);
+      }
       
       // Update player monthly statement timestamp if applicable
       if (email.metadata?.player_id) {
@@ -311,6 +326,7 @@ export async function getQueueStatus() {
   const todayEnd = `${today}T23:59:59.999Z`;
   
   // Query for emails sent today - sent_at must be a valid timestamp
+  // Use a more reliable query that handles timezone issues
   const { count: todaySent, error: countError } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
@@ -321,6 +337,8 @@ export async function getQueueStatus() {
   
   if (countError) {
     console.error('Error counting today\'s emails:', countError);
+  } else {
+    console.log(`Today's email count: ${todaySent || 0} (from ${todayStart} to ${todayEnd})`);
   }
   
   // Try to get Brevo account stats for real-time sync

@@ -175,23 +175,23 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-            Categoría
-          </label>
-          <div className="relative">
-            <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <select
-              required
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none"
-            >
-              <option value="" disabled>Selecciona una categoría</option>
-              {tournament.categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              Categoría
+            </label>
+            <div className="relative">
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <select
+                required
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none"
+              >
+                <option value="" disabled>Selecciona una categoría</option>
+                {tournament.categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
           </div>
         </div>
 

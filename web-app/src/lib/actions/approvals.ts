@@ -33,7 +33,7 @@ export async function getPendingPlayers() {
 
 export async function approvePlayer(playerId: string, type: 'Active' | 'Scholarship') {
   try {
-    const supabase = await createClient();
+  const supabase = await createClient();
 
     // Get player data with family info including tutor email
     const { data: player, error: playerError } = await supabase
@@ -47,20 +47,20 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
       return { error: `Error al obtener datos del jugador: ${playerError?.message || 'Jugador no encontrado'}` };
     }
 
-    const updateData: any = {
-      status: type === 'Scholarship' ? 'Scholarship' : 'Active',
-    };
+  const updateData: any = {
+    status: type === 'Scholarship' ? 'Scholarship' : 'Active',
+  };
 
-    if (type === 'Scholarship') {
-      updateData.discount_percent = 100;
-      updateData.notes = 'Becado aprobado desde panel de control';
-    }
+  if (type === 'Scholarship') {
+    updateData.discount_percent = 100;
+    updateData.notes = 'Becado aprobado desde panel de control';
+  }
 
     // Update player status
     const { error: updateError } = await supabase
-      .from('players')
-      .update(updateData)
-      .eq('id', playerId);
+    .from('players')
+    .update(updateData)
+    .eq('id', playerId);
 
     if (updateError) {
       console.error('Error updating player status:', updateError);
@@ -146,10 +146,10 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
     }
   }
 
-    revalidatePath('/dashboard/approvals');
-    revalidatePath('/dashboard/players');
+  revalidatePath('/dashboard/approvals');
+  revalidatePath('/dashboard/players');
     revalidatePath('/dashboard/finances');
-    return { success: true };
+  return { success: true };
   } catch (error: any) {
     console.error('Unexpected error in approvePlayer:', error);
     return { error: `Error inesperado: ${error.message || 'Error desconocido'}` };

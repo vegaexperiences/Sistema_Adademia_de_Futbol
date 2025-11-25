@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     
     for (const eventData of events) {
       const event = eventData.event || eventData['event'];
-      const messageId = eventData['message-id'] || eventData.messageId || eventData['message_id'] || eventData.message_id;
+      let messageId = eventData['message-id'] || eventData.messageId || eventData['message_id'] || eventData.message_id;
 
       if (!messageId) {
         console.warn('No message-id in webhook event:', eventData);
@@ -66,6 +66,9 @@ export async function POST(request: Request) {
         console.warn('No event in webhook data:', eventData);
         continue;
       }
+      
+      // Clean messageId - remove angle brackets if present
+      messageId = messageId.replace(/^<|>$/g, '').trim();
       
       processed++;
 
@@ -85,13 +88,31 @@ export async function POST(request: Request) {
           .single();
         
         if (deliveredError || !deliveredEmail) {
-          console.warn(`Could not find email with brevo_email_id: ${messageId}`, deliveredError);
+          // Try to find by partial match (in case format differs)
+          const { data: partialMatch } = await supabase
+            .from('email_queue')
+            .select('id, brevo_email_id')
+            .like('brevo_email_id', `%${messageId.split('@')[0]}%`)
+            .limit(1)
+            .single();
+          
+          if (partialMatch) {
+            await supabase
+              .from('email_queue')
+              .update({ delivered_at: new Date().toISOString() })
+              .eq('id', partialMatch.id);
+            console.log(`Email delivered (partial match): ${messageId} (email_queue id: ${partialMatch.id})`);
+          } else {
+            console.warn(`Could not find email with brevo_email_id: ${messageId}`, deliveredError);
+          }
         } else {
           console.log(`Email delivered: ${messageId} (email_queue id: ${deliveredEmail.id})`);
         }
         break;
 
       case 'opened':
+      case 'unique_opened':
+        // unique_opened is the same as opened - first time email is opened
         const { data: openedEmail, error: openedError } = await supabase
           .from('email_queue')
           .update({ opened_at: new Date().toISOString() })
@@ -100,7 +121,23 @@ export async function POST(request: Request) {
           .single();
         
         if (openedError || !openedEmail) {
-          console.warn(`Could not find email with brevo_email_id: ${messageId}`, openedError);
+          // Try to find by partial match
+          const { data: partialMatch } = await supabase
+            .from('email_queue')
+            .select('id, brevo_email_id')
+            .like('brevo_email_id', `%${messageId.split('@')[0]}%`)
+            .limit(1)
+            .single();
+          
+          if (partialMatch) {
+            await supabase
+              .from('email_queue')
+              .update({ opened_at: new Date().toISOString() })
+              .eq('id', partialMatch.id);
+            console.log(`Email opened (partial match): ${messageId} (email_queue id: ${partialMatch.id})`);
+          } else {
+            console.warn(`Could not find email with brevo_email_id: ${messageId}`, openedError);
+          }
         } else {
           console.log(`Email opened: ${messageId} (email_queue id: ${openedEmail.id})`);
         }
@@ -156,6 +193,11 @@ export async function POST(request: Request) {
           })
           .eq('brevo_email_id', messageId);
         console.log(`Email blocked: ${messageId}`);
+        break;
+
+      case 'request':
+        // This is just a webhook test/validation event, ignore it
+        console.log(`Webhook validation request received: ${messageId}`);
         break;
 
       default:

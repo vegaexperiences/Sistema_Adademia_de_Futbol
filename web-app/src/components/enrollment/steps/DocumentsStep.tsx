@@ -125,33 +125,33 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
                 ) : (
                   <>
                     <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                    <label htmlFor="cedulaTutor" className="cursor-pointer w-full text-center">
+              <label htmlFor="cedulaTutor" className="cursor-pointer w-full text-center">
                       <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">
-                        Cédula del Tutor (Frente)
-                      </span>
-                      <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                  Cédula del Tutor (Frente)
+                </span>
+                <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
                         Click para subir o arrastrar archivo
-                      </span>
-                      <input
-                        id="cedulaTutor"
-                        name="cedulaTutor"
-                        type="file"
-                        className="sr-only"
+                </span>
+                <input
+                  id="cedulaTutor"
+                  name="cedulaTutor"
+                  type="file"
+                  className="sr-only"
                         accept="image/*,application/pdf"
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
                             handleFileChange('cedulaTutorFile', e.target.files[0]);
                           }
                         }}
-                        required={!data.cedulaTutorFile}
-                      />
-                    </label>
+                  required={!data.cedulaTutorFile}
+                />
+              </label>
                   </>
                 )}
                 {uploadErrors['cedulaTutorFile'] && (
                   <p className="mt-2 text-sm text-red-500">{uploadErrors['cedulaTutorFile']}</p>
                 )}
-              </div>
+            </div>
             )}
           </div>
 
@@ -190,24 +190,24 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
                       ) : (
                         <>
                           <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                          <label htmlFor={`cedulaJugadorFront_${index}`} className="cursor-pointer w-full text-center">
+                  <label htmlFor={`cedulaJugadorFront_${index}`} className="cursor-pointer w-full text-center">
                             <span className="text-xs font-medium text-gray-900 dark:text-white">
                               Cédula (Frente)
-                            </span>
-                            <input
-                              id={`cedulaJugadorFront_${index}`}
-                              name={`cedulaJugadorFront_${index}`}
-                              type="file"
-                              className="sr-only"
+                    </span>
+                    <input
+                      id={`cedulaJugadorFront_${index}`}
+                      name={`cedulaJugadorFront_${index}`}
+                      type="file"
+                      className="sr-only"
                               accept="image/*,application/pdf"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
                                   handlePlayerFileChange(index, 'cedulaFrontFile', e.target.files[0]);
-                                }
-                              }}
-                              required={!player.cedulaFrontFile}
-                            />
-                          </label>
+                        }
+                      }}
+                      required={!player.cedulaFrontFile}
+                    />
+                  </label>
                         </>
                       )}
                       {uploadErrors[`player-${index}-cedulaFrontFile`] && (
@@ -245,24 +245,24 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
                       ) : (
                         <>
                           <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                          <label htmlFor={`cedulaJugadorBack_${index}`} className="cursor-pointer w-full text-center">
+                  <label htmlFor={`cedulaJugadorBack_${index}`} className="cursor-pointer w-full text-center">
                             <span className="text-xs font-medium text-gray-900 dark:text-white">
                               Cédula (Dorso)
-                            </span>
-                            <input
-                              id={`cedulaJugadorBack_${index}`}
-                              name={`cedulaJugadorBack_${index}`}
-                              type="file"
-                              className="sr-only"
+                    </span>
+                    <input
+                      id={`cedulaJugadorBack_${index}`}
+                      name={`cedulaJugadorBack_${index}`}
+                      type="file"
+                      className="sr-only"
                               accept="image/*,application/pdf"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
                                   handlePlayerFileChange(index, 'cedulaBackFile', e.target.files[0]);
-                                }
-                              }}
-                              required={!player.cedulaBackFile}
-                            />
-                          </label>
+                        }
+                      }}
+                      required={!player.cedulaBackFile}
+                    />
+                  </label>
                         </>
                       )}
                       {uploadErrors[`player-${index}-cedulaBackFile`] && (

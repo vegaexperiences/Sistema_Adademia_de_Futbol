@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     // Allow Vercel Cron (has signature) or manual calls with CRON_SECRET
     if (process.env.CRON_SECRET) {
       if (!vercelSignature && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
     }
 

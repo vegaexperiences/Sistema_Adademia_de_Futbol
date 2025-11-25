@@ -145,7 +145,7 @@ export async function POST(request: Request) {
             method: data.paymentMethod,
             notes: `Matrícula compartida (pago principal registrado en jugador principal). Tutor: ${data.tutorName}`,
             proof_url: data.paymentProofFile,
-          });
+      });
       }
     }
 

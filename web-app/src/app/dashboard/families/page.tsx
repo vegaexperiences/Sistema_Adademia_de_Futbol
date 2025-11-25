@@ -8,7 +8,7 @@ export default async function FamiliesPage() {
     .from('families')
     .select('*, players(id, first_name, last_name, status)')
     .order('tutor_name');
-  
+
   // Filter to only show approved players (Active or Scholarship) and only families with at least one approved player
   const familiesWithApprovedPlayers = families
     ?.map(family => ({
