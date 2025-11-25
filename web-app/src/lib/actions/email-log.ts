@@ -11,6 +11,8 @@ export async function logEmailSent(
 ) {
   const supabase = await createClient();
   
+  const now = new Date().toISOString();
+
   const { error } = await supabase
     .from('email_queue')
     .insert({
@@ -18,8 +20,8 @@ export async function logEmailSent(
       subject: subject,
       html_content: '',
       status: 'sent',
-      sent_at: new Date().toISOString(),
-      scheduled_for: new Date().toISOString().split('T')[0],
+      sent_at: now,
+      scheduled_for: now,
       brevo_email_id: brevoEmailId,
       metadata: { context }
     });
