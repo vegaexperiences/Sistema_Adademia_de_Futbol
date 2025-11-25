@@ -106,19 +106,27 @@ export default async function EmailsPage() {
   // Get all sent emails with their sent_at dates for debugging
   const { data: sentEmails } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id, status, created_at')
+    .select('id, subject, sent_at, brevo_email_id, status, created_at, scheduled_for')
     .eq('status', 'sent')
-    .order('sent_at', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(10);
   
   // Get emails sent today for debugging
   const { data: todayEmails } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id')
+    .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for')
     .eq('status', 'sent')
     .not('sent_at', 'is', null)
     .gte('sent_at', todayStart)
     .lte('sent_at', todayEnd);
+  
+  // Also get emails with status='sent' but sent_at is null (data issue)
+  const { data: sentWithoutDate } = await supabase
+    .from('email_queue')
+    .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for')
+    .eq('status', 'sent')
+    .is('sent_at', null)
+    .limit(10);
 
   return (
     <div className="space-y-6 animate-fade-in p-6">
@@ -287,7 +295,7 @@ export default async function EmailsPage() {
           
           <div>
             <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-              Últimos 10 Correos Enviados:
+              Últimos 10 Correos Enviados (status='sent'):
             </h4>
             {sentEmails && sentEmails.length > 0 ? (
               <div className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto max-h-64">
@@ -297,6 +305,24 @@ export default async function EmailsPage() {
               </div>
             ) : (
               <p className="text-yellow-800 dark:text-yellow-200">No hay correos enviados</p>
+            )}
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+              ⚠️ Correos con status='sent' pero sent_at es NULL ({sentWithoutDate?.length || 0}):
+            </h4>
+            {sentWithoutDate && sentWithoutDate.length > 0 ? (
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                <p className="text-red-800 dark:text-red-200 mb-2 text-xs">
+                  Estos correos tienen status='sent' pero no tienen fecha de envío. Esto es un problema de datos.
+                </p>
+                <pre className="text-xs bg-white dark:bg-gray-800 p-2 rounded overflow-auto max-h-48">
+                  {JSON.stringify(sentWithoutDate, null, 2)}
+                </pre>
+              </div>
+            ) : (
+              <p className="text-green-800 dark:text-green-200 text-xs">✓ Todos los correos enviados tienen sent_at</p>
             )}
           </div>
         </div>
