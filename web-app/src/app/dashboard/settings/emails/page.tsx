@@ -103,10 +103,17 @@ export default async function EmailsPage() {
   const todayStart = `${today}T00:00:00.000Z`;
   const todayEnd = `${today}T23:59:59.999Z`;
   
+  // Get ALL emails in the queue for debugging (not just sent)
+  const { data: allEmails, count: totalEmails } = await supabase
+    .from('email_queue')
+    .select('id, subject, sent_at, brevo_email_id, status, created_at, scheduled_for, to_email', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .limit(20);
+  
   // Get all sent emails with their sent_at dates for debugging
   const { data: sentEmails } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id, status, created_at, scheduled_for')
+    .select('id, subject, sent_at, brevo_email_id, status, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
     .order('created_at', { ascending: false })
     .limit(10);
@@ -114,7 +121,7 @@ export default async function EmailsPage() {
   // Get emails sent today for debugging
   const { data: todayEmails } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for')
+    .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
     .not('sent_at', 'is', null)
     .gte('sent_at', todayStart)
@@ -123,10 +130,26 @@ export default async function EmailsPage() {
   // Also get emails with status='sent' but sent_at is null (data issue)
   const { data: sentWithoutDate } = await supabase
     .from('email_queue')
-    .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for')
+    .select('id, subject, sent_at, brevo_email_id, created_at, scheduled_for, to_email')
     .eq('status', 'sent')
     .is('sent_at', null)
     .limit(10);
+  
+  // Count by status
+  const { count: pendingCount } = await supabase
+    .from('email_queue')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  
+  const { count: sentCount } = await supabase
+    .from('email_queue')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'sent');
+  
+  const { count: failedCount } = await supabase
+    .from('email_queue')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'failed');
 
   return (
     <div className="space-y-6 animate-fade-in p-6">
@@ -266,6 +289,33 @@ export default async function EmailsPage() {
             <pre className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto text-xs">
               {JSON.stringify(queueStatus, null, 2)}
             </pre>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+              📊 Conteo Real en Base de Datos:
+            </h4>
+            <div className="bg-white dark:bg-gray-800 p-3 rounded">
+              <p><strong>Total correos:</strong> {totalEmails || 0}</p>
+              <p><strong>Pendientes:</strong> {pendingCount || 0}</p>
+              <p><strong>Enviados:</strong> {sentCount || 0}</p>
+              <p><strong>Fallidos:</strong> {failedCount || 0}</p>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+              📧 Últimos 20 Correos en la Base de Datos (Todos los Estados):
+            </h4>
+            {allEmails && allEmails.length > 0 ? (
+              <div className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto max-h-64">
+                <pre className="text-xs">
+                  {JSON.stringify(allEmails, null, 2)}
+                </pre>
+              </div>
+            ) : (
+              <p className="text-yellow-800 dark:text-yellow-200">No hay correos en la base de datos</p>
+            )}
           </div>
           
           <div>
