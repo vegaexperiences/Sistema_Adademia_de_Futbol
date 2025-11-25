@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "create-storage": "tsx scripts/create-storage-bucket.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
@@ -26,10 +27,9 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "recharts": "^3.5.0",
-    "@getbrevo/brevo": "^3.0.1",
-    "zod": "^3.23.8",
     "tailwind-merge": "^3.4.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -39,6 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

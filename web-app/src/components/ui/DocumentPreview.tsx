@@ -45,7 +45,7 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
         }
 
         // If it's a Supabase Storage path (contains /storage/ or storage.v1)
-        if (url.includes('/storage/') || url.includes('storage.v1')) {
+        if (url.includes('/storage/') || url.includes('storage.v1') || url.includes('supabase.co/storage')) {
           const supabase = createClient();
           
           // Extract bucket and path from Supabase Storage URL
@@ -59,7 +59,7 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
               bucket = match[1];
               path = match[2];
             }
-          } else if (url.includes('storage.v1.supabase.co')) {
+          } else if (url.includes('storage.v1.supabase.co') || url.includes('supabase.co/storage')) {
             // Handle Supabase Storage URL format
             const match = url.match(/\/object\/public\/([^\/]+)\/(.+)/);
             if (match) {
@@ -84,33 +84,60 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
 
         // If it's just a filename (no slashes, no http), try multiple sources
         if (!url.includes('/') && !url.includes('\\')) {
-          // First try: Supabase Storage documents bucket
-          try {
-            const supabase = createClient();
-            const { data } = supabase.storage.from('documents').getPublicUrl(url);
-            // Test if the URL is accessible
-            const testImg = new Image();
-            testImg.onload = () => {
-              setImageUrl(data.publicUrl);
-              setLoading(false);
-            };
-            testImg.onerror = () => {
-              // If Supabase Storage fails, try public folder
-              setImageUrl(`/${url}`);
-              setLoading(false);
-            };
-            testImg.src = data.publicUrl;
-            return;
-          } catch (err) {
-            // Fallback to public folder
-            setImageUrl(`/${url}`);
+          // First try: public folder (most common for old files)
+          const publicUrl = `/${url}`;
+          const testImg = new Image();
+          
+          testImg.onload = () => {
+            // File exists in public folder
+            setImageUrl(publicUrl);
             setLoading(false);
-            return;
-          }
+          };
+          
+          testImg.onerror = async () => {
+            // Public folder failed, try Supabase Storage
+            try {
+              const supabase = createClient();
+              
+              // Check if bucket exists first
+              const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+              
+              if (bucketError || !buckets?.some(b => b.name === 'documents')) {
+                // Bucket doesn't exist, fallback to public
+                console.warn('Supabase Storage bucket "documents" not found. Using public folder.');
+                setImageUrl(publicUrl);
+                setLoading(false);
+                return;
+              }
+              
+              const { data } = supabase.storage.from('documents').getPublicUrl(url);
+              
+              // Test the Supabase URL
+              const testStorageImg = new Image();
+              testStorageImg.onload = () => {
+                setImageUrl(data.publicUrl);
+                setLoading(false);
+              };
+              testStorageImg.onerror = () => {
+                // Both failed, use public as fallback
+                setImageUrl(publicUrl);
+                setLoading(false);
+              };
+              testStorageImg.src = data.publicUrl;
+            } catch (err) {
+              // Error accessing storage, use public folder
+              setImageUrl(publicUrl);
+              setLoading(false);
+            }
+          };
+          
+          testImg.src = publicUrl;
+          return;
         }
 
-        // Default: use as-is (might be a relative path)
-        setImageUrl(url);
+        // Default: try as public folder file first
+        const publicUrl = url.startsWith('/') ? url : `/${url}`;
+        setImageUrl(publicUrl);
         setLoading(false);
       } catch (err) {
         console.error('Error processing image URL:', err);
