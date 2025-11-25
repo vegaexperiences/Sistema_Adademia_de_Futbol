@@ -86,6 +86,8 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
         if (!url.includes('/') && !url.includes('\\')) {
           // First try: public folder (most common for old files)
           const publicUrl = `/${url}`;
+          
+          // Try to load the image directly
           const testImg = new Image();
           
           testImg.onload = () => {
@@ -95,7 +97,34 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
           };
           
           testImg.onerror = async () => {
-            // Public folder failed, try Supabase Storage
+            // Public folder failed, try alternative names or Supabase Storage
+            // Try common alternative names (logo_academia.png -> logo.png)
+            const alternatives: string[] = [];
+            if (url.includes('logo_academia')) {
+              alternatives.push('/logo.png');
+            }
+            if (url.includes('logo') && !url.includes('academia')) {
+              alternatives.push('/logo_academia.png');
+            }
+            
+            // Try alternatives first
+            for (const alt of alternatives) {
+              const altImg = new Image();
+              const altPromise = new Promise<boolean>((resolve) => {
+                altImg.onload = () => {
+                  setImageUrl(alt);
+                  setLoading(false);
+                  resolve(true);
+                };
+                altImg.onerror = () => resolve(false);
+                altImg.src = alt;
+              });
+              
+              const found = await altPromise;
+              if (found) return;
+            }
+            
+            // If alternatives failed, try Supabase Storage
             try {
               const supabase = createClient();
               
@@ -103,10 +132,10 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
               const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
               
               if (bucketError || !buckets?.some(b => b.name === 'documents')) {
-                // Bucket doesn't exist, fallback to public
-                console.warn('Supabase Storage bucket "documents" not found. Using public folder.');
+                // Bucket doesn't exist, use public as final fallback
                 setImageUrl(publicUrl);
                 setLoading(false);
+                setError(true);
                 return;
               }
               
@@ -119,15 +148,17 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
                 setLoading(false);
               };
               testStorageImg.onerror = () => {
-                // Both failed, use public as fallback
+                // All sources failed
                 setImageUrl(publicUrl);
                 setLoading(false);
+                setError(true);
               };
               testStorageImg.src = data.publicUrl;
             } catch (err) {
-              // Error accessing storage, use public folder
+              // Error accessing storage, use public as final fallback
               setImageUrl(publicUrl);
               setLoading(false);
+              setError(true);
             }
           };
           
@@ -228,8 +259,14 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
               src={finalUrl} 
               alt={title} 
               className="w-full h-full object-contain"
-              onError={() => setError(true)}
-              onLoad={() => setLoading(false)}
+              onError={() => {
+                setError(true);
+                setLoading(false);
+              }}
+              onLoad={() => {
+                setLoading(false);
+                setError(false);
+              }}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-4">
