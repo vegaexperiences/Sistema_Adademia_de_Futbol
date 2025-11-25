@@ -80,6 +80,7 @@ export default function NewExpensePage() {
             <label className="block text-sm font-medium text-gray-700">Método de Pago</label>
             <select name="payment_method" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm border p-2">
               <option value="Transferencia">Transferencia</option>
+              <option value="PagueloFacil">Paguelo Fácil</option>
               <option value="Efectivo">Efectivo</option>
               <option value="Tarjeta">Tarjeta</option>
               <option value="Cheque">Cheque</option>
