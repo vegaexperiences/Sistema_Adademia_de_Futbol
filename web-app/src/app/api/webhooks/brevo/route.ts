@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     // Format 1: { event: 'delivered', 'message-id': 'xxx', ... }
     // Format 2: { event: 'delivered', messageId: 'xxx', ... }
     // Format 3: Array of events: [{ event: 'delivered', 'message-id': 'xxx' }, ...]
-    let events = Array.isArray(data) ? data : [data];
+    const events = Array.isArray(data) ? data : [data];
     
     const supabase = await createClient();
     let processed = 0;
@@ -86,7 +86,6 @@ export async function POST(request: Request) {
       case 'delivered':
         // Try brevo_email_id first, then resend_email_id as fallback
         let deliveredEmail = null;
-        let deliveredError = null;
         
         // First try exact match with brevo_email_id
         const { data: brevoDelivered, error: brevoError } = await supabase
@@ -188,7 +187,6 @@ export async function POST(request: Request) {
         // unique_opened is the same as opened - first time email is opened
         // Try brevo_email_id first, then resend_email_id as fallback
         let openedEmail = null;
-        let openedError = null;
         
         // First try exact match with brevo_email_id
         const { data: brevoOpened, error: brevoOpenedErr } = await supabase
