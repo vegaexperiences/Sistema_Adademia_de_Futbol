@@ -5,12 +5,16 @@ import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
 export function ThemeToggle() {
-  const { setTheme, theme } = useTheme()
+  const { setTheme, theme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
-  }, [])
+    // Ensure theme is never 'system' - force to light if system
+    if (theme === 'system') {
+      setTheme('light')
+    }
+  }, [theme, setTheme])
 
   if (!mounted) {
     return (

@@ -30,6 +30,7 @@ export default function RootLayout({
           defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange
+          storageKey="theme"
         >
           <Navbar />
           <main className="flex-grow">
