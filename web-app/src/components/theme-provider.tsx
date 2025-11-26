@@ -5,7 +5,6 @@ import { ThemeProvider as NextThemesProvider } from "next-themes"
 
 export function ThemeProvider({ children, ...props }: React.ComponentProps<typeof NextThemesProvider>) {
   const [mounted, setMounted] = React.useState(false);
-  const [currentTheme, setCurrentTheme] = React.useState<'light' | 'dark'>('light');
 
   React.useEffect(() => {
     setMounted(true);
@@ -13,12 +12,21 @@ export function ThemeProvider({ children, ...props }: React.ComponentProps<typeo
     if (typeof window !== 'undefined') {
       const html = document.documentElement;
       
+      // Force remove any system theme detection
+      // Clear any theme-related localStorage entries that might cause issues
+      const themeKeys = ['theme', 'next-themes', 'color-scheme'];
+      themeKeys.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value && value !== 'light' && value !== 'dark') {
+          localStorage.setItem(key, 'light');
+        }
+      });
+      
       // Get theme from localStorage or default to light
       const savedTheme = localStorage.getItem('theme');
-      const theme = (savedTheme === 'dark' || savedTheme === 'light') ? savedTheme : 'light';
-      setCurrentTheme(theme);
+      const theme = (savedTheme === 'dark') ? 'dark' : 'light';
       
-      // Apply theme immediately
+      // Apply theme immediately and aggressively
       const applyTheme = (t: 'light' | 'dark') => {
         if (t === 'dark') {
           html.classList.add('dark');
@@ -27,37 +35,68 @@ export function ThemeProvider({ children, ...props }: React.ComponentProps<typeo
           html.classList.remove('dark');
           html.classList.add('light');
         }
+        // Ensure localStorage is set correctly
         localStorage.setItem('theme', t);
+        // Also set next-themes storage key
+        localStorage.setItem('next-themes', t);
       };
       
-      applyTheme(theme);
+      // Force light mode initially, then apply saved theme
+      html.classList.remove('dark');
+      html.classList.add('light');
+      if (theme === 'dark') {
+        // Small delay to ensure light is set first, then apply dark if needed
+        setTimeout(() => applyTheme('dark'), 0);
+      } else {
+        applyTheme('light');
+      }
       
-      // Listen for theme changes from ThemeToggle
-      const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'theme' && e.newValue) {
-          const newTheme = e.newValue as 'light' | 'dark';
-          setCurrentTheme(newTheme);
-          applyTheme(newTheme);
-        }
-      };
-      
-      window.addEventListener('storage', handleStorageChange);
-      
-      // Monitor for dark class being added incorrectly
+      // Aggressive MutationObserver to prevent unwanted dark class
       const observer = new MutationObserver(() => {
         const saved = localStorage.getItem('theme') || 'light';
         const shouldBeDark = saved === 'dark';
         const hasDark = html.classList.contains('dark');
+        const hasLight = html.classList.contains('light');
         
-        if (shouldBeDark !== hasDark) {
-          applyTheme(saved as 'light' | 'dark');
+        // If dark is present but shouldn't be, force remove it
+        if (hasDark && !shouldBeDark) {
+          html.classList.remove('dark');
+          html.classList.add('light');
+          localStorage.setItem('theme', 'light');
+        }
+        // If light is not present but should be, add it
+        if (!hasLight && !shouldBeDark) {
+          html.classList.add('light');
+        }
+        // If dark should be present but isn't, add it (user explicitly set dark)
+        if (shouldBeDark && !hasDark) {
+          html.classList.add('dark');
+          html.classList.remove('light');
         }
       });
       
       observer.observe(html, {
         attributes: true,
-        attributeFilter: ['class']
+        attributeFilter: ['class'],
+        childList: false,
+        subtree: false
       });
+      
+      // Also listen for storage changes
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'theme' && e.newValue) {
+          const newTheme = e.newValue === 'dark' ? 'dark' : 'light';
+          if (newTheme === 'dark') {
+            html.classList.add('dark');
+            html.classList.remove('light');
+          } else {
+            html.classList.remove('dark');
+            html.classList.add('light');
+          }
+        }
+      };
+      
+      window.addEventListener('storage', handleStorageChange);
       
       return () => {
         window.removeEventListener('storage', handleStorageChange);
@@ -79,7 +118,7 @@ export function ThemeProvider({ children, ...props }: React.ComponentProps<typeo
       enableSystem={false}
       attribute="class"
       disableTransitionOnChange
-      forcedTheme={undefined} // Don't force, let user control via button
+      forcedTheme="light" // Force light initially, user can change via button
     >
       {children}
     </NextThemesProvider>

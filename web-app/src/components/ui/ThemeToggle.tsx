@@ -13,15 +13,25 @@ export function ThemeToggle() {
     
     // Initialize theme from localStorage or default to light
     const savedTheme = localStorage.getItem('theme');
-    if (!savedTheme || savedTheme === 'system') {
+    if (!savedTheme || savedTheme === 'system' || (savedTheme !== 'light' && savedTheme !== 'dark')) {
       localStorage.setItem('theme', 'light');
+      localStorage.setItem('next-themes', 'light');
       setTheme('light');
+      // Force HTML classes
+      const html = document.documentElement;
+      html.classList.remove('dark');
+      html.classList.add('light');
     } else if (savedTheme === 'light' || savedTheme === 'dark') {
       setTheme(savedTheme);
-    } else {
-      // Invalid theme, reset to light
-      localStorage.setItem('theme', 'light');
-      setTheme('light');
+      // Ensure HTML classes match
+      const html = document.documentElement;
+      if (savedTheme === 'dark') {
+        html.classList.add('dark');
+        html.classList.remove('light');
+      } else {
+        html.classList.remove('dark');
+        html.classList.add('light');
+      }
     }
   }, [setTheme])
 
@@ -47,8 +57,9 @@ export function ThemeToggle() {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
+    localStorage.setItem('next-themes', newTheme);
     
-    // Immediately update HTML
+    // Immediately update HTML and force it
     const html = document.documentElement;
     if (newTheme === 'dark') {
       html.classList.add('dark');
@@ -57,6 +68,18 @@ export function ThemeToggle() {
       html.classList.remove('dark');
       html.classList.add('light');
     }
+    
+    // Force update to prevent any automatic changes
+    setTimeout(() => {
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      if (currentTheme === 'dark') {
+        html.classList.add('dark');
+        html.classList.remove('light');
+      } else {
+        html.classList.remove('dark');
+        html.classList.add('light');
+      }
+    }, 10);
   }
 
   if (!mounted) {
