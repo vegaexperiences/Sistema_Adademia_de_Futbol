@@ -69,6 +69,28 @@
     color: #1f2937 !important; /* gray-800 */
     border-color: #e5e7eb; /* gray-200 */
   }
+  
+  /* Force light mode colors - override any dark: classes when html doesn't have dark class */
+  html:not(.dark) * {
+    /* Ensure text colors are dark in light mode */
+    --tw-text-opacity: 1;
+  }
+  
+  /* Prevent dark mode styles from applying when html has light class */
+  html.light *[class*="dark:"] {
+    /* These classes should not apply */
+  }
+  
+  /* Force light backgrounds on common dark mode classes when in light mode */
+  html:not(.dark) .dark\:bg-gray-800,
+  html:not(.dark) .dark\:bg-gray-900,
+  html:not(.dark) .dark\:bg-black {
+    background-color: transparent !important;
+  }
+  
+  html:not(.dark) .dark\:text-white {
+    color: inherit !important;
+  }
 
 
 }
