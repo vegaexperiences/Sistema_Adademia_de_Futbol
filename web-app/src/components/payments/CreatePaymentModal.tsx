@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { X, DollarSign, Calendar, CreditCard, FileText, User } from 'lucide-react';
 import { createPayment } from '@/lib/actions/payments';
 import { useRouter } from 'next/navigation';
+import { PagueloFacilCheckoutInline } from './PagueloFacilCheckoutInline';
 
 interface Player {
   id: string;
@@ -135,13 +136,15 @@ export function CreatePaymentModal({ players, familyName, tutorEmail, onClose }:
     <div 
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) {
+        if (e.target === e.currentTarget && !showPagueloFacilCheckout) {
           onClose();
         }
       }}
     >
       <div 
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className={`bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-h-[90vh] overflow-hidden flex flex-col transition-all duration-300 ${
+          showPagueloFacilCheckout ? 'max-w-4xl' : 'max-w-2xl'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
@@ -158,6 +161,20 @@ export function CreatePaymentModal({ players, familyName, tutorEmail, onClose }:
         </div>
 
         <div className="overflow-y-auto flex-1 p-6">
+          {showPagueloFacilCheckout && pagueloFacilConfig ? (
+            <PagueloFacilCheckoutInline
+              amount={parseFloat(formData.amount)}
+              description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.first_name || ''} ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.last_name || ''}`}
+              email={tutorEmail || eligiblePlayers.find(p => p.id === selectedPlayerId)?.tutor_email || ''}
+              orderId={`payment-${selectedPlayerId}-${Date.now()}`}
+              apiKey={pagueloFacilConfig.apiKey}
+              cclw={pagueloFacilConfig.cclw}
+              sandbox={pagueloFacilConfig.sandbox}
+              onSuccess={handlePagueloFacilSuccess}
+              onError={handlePagueloFacilError}
+              onBack={() => setShowPagueloFacilCheckout(false)}
+            />
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
           {/* Player Selection */}
           <div>
@@ -335,24 +352,9 @@ export function CreatePaymentModal({ players, familyName, tutorEmail, onClose }:
             </button>
           </div>
         </form>
+          )}
         </div>
       </div>
-
-      {/* PagueloFacil Checkout Modal */}
-      {showPagueloFacilCheckout && pagueloFacilConfig && (
-        <PagueloFacilCheckout
-          amount={parseFloat(formData.amount)}
-          description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.first_name || ''} ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.last_name || ''}`}
-          email={tutorEmail || eligiblePlayers.find(p => p.id === selectedPlayerId)?.tutor_email || ''}
-          orderId={`payment-${selectedPlayerId}-${Date.now()}`}
-          apiKey={pagueloFacilConfig.apiKey}
-          cclw={pagueloFacilConfig.cclw}
-          sandbox={pagueloFacilConfig.sandbox}
-          onSuccess={handlePagueloFacilSuccess}
-          onError={handlePagueloFacilError}
-          onClose={() => setShowPagueloFacilCheckout(false)}
-        />
-      )}
     </div>
   );
 }
