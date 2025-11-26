@@ -4,71 +4,81 @@ import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 
 export function ThemeProvider({ children, ...props }: React.ComponentProps<typeof NextThemesProvider>) {
-  // Force light theme on mount and prevent any dark mode
+  const [mounted, setMounted] = React.useState(false);
+  const [currentTheme, setCurrentTheme] = React.useState<'light' | 'dark'>('light');
+
   React.useEffect(() => {
+    setMounted(true);
+    
     if (typeof window !== 'undefined') {
       const html = document.documentElement;
       
-      // Immediately force light mode
-      const forceLight = () => {
-        // Remove dark class and add light class
-        html.classList.remove('dark');
-        html.classList.add('light');
-        
-        // Force set theme to light in localStorage
-        localStorage.setItem('theme', 'light');
+      // Get theme from localStorage or default to light
+      const savedTheme = localStorage.getItem('theme');
+      const theme = (savedTheme === 'dark' || savedTheme === 'light') ? savedTheme : 'light';
+      setCurrentTheme(theme);
+      
+      // Apply theme immediately
+      const applyTheme = (t: 'light' | 'dark') => {
+        if (t === 'dark') {
+          html.classList.add('dark');
+          html.classList.remove('light');
+        } else {
+          html.classList.remove('dark');
+          html.classList.add('light');
+        }
+        localStorage.setItem('theme', t);
       };
       
-      // Run immediately
-      forceLight();
+      applyTheme(theme);
       
-      // Also run after a short delay to catch any late additions
-      setTimeout(forceLight, 0);
-      setTimeout(forceLight, 100);
-      setTimeout(forceLight, 500);
+      // Listen for theme changes from ThemeToggle
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'theme' && e.newValue) {
+          const newTheme = e.newValue as 'light' | 'dark';
+          setCurrentTheme(newTheme);
+          applyTheme(newTheme);
+        }
+      };
       
-      // Monitor for dark class being added and remove it
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-            const currentTheme = localStorage.getItem('theme');
-            if (currentTheme !== 'dark' && html.classList.contains('dark')) {
-              forceLight();
-            }
-          }
-        });
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Monitor for dark class being added incorrectly
+      const observer = new MutationObserver(() => {
+        const saved = localStorage.getItem('theme') || 'light';
+        const shouldBeDark = saved === 'dark';
+        const hasDark = html.classList.contains('dark');
+        
+        if (shouldBeDark !== hasDark) {
+          applyTheme(saved as 'light' | 'dark');
+        }
       });
       
-      // Observe the html element for class changes
       observer.observe(html, {
         attributes: true,
         attributeFilter: ['class']
       });
       
-      // Also set up interval as backup
-      const interval = setInterval(() => {
-        const currentTheme = localStorage.getItem('theme');
-        if (currentTheme !== 'dark' && html.classList.contains('dark')) {
-          forceLight();
-        }
-      }, 100);
-      
       return () => {
+        window.removeEventListener('storage', handleStorageChange);
         observer.disconnect();
-        clearInterval(interval);
       };
     }
   }, []);
 
+  // Don't render until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return <>{children}</>;
+  }
+
   return (
     <NextThemesProvider 
-      {...props}
       storageKey="theme"
-      forcedTheme="light"
-      enableSystem={false}
       defaultTheme="light"
+      enableSystem={false}
       attribute="class"
       disableTransitionOnChange
+      forcedTheme={undefined} // Don't force, let user control via button
     >
       {children}
     </NextThemesProvider>

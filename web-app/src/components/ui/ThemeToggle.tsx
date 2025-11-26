@@ -10,17 +10,54 @@ export function ThemeToggle() {
 
   React.useEffect(() => {
     setMounted(true)
-    // Force theme to light and prevent any system detection
-    if (theme === 'system' || theme === undefined || !theme) {
-      setTheme('light')
+    
+    // Initialize theme from localStorage or default to light
+    const savedTheme = localStorage.getItem('theme');
+    if (!savedTheme || savedTheme === 'system') {
+      localStorage.setItem('theme', 'light');
+      setTheme('light');
+    } else if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme);
+    } else {
+      // Invalid theme, reset to light
+      localStorage.setItem('theme', 'light');
+      setTheme('light');
     }
-    // Also ensure HTML element doesn't have dark class if theme is light
-    if (theme === 'light' || !theme) {
-      document.documentElement.classList.remove('dark')
-      document.documentElement.classList.add('light')
-      localStorage.setItem('theme', 'light')
+  }, [setTheme])
+
+  React.useEffect(() => {
+    if (mounted && theme) {
+      // Ensure HTML element matches theme
+      const html = document.documentElement;
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        html.classList.remove('light');
+      } else {
+        html.classList.remove('dark');
+        html.classList.add('light');
+      }
+      // Sync localStorage
+      if (theme !== 'system') {
+        localStorage.setItem('theme', theme);
+      }
     }
-  }, [theme, setTheme])
+  }, [theme, mounted])
+
+  const handleToggle = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    // Immediately update HTML
+    const html = document.documentElement;
+    if (newTheme === 'dark') {
+      html.classList.add('dark');
+      html.classList.remove('light');
+    } else {
+      html.classList.remove('dark');
+      html.classList.add('light');
+    }
+  }
 
   if (!mounted) {
     return (
@@ -30,7 +67,7 @@ export function ThemeToggle() {
 
   return (
     <button
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+      onClick={handleToggle}
       className="w-full px-4 py-2.5 rounded-xl font-medium transition-all duration-300 hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-2"
       style={{
         background: theme === "light" 
