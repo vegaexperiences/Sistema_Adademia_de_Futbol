@@ -11,8 +11,12 @@ export function ThemeToggle() {
   React.useEffect(() => {
     setMounted(true)
     // Ensure theme is never 'system' - force to light if system
-    if (theme === 'system') {
+    if (theme === 'system' || theme === undefined) {
       setTheme('light')
+    }
+    // Also ensure HTML element doesn't have dark class if theme is light
+    if (theme === 'light') {
+      document.documentElement.classList.remove('dark')
     }
   }, [theme, setTheme])
 
