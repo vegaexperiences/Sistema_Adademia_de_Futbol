@@ -34,12 +34,22 @@ export class PagueloFacilService {
 
   static getConfig(): PagueloFacilConfig {
     if (!this.config) {
-      const apiKey = process.env.PAGUELOFACIL_ACCESS_TOKEN || '';
-      const cclw = process.env.PAGUELOFACIL_CCLW || '';
+      // Get tokens and clean them (remove any non-ASCII characters that might have been copied incorrectly)
+      const rawApiKey = process.env.PAGUELOFACIL_ACCESS_TOKEN || '';
+      const rawCclw = process.env.PAGUELOFACIL_CCLW || '';
+      
+      // Clean tokens: remove non-ASCII characters and trim whitespace
+      const apiKey = rawApiKey.replace(/[^\x20-\x7E]/g, '').trim();
+      const cclw = rawCclw.replace(/[^\x20-\x7E]/g, '').trim();
       const sandbox = process.env.PAGUELOFACIL_SANDBOX === 'true';
 
       if (!apiKey || !cclw) {
         throw new Error('PagueloFacil credentials not configured. Please set PAGUELOFACIL_ACCESS_TOKEN and PAGUELOFACIL_CCLW environment variables.');
+      }
+
+      // Log warning if tokens were cleaned (indicates potential copy/paste issue)
+      if (rawApiKey !== apiKey || rawCclw !== cclw) {
+        console.warn('[PagueloFacil] Tokens were cleaned - some non-ASCII characters were removed. Please verify your environment variables.');
       }
 
       this.config = { apiKey, cclw, sandbox };

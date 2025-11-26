@@ -70,12 +70,20 @@ export function PagueloFacilCheckoutInline({
       }
 
       try {
+        // Clean and validate tokens (remove any non-ASCII characters that might have been copied incorrectly)
+        const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
+        const cleanCclw = cclw.replace(/[^\x20-\x7E]/g, '').trim();
+
+        if (!cleanApiKey || !cleanCclw) {
+          throw new Error('Token de acceso o CCLW inválido. Por favor verifica las variables de entorno.');
+        }
+
         window.pfWallet = window.pfWallet || {};
         window.pfWallet.useAsSandbox(sandbox);
 
         window.pfWallet.openService({
-          apiKey: apiKey,
-          cclw: cclw
+          apiKey: cleanApiKey,
+          cclw: cleanCclw
         }).then((merchantSetup: any) => {
           // Create payment form
           const paymentData = {
