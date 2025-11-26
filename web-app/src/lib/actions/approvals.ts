@@ -65,9 +65,13 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
         .single();
       
       if (familyPlayers?.families) {
-        tutorCedula = Array.isArray(familyPlayers.families) 
-          ? familyPlayers.families[0]?.tutor_cedula || null
-          : familyPlayers.families.tutor_cedula || null;
+        if (Array.isArray(familyPlayers.families)) {
+          tutorCedula = familyPlayers.families[0]?.tutor_cedula || null;
+        } else if (familyPlayers.families && typeof familyPlayers.families === 'object' && 'tutor_cedula' in familyPlayers.families) {
+          tutorCedula = (familyPlayers.families as { tutor_cedula?: string | null }).tutor_cedula || null;
+        } else {
+          tutorCedula = null;
+        }
       }
     }
 

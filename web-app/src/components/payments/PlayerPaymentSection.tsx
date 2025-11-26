@@ -11,10 +11,10 @@ interface Payment {
   id: string;
   amount: number;
   payment_type: string;
-  payment_method: string;
+  payment_method: string | null;
   payment_date: string;
-  month_year?: string | null;
-  notes?: string | null;
+  month_year: string | null;
+  notes: string | null;
 }
 
 interface PlayerPaymentSectionProps {

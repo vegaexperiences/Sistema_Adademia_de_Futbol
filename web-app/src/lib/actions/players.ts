@@ -72,7 +72,7 @@ export async function retirePlayer(playerId: string, reason?: string) {
   
   // Add reason to notes if provided
   if (reason) {
-    const currentNotes = player.notes || '';
+    const currentNotes = (player as any).notes || '';
     updateData.notes = currentNotes 
       ? `${currentNotes}\n\nRetirado: ${reason}` 
       : `Retirado: ${reason}`;
