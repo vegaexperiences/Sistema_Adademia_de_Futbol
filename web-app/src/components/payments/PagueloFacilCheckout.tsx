@@ -52,7 +52,10 @@ export function PagueloFacilCheckout({
       script.async = true;
       script.onload = () => {
         scriptLoaded.current = true;
-        initializePayment();
+        // Wait a bit for the SDK to fully initialize
+        setTimeout(() => {
+          initializePayment();
+        }, 500);
       };
       script.onerror = () => {
         setError('Error al cargar el SDK de Paguelo Fácil');
@@ -63,9 +66,28 @@ export function PagueloFacilCheckout({
     };
 
     const initializePayment = () => {
-      if (!window.pfWallet || !containerRef.current) {
-        setError('SDK de Paguelo Fácil no disponible');
+      // Check if SDK is available and has required methods
+      if (!window.pfWallet) {
+        setError('SDK de Paguelo Fácil no disponible. Por favor recarga la página.');
         setLoading(false);
+        onError('SDK de Paguelo Fácil no disponible');
+        return;
+      }
+
+      if (!containerRef.current) {
+        setError('Contenedor de formulario no disponible');
+        setLoading(false);
+        onError('Contenedor de formulario no disponible');
+        return;
+      }
+
+      // Verify SDK methods exist
+      if (typeof window.pfWallet.useAsSandbox !== 'function' || 
+          typeof window.pfWallet.openService !== 'function' ||
+          typeof window.pfWallet.renderForm !== 'function') {
+        setError('El SDK de Paguelo Fácil no está completamente cargado. Por favor recarga la página.');
+        setLoading(false);
+        onError('SDK de Paguelo Fácil incompleto');
         return;
       }
 
@@ -78,45 +100,53 @@ export function PagueloFacilCheckout({
           throw new Error('Token de acceso o CCLW inválido. Por favor verifica las variables de entorno.');
         }
 
-        window.pfWallet = window.pfWallet || {};
+        // Set sandbox mode BEFORE opening service
         window.pfWallet.useAsSandbox(sandbox);
 
-        window.pfWallet.openService({
-          apiKey: cleanApiKey,
-          cclw: cleanCclw
-        }).then((merchantSetup: any) => {
-          // Create payment form
-          const paymentData = {
-            amount: amount,
-            description: description,
-            email: email,
-            orderId: orderId,
-            // Additional configuration
-            onSuccess: (response: any) => {
-              console.log('PagueloFacil payment success:', response);
-              onSuccess(response.transactionId || response.id, response);
-            },
-            onError: (err: any) => {
-              console.error('PagueloFacil payment error:', err);
-              setError(err.message || 'Error al procesar el pago');
-              onError(err.message || 'Error al procesar el pago');
-            }
-          };
+        // Wait a bit more to ensure sandbox mode is set
+        setTimeout(() => {
+          window.pfWallet.openService({
+            apiKey: cleanApiKey,
+            cclw: cleanCclw
+          }).then((merchantSetup: any) => {
+            console.log('PagueloFacil merchant setup:', merchantSetup);
+            
+            // Create payment form
+            const paymentData = {
+              amount: amount,
+              description: description,
+              email: email,
+              orderId: orderId,
+              // Additional configuration
+              onSuccess: (response: any) => {
+                console.log('PagueloFacil payment success:', response);
+                onSuccess(response.transactionId || response.id, response);
+              },
+              onError: (err: any) => {
+                console.error('PagueloFacil payment error:', err);
+                const errorMsg = err.message || err.error || 'Error al procesar el pago';
+                setError(errorMsg);
+                onError(errorMsg);
+              }
+            };
 
-          // Render the payment form in the container
-          window.pfWallet.renderForm(containerRef.current, paymentData);
-          setLoading(false);
-        }).catch((err: any) => {
-          console.error('Error opening PagueloFacil service:', err);
-          setError(err.message || 'Error al inicializar Paguelo Fácil');
-          setLoading(false);
-          onError(err.message || 'Error al inicializar Paguelo Fácil');
-        });
+            // Render the payment form in the container
+            window.pfWallet.renderForm(containerRef.current, paymentData);
+            setLoading(false);
+          }).catch((err: any) => {
+            console.error('Error opening PagueloFacil service:', err);
+            const errorMsg = err.message || err.error || 'Error al inicializar Paguelo Fácil. Verifica tus credenciales.';
+            setError(errorMsg);
+            setLoading(false);
+            onError(errorMsg);
+          });
+        }, 200);
       } catch (err: any) {
         console.error('Error initializing PagueloFacil:', err);
-        setError(err.message || 'Error al inicializar el formulario de pago');
+        const errorMsg = err.message || 'Error al inicializar el formulario de pago';
+        setError(errorMsg);
         setLoading(false);
-        onError(err.message || 'Error al inicializar el formulario de pago');
+        onError(errorMsg);
       }
     };
 
