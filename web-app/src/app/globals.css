@@ -79,8 +79,15 @@
     @apply bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20;
   }
   
-  .dark .glass-card {
+  /* Only apply dark styles when html has dark class explicitly */
+  html.dark .glass-card {
     @apply bg-gray-800/90 border-gray-700/50 shadow-gray-900/50;
+  }
+  
+  /* Force light background for glass-card in light mode */
+  html:not(.dark) .glass-card,
+  html.light .glass-card {
+    @apply bg-white/70 border-white/20;
   }
   
   /* Purple gradient for active states */

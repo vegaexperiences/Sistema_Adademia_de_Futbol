@@ -7,36 +7,45 @@ export function ThemeProvider({ children, ...props }: React.ComponentProps<typeo
   // Force light theme on mount and clear any system/dark preferences
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Remove dark class from html element immediately
-      document.documentElement.classList.remove('dark');
+      // Immediately remove dark class and add light class
+      const html = document.documentElement;
+      html.classList.remove('dark');
+      html.classList.add('light');
       
-      // Check and fix localStorage
+      // Force set theme to light in localStorage
+      localStorage.setItem('theme', 'light');
+      
+      // Check and fix localStorage - remove any system/dark values
       const theme = localStorage.getItem('theme');
       if (theme === 'system' || theme === 'dark' || !theme) {
         localStorage.setItem('theme', 'light');
-        document.documentElement.classList.remove('dark');
+        html.classList.remove('dark');
+        html.classList.add('light');
       }
       
       // Also check for any other theme storage keys
       const keys = Object.keys(localStorage);
       keys.forEach(key => {
-        if (key.includes('theme') && localStorage.getItem(key) === 'system') {
-          localStorage.setItem(key, 'light');
-        }
-        if (key.includes('theme') && localStorage.getItem(key) === 'dark') {
-          localStorage.setItem(key, 'light');
+        if (key.includes('theme')) {
+          const value = localStorage.getItem(key);
+          if (value === 'system' || value === 'dark') {
+            localStorage.setItem(key, 'light');
+          }
         }
       });
       
-      // Force remove dark class periodically to prevent it from being re-added
-      const interval = setInterval(() => {
-        if (document.documentElement.classList.contains('dark')) {
-          const currentTheme = localStorage.getItem('theme');
-          if (currentTheme !== 'dark') {
-            document.documentElement.classList.remove('dark');
-          }
+      // Force remove dark class and ensure light class is present
+      const forceLight = () => {
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme !== 'dark') {
+          html.classList.remove('dark');
+          html.classList.add('light');
         }
-      }, 100);
+      };
+      
+      // Run immediately and then periodically
+      forceLight();
+      const interval = setInterval(forceLight, 50);
       
       return () => clearInterval(interval);
     }
