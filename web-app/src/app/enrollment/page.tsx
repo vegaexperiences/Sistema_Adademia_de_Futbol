@@ -16,7 +16,7 @@ export default async function EnrollmentPage() {
           </p>
         </div>
         
-        <div className="glass-card overflow-hidden">
+        <div className="glass-card overflow-visible">
           <EnrollmentForm config={config} />
         </div>
       </div>
