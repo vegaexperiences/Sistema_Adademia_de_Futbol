@@ -4,50 +4,59 @@ import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 
 export function ThemeProvider({ children, ...props }: React.ComponentProps<typeof NextThemesProvider>) {
-  // Force light theme on mount and clear any system/dark preferences
+  // Force light theme on mount and prevent any dark mode
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Immediately remove dark class and add light class
       const html = document.documentElement;
-      html.classList.remove('dark');
-      html.classList.add('light');
       
-      // Force set theme to light in localStorage
-      localStorage.setItem('theme', 'light');
-      
-      // Check and fix localStorage - remove any system/dark values
-      const theme = localStorage.getItem('theme');
-      if (theme === 'system' || theme === 'dark' || !theme) {
-        localStorage.setItem('theme', 'light');
+      // Immediately force light mode
+      const forceLight = () => {
+        // Remove dark class and add light class
         html.classList.remove('dark');
         html.classList.add('light');
-      }
-      
-      // Also check for any other theme storage keys
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.includes('theme')) {
-          const value = localStorage.getItem(key);
-          if (value === 'system' || value === 'dark') {
-            localStorage.setItem(key, 'light');
-          }
-        }
-      });
-      
-      // Force remove dark class and ensure light class is present
-      const forceLight = () => {
-        const currentTheme = localStorage.getItem('theme');
-        if (currentTheme !== 'dark') {
-          html.classList.remove('dark');
-          html.classList.add('light');
-        }
+        
+        // Force set theme to light in localStorage
+        localStorage.setItem('theme', 'light');
       };
       
-      // Run immediately and then periodically
+      // Run immediately
       forceLight();
-      const interval = setInterval(forceLight, 50);
       
-      return () => clearInterval(interval);
+      // Also run after a short delay to catch any late additions
+      setTimeout(forceLight, 0);
+      setTimeout(forceLight, 100);
+      setTimeout(forceLight, 500);
+      
+      // Monitor for dark class being added and remove it
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme !== 'dark' && html.classList.contains('dark')) {
+              forceLight();
+            }
+          }
+        });
+      });
+      
+      // Observe the html element for class changes
+      observer.observe(html, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
+      
+      // Also set up interval as backup
+      const interval = setInterval(() => {
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme !== 'dark' && html.classList.contains('dark')) {
+          forceLight();
+        }
+      }, 100);
+      
+      return () => {
+        observer.disconnect();
+        clearInterval(interval);
+      };
     }
   }, []);
 
@@ -55,7 +64,7 @@ export function ThemeProvider({ children, ...props }: React.ComponentProps<typeo
     <NextThemesProvider 
       {...props}
       storageKey="theme"
-      forcedTheme={props.forcedTheme || undefined}
+      forcedTheme="light"
     >
       {children}
     </NextThemesProvider>
