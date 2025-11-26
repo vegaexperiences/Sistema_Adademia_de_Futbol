@@ -48,7 +48,7 @@ export function AddSecondaryEmailButton({ familyId, currentSecondaryEmail }: Add
 
   if (isOpen) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+      <div className="fixed inset-0 bg-gray-900/60 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             setIsOpen(false);
