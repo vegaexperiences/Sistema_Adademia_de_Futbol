@@ -76,20 +76,73 @@
     --tw-text-opacity: 1;
   }
   
-  /* Prevent dark mode styles from applying when html has light class */
-  html.light *[class*="dark:"] {
-    /* These classes should not apply */
+  /* CRITICAL: Prevent ALL dark: classes from applying when html doesn't have dark class */
+  /* This uses attribute selector to match any element with dark: in class name */
+  html:not(.dark) [class*="dark:"] {
+    /* Reset all dark mode background colors */
+    background-color: unset !important;
+    background-image: unset !important;
+  }
+  
+  /* AGGRESSIVE: Prevent ALL dark: classes from applying when html doesn't have dark class */
+  /* This targets any element with dark: in its class attribute */
+  html:not(.dark) [class*="dark:"] {
+    /* Reset all properties that dark: classes might affect */
+    background-color: unset !important;
+    background-image: unset !important;
+    color: unset !important;
+    border-color: unset !important;
   }
   
   /* Force light backgrounds on common dark mode classes when in light mode */
-  html:not(.dark) .dark\:bg-gray-800,
-  html:not(.dark) .dark\:bg-gray-900,
-  html:not(.dark) .dark\:bg-black {
+  html:not(.dark) [class*="dark:bg-gray-800"],
+  html:not(.dark) [class*="dark:bg-gray-900"],
+  html:not(.dark) [class*="dark:bg-black"],
+  html:not(.dark) [class*="dark:from-gray-800"],
+  html:not(.dark) [class*="dark:to-gray-900"],
+  html:not(.dark) [class*="dark:from-gray-900"],
+  html:not(.dark) [class*="dark:from-blue-900"],
+  html:not(.dark) [class*="dark:from-indigo-900"],
+  html:not(.dark) [class*="dark:from-purple-900"],
+  html:not(.dark) [class*="dark:from-pink-900"],
+  html:not(.dark) [class*="dark:to-blue-900"],
+  html:not(.dark) [class*="dark:to-indigo-900"],
+  html:not(.dark) [class*="dark:to-purple-900"],
+  html:not(.dark) [class*="dark:to-pink-900"],
+  html:not(.dark) [class*="dark:to-gray-900"] {
     background-color: transparent !important;
+    background-image: none !important;
   }
   
-  html:not(.dark) .dark\:text-white {
+  /* Force light text colors */
+  html:not(.dark) [class*="dark:text-white"],
+  html:not(.dark) [class*="dark:text-gray-100"],
+  html:not(.dark) [class*="dark:text-gray-200"],
+  html:not(.dark) [class*="dark:text-gray-300"],
+  html:not(.dark) [class*="dark:text-gray-400"] {
     color: inherit !important;
+  }
+  
+  /* Force light border colors */
+  html:not(.dark) [class*="dark:border-gray-700"],
+  html:not(.dark) [class*="dark:border-gray-800"],
+  html:not(.dark) [class*="dark:border-gray-900"] {
+    border-color: inherit !important;
+  }
+  
+  /* CRITICAL: Remove gradient backgrounds that use dark: classes */
+  html:not(.dark) [class*="bg-gradient-to-br"][class*="dark:from-"],
+  html:not(.dark) [class*="bg-gradient-to-br"][class*="dark:to-"] {
+    /* Keep the base gradient but remove dark: variants */
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+  }
+  
+  /* Force remove dark: gradient stops */
+  html:not(.dark) [class*="dark:from-"],
+  html:not(.dark) [class*="dark:to-"] {
+    --tw-gradient-from: unset !important;
+    --tw-gradient-to: unset !important;
+    --tw-gradient-stops: unset !important;
   }
 
 
