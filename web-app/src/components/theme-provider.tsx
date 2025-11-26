@@ -65,6 +65,10 @@ export function ThemeProvider({ children, ...props }: React.ComponentProps<typeo
       {...props}
       storageKey="theme"
       forcedTheme="light"
+      enableSystem={false}
+      defaultTheme="light"
+      attribute="class"
+      disableTransitionOnChange
     >
       {children}
     </NextThemesProvider>
