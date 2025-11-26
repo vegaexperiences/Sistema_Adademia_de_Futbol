@@ -1,12 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { Users, Mail, Phone, User, DollarSign, CreditCard, ArrowLeft, FileText } from 'lucide-react';
+import { Users, Mail, Phone, User, DollarSign, ArrowLeft, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { getPlayersPayments } from '@/lib/actions/payments';
-import PaymentHistory from '@/components/payments/PaymentHistory';
-import { CreatePaymentButton } from '@/components/payments/CreatePaymentButton';
 import { getPlayerCategory } from '@/lib/utils/player-category';
 import { AddSecondaryEmailButton } from '@/components/tutors/AddSecondaryEmailButton';
+import { PaymentSection } from './PaymentSection';
 
 export default async function FamilyProfilePage({ 
   params 
@@ -271,35 +270,13 @@ export default async function FamilyProfilePage({
       </div>
 
       {/* Payment History */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <CreditCard className="h-6 w-6" />
-            Gestión de Pagos
-          </h2>
-          {approvedPlayers.length > 0 && (
-            <CreatePaymentButton 
-              players={approvedPlayers} 
-              familyName={family.tutor_name || 'Familia'}
-              familyId={family.id}
-              tutorEmail={family.tutor_email || null}
-            />
-          )}
-        </div>
-        
-        {playerCount > 1 && (
-          <div className="mb-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500">
-            <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-              💡 Descuento Familiar Aplicable
-            </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Esta familia califica para el descuento familiar en la mensualidad del {playerCount > 2 ? 'tercer jugador en adelante' : 'segundo jugador en adelante'}.
-            </p>
-          </div>
-        )}
-        
-        <PaymentHistory payments={payments} showPlayerName={true} />
-      </div>
+      <PaymentSection
+        players={approvedPlayers}
+        payments={payments}
+        familyName={family.tutor_name || 'Familia'}
+        tutorEmail={family.tutor_email || null}
+        playerCount={playerCount}
+      />
     </div>
   );
 }

@@ -73,6 +73,7 @@ export function ThemeProvider({ children, ...props }: React.ComponentProps<typeo
 
   return (
     <NextThemesProvider 
+      {...props}
       storageKey="theme"
       defaultTheme="light"
       enableSystem={false}

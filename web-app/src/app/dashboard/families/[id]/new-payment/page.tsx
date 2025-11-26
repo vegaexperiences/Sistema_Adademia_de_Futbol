@@ -1,76 +1,26 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, DollarSign, Calendar, CreditCard, FileText, User } from 'lucide-react';
-import { createPayment } from '@/lib/actions/payments';
-import { PagueloFacilCheckoutInline } from '@/components/payments/PagueloFacilCheckoutInline';
-import Link from 'next/link';
-
-interface Player {
-  id: string;
-  first_name: string;
-  last_name: string;
-  status: string;
-  category?: string | null;
-  tutor_email?: string | null;
-}
 
 export default function NewPaymentPage() {
   const router = useRouter();
   const params = useParams();
   const familyId = params.id as string;
-  
-  const [familyData, setFamilyData] = useState<{
-    familyId: string;
-    familyName: string;
-    tutorEmail?: string | null;
-    players: Player[];
-  } | null>(null);
-  
-  const [isPending, startTransition] = useTransition();
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
-  const [formData, setFormData] = useState({
-    amount: '',
-    payment_type: 'monthly' as 'enrollment' | 'monthly' | 'custom',
-    payment_method: 'cash' as 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'other',
-    payment_date: new Date().toISOString().split('T')[0],
-    month_year: '',
-    notes: '',
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [showPagueloFacilCheckout, setShowPagueloFacilCheckout] = useState(false);
-  const [pagueloFacilConfig, setPagueloFacilConfig] = useState<{ apiKey: string; cclw: string; sandbox: boolean } | null>(null);
 
   useEffect(() => {
-    // Get family data from sessionStorage
-    const stored = sessionStorage.getItem('paymentFamilyData');
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        setFamilyData(data);
-        // Clear sessionStorage after reading
-        sessionStorage.removeItem('paymentFamilyData');
-      } catch (e) {
-        console.error('Error parsing family data:', e);
-        router.push(`/dashboard/families/${familyId}`);
-      }
-    } else {
-      // If no data, redirect back
-      router.push(`/dashboard/families/${familyId}`);
-    }
+    // Redirect to family page - payment form is now inline
+    router.replace(`/dashboard/families/${familyId}`);
   }, [familyId, router]);
 
-  if (!familyData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">Cargando...</p>
-        </div>
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <p className="text-gray-600 dark:text-gray-400">Redirigiendo...</p>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // Filter to only show Active and Scholarship players
   const eligiblePlayers = familyData.players.filter(p => 
