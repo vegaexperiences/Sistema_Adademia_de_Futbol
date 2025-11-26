@@ -64,9 +64,12 @@ export default async function TutorsPage() {
     if (family.tutor_name || family.tutor_email || family.tutor_cedula) {
       const tutorKey = family.tutor_cedula || family.tutor_email || family.tutor_name || `family-${family.id}`;
       if (tutorKey) {
-        const playerIds = Array.isArray(family.players) 
-          ? family.players.map((p: any) => p.id)
-          : (family.players?.id ? [family.players.id] : []);
+        let playerIds: string[] = [];
+        if (Array.isArray(family.players)) {
+          playerIds = family.players.map((p: any) => p.id).filter((id: any) => id);
+        } else if (family.players && typeof family.players === 'object' && 'id' in family.players) {
+          playerIds = [(family.players as any).id].filter((id: any) => id);
+        }
         
         tutorsMap.set(tutorKey, {
           name: family.tutor_name || 'Sin nombre',
