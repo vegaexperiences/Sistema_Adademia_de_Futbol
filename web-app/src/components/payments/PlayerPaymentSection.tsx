@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CreditCard, DollarSign, Plus, X, Calendar } from 'lucide-react';
 import { createPayment } from '@/lib/actions/payments';
 import PaymentHistory from './PaymentHistory';
-import { PagueloFacilCheckoutInline } from './PagueloFacilCheckoutInline';
+import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
 
 interface Payment {
   id: string;
@@ -37,8 +37,6 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments }: Pl
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [showPagueloFacilCheckout, setShowPagueloFacilCheckout] = useState(false);
-  const [pagueloFacilConfig, setPagueloFacilConfig] = useState<{ apiKey: string; cclw: string; sandbox: boolean } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,21 +48,10 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments }: Pl
       return;
     }
 
-    // If PagueloFacil is selected, open checkout
+    // If PagueloFacil is selected, the payment will be handled by PagueloFacilPaymentButton
+    // which redirects to Paguelo Fácil's secure page. The callback will handle the payment creation.
     if (formData.payment_method === 'paguelofacil') {
-      try {
-        const response = await fetch('/api/payments/paguelofacil');
-        const data = await response.json();
-        
-        if (data.success && data.config) {
-          setPagueloFacilConfig(data.config);
-          setShowPagueloFacilCheckout(true);
-        } else {
-          setError('Error al inicializar Paguelo Fácil. Por favor intenta con otro método de pago.');
-        }
-      } catch (err: any) {
-        setError('Error al inicializar Paguelo Fácil: ' + (err.message || 'Error desconocido'));
-      }
+      // Payment will be processed via redirect, no need to do anything here
       return;
     }
 
@@ -101,43 +88,6 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments }: Pl
     });
   };
 
-  const handlePagueloFacilSuccess = async (transactionId: string, response: any) => {
-    try {
-      await createPayment({
-        player_id: playerId,
-        amount: parseFloat(formData.amount),
-        payment_type: formData.payment_type,
-        payment_method: 'paguelofacil',
-        payment_date: new Date().toISOString().split('T')[0],
-        month_year: formData.payment_type === 'monthly' ? formData.month_year : undefined,
-        notes: `Pago procesado con Paguelo Fácil. Transaction ID: ${transactionId}. ${formData.notes || ''}`,
-      });
-
-      setShowPagueloFacilCheckout(false);
-      setSuccess(true);
-      setTimeout(() => {
-        router.refresh();
-        setShowPaymentForm(false);
-        setFormData({
-          amount: suggestedAmount.toString(),
-          payment_type: 'monthly',
-          payment_method: 'cash',
-          payment_date: new Date().toISOString().split('T')[0],
-          month_year: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
-          notes: ''
-        });
-        setSuccess(false);
-      }, 1500);
-    } catch (err: any) {
-      setError('Error al registrar el pago: ' + (err.message || 'Error desconocido'));
-      setShowPagueloFacilCheckout(false);
-    }
-  };
-
-  const handlePagueloFacilError = (errorMsg: string) => {
-    setError('Error en Paguelo Fácil: ' + errorMsg);
-    setShowPagueloFacilCheckout(false);
-  };
 
   return (
     <div className="glass-card p-6">
@@ -172,19 +122,38 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments }: Pl
             </button>
           </div>
 
-          {showPagueloFacilCheckout && pagueloFacilConfig ? (
-            <PagueloFacilCheckoutInline
-              amount={parseFloat(formData.amount)}
-              description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'}`}
-              email=""
-              orderId={`payment-${playerId}-${Date.now()}`}
-              apiKey={pagueloFacilConfig.apiKey}
-              cclw={pagueloFacilConfig.cclw}
-              sandbox={pagueloFacilConfig.sandbox}
-              onSuccess={handlePagueloFacilSuccess}
-              onError={handlePagueloFacilError}
-              onBack={() => setShowPagueloFacilCheckout(false)}
-            />
+          {formData.payment_method === 'paguelofacil' ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
+                  <strong>Monto:</strong> ${parseFloat(formData.amount).toFixed(2)}<br />
+                  <strong>Tipo:</strong> {formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago Personalizado'}
+                </p>
+              </div>
+              <PagueloFacilPaymentButton
+                amount={parseFloat(formData.amount)}
+                description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - Jugador ID: ${playerId}`}
+                email=""
+                orderId={`payment-${playerId}-${Date.now()}`}
+                returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/paguelofacil/callback?type=payment&playerId=${playerId}&paymentType=${formData.payment_type}&amount=${formData.amount}&monthYear=${formData.month_year || ''}&notes=${encodeURIComponent(formData.notes || '')}`}
+                customParams={{
+                  type: 'payment',
+                  playerId: playerId,
+                  paymentType: formData.payment_type,
+                  amount: formData.amount,
+                  monthYear: formData.month_year || '',
+                  notes: formData.notes || '',
+                }}
+                onError={(error) => setError('Error en Paguelo Fácil: ' + error)}
+              />
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, payment_method: 'cash' })}
+                className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
+                ← Volver y cambiar método de pago
+              </button>
+            </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Amount */}
