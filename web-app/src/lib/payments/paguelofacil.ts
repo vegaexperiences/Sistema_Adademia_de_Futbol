@@ -9,13 +9,6 @@ export interface PagueloFacilConfig {
   sandbox?: boolean; // Use sandbox environment
 }
 
-export interface PagueloFacilTransaction {
-  amount: number;
-  description: string;
-  email: string;
-  orderId?: string;
-  metadata?: Record<string, any>;
-}
 
 export interface PagueloFacilResponse {
   success: boolean;
@@ -23,6 +16,38 @@ export interface PagueloFacilResponse {
   transactionId?: string;
   error?: string;
   message?: string;
+}
+
+export interface PagueloFacilCallbackParams {
+  TotalPagado: string;
+  Fecha: string;
+  Hora: string;
+  Tipo: string;
+  Oper: string;
+  Usuario: string;
+  Email: string;
+  Estado: string;
+  Razon?: string;
+  PARM_1?: string;
+  [key: string]: string | undefined; // Para parámetros personalizados adicionales
+}
+
+export interface PagueloFacilLinkResponse {
+  success: boolean;
+  paymentUrl?: string;
+  code?: string;
+  error?: string;
+}
+
+export interface PagueloFacilTransaction {
+  amount: number;
+  description: string;
+  email?: string;
+  orderId?: string;
+  returnUrl?: string;
+  expiresIn?: number;
+  customParams?: Record<string, string>;
+  metadata?: Record<string, any>;
 }
 
 export class PagueloFacilService {
@@ -122,5 +147,159 @@ export class PagueloFacilService {
         verified: false
       };
     }
+  }
+
+  /**
+   * Get the base URL for LinkDeamon endpoint
+   */
+  static getLinkDeamonUrl(): string {
+    const config = this.getConfig();
+    return config.sandbox
+      ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
+      : 'https://secure.paguelofacil.com/LinkDeamon.cfm';
+  }
+
+  /**
+   * Encode URL to hexadecimal format for RETURN_URL parameter
+   */
+  static encodeUrlToHex(url: string): string {
+    return Buffer.from(url, 'utf8').toString('hex').toUpperCase();
+  }
+
+  /**
+   * Create a payment link using LinkDeamon
+   */
+  static async createPaymentLink(transaction: PagueloFacilTransaction): Promise<PagueloFacilLinkResponse> {
+    try {
+      const config = this.getConfig();
+      const url = this.getLinkDeamonUrl();
+
+      // Validate amount (minimum is $1.00)
+      if (transaction.amount < 1.0) {
+        return {
+          success: false,
+          error: 'El monto mínimo es $1.00 USD'
+        };
+      }
+
+      // Prepare POST data
+      const postData: Record<string, string> = {
+        CCLW: config.cclw,
+        CMTN: transaction.amount.toFixed(2), // Amount with 2 decimal places
+        CDSC: transaction.description.substring(0, 150), // Max 150 characters
+      };
+
+      // Add optional parameters
+      if (transaction.returnUrl) {
+        postData.RETURN_URL = this.encodeUrlToHex(transaction.returnUrl);
+      }
+
+      if (transaction.email) {
+        postData.EMAIL = transaction.email;
+      }
+
+      if (transaction.expiresIn) {
+        postData.EXPIRES_IN = transaction.expiresIn.toString();
+      } else {
+        postData.EXPIRES_IN = '3600'; // Default 1 hour
+      }
+
+      // Add orderId first as PARM_1 if provided
+      if (transaction.orderId) {
+        postData.PARM_1 = transaction.orderId;
+      }
+
+      // Add custom parameters (PARM_2, PARM_3, etc.) starting after orderId
+      if (transaction.customParams) {
+        let paramIndex = transaction.orderId ? 2 : 1; // Start from PARM_2 if orderId exists
+        Object.entries(transaction.customParams).forEach(([key, value]) => {
+          const paramKey = `PARM_${paramIndex}`;
+          postData[paramKey] = String(value).substring(0, 150); // Max 150 characters
+          paramIndex++;
+        });
+      }
+
+      // Build query string for POST
+      const postBody = Object.entries(postData)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+
+      // Make POST request to LinkDeamon
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': '*/*',
+        },
+        body: postBody,
+      });
+
+      const responseText = await response.text();
+
+      // Try to parse as JSON
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        // If not JSON, might be HTML error page
+        console.error('[PagueloFacil] Non-JSON response:', responseText);
+        return {
+          success: false,
+          error: 'Error al generar enlace de pago. Respuesta inválida del servidor.'
+        };
+      }
+
+      // Check response structure
+      if (result.success && result.data?.url) {
+        return {
+          success: true,
+          paymentUrl: result.data.url,
+          code: result.data.code,
+        };
+      } else {
+        const errorMsg = result.message || result.error || 'Error desconocido al generar enlace de pago';
+        console.error('[PagueloFacil] Error creating payment link:', result);
+        return {
+          success: false,
+          error: errorMsg
+        };
+      }
+    } catch (error: any) {
+      console.error('[PagueloFacil] Error creating payment link:', error);
+      return {
+        success: false,
+        error: error.message || 'Error al crear enlace de pago'
+      };
+    }
+  }
+
+  /**
+   * Parse callback parameters from RETURN_URL
+   */
+  static parseCallbackParams(query: Record<string, string | string[]>): PagueloFacilCallbackParams {
+    const params: PagueloFacilCallbackParams = {
+      TotalPagado: '',
+      Fecha: '',
+      Hora: '',
+      Tipo: '',
+      Oper: '',
+      Usuario: '',
+      Email: '',
+      Estado: '',
+    };
+
+    Object.entries(query).forEach(([key, value]) => {
+      const stringValue = Array.isArray(value) ? value[0] : value;
+      params[key] = stringValue;
+    });
+
+    return params;
+  }
+
+  /**
+   * Verify if a callback indicates an approved transaction
+   */
+  static isTransactionApproved(params: PagueloFacilCallbackParams): boolean {
+    return params.Estado === 'Aprobada' && parseFloat(params.TotalPagado) > 0;
   }
 }
