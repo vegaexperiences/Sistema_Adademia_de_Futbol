@@ -30,6 +30,16 @@ export async function POST(request: NextRequest) {
                    (request.headers.get('origin') || 'http://localhost:3000');
     const finalReturnUrl = returnUrl || `${baseUrl}/api/payments/paguelofacil/callback`;
 
+    console.log('[PagueloFacil Link] Creating payment link with:', {
+      amount,
+      description,
+      email,
+      orderId,
+      returnUrl: finalReturnUrl,
+      customParams,
+      baseUrl,
+    });
+
     // Create payment link
     const result = await PagueloFacilService.createPaymentLink({
       amount: parseFloat(amount),
