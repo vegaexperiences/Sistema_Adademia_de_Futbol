@@ -68,6 +68,16 @@ export class PagueloFacilService {
       const cclw = rawCclw.replace(/[^\x20-\x7E]/g, '').trim();
       const sandbox = process.env.PAGUELOFACIL_SANDBOX === 'true';
 
+      // Log sandbox status for debugging
+      console.log('[PagueloFacil] Configuration loaded:', {
+        sandbox,
+        sandboxEnv: process.env.PAGUELOFACIL_SANDBOX,
+        hasApiKey: !!apiKey,
+        hasCclw: !!cclw,
+        apiKeyLength: apiKey.length,
+        cclwLength: cclw.length,
+      });
+
       if (!apiKey || !cclw) {
         throw new Error('PagueloFacil credentials not configured. Please set PAGUELOFACIL_ACCESS_TOKEN and PAGUELOFACIL_CCLW environment variables.');
       }
