@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
       merchantId: config.merchantId,
       cdnUrl: YappyService.getCdnUrl(),
       environment: config.environment,
+      domainUrl: config.domainUrl,
     });
   } catch (error: any) {
     console.error('[Yappy Config] Error:', error);

@@ -46,6 +46,7 @@ export function YappyPaymentButton({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [merchantId, setMerchantId] = useState<string>('');
+  const [domainUrl, setDomainUrl] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoaded = useRef(false);
 
@@ -55,9 +56,12 @@ export function YappyPaymentButton({
       try {
         const response = await fetch('/api/payments/yappy/config');
         const data = await response.json();
-        console.log('[Yappy] Config response:', { success: data.success, hasMerchantId: !!data.merchantId, environment: data.environment });
+        console.log('[Yappy] Config response:', { success: data.success, hasMerchantId: !!data.merchantId, environment: data.environment, domainUrl: data.domainUrl });
         if (data.success && data.merchantId) {
           setMerchantId(data.merchantId);
+          if (data.domainUrl) {
+            setDomainUrl(data.domainUrl);
+          }
         } else {
           const errorMsg = data.error || 'Error al obtener configuración de Yappy';
           console.error('[Yappy] Config error:', errorMsg);
@@ -165,12 +169,19 @@ export function YappyPaymentButton({
           yappyButton.setAttribute('order-id', orderId);
           yappyButton.setAttribute('return-url', returnUrlWithParams.toString());
           
+          // Add domain-url if available (some Yappy configurations require this)
+          if (domainUrl) {
+            yappyButton.setAttribute('domain-url', domainUrl);
+          }
+          
           console.log('[Yappy] Button attributes:', {
             merchantId,
             amount: amount.toFixed(2),
             description: description.substring(0, 200),
             orderId,
             returnUrl: returnUrlWithParams.toString(),
+            domainUrl: domainUrl || 'not set',
+            currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
           });
 
           // Listen to all possible events from Yappy component
@@ -272,7 +283,7 @@ export function YappyPaymentButton({
       // Wait a bit for the module to fully load
       setTimeout(renderButton, 200);
     }
-  }, [isLoading, merchantId, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
+  }, [isLoading, merchantId, domainUrl, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
 
   return (
     <div className={`space-y-2 ${className}`}>

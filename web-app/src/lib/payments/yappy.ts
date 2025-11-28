@@ -54,7 +54,10 @@ export class YappyService {
     if (!this.config) {
       const merchantId = process.env.YAPPY_MERCHANT_ID || '';
       const secretKey = process.env.YAPPY_SECRET_KEY || '';
-      const domainUrl = process.env.YAPPY_DOMAIN_URL || process.env.NEXT_PUBLIC_APP_URL || '';
+      // Get domain URL - ensure it doesn't include protocol for Yappy
+      let domainUrl = process.env.YAPPY_DOMAIN_URL || process.env.NEXT_PUBLIC_APP_URL || '';
+      // Remove protocol if present (Yappy expects just the domain)
+      domainUrl = domainUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
       const environment = (process.env.YAPPY_ENVIRONMENT || 'production') as 'production' | 'testing';
 
       console.log('[Yappy] Configuration loaded:', {
