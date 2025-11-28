@@ -13,7 +13,8 @@ import {
   User,
   Trophy,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  Mail
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -114,6 +115,14 @@ export default async function DashboardLayout({
           >
             <FileText size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Reportes</span>
+          </Link>
+
+          <Link
+            href="/dashboard/emails"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+          >
+            <Mail size={20} className="group-hover:scale-110 transition-transform duration-300" />
+            <span className="font-medium">Correos</span>
           </Link>
 
           <Link
