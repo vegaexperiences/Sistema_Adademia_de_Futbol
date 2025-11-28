@@ -1,43 +1,99 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { User, Mail, Phone, Users, DollarSign, CreditCard, ArrowLeft } from 'lucide-react';
+import { User, Mail, Phone, Users, DollarSign, CreditCard, ArrowLeft, FileText, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getPlayersPayments } from '@/lib/actions/payments';
 import PaymentHistory from '@/components/payments/PaymentHistory';
+import { AddSecondaryEmailButton } from '@/components/tutors/AddSecondaryEmailButton';
+import { DocumentPreview } from '@/components/ui/DocumentPreview';
 
 export default async function TutorProfilePage({ 
   params 
 }: { 
   params: Promise<{ email: string }> 
 }) {
-  const { email } = await params;
+  const { email: identifier } = await params;
   const supabase = await createClient();
-  const decodedEmail = decodeURIComponent(email);
+  const decodedIdentifier = decodeURIComponent(identifier);
   
-  // Get all players for this tutor
+  // Try to find tutor by cedula first, then by email, then by name
+  // Get all players and their families
   const { data: players } = await supabase
     .from('players')
-    .select('*')
-    .eq('tutor_email', decodedEmail);
-
+    .select(`
+      *,
+      families (
+        id,
+        tutor_name,
+        tutor_email,
+        tutor_phone,
+        tutor_cedula,
+        tutor_cedula_url,
+        secondary_email
+      )
+    `);
+  
   if (!players || players.length === 0) {
     notFound();
   }
 
-  // Get tutor info from first player
-  const tutorInfo = {
-    name: players[0].tutor_name,
-    email: players[0].tutor_email,
-    phone: players[0].tutor_phone,
-    cedula: players[0].tutor_cedula
-  };
+  // Find tutor by cedula, email, or name
+  let tutorInfo: any = null;
+  let relatedPlayers: any[] = [];
+  
+  for (const player of players) {
+    const family = Array.isArray(player.families) ? player.families[0] : player.families;
+    
+    // Check if this player belongs to the tutor we're looking for
+    if (family?.tutor_cedula === decodedIdentifier || 
+        family?.tutor_email === decodedIdentifier ||
+        family?.tutor_name === decodedIdentifier ||
+        player.tutor_cedula === decodedIdentifier ||
+        player.tutor_email === decodedIdentifier ||
+        player.tutor_name === decodedIdentifier) {
+      
+      if (!tutorInfo) {
+        // Use family info if available, otherwise use player info
+        if (family) {
+          tutorInfo = {
+            id: family.id,
+            name: family.tutor_name,
+            email: family.tutor_email,
+            secondary_email: family.secondary_email || null,
+            phone: family.tutor_phone,
+            cedula: family.tutor_cedula,
+            cedula_url: family.tutor_cedula_url,
+            type: 'Family'
+          };
+        } else {
+          tutorInfo = {
+            name: player.tutor_name,
+            email: player.tutor_email,
+            secondary_email: null,
+            phone: player.tutor_phone,
+            cedula: player.tutor_cedula,
+            cedula_url: null,
+            type: 'Individual'
+          };
+        }
+      }
+      
+      relatedPlayers.push(player);
+    }
+  }
 
-  const playerCount = players.length;
-  const activeCount = players.filter(p => p.status === 'Active').length;
-  const scholarshipCount = players.filter(p => p.status === 'Scholarship').length;
+  if (!tutorInfo || relatedPlayers.length === 0) {
+    notFound();
+  }
+  
+  const tutorPlayers = relatedPlayers;
+
+  const playerCount = tutorPlayers.length;
+  const activeCount = tutorPlayers.filter(p => p.status === 'Active').length;
+  const scholarshipCount = tutorPlayers.filter(p => p.status === 'Scholarship').length;
   
   // Get all payments for these players
-  const playerIds = players.map(p => p.id);
+  const playerIds = tutorPlayers.map(p => p.id);
   const payments = await getPlayersPayments(playerIds);
   
   // Calculate total paid
@@ -136,18 +192,36 @@ export default async function TutorProfilePage({
 
       {/* Contact Info */}
       <div className="glass-card p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <User className="h-6 w-6" />
-          Información de Contacto
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <User className="h-6 w-6" />
+            Información de Contacto
+          </h2>
+          {tutorInfo.type === 'Family' && tutorInfo.id && (
+            <AddSecondaryEmailButton 
+              familyId={tutorInfo.id} 
+              currentSecondaryEmail={tutorInfo.secondary_email}
+            />
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border-l-4 border-blue-500">
             <div className="flex items-center gap-2 mb-1">
               <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email</p>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email Principal</p>
             </div>
             <p className="text-lg font-bold text-gray-900 dark:text-white">{tutorInfo.email || 'Sin email'}</p>
           </div>
+
+          {tutorInfo.secondary_email && (
+            <div className="bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 p-4 rounded-xl border-l-4 border-cyan-500">
+              <div className="flex items-center gap-2 mb-1">
+                <Mail className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email Secundario</p>
+              </div>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{tutorInfo.secondary_email}</p>
+            </div>
+          )}
 
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
             <div className="flex items-center gap-2 mb-1">
@@ -157,11 +231,24 @@ export default async function TutorProfilePage({
             <p className="text-lg font-bold text-gray-900 dark:text-white">{tutorInfo.phone || 'Sin teléfono'}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border-l-4 border-purple-500 md:col-span-2">
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border-l-4 border-purple-500">
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">🆔 Cédula</p>
             <p className="text-lg font-bold text-gray-900 dark:text-white">{tutorInfo.cedula || 'Sin cédula'}</p>
           </div>
         </div>
+
+        {/* Documents */}
+        {tutorInfo.cedula_url && (
+          <div className="mt-6">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Documentos
+            </h3>
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500">
+              <DocumentPreview url={tutorInfo.cedula_url} title="Cédula del Tutor" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Players List */}
@@ -171,7 +258,7 @@ export default async function TutorProfilePage({
           Jugadores a Cargo
         </h2>
         <div className="grid gap-4">
-          {players.map((player) => (
+          {tutorPlayers.map((player) => (
             <Link
               key={player.id}
               href={`/dashboard/players/${player.id}`}

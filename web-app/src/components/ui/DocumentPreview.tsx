@@ -128,17 +128,7 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
             try {
               const supabase = createClient();
               
-              // Check if bucket exists first
-              const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-              
-              if (bucketError || !buckets?.some(b => b.name === 'documents')) {
-                // Bucket doesn't exist, use public as final fallback
-                setImageUrl(publicUrl);
-                setLoading(false);
-                setError(true);
-                return;
-              }
-              
+              // Try to get public URL directly - if bucket doesn't exist, we'll handle it
               const { data } = supabase.storage.from('documents').getPublicUrl(url);
               
               // Test the Supabase URL

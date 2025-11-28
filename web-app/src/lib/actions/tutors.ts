@@ -61,3 +61,19 @@ export async function getAllTutors() {
 
   return Array.from(tutorsMap.values());
 }
+
+export async function updateSecondaryEmail(familyId: string, email: string | null) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('families')
+    .update({ secondary_email: email })
+    .eq('id', familyId);
+
+  if (error) {
+    console.error('Error updating secondary email:', error);
+    return { error: 'Error al actualizar el email secundario' };
+  }
+
+  return { success: true };
+}

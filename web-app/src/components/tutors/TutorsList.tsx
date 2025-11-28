@@ -5,11 +5,14 @@ import { User, Mail, Phone, Search, Users } from 'lucide-react';
 import Link from 'next/link';
 
 interface Tutor {
-  name: string;
-  email: string;
-  phone: string;
+  name: string | null;
+  email: string | null;
+  secondary_email?: string | null;
+  phone: string | null;
   cedula: string | null;
+  cedula_url?: string | null;
   playerCount?: number;
+  type?: 'Family' | 'Individual';
 }
 
 export default function TutorsList({ tutors }: { tutors: Tutor[] }) {
@@ -83,10 +86,13 @@ export default function TutorsList({ tutors }: { tutors: Tutor[] }) {
       {/* Tutors Grid */}
       <div className="grid gap-6">
         {filteredTutors.length > 0 ? (
-          filteredTutors.map((tutor, index) => (
+          filteredTutors.map((tutor, index) => {
+            // Use cedula as identifier, fallback to email or name
+            const identifier = tutor.cedula || tutor.email || tutor.name || `tutor-${index}`;
+            return (
             <Link
-              key={`${tutor.email}-${index}`}
-              href={`/dashboard/tutors/${encodeURIComponent(tutor.email)}`}
+              key={identifier}
+              href={`/dashboard/tutors/${encodeURIComponent(identifier)}`}
               className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up cursor-pointer"
             >
               <div className="flex items-start gap-4">
@@ -116,6 +122,11 @@ export default function TutorsList({ tutors }: { tutors: Tutor[] }) {
                         <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email</p>
                       </div>
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{tutor.email || 'Sin email'}</p>
+                      {tutor.secondary_email && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          📧 Secundario: {tutor.secondary_email}
+                        </p>
+                      )}
                     </div>
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
                       <div className="flex items-center gap-2 mb-1">
@@ -132,7 +143,8 @@ export default function TutorsList({ tutors }: { tutors: Tutor[] }) {
                 </div>
               </div>
             </Link>
-          ))
+            );
+          })
         ) : (
           <div className="glass-card p-12 text-center">
             <User className="mx-auto h-16 w-16 text-gray-400 mb-4" />

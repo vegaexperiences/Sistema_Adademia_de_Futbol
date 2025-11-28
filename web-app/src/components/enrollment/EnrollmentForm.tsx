@@ -180,7 +180,7 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
       </div>
 
       {/* Step Content */}
-      <div className="p-6 sm:p-10 flex-grow">
+      <div className="p-6 sm:p-10 flex-grow overflow-visible">
         {currentStep === 0 && (
           <TutorStep data={formData} updateData={updateData} onNext={nextStep} />
         )}

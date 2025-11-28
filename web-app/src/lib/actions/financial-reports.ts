@@ -28,13 +28,14 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
   const endDate = `${year}-12-31`;
   
   // Get all payments and expenses for the year in parallel
+  // Note: If status column doesn't exist yet, this will return all payments
+  // After migration, it will filter by status = 'Approved'
   const [paymentsResult, expensesResult, staffResult] = await Promise.all([
     supabase
       .from('payments')
-      .select('amount, payment_date')
+      .select('amount, payment_date, status')
       .gte('payment_date', startDate)
-      .lte('payment_date', endDate)
-      .eq('status', 'Approved'),
+      .lte('payment_date', endDate),
     supabase
       .from('expenses')
       .select('amount, date')
@@ -53,10 +54,15 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
     const monthEnd = new Date(year, monthIndex + 1, 0);
     
     // Calculate income for this month
+    // Filter by status if it exists, otherwise include all payments (for backward compatibility)
     const income = (paymentsResult.data || [])
       .filter(p => {
         const date = new Date(p.payment_date);
-        return date >= monthStart && date <= monthEnd;
+        const isInMonth = date >= monthStart && date <= monthEnd;
+        // If status field exists, only include 'Approved' payments
+        // If status doesn't exist (before migration), include all payments
+        const hasValidStatus = !p.status || p.status === 'Approved';
+        return isInMonth && hasValidStatus;
       })
       .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
     
@@ -130,15 +136,17 @@ export async function getCashFlow(startDate: string, endDate: string) {
   const supabase = await createClient();
   
   // Get all income
+  // Select status field to filter in JavaScript (for backward compatibility)
   const { data: payments } = await supabase
     .from('payments')
-    .select('amount, payment_date')
+    .select('amount, payment_date, status')
     .gte('payment_date', startDate)
     .lte('payment_date', endDate)
-    .eq('status', 'Approved')
     .order('payment_date');
   
-  const totalIncome = payments?.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0) || 0;
+  // Filter by status if it exists, otherwise include all (backward compatibility)
+  const approvedPayments = payments?.filter(p => !p.status || p.status === 'Approved') || [];
+  const totalIncome = approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
   
   // Get all expenses
   const { data: expenses } = await supabase
@@ -179,10 +187,9 @@ export async function getFinancialSummary() {
   const [paymentsResult, expensesResult, staffPaymentsResult] = await Promise.all([
     supabase
       .from('payments')
-      .select('amount')
+      .select('amount, status')
       .gte('payment_date', startOfMonth)
-      .lte('payment_date', endOfMonth)
-      .eq('status', 'Approved'),
+      .lte('payment_date', endOfMonth),
     supabase
       .from('expenses')
       .select('amount')
@@ -195,7 +202,9 @@ export async function getFinancialSummary() {
       .lte('payment_date', endOfMonth)
   ]);
   
-  const income = (paymentsResult.data || []).reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+  // Filter by status if it exists, otherwise include all (backward compatibility)
+  const approvedPayments = (paymentsResult.data || []).filter(p => !p.status || p.status === 'Approved');
+  const income = approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
   const operationalExpenses = (expensesResult.data || []).reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
   const staffExpenses = (staffPaymentsResult.data || []).reduce((sum, s) => sum + parseFloat(s.amount.toString()), 0);
   const totalExpenses = operationalExpenses + staffExpenses;

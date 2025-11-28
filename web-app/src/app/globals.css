@@ -23,12 +23,13 @@
     background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color-scheme: light dark;
+    color-scheme: light;
   }
   
-  /* Dark mode background */
-  .dark body {
+  /* Dark mode background - only when explicitly set */
+  html.dark body {
     background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
+    color-scheme: dark;
   }
   
   /* Override text colors for better contrast in light mode */
@@ -78,8 +79,15 @@
     @apply bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20;
   }
   
-  .dark .glass-card {
+  /* Only apply dark styles when html has dark class explicitly */
+  html.dark .glass-card {
     @apply bg-gray-800/90 border-gray-700/50 shadow-gray-900/50;
+  }
+  
+  /* Force light background for glass-card in light mode */
+  html:not(.dark) .glass-card,
+  html.light .glass-card {
+    @apply bg-white/70 border-white/20;
   }
   
   /* Purple gradient for active states */
@@ -103,6 +111,10 @@
   
   .animate-scale-in {
     animation: scaleIn 0.3s ease-out;
+  }
+  
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
   }
   
   @keyframes fadeIn {
@@ -132,6 +144,17 @@
     }
     to {
       transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
       opacity: 1;
     }
   }

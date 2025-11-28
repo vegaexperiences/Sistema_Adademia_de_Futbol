@@ -8,10 +8,11 @@ export interface Payment {
   player_id: string;
   amount: number;
   payment_type: 'enrollment' | 'monthly' | 'custom';
-  payment_method?: 'cash' | 'transfer' | 'yappy' | 'card' | 'other';
+  payment_method?: 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'other';
   payment_date: string;
   month_year?: string;
   notes?: string;
+  status?: 'Approved' | 'Pending' | 'Rejected' | 'Cancelled';
 }
 
 // Get all payments for a player
@@ -60,6 +61,7 @@ export async function createPayment(payment: Payment) {
     .from('payments')
     .insert({
       ...payment,
+      status: payment.status || 'Approved', // Default to 'Approved' if not specified
       created_by: user?.id
     })
     .select()
@@ -79,9 +81,12 @@ export async function createPayment(payment: Payment) {
     })
     .eq('id', payment.player_id);
   
+  // Revalidate all relevant paths
   revalidatePath('/dashboard/players');
   revalidatePath('/dashboard/families');
   revalidatePath('/dashboard/tutors');
+  revalidatePath('/dashboard/finances');
+  revalidatePath('/dashboard/finances/transactions');
   
   return data;
 }

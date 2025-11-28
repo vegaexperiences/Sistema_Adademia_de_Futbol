@@ -42,6 +42,7 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
   };
   
   const getPaymentMethodLabel = (method: string | null) => {
+    if (method === 'paguelofacil') return '💳 Paguelo Fácil';
     if (!method) return 'N/A';
     const labels: Record<string, string> = {
       'cash': 'Efectivo',

@@ -27,6 +27,11 @@ export function validateEnv() {
   if (!process.env.BREVO_FROM_EMAIL) {
     console.warn('⚠️  BREVO_FROM_EMAIL no está configurada. Se usará un email por defecto.');
   }
+
+  // PagueloFacil credentials (optional - only needed if using PagueloFacil payments)
+  if (!process.env.PAGUELOFACIL_ACCESS_TOKEN || !process.env.PAGUELOFACIL_CCLW) {
+    console.warn('⚠️  PAGUELOFACIL_ACCESS_TOKEN y PAGUELOFACIL_CCLW no están configuradas. Los pagos con Paguelo Fácil no funcionarán.');
+  }
 }
 
 // Validate on module load (only in server-side)

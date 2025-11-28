@@ -1,11 +1,45 @@
+'use client';
+
 import { PlayerEmail } from '@/lib/actions/player-emails';
-import { Mail, CheckCircle, Eye, XCircle, MousePointerClick, Clock } from 'lucide-react';
+import { Mail, CheckCircle, Eye, XCircle, MousePointerClick, Clock, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 
 interface EmailHistoryCardProps {
   emails: PlayerEmail[];
 }
 
 export function EmailHistoryCard({ emails }: EmailHistoryCardProps) {
+  const [updating, setUpdating] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  const handleUpdateStatuses = async () => {
+    setUpdating(true);
+    try {
+      const response = await fetch('/api/emails/update-statuses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emailIds: emails.map(e => e.id)
+        })
+      });
+
+      if (response.ok) {
+        setLastUpdate(new Date());
+        // Refresh the page after a short delay to show updated statuses
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        alert('Error al actualizar estados');
+      }
+    } catch (error) {
+      console.error('Error updating email statuses:', error);
+      alert('Error al actualizar estados');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (emails.length === 0) {
     return (
       <div className="glass-card p-6">
@@ -120,10 +154,26 @@ export function EmailHistoryCard({ emails }: EmailHistoryCardProps) {
         ))}
       </div>
 
-      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          ℹ️ Los estados se actualizan automáticamente cuando el destinatario interactúa con el correo.
-        </p>
+      <div className="mt-4 space-y-3">
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+            ℹ️ Los estados se actualizan automáticamente cuando el destinatario interactúa con el correo.
+          </p>
+          {lastUpdate && (
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              Última actualización: {lastUpdate.toLocaleTimeString('es-ES')}
+            </p>
+          )}
+        </div>
+        
+        <button
+          onClick={handleUpdateStatuses}
+          disabled={updating}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+        >
+          <RefreshCw size={16} className={updating ? 'animate-spin' : ''} />
+          {updating ? 'Actualizando...' : 'Actualizar Estados de Correos'}
+        </button>
       </div>
     </div>
   );

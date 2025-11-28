@@ -7,7 +7,7 @@ export async function getFamilies() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('families')
-    .select('*, players(count)')
+    .select('*, players(id, status)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -15,8 +15,13 @@ export async function getFamilies() {
     return [];
   }
 
-  // Filter families with > 1 player
-  return data.filter((f: any) => f.players[0].count > 1);
+  // Filter families with >= 2 approved players (Active or Scholarship)
+  return data.filter((f: any) => {
+    const approvedCount = f.players?.filter((p: any) => 
+      p.status === 'Active' || p.status === 'Scholarship'
+    ).length || 0;
+    return approvedCount >= 2;
+  });
 }
 
 export async function createFamily(formData: FormData) {

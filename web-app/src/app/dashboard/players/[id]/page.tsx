@@ -1,15 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { User, Calendar, Mail, Phone, FileText, DollarSign, CreditCard, ArrowLeft } from 'lucide-react';
+import { User, Calendar, Mail, Phone, FileText, DollarSign, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
 import { getPlayerPayments, calculateMonthlyFee } from '@/lib/actions/payments';
-import PaymentHistory from '@/components/payments/PaymentHistory';
-import CreatePayment from '@/components/payments/CreatePayment';
+import { PlayerPaymentSection } from '@/components/payments/PlayerPaymentSection';
 import PlayerManagement from '@/components/payments/PlayerManagement';
 import { EmailHistoryCard } from '@/components/players/EmailHistoryCard';
 import { getPlayerEmailHistory } from '@/lib/actions/player-emails';
 import { getPlayerCategory, getCategoryColor, calculateAge } from '@/lib/utils/player-category';
+import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
 
 export default async function PlayerProfilePage({ 
   params 
@@ -57,6 +57,7 @@ export default async function PlayerProfilePage({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <PagueloFacilSuccessHandler />
       {/* Back Button */}
       <Link 
         href="/dashboard/players"
@@ -238,17 +239,11 @@ export default async function PlayerProfilePage({
       <EmailHistoryCard emails={emailHistory} />
 
       {/* Payment System */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <CreditCard className="h-6 w-6" />
-            Sistema de Pagos
-          </h2>
-          <CreatePayment playerId={id} suggestedAmount={suggestedFee} />
-        </div>
-        
-        <PaymentHistory payments={payments} />
-      </div>
+      <PlayerPaymentSection 
+        playerId={id} 
+        suggestedAmount={suggestedFee} 
+        payments={payments}
+      />
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { Users, Mail, Phone, User, DollarSign, CreditCard, ArrowLeft, FileText } from 'lucide-react';
+import { Users, Mail, Phone, User, DollarSign, ArrowLeft, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { getPlayersPayments } from '@/lib/actions/payments';
-import PaymentHistory from '@/components/payments/PaymentHistory';
+import { getPlayerCategory } from '@/lib/utils/player-category';
+import { AddSecondaryEmailButton } from '@/components/tutors/AddSecondaryEmailButton';
+import { PaymentSection } from './PaymentSection';
 
 export default async function FamilyProfilePage({ 
   params 
@@ -19,15 +21,33 @@ export default async function FamilyProfilePage({
     .select('*, players(*)')
     .eq('id', id)
     .single();
+  
+  // Ensure secondary_email is included in family data
+  const familyWithSecondaryEmail = family ? {
+    ...family,
+    secondary_email: (family as any).secondary_email || null
+  } : null;
 
-  if (!family) {
+  if (!family || !familyWithSecondaryEmail) {
     notFound();
   }
 
   // Filter to only show approved players (Active or Scholarship)
-  const approvedPlayers = family.players?.filter((p: any) => 
+  // Also calculate/ensure category is set for each player
+  const approvedPlayers = (family.players?.filter((p: any) => 
     p.status === 'Active' || p.status === 'Scholarship'
-  ) || [];
+  ) || []).map((p: any) => {
+    // If category is missing or is 'Pendiente', calculate it from birth date
+    if (!p.category || p.category === 'Pendiente') {
+      if (p.birth_date && p.gender) {
+        const genderForCategory = p.gender === 'M' ? 'Masculino' : 'Femenino';
+        p.category = getPlayerCategory(p.birth_date, genderForCategory);
+      } else {
+        p.category = null;
+      }
+    }
+    return p;
+  });
 
   const playerCount = approvedPlayers.length;
   const activeCount = approvedPlayers.filter((p: any) => p.status === 'Active').length;
@@ -133,10 +153,16 @@ export default async function FamilyProfilePage({
 
       {/* Tutor Info */}
       <div className="glass-card p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <User className="h-6 w-6" />
-          Información del Tutor
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <User className="h-6 w-6" />
+            Información del Tutor
+          </h2>
+          <AddSecondaryEmailButton 
+            familyId={family.id} 
+            currentSecondaryEmail={familyWithSecondaryEmail.secondary_email}
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500">
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">👤 Nombre Completo</p>
@@ -151,17 +177,27 @@ export default async function FamilyProfilePage({
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border-l-4 border-blue-500">
             <div className="flex items-center gap-2 mb-1">
               <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email</p>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email Principal</p>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{family.tutor_email}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">{family.tutor_email || 'Sin email'}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
+          {familyWithSecondaryEmail.secondary_email && (
+            <div className="bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 p-4 rounded-xl border-l-4 border-cyan-500">
+              <div className="flex items-center gap-2 mb-1">
+                <Mail className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Email Secundario</p>
+              </div>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{familyWithSecondaryEmail.secondary_email}</p>
+            </div>
+          )}
+
+          <div className={`bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500 ${familyWithSecondaryEmail.secondary_email ? '' : 'md:col-span-2'}`}>
             <div className="flex items-center gap-2 mb-1">
               <Phone className="h-4 w-4 text-green-600 dark:text-green-400" />
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Teléfono</p>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{family.tutor_phone}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">{family.tutor_phone || 'Sin teléfono'}</p>
           </div>
         </div>
       </div>
@@ -181,24 +217,34 @@ export default async function FamilyProfilePage({
                 className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border-l-4 border-purple-500 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer"
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                      {player.first_name} {player.last_name}
-                    </p>
-                    <div className="flex gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">
+                        {player.first_name} {player.last_name}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 items-center">
                       {player.category && (
-                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
+                          background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                          color: '#1e3a8a'
+                        }}>
                           📚 {player.category}
                         </span>
                       )}
                       {player.gender && (
-                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
+                          background: player.gender === 'M' 
+                            ? 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)'
+                            : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
+                          color: player.gender === 'M' ? '#5b21b6' : '#be185d'
+                        }}>
                           {player.gender === 'M' ? '👦' : '👧'} {player.gender === 'M' ? 'Masculino' : 'Femenino'}
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
+                  <span className="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ml-4" style={{
                     background: player.status === 'Active' 
                       ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
                       : player.status === 'Scholarship'
@@ -224,25 +270,13 @@ export default async function FamilyProfilePage({
       </div>
 
       {/* Payment History */}
-      <div className="glass-card p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <CreditCard className="h-6 w-6" />
-          Historial de Pagos Familiar
-        </h2>
-        
-        {playerCount > 1 && (
-          <div className="mb-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500">
-            <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-              💡 Descuento Familiar Aplicable
-            </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Esta familia califica para el descuento familiar en la mensualidad del {playerCount > 2 ? 'tercer jugador en adelante' : 'segundo jugador en adelante'}.
-            </p>
-          </div>
-        )}
-        
-        <PaymentHistory payments={payments} showPlayerName={true} />
-      </div>
+      <PaymentSection
+        players={approvedPlayers}
+        payments={payments}
+        familyName={family.tutor_name || 'Familia'}
+        tutorEmail={family.tutor_email || null}
+        playerCount={playerCount}
+      />
     </div>
   );
 }

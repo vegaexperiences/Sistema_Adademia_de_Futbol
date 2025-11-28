@@ -314,16 +314,58 @@ async function getBrevoAccountStats() {
     // Try to get account information
     const accountInfo = await brevoAccount.getAccount();
     
+    // Brevo SDK returns { response, body } structure
+    // The actual data is in the body property
+    const response = accountInfo as any;
+    const body = response.body || response;
+    
+    // Log the full body to understand the structure
+    // This helps us find the correct field for remaining emails
+    console.log('Brevo account info full body:', JSON.stringify(body, null, 2));
+    console.log('Brevo account info body keys:', Object.keys(body || {}));
+    
     // Brevo account info may include plan limits and usage
-    // Note: The exact structure depends on Brevo's API response
+    // The response structure can vary, so we check multiple possible fields
+    // Try different possible field names for remaining emails
+    // Note: Brevo's getAccount() API may not return email credits directly
+    // We need to check all possible nested structures
+    const remainingEmails = 
+      body.emailCredits || 
+      body.remainingEmails || 
+      body.credits?.email || 
+      body.credits?.transactional ||
+      body.plan?.emailCredits ||
+      body.plan?.remainingEmails ||
+      body.plan?.emailLimit ||
+      body.plan?.credits?.email ||
+      body.plan?.credits?.transactional ||
+      body.planInfo?.emailCredits ||
+      body.planInfo?.remainingEmails ||
+      body.planInfo?.emailLimit ||
+      body.planInfo?.credits?.email ||
+      body.planInfo?.credits?.transactional ||
+      null;
+    
+    // If we still don't have remainingEmails, log all nested objects for debugging
+    if (!remainingEmails) {
+      console.log('⚠️ Could not find remainingEmails in Brevo response. Available fields:', {
+        topLevel: Object.keys(body || {}),
+        plan: body.plan ? Object.keys(body.plan) : null,
+        credits: body.credits ? Object.keys(body.credits) : null,
+        planInfo: body.planInfo ? Object.keys(body.planInfo) : null,
+      });
+    }
+    
     return {
-      planType: (accountInfo as any).planType,
-      credits: (accountInfo as any).credits,
-      // Some Brevo accounts show remaining emails in the response
-      remainingEmails: (accountInfo as any).emailCredits || null,
+      planType: body.planType || body.plan?.type || null,
+      credits: body.credits || null,
+      remainingEmails: remainingEmails,
     };
   } catch (error) {
     console.warn('Could not fetch Brevo account stats:', error);
+    if (error instanceof Error) {
+      console.warn('Error details:', error.message, error.stack);
+    }
     return null;
   }
 }
@@ -356,6 +398,7 @@ export async function getQueueStatus() {
   // Query for emails sent today - try sent_at first, then fallback to created_at if sent_at is null
   // This handles cases where emails were marked as 'sent' but sent_at wasn't set
   // Use date comparison with proper timezone handling
+  // Also check if sent_at is a string that needs parsing
   const { count: todaySentBySentAt, error: countError1 } = await supabase
     .from('email_queue')
     .select('*', { count: 'exact', head: true })
@@ -373,12 +416,37 @@ export async function getQueueStatus() {
     .gte('created_at', todayStart)
     .lte('created_at', todayEnd);
   
+  // Additional query: Get all sent emails today regardless of sent_at format
+  // This helps catch emails that might have been sent but have timestamp issues
+  const { data: allTodayEmails, error: allTodayError } = await supabase
+    .from('email_queue')
+    .select('id, sent_at, created_at, status, to_email')
+    .eq('status', 'sent')
+    .or(`sent_at.gte.${todayStart},sent_at.is.null,created_at.gte.${todayStart}`)
+    .or(`sent_at.lte.${todayEnd},sent_at.is.null,created_at.lte.${todayEnd}`);
+  
+  // Count emails where sent_at or created_at is today (more lenient check)
+  let actualTodayCount = 0;
+  if (allTodayEmails) {
+    actualTodayCount = allTodayEmails.filter(email => {
+      const sentDate = email.sent_at ? new Date(email.sent_at).toISOString().split('T')[0] : null;
+      const createdDate = email.created_at ? new Date(email.created_at).toISOString().split('T')[0] : null;
+      return sentDate === today || createdDate === today;
+    }).length;
+  }
+  
   const todaySent = (todaySentBySentAt || 0) + (todaySentByCreatedAt || 0);
+  
+  // Use the more lenient count if it's higher (catches edge cases)
+  const finalTodaySent = Math.max(todaySent, actualTodayCount);
   
   if (countError1 || countError2) {
     console.error('Error counting today\'s emails:', countError1 || countError2);
   } else {
-    console.log(`Today's email count: ${todaySent} (${todaySentBySentAt || 0} by sent_at, ${todaySentByCreatedAt || 0} by created_at fallback)`);
+    console.log(`Today's email count: ${finalTodaySent} (strict: ${todaySent}, lenient: ${actualTodayCount}, by sent_at: ${todaySentBySentAt || 0}, by created_at fallback: ${todaySentByCreatedAt || 0})`);
+    if (allTodayError) {
+      console.error('Error getting all today emails:', allTodayError);
+    }
   }
   
   // Try to get Brevo account stats for real-time sync
@@ -388,7 +456,7 @@ export async function getQueueStatus() {
   // Brevo shows "289 / 300 Marketing & Transactional emails left"
   // This means: 300 - 289 = 11 emails sent today
   // So: remaining = 289, sentToday = 11
-  let actualTodaySent = todaySent || 0;
+  let actualTodaySent = finalTodaySent || 0;
   let actualRemainingToday = Math.max(0, DAILY_LIMIT - actualTodaySent);
   
   // If we can get Brevo stats, use them as the source of truth
@@ -397,16 +465,19 @@ export async function getQueueStatus() {
   if (brevoStats?.remainingEmails !== null && brevoStats?.remainingEmails !== undefined) {
     // Brevo shows remaining, so: sent = limit - remaining
     const brevoSentToday = Math.max(0, DAILY_LIMIT - brevoStats.remainingEmails);
-    // Use Brevo's count as it's the source of truth
+    // Use Brevo's count as it's the source of truth (it's more accurate than our DB count)
+    console.log(`Using Brevo stats: ${brevoSentToday} sent today (${brevoStats.remainingEmails} remaining out of ${DAILY_LIMIT})`);
     actualTodaySent = brevoSentToday;
     actualRemainingToday = brevoStats.remainingEmails;
+  } else {
+    console.log(`Using database count: ${finalTodaySent} sent today (DB may not have all emails if sent outside the system)`);
   }
   
   return {
     pending: pending || 0,
     sent: sent || 0,
     failed: failed || 0,
-    todaySent: actualTodaySent,
+    todaySent: actualTodaySent, // Use Brevo stats if available, otherwise use DB count
     dailyLimit: DAILY_LIMIT,
     remainingToday: actualRemainingToday,
     // Include Brevo stats for debugging

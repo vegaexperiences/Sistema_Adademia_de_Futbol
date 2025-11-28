@@ -19,24 +19,7 @@ export async function uploadFile(file: File, path: string): Promise<UploadResult
   try {
     const supabase = createClient();
 
-    // Check if bucket exists, if not, we'll get an error that we can handle
-    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-    
-    if (bucketError) {
-      console.error('Error checking buckets:', bucketError);
-      return { url: null, error: 'Error al acceder al almacenamiento' };
-    }
-
-    const bucketExists = buckets?.some(b => b.name === BUCKET_NAME);
-    
-    if (!bucketExists) {
-      return { 
-        url: null, 
-        error: `El bucket "${BUCKET_NAME}" no existe. Por favor créalo en Supabase Storage.` 
-      };
-    }
-
-    // Upload the file
+    // Upload the file directly - if bucket doesn't exist, we'll get an error
     const fileExt = file.name.split('.').pop();
     const fileName = `${path}-${Date.now()}.${fileExt}`;
     const filePath = `${path}/${fileName}`;
@@ -50,6 +33,15 @@ export async function uploadFile(file: File, path: string): Promise<UploadResult
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
+      
+      // Check if error is about bucket not existing
+      if (uploadError.message?.includes('Bucket not found') || uploadError.message?.includes('does not exist')) {
+        return { 
+          url: null, 
+          error: `El bucket "${BUCKET_NAME}" no existe. Por favor créalo en Supabase Storage.` 
+        };
+      }
+      
       return { url: null, error: uploadError.message || 'Error al subir el archivo' };
     }
 

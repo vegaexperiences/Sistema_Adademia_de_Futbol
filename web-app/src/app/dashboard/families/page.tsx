@@ -9,7 +9,7 @@ export default async function FamiliesPage() {
     .select('*, players(id, first_name, last_name, status)')
     .order('tutor_name');
 
-  // Filter to only show approved players (Active or Scholarship) and only families with at least one approved player
+  // Filter to only show approved players (Active or Scholarship) and only families with at least 2 approved players
   const familiesWithApprovedPlayers = families
     ?.map(family => ({
       ...family,
@@ -17,7 +17,7 @@ export default async function FamiliesPage() {
         player.status === 'Active' || player.status === 'Scholarship'
       ) || []
     }))
-    .filter(family => family.players.length > 0) || []; // Only show families with at least one approved player
+    .filter(family => family.players.length >= 2) || []; // Only show families with 2+ approved players
 
   return <FamiliesList families={familiesWithApprovedPlayers} />;
 }

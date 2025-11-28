@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { Users, CheckCircle, Clock, GraduationCap, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -149,7 +150,7 @@ export default async function DashboardPage() {
           🚀 Acciones Rápidas
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a href="/dashboard/approvals" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
+          <Link href="/dashboard/approvals" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
             background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
           }}>
             <Clock className="h-10 w-10 text-white mb-3" />
@@ -157,9 +158,9 @@ export default async function DashboardPage() {
             <p className="text-white/90 text-sm">
               {pendingPlayers} solicitudes esperando aprobación
             </p>
-          </a>
+          </Link>
 
-          <a href="/dashboard/players" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
+          <Link href="/dashboard/players" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           }}>
             <Users className="h-10 w-10 text-white mb-3" />
@@ -167,9 +168,9 @@ export default async function DashboardPage() {
             <p className="text-white/90 text-sm">
               Gestionar {totalPlayers} jugadores registrados
             </p>
-          </a>
+          </Link>
 
-          <a href="/dashboard/families" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
+          <Link href="/dashboard/families" className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl" style={{
             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
           }}>
             <Users className="h-10 w-10 text-white mb-3" />
@@ -177,7 +178,7 @@ export default async function DashboardPage() {
             <p className="text-white/90 text-sm">
               {totalFamilies} familias registradas
             </p>
-          </a>
+          </Link>
         </div>
       </div>
     </div>

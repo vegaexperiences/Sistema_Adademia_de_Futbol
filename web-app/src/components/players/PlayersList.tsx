@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Search, Filter, User, Calendar, GraduationCap, CheckCircle } from 'lucide-react';
+import { Users, Search, Filter, User, Calendar, GraduationCap, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { retirePlayer } from '@/lib/actions/players';
 
 interface Player {
   id: string;
@@ -13,26 +15,82 @@ interface Player {
   gender: string;
   category: string | null;
   status: string;
+  payment_status?: string | null;
+  custom_monthly_fee?: number | null;
 }
 
-export default function PlayersPage({ players }: { players: Player[] }) {
+interface PlayersListProps {
+  players: Player[];
+  initialView?: 'active' | 'retired';
+}
+
+export default function PlayersList({ players, initialView = 'active' }: PlayersListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [view, setView] = useState<'active' | 'retired'>(initialView);
+  const [retiringId, setRetiringId] = useState<string | null>(null);
+  const router = useRouter();
   
+  // Count only approved players (exclude Pending - they're in approvals section)
   const activeCount = players?.filter(p => p.status === 'Active').length || 0;
   const scholarshipCount = players?.filter(p => p.status === 'Scholarship').length || 0;
-  const pendingCount = players?.filter(p => p.status === 'Pending').length || 0;
+  const rejectedCount = players?.filter(p => p.status === 'Rejected').length || 0;
 
-  // Filter players based on search
+  // Filter players based on view and search
+  // Note: Pending players should NEVER appear here - they only appear in approvals
   const filteredPlayers = players?.filter(player => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      player.first_name?.toLowerCase().includes(search) ||
-      player.last_name?.toLowerCase().includes(search) ||
-      player.cedula?.toLowerCase().includes(search) ||
-      `${player.first_name} ${player.last_name}`.toLowerCase().includes(search)
-    );
+    // Always exclude Pending players from the players list
+    if (player.status === 'Pending') {
+      return false;
+    }
+    
+    // Filter by view
+    if (view === 'active') {
+      // Show only Active and Scholarship (no Pending)
+      if (!['Active', 'Scholarship'].includes(player.status)) {
+        return false;
+      }
+    } else if (view === 'retired') {
+      // Show only Rejected/Retired
+      if (player.status !== 'Rejected') {
+        return false;
+      }
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      return (
+        player.first_name?.toLowerCase().includes(search) ||
+        player.last_name?.toLowerCase().includes(search) ||
+        player.cedula?.toLowerCase().includes(search) ||
+        `${player.first_name} ${player.last_name}`.toLowerCase().includes(search)
+      );
+    }
+    
+    return true;
   }) || [];
+
+  const handleRetirePlayer = async (playerId: string, playerName: string) => {
+    if (!confirm(`¿Estás seguro de que deseas retirar a ${playerName}? Esta acción cambiará su estado a "Retirado" pero no se borrará de la plataforma.`)) {
+      return;
+    }
+    
+    setRetiringId(playerId);
+    try {
+      const result = await retirePlayer(playerId);
+      if (result.error) {
+        alert(`Error: ${result.error}`);
+      } else {
+        alert(result.message || 'Jugador retirado exitosamente');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error retiring player:', error);
+      alert('Error al retirar jugador');
+    } finally {
+      setRetiringId(null);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -51,6 +109,32 @@ export default function PlayersPage({ players }: { players: Player[] }) {
         <p className="text-lg text-gray-600 dark:text-gray-400">
           Gestiona todos los jugadores de la academia
         </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="glass-card p-4">
+        <div className="flex gap-3">
+          <button
+            onClick={() => setView('active')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all border ${
+              view === 'active'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg border-transparent'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            Activos ({activeCount + scholarshipCount})
+          </button>
+          <button
+            onClick={() => setView('retired')}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all border ${
+              view === 'retired'
+                ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg border-transparent'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+          >
+            Retirados/No Aprobados ({rejectedCount})
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -86,13 +170,13 @@ export default function PlayersPage({ players }: { players: Player[] }) {
         <div className="glass-card p-6 hover:shadow-xl transition-all duration-300">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
             }}>
-              <Calendar className="h-6 w-6 text-white" />
+              <XCircle className="h-6 w-6 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingCount}</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Retirados</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{rejectedCount}</p>
             </div>
           </div>
         </div>
@@ -129,20 +213,40 @@ export default function PlayersPage({ players }: { players: Player[] }) {
       {/* Players Grid */}
       <div className="grid gap-6">
         {filteredPlayers && filteredPlayers.length > 0 ? (
-          filteredPlayers.map((player) => (
-            <Link 
+          filteredPlayers.map((player) => {
+            // Determine card color based on player status
+            let cardGradient = 'from-white to-gray-50 dark:from-gray-800 dark:to-gray-900'; // Default
+            let cardBorder = 'border-gray-200 dark:border-gray-700'; // Default
+            
+            if (player.status === 'Scholarship') {
+              // Yellow for scholarship players
+              cardGradient = 'from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20';
+              cardBorder = 'border-yellow-300 dark:border-yellow-700';
+            } else if (player.payment_status === 'overdue') {
+              // Red for overdue players
+              cardGradient = 'from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20';
+              cardBorder = 'border-red-300 dark:border-red-700';
+            } else if (player.custom_monthly_fee !== null && player.custom_monthly_fee !== undefined) {
+              // Light blue/cyan for players with custom fee
+              cardGradient = 'from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20';
+              cardBorder = 'border-cyan-300 dark:border-cyan-700';
+            }
+            
+            return (
+            <div 
               key={player.id} 
-              href={`/dashboard/players/${player.id}`}
-              className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up cursor-pointer"
+              className={`glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up bg-gradient-to-br ${cardGradient} border-l-4 ${cardBorder}`}
             >
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Player Info */}
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        {player.first_name} {player.last_name}
-                      </h3>
+                    <div className="flex-1">
+                      <Link href={`/dashboard/players/${player.id}`}>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">
+                          {player.first_name} {player.last_name}
+                        </h3>
+                      </Link>
                       <div className="flex gap-2 flex-wrap">
                         {player.category && (
                           <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
@@ -164,35 +268,52 @@ export default function PlayersPage({ players }: { players: Player[] }) {
                         )}
                       </div>
                     </div>
-                    <span
-                      className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap"
-                      style={{
-                        background:
-                          player.status === 'Active'
-                        ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
-                        : player.status === 'Scholarship'
-                        ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
-                            : player.status === 'Rejected'
-                            ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
-                        : 'linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)',
-                        color:
-                          player.status === 'Active'
-                        ? '#065f46'
-                            : player.status === 'Scholarship'
-                            ? '#1e3a8a'
-                            : player.status === 'Rejected'
-                            ? '#b91c1c'
-                            : '#92400e',
-                      }}
-                    >
-                      {player.status === 'Active'
-                        ? '✅ Activo'
-                        : player.status === 'Scholarship'
-                        ? '🎓 Becado'
-                        : player.status === 'Rejected'
-                        ? '⛔ Retirado'
-                        : '⏳ Pendiente'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap"
+                        style={{
+                          background:
+                            player.status === 'Active'
+                          ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
+                          : player.status === 'Scholarship'
+                          ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
+                              : player.status === 'Rejected'
+                              ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
+                          : 'linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)',
+                          color:
+                            player.status === 'Active'
+                          ? '#065f46'
+                              : player.status === 'Scholarship'
+                              ? '#1e3a8a'
+                              : player.status === 'Rejected'
+                              ? '#b91c1c'
+                              : '#92400e',
+                        }}
+                      >
+                        {player.status === 'Active'
+                          ? '✅ Activo'
+                          : player.status === 'Scholarship'
+                          ? '🎓 Becado'
+                          : player.status === 'Rejected'
+                          ? '⛔ Retirado'
+                          : '⏳ Pendiente'}
+                      </span>
+                      {view === 'active' && player.status !== 'Rejected' && (
+                        <button
+                          onClick={() => handleRetirePlayer(player.id, `${player.first_name} ${player.last_name}`)}
+                          disabled={retiringId === player.id}
+                          className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                          style={{
+                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
+                          }}
+                          title="Retirar jugador de la plataforma"
+                        >
+                          <XCircle size={16} />
+                          {retiringId === player.id ? 'Retirando...' : 'Retirar'}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -209,8 +330,9 @@ export default function PlayersPage({ players }: { players: Player[] }) {
                   </div>
                 </div>
               </div>
-            </Link>
-          ))
+            </div>
+            );
+          })
         ) : (
           <div className="glass-card p-12 text-center">
             <User className="mx-auto h-16 w-16 text-gray-400 mb-4" />
