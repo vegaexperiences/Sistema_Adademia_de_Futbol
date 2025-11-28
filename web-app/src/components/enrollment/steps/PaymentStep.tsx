@@ -5,6 +5,7 @@ import { SystemConfig } from '@/lib/actions/config';
 import { useRef, useState } from 'react';
 import { uploadFile } from '@/lib/utils/file-upload';
 import { PagueloFacilCheckout } from '@/components/payments/PagueloFacilCheckout';
+import { YappyPaymentButton } from '@/components/payments/YappyPaymentButton';
 
 interface PaymentStepProps {
   data: any;
@@ -151,8 +152,46 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
           )}
         </div>
 
-        {/* File Upload Section for Proof - Not needed for PagueloFacil */}
-        {(data.paymentMethod === 'Comprobante' || data.paymentMethod === 'Transferencia' || data.paymentMethod === 'Yappy') && (
+        {/* Yappy Payment Button */}
+        {data.paymentMethod === 'Yappy' && (
+          <div className="mt-4 animate-fade-in">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
+              <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                <strong>Total a pagar:</strong> ${totalAmount.toFixed(2)}
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Completa el pago con Yappy Comercial. El pago se registrará automáticamente.
+              </p>
+            </div>
+            <YappyPaymentButton
+              amount={totalAmount}
+              description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
+              orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
+              returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback?type=enrollment&amount=${totalAmount}`}
+              customParams={{
+                type: 'enrollment',
+                amount: totalAmount.toString(),
+                playerCount: data.players.length.toString(),
+                tutorName: data.tutorName || '',
+                tutorEmail: data.tutorEmail || '',
+              }}
+              onSuccess={async (transactionId: string) => {
+                // Mark payment as complete and submit enrollment
+                updateData({ 
+                  paymentProofFile: `yappy:${transactionId}` // Store transaction ID as proof
+                });
+                // Submit the enrollment form
+                onSubmit();
+              }}
+              onError={(errorMsg: string) => {
+                alert('Error en Yappy: ' + errorMsg);
+              }}
+            />
+          </div>
+        )}
+
+        {/* File Upload Section for Proof - Not needed for PagueloFacil or Yappy */}
+        {(data.paymentMethod === 'Comprobante' || data.paymentMethod === 'Transferencia') && (
           <div className="mt-4 animate-fade-in">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Adjuntar Comprobante
@@ -249,14 +288,16 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               onSubmit();
             }
           }}
-          disabled={!data.paymentMethod || (['Comprobante', 'Transferencia', 'Yappy'].includes(data.paymentMethod) && !data.paymentProofFile)}
+          disabled={!data.paymentMethod || (['Comprobante', 'Transferencia'].includes(data.paymentMethod) && !data.paymentProofFile) || data.paymentMethod === 'Yappy' || data.paymentMethod === 'PagueloFacil'}
           className={`px-6 py-2 rounded-lg font-bold transition-all shadow-md hover:scale-105 duration-300 ${
-            !data.paymentMethod || (['Comprobante', 'Transferencia', 'Yappy'].includes(data.paymentMethod) && !data.paymentProofFile)
+            !data.paymentMethod || (['Comprobante', 'Transferencia'].includes(data.paymentMethod) && !data.paymentProofFile) || data.paymentMethod === 'Yappy' || data.paymentMethod === 'PagueloFacil'
               ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-500 shadow-none hover:scale-100' 
               : 'bg-primary text-white hover:bg-primary/90 hover:shadow-lg'
           }`}
         >
-          {data.paymentMethod === 'PagueloFacil' ? 'Continuar con Paguelo Fácil' : 'Pagar y Finalizar'}
+          {data.paymentMethod === 'PagueloFacil' ? 'Continuar con Paguelo Fácil' : 
+           data.paymentMethod === 'Yappy' ? 'Completa el pago con Yappy arriba' :
+           'Pagar y Finalizar'}
         </button>
       </div>
 

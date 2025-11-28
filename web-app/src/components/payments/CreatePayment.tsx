@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { createPayment } from '@/lib/actions/payments';
 import { Plus, X } from 'lucide-react';
+import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
+import { YappyPaymentButton } from './YappyPaymentButton';
+import { useRouter } from 'next/navigation';
 
 interface CreatePaymentProps {
   playerId: string;
@@ -11,8 +14,10 @@ interface CreatePaymentProps {
 }
 
 export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess }: CreatePaymentProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     amount: suggestedAmount.toString(),
     payment_type: 'monthly' as 'enrollment' | 'monthly' | 'custom',
@@ -24,6 +29,14 @@ export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If PagueloFacil or Yappy is selected, the payment will be handled by their respective buttons
+    // which redirect to secure payment pages. The callback will handle the payment creation.
+    if (formData.payment_method === 'paguelofacil' || formData.payment_method === 'yappy') {
+      // Payment will be processed via redirect, no need to do anything here
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -37,17 +50,21 @@ export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess
         notes: formData.notes || undefined
       });
 
-      setIsOpen(false);
-      setFormData({
-        amount: suggestedAmount.toString(),
-        payment_type: 'monthly',
-        payment_method: 'cash',
-        payment_date: new Date().toISOString().split('T')[0],
-        month_year: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
-        notes: ''
-      });
-      
-      if (onSuccess) onSuccess();
+      setSuccess(true);
+      setTimeout(() => {
+        setIsOpen(false);
+        setFormData({
+          amount: suggestedAmount.toString(),
+          payment_type: 'monthly',
+          payment_method: 'cash',
+          payment_date: new Date().toISOString().split('T')[0],
+          month_year: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+          notes: ''
+        });
+        setSuccess(false);
+        router.refresh();
+        if (onSuccess) onSuccess();
+      }, 1500);
     } catch (error) {
       console.error('Error creating payment:', error);
       alert('Error al crear el pago');
@@ -82,6 +99,91 @@ export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess
                 </button>
               </div>
 
+              {formData.payment_method === 'paguelofacil' ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
+                      <strong>Monto:</strong> ${parseFloat(formData.amount).toFixed(2)}<br />
+                      <strong>Tipo:</strong> {formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago Personalizado'}
+                    </p>
+                  </div>
+                  <PagueloFacilPaymentButton
+                    amount={parseFloat(formData.amount)}
+                    description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - Jugador ID: ${playerId}`}
+                    email=""
+                    orderId={`payment-${playerId}-${Date.now()}`}
+                    returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/paguelofacil/callback?type=payment&playerId=${playerId}&paymentType=${formData.payment_type}&amount=${formData.amount}&monthYear=${formData.month_year || ''}&notes=${encodeURIComponent(formData.notes || '')}`}
+                    customParams={{
+                      type: 'payment',
+                      playerId: playerId,
+                      paymentType: formData.payment_type,
+                      amount: formData.amount,
+                      monthYear: formData.month_year || '',
+                      notes: formData.notes || '',
+                    }}
+                    onError={(error) => alert('Error en Paguelo Fácil: ' + error)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, payment_method: 'cash' })}
+                    className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  >
+                    ← Volver y cambiar método de pago
+                  </button>
+                </div>
+              ) : formData.payment_method === 'yappy' ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
+                      <strong>Monto:</strong> ${parseFloat(formData.amount).toFixed(2)}<br />
+                      <strong>Tipo:</strong> {formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago Personalizado'}
+                    </p>
+                  </div>
+                  <YappyPaymentButton
+                    amount={parseFloat(formData.amount)}
+                    description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - Jugador ID: ${playerId}`}
+                    orderId={`payment-${playerId}-${Date.now()}`}
+                    returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback?type=payment&playerId=${playerId}&paymentType=${formData.payment_type}&amount=${formData.amount}&monthYear=${formData.month_year || ''}&notes=${encodeURIComponent(formData.notes || '')}`}
+                    customParams={{
+                      type: 'payment',
+                      playerId: playerId,
+                      paymentType: formData.payment_type,
+                      amount: formData.amount,
+                      monthYear: formData.month_year || '',
+                      notes: formData.notes || '',
+                    }}
+                    playerId={playerId}
+                    paymentType={formData.payment_type}
+                    monthYear={formData.month_year}
+                    notes={formData.notes}
+                    onSuccess={async (transactionId: string) => {
+                      setSuccess(true);
+                      setTimeout(() => {
+                        setIsOpen(false);
+                        setFormData({
+                          amount: suggestedAmount.toString(),
+                          payment_type: 'monthly',
+                          payment_method: 'cash',
+                          payment_date: new Date().toISOString().split('T')[0],
+                          month_year: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+                          notes: ''
+                        });
+                        setSuccess(false);
+                        router.refresh();
+                        if (onSuccess) onSuccess();
+                      }, 1500);
+                    }}
+                    onError={(error) => alert('Error en Yappy: ' + error)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, payment_method: 'cash' })}
+                    className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  >
+                    ← Volver y cambiar método de pago
+                  </button>
+                </div>
+              ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Amount */}
                 <div>
@@ -191,13 +293,14 @@ export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || success}
                     className="flex-1 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-500 dark:to-emerald-500"
                   >
-                    {loading ? 'Guardando...' : 'Guardar Pago'}
+                    {loading ? 'Guardando...' : success ? '¡Guardado!' : 'Guardar Pago'}
                   </button>
                 </div>
               </form>
+              )}
             </div>
           </div>
         </div>

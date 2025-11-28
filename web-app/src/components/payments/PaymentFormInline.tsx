@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DollarSign, Calendar, CreditCard, FileText, User, X } from 'lucide-react';
 import { createPayment } from '@/lib/actions/payments';
 import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
+import { YappyPaymentButton } from './YappyPaymentButton';
 
 interface Player {
   id: string;
@@ -58,9 +59,9 @@ export function PaymentFormInline({ players, familyName, tutorEmail, onSuccess, 
       return;
     }
 
-    // If PagueloFacil is selected, the payment will be handled by PagueloFacilPaymentButton
-    // which redirects to Paguelo Fácil's secure page. The callback will handle the payment creation.
-    if (formData.payment_method === 'paguelofacil') {
+    // If PagueloFacil or Yappy is selected, the payment will be handled by their respective buttons
+    // which redirect to secure payment pages. The callback will handle the payment creation.
+    if (formData.payment_method === 'paguelofacil' || formData.payment_method === 'yappy') {
       // Payment will be processed via redirect, no need to do anything here
       return;
     }
@@ -145,6 +146,63 @@ export function PaymentFormInline({ players, familyName, tutorEmail, onSuccess, 
               notes: formData.notes || '',
             }}
             onError={(error) => setError('Error en Paguelo Fácil: ' + error)}
+          />
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, payment_method: 'cash' })}
+            className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
+            ← Volver y cambiar método de pago
+          </button>
+        </div>
+      ) : formData.payment_method === 'yappy' && selectedPlayerId ? (
+        <div className="space-y-4">
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
+              <strong>Jugador:</strong> {eligiblePlayers.find(p => p.id === selectedPlayerId)?.first_name || ''} {eligiblePlayers.find(p => p.id === selectedPlayerId)?.last_name || ''}<br />
+              <strong>Monto:</strong> ${parseFloat(formData.amount).toFixed(2)}<br />
+              <strong>Tipo:</strong> {formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago Personalizado'}
+            </p>
+          </div>
+          <YappyPaymentButton
+            amount={parseFloat(formData.amount)}
+            description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.first_name || ''} ${eligiblePlayers.find(p => p.id === selectedPlayerId)?.last_name || ''}`}
+            orderId={`payment-${selectedPlayerId}-${Date.now()}`}
+            returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback?type=payment&playerId=${selectedPlayerId}&paymentType=${formData.payment_type}&amount=${formData.amount}&monthYear=${formData.month_year || ''}&notes=${encodeURIComponent(formData.notes || '')}`}
+            customParams={{
+              type: 'payment',
+              playerId: selectedPlayerId,
+              paymentType: formData.payment_type,
+              amount: formData.amount,
+              monthYear: formData.month_year || '',
+              notes: formData.notes || '',
+            }}
+            playerId={selectedPlayerId}
+            paymentType={formData.payment_type}
+            monthYear={formData.month_year}
+            notes={formData.notes}
+            onSuccess={async (transactionId: string) => {
+              setSuccess(true);
+              setTimeout(() => {
+                if (onSuccess) {
+                  onSuccess();
+                } else {
+                  router.refresh();
+                }
+                // Reset form
+                setSelectedPlayerId('');
+                setFormData({
+                  amount: '',
+                  payment_type: 'monthly',
+                  payment_method: 'cash',
+                  payment_date: new Date().toISOString().split('T')[0],
+                  month_year: '',
+                  notes: '',
+                });
+                setSuccess(false);
+              }, 1500);
+            }}
+            onError={(error) => setError('Error en Yappy: ' + error)}
           />
           <button
             type="button"
