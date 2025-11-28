@@ -1,0 +1,73 @@
+
+> web-app@0.1.0 build
+> next build
+
+   ▲ Next.js 16.0.3 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 2.5s
+   Running TypeScript ...
+   Collecting page data using 9 workers ...
+   Generating static pages using 9 workers (0/43) ...
+   Generating static pages using 9 workers (10/43) 
+   Generating static pages using 9 workers (21/43) 
+   Generating static pages using 9 workers (32/43) 
+ ✓ Generating static pages using 9 workers (43/43) in 317.7ms
+   Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/cron/process-emails
+├ ƒ /api/cron/process-recurring-payments
+├ ƒ /api/emails/update-statuses
+├ ƒ /api/enrollment
+├ ƒ /api/payments/paguelofacil
+├ ƒ /api/payments/paguelofacil/callback
+├ ƒ /api/payments/paguelofacil/link
+├ ƒ /api/payments/paguelofacil/process
+├ ƒ /api/payments/paguelofacil/recurring
+├ ƒ /api/payments/paguelofacil/tokenize
+├ ƒ /api/test-email
+├ ƒ /api/webhooks/brevo
+├ ƒ /api/webhooks/brevo/test
+├ ƒ /api/webhooks/resend
+├ ○ /auth/forgot-password
+├ ○ /auth/reset-password
+├ ƒ /dashboard
+├ ƒ /dashboard/approvals
+├ ƒ /dashboard/emails
+├ ƒ /dashboard/emails/templates/[id]
+├ ƒ /dashboard/families
+├ ƒ /dashboard/families/[id]
+├ ƒ /dashboard/families/[id]/new-payment
+├ ƒ /dashboard/families/new
+├ ƒ /dashboard/finance
+├ ƒ /dashboard/finance/new-expense
+├ ƒ /dashboard/finance/new-payment
+├ ƒ /dashboard/finances
+├ ƒ /dashboard/finances/expenses
+├ ƒ /dashboard/finances/expenses/new
+├ ƒ /dashboard/finances/staff
+├ ƒ /dashboard/finances/staff/new
+├ ƒ /dashboard/players
+├ ƒ /dashboard/players/[id]
+├ ƒ /dashboard/players/new
+├ ƒ /dashboard/reports
+├ ƒ /dashboard/settings
+├ ƒ /dashboard/settings/emails
+├ ƒ /dashboard/settings/emails/edit/[id]
+├ ƒ /dashboard/tournaments
+├ ƒ /dashboard/tutors
+├ ƒ /dashboard/tutors/[email]
+├ ƒ /enrollment
+├ ○ /icon.png
+├ ○ /login
+├ ○ /test-paguelofacil
+└ ƒ /tournaments
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
