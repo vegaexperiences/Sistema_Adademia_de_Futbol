@@ -152,6 +152,9 @@ export function YappyPaymentButton({
           if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
           if (notes) returnUrlWithParams.searchParams.set('notes', notes);
 
+          console.log('[Yappy] Current domain:', window.location.hostname);
+          console.log('[Yappy] Return URL:', returnUrlWithParams.toString());
+
           // Create the btn-yappy element
           const yappyButton = document.createElement('btn-yappy');
           
@@ -168,6 +171,15 @@ export function YappyPaymentButton({
             description: description.substring(0, 200),
             orderId,
             returnUrl: returnUrlWithParams.toString(),
+          });
+
+          // Listen to all possible events from Yappy component
+          const eventTypes = ['yappy-success', 'yappy-error', 'yappy-unavailable', 'yappy-loading', 'yappy-ready', 'error', 'unavailable'];
+          
+          eventTypes.forEach(eventType => {
+            yappyButton.addEventListener(eventType, (event: any) => {
+              console.log(`[Yappy] Event received: ${eventType}`, event.detail || event);
+            });
           });
 
           // Handle success event
@@ -193,8 +205,62 @@ export function YappyPaymentButton({
             onError?.(errorMsg);
           });
 
+          // Monitor the button element for changes (in case Yappy shows error message in DOM)
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                const buttonElement = yappyButton as any;
+                const textContent = buttonElement.textContent || buttonElement.innerText || '';
+                
+                // Check if Yappy is showing an error message in the DOM
+                if (textContent.includes('no está disponible') || 
+                    textContent.includes('no disponible') ||
+                    textContent.includes('intenta más tarde') ||
+                    textContent.includes('try again later') ||
+                    textContent.includes('not available')) {
+                  console.warn('[Yappy] Error message detected in DOM:', textContent);
+                  const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+                  if (!error) {
+                    const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
+                    setError(errorMsg);
+                    onError?.(errorMsg);
+                  }
+                }
+              }
+            });
+          });
+
+          // Start observing the button element
+          observer.observe(yappyButton, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+          });
+
           if (containerRef.current) {
             containerRef.current.appendChild(yappyButton);
+            
+            // Check after a delay if the button shows an error
+            setTimeout(() => {
+              const buttonElement = yappyButton as any;
+              const textContent = buttonElement.textContent || buttonElement.innerText || '';
+              const innerHTML = buttonElement.innerHTML || '';
+              
+              console.log('[Yappy] Button content after render:', { textContent, innerHTML });
+              
+              if (textContent.includes('no está disponible') || 
+                  textContent.includes('no disponible') ||
+                  innerHTML.includes('no está disponible') ||
+                  textContent.includes('not available')) {
+                console.warn('[Yappy] Error detected in button content:', { textContent, innerHTML });
+                const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+                if (!error) {
+                  const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
+                  setError(errorMsg);
+                  onError?.(errorMsg);
+                }
+              }
+            }, 2000);
           }
         } catch (err: any) {
           console.error('[Yappy] Error rendering button:', err);
@@ -219,7 +285,18 @@ export function YappyPaymentButton({
 
       {error && (
         <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-xs sm:text-sm text-red-800 dark:text-red-200">{error}</p>
+          <p className="text-xs sm:text-sm text-red-800 dark:text-red-200 font-medium mb-2">{error}</p>
+          {error.includes('no está disponible') && (
+            <div className="text-xs text-red-700 dark:text-red-300 space-y-1">
+              <p>💡 <strong>Posibles causas:</strong></p>
+              <ul className="list-disc list-inside ml-2 space-y-0.5">
+                <li>El dominio <code className="bg-red-100 dark:bg-red-900/30 px-1 rounded">{typeof window !== 'undefined' ? window.location.hostname : 'N/A'}</code> no está autorizado en tu panel de Yappy</li>
+                <li>El merchant ID no está activo o configurado correctamente</li>
+                <li>Problema temporal con el servicio de Yappy</li>
+              </ul>
+              <p className="mt-2">Verifica en tu panel de Yappy que el dominio esté autorizado para este merchant ID.</p>
+            </div>
+          )}
         </div>
       )}
 
