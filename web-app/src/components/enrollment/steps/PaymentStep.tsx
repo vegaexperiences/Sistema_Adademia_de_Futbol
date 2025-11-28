@@ -257,11 +257,11 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
         )}
       </div>
 
-      <div className="flex justify-between pt-4">
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
         <button
           type="button"
           onClick={onBack}
-          className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-6 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+          className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg active:bg-gray-50 dark:active:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-base touch-manipulation w-full sm:w-auto"
         >
           Atrás
         </button>

@@ -55,10 +55,13 @@ export function YappyPaymentButton({
       try {
         const response = await fetch('/api/payments/yappy/config');
         const data = await response.json();
+        console.log('[Yappy] Config response:', { success: data.success, hasMerchantId: !!data.merchantId, environment: data.environment });
         if (data.success && data.merchantId) {
           setMerchantId(data.merchantId);
         } else {
-          throw new Error(data.error || 'Error al obtener configuración de Yappy');
+          const errorMsg = data.error || 'Error al obtener configuración de Yappy';
+          console.error('[Yappy] Config error:', errorMsg);
+          throw new Error(errorMsg);
         }
       } catch (err: any) {
         console.error('[Yappy] Error getting config:', err);
@@ -115,11 +118,22 @@ export function YappyPaymentButton({
   useEffect(() => {
     if (!isLoading && merchantId && containerRef.current && scriptLoaded.current) {
       // Wait a bit for the custom element to be defined
+      let retryCount = 0;
+      const maxRetries = 50; // 5 seconds max wait
+      
       const renderButton = () => {
         try {
           // Check if custom element is defined
           if (!customElements.get('btn-yappy')) {
-            console.log('[Yappy] Waiting for custom element to be defined...');
+            retryCount++;
+            if (retryCount >= maxRetries) {
+              console.error('[Yappy] Custom element not defined after max retries');
+              setError('El componente de Yappy no se pudo cargar. Por favor, recarga la página o intenta más tarde.');
+              setIsLoading(false);
+              onError?.('El componente de Yappy no se pudo cargar');
+              return;
+            }
+            console.log(`[Yappy] Waiting for custom element to be defined... (${retryCount}/${maxRetries})`);
             setTimeout(renderButton, 100);
             return;
           }
@@ -147,6 +161,14 @@ export function YappyPaymentButton({
           yappyButton.setAttribute('description', description.substring(0, 200)); // Max 200 chars
           yappyButton.setAttribute('order-id', orderId);
           yappyButton.setAttribute('return-url', returnUrlWithParams.toString());
+          
+          console.log('[Yappy] Button attributes:', {
+            merchantId,
+            amount: amount.toFixed(2),
+            description: description.substring(0, 200),
+            orderId,
+            returnUrl: returnUrlWithParams.toString(),
+          });
 
           // Handle success event
           yappyButton.addEventListener('yappy-success', (event: any) => {
@@ -158,7 +180,15 @@ export function YappyPaymentButton({
           // Handle error event
           yappyButton.addEventListener('yappy-error', (event: any) => {
             console.error('[Yappy] Payment error:', event.detail);
-            const errorMsg = event.detail?.message || 'Error al procesar el pago con Yappy';
+            const errorMsg = event.detail?.message || event.detail?.error || 'Error al procesar el pago con Yappy';
+            setError(errorMsg);
+            onError?.(errorMsg);
+          });
+
+          // Listen for any messages from the Yappy component
+          yappyButton.addEventListener('yappy-unavailable', (event: any) => {
+            console.error('[Yappy] Service unavailable:', event.detail);
+            const errorMsg = event.detail?.message || 'Yappy no está disponible en este momento. Por favor, intenta más tarde o usa otro método de pago.';
             setError(errorMsg);
             onError?.(errorMsg);
           });
@@ -181,26 +211,26 @@ export function YappyPaymentButton({
   return (
     <div className={`space-y-2 ${className}`}>
       {isLoading && (
-        <div className="flex flex-col items-center justify-center py-8">
+        <div className="flex flex-col items-center justify-center py-6 sm:py-8">
           <Loader2 className="animate-spin text-blue-600 mb-2" size={24} />
-          <p className="text-sm text-gray-600 dark:text-gray-400">Cargando botón de pago Yappy...</p>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando botón de pago Yappy...</p>
         </div>
       )}
 
       {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+        <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-xs sm:text-sm text-red-800 dark:text-red-200">{error}</p>
         </div>
       )}
 
       {/* Container for Yappy web component */}
       <div 
         ref={containerRef}
-        className={isLoading ? 'hidden' : ''}
+        className={isLoading ? 'hidden' : 'min-h-[48px] touch-manipulation'}
       />
 
       {!isLoading && !error && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-center px-2">
           🔒 Pago seguro procesado por Yappy Comercial
         </p>
       )}

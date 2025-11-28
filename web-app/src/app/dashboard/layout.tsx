@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { MobileHeader } from '@/components/layout/MobileHeader';
 
 export default async function DashboardLayout({
   children,
@@ -33,6 +34,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen flex">
+      {/* Mobile Header */}
+      <MobileHeader userEmail={user.email || ''} />
+
       {/* Sidebar with Glass Effect */}
       <aside className="w-64 glass-card m-4 p-0 hidden md:flex flex-col animate-slide-up overflow-hidden">
         {/* Logo Section */}
@@ -158,7 +162,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-8 pt-20 md:pt-4">
         <div className="animate-fade-in max-w-7xl mx-auto">
           {children}
         </div>

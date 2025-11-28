@@ -29,41 +29,41 @@ export default function FamiliesList({ families }: { families: Family[] }) {
   }) || [];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="glass-card p-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 rounded-xl" style={{
+      <div className="glass-card p-4 sm:p-6 md:p-8">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+          <div className="p-2 sm:p-3 rounded-xl" style={{
             background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
           }}>
-            <Users className="h-8 w-8 text-white" />
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
             👨‍👩‍👧‍👦 Familias
           </h1>
         </div>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
+        <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400">
           Familias con múltiples jugadores
         </p>
       </div>
 
       {/* Stats */}
-      <div className="glass-card p-6">
-        <div className="flex items-center gap-4">
-          <div className="p-4 rounded-xl" style={{
+      <div className="glass-card p-4 sm:p-6">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="p-3 sm:p-4 rounded-xl" style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           }}>
-            <Users className="h-8 w-8 text-white" />
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Total Familias</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{families?.length || 0}</p>
+            <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">Total Familias</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{families?.length || 0}</p>
           </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="glass-card p-6">
+      <div className="glass-card p-4 sm:p-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
@@ -71,7 +71,7 @@ export default function FamiliesList({ families }: { families: Family[] }) {
             placeholder="🔍 Buscar por nombre, email, teléfono..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+            className="w-full pl-10 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base"
           />
         </div>
         {searchTerm && (

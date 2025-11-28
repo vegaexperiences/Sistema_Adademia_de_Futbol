@@ -33,7 +33,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="text"
                 id="tutorName"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
                 placeholder="Juan Pérez"
                 value={data.tutorName || ''}
                 onChange={(e) => updateData({ tutorName: e.target.value })}
@@ -53,7 +53,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="text"
                 id="tutorCedula"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
                 placeholder="8-888-8888"
                 value={data.tutorCedula || ''}
                 onChange={(e) => updateData({ tutorCedula: e.target.value })}
@@ -73,7 +73,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="email"
                 id="tutorEmail"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
                 placeholder="juan@ejemplo.com"
                 value={data.tutorEmail || ''}
                 onChange={(e) => updateData({ tutorEmail: e.target.value })}
@@ -93,7 +93,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="tel"
                 id="tutorPhone"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
                 placeholder="6000-0000"
                 value={data.tutorPhone || ''}
                 onChange={(e) => updateData({ tutorPhone: e.target.value })}
@@ -106,7 +106,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
       <div className="flex justify-end">
         <button
           type="submit"
-          className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-primary/90 hover:shadow-lg hover:scale-105 transition-all duration-300"
+          className="bg-primary text-white px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg font-bold text-base hover:bg-primary/90 hover:shadow-lg active:scale-95 hover:scale-105 transition-all duration-300 touch-manipulation w-full sm:w-auto"
         >
           Siguiente
         </button>

@@ -73,7 +73,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
       <button
         onClick={() => handleAction(() => approvePlayer(playerId, 'Active'), 'active')}
         disabled={isPending}
-        className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation"
         style={{
           background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
           boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
@@ -95,7 +95,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
       <button
         onClick={() => handleAction(() => approvePlayer(playerId, 'Scholarship'), 'scholarship')}
         disabled={isPending}
-        className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation"
         style={{
           background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
           boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
@@ -117,7 +117,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
       <button
         onClick={() => handleAction(() => rejectPlayer(playerId), 'reject')}
         disabled={isPending}
-        className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation"
         style={{
           background: 'white',
           color: '#ef4444',
@@ -199,7 +199,7 @@ export function TournamentApprovalButtons({ registrationId }: TournamentApproval
         <button
           onClick={() => handleAction(() => approveTournamentRegistration(registrationId), 'approve')}
           disabled={isPending}
-          className="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="flex-1 w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation"
           style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)' }}
         >
           {isPending ? (
@@ -218,7 +218,7 @@ export function TournamentApprovalButtons({ registrationId }: TournamentApproval
         <button
           onClick={() => handleAction(() => rejectTournamentRegistration(registrationId), 'reject')}
           disabled={isPending}
-          className="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="flex-1 w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation"
           style={{ background: 'white', color: '#ef4444', border: '2px solid #ef4444', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.2)' }}
         >
           {isPending ? (

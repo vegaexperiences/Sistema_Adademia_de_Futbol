@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { createClient } from '@/lib/supabase/client';
@@ -202,6 +203,9 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
       <DialogContent className="max-w-4xl h-[80vh] bg-white dark:bg-gray-900">
         <DialogHeader>
           <DialogTitle className="text-gray-900 dark:text-white">{title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Vista previa del documento {title}
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-1 w-full h-full min-h-[400px] bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden relative">
           {loading ? (

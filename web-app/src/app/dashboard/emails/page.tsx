@@ -29,16 +29,16 @@ export default async function EmailsPage({
       : { emails: [], total: 0, page: 1, totalPages: 0 };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="glass-card p-6">
+      <div className="glass-card p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-              <Mail className="text-blue-600" size={32} />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2 sm:gap-3">
+              <Mail className="text-blue-600" size={24} className="sm:w-8 sm:h-8" />
               Sistema de Correos
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               Gestiona plantillas, cola de envío, historial y comunicaciones masivas
             </p>
           </div>

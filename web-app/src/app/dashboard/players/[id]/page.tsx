@@ -56,30 +56,30 @@ export default async function PlayerProfilePage({
   const emailHistory = await getPlayerEmailHistory(id);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <PagueloFacilSuccessHandler />
       {/* Back Button */}
       <Link 
         href="/dashboard/players"
-        className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        className="inline-flex items-center gap-2 text-sm sm:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors touch-manipulation min-h-[44px]"
       >
-        <ArrowLeft size={20} />
-        Volver a Jugadores
+        <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
+        <span>Volver a Jugadores</span>
       </Link>
 
       {/* Header */}
-      <div className="glass-card p-8">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl" style={{
+      <div className="glass-card p-4 sm:p-6 md:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+            <div className="p-3 sm:p-4 rounded-xl" style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             }}>
-              <User className="h-10 w-10 text-white" />
+              <User className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
             </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex flex-wrap items-center gap-2 sm:gap-3">
                    {player.first_name} {player.last_name}
-                   <span className={`px-4 py-2 rounded-full text-lg font-bold ${categoryColor}`}>
+                   <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-base md:text-lg font-bold ${categoryColor}`}>
                      {category}
                    </span>
                  </h1>

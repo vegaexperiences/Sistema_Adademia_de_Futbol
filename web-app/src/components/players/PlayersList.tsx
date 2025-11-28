@@ -93,43 +93,43 @@ export default function PlayersList({ players, initialView = 'active' }: Players
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="glass-card p-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 rounded-xl" style={{
+      <div className="glass-card p-4 sm:p-6 md:p-8">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+          <div className="p-2 sm:p-3 rounded-xl" style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           }}>
-            <Users className="h-8 w-8 text-white" />
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
             ⚽ Jugadores
           </h1>
         </div>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
+        <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400">
           Gestiona todos los jugadores de la academia
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="glass-card p-4">
-        <div className="flex gap-3">
+      <div className="glass-card p-3 sm:p-4">
+        <div className="flex gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={() => setView('active')}
-            className={`px-4 py-2 rounded-xl font-semibold transition-all border ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px] rounded-xl font-semibold text-sm sm:text-base transition-all border touch-manipulation ${
               view === 'active'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg border-transparent'
-                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800'
             }`}
           >
             Activos ({activeCount + scholarshipCount})
           </button>
           <button
             onClick={() => setView('retired')}
-            className={`px-4 py-2 rounded-xl font-semibold transition-all border ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px] rounded-xl font-semibold text-sm sm:text-base transition-all border touch-manipulation ${
               view === 'retired'
                 ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg border-transparent'
-                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800'
             }`}
           >
             Retirados/No Aprobados ({rejectedCount})
@@ -138,53 +138,53 @@ export default function PlayersList({ players, initialView = 'active' }: Players
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-card p-6 hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl" style={{
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="glass-card p-4 sm:p-6 hover:shadow-xl transition-all duration-300 touch-manipulation">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 rounded-xl" style={{
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
             }}>
-              <CheckCircle className="h-6 w-6 text-white" />
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Activos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeCount}</p>
+              <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">Activos</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{activeCount}</p>
             </div>
           </div>
         </div>
 
-        <div className="glass-card p-6 hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl" style={{
+        <div className="glass-card p-4 sm:p-6 hover:shadow-xl transition-all duration-300 touch-manipulation">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 rounded-xl" style={{
               background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
             }}>
-              <GraduationCap className="h-6 w-6 text-white" />
+              <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Becados</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{scholarshipCount}</p>
+              <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">Becados</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{scholarshipCount}</p>
             </div>
           </div>
         </div>
 
-        <div className="glass-card p-6 hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl" style={{
+        <div className="glass-card p-4 sm:p-6 hover:shadow-xl transition-all duration-300 touch-manipulation">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 rounded-xl" style={{
               background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
             }}>
-              <XCircle className="h-6 w-6 text-white" />
+              <XCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Retirados</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{rejectedCount}</p>
+              <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">Retirados</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{rejectedCount}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="glass-card p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="glass-card p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
@@ -192,10 +192,10 @@ export default function PlayersList({ players, initialView = 'active' }: Players
               placeholder="🔍 Buscar por nombre, cédula..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="w-full pl-10 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base"
             />
           </div>
-          <button className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2" style={{
+          <button className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation" style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
           }}>
@@ -235,15 +235,15 @@ export default function PlayersList({ players, initialView = 'active' }: Players
             return (
             <div 
               key={player.id} 
-              className={`glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up bg-gradient-to-br ${cardGradient} border-l-4 ${cardBorder}`}
+              className={`glass-card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up bg-gradient-to-br ${cardGradient} border-l-4 ${cardBorder}`}
             >
-              <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
                 {/* Player Info */}
                 <div className="flex-1">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    <div className="flex-1 min-w-0">
                       <Link href={`/dashboard/players/${player.id}`}>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer break-words">
                           {player.first_name} {player.last_name}
                         </h3>
                       </Link>

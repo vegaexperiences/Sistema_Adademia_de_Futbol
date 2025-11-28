@@ -20,61 +20,61 @@ export default async function FinancesPage() {
   ]);
 
   return (
-    <div className="space-y-6 animate-fade-in p-6">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in p-3 sm:p-6">
       <PagueloFacilSuccessHandler />
       {/* Header */}
-      <div className="glass-card p-6">
-        <div className="flex justify-between items-center">
+      <div className="glass-card p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               💰 Gestión Financiera
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               Panel de control financiero y reportes
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
             <Link
               href="/dashboard/finances/staff"
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center gap-2"
+              className="px-4 py-2.5 min-h-[44px] bg-purple-600 text-white rounded-lg hover:bg-purple-700 active:bg-purple-800 transition-colors font-medium flex items-center justify-center gap-2 touch-manipulation text-sm sm:text-base"
             >
-              <Users size={20} />
-              Personal
+              <Users size={18} className="sm:w-5 sm:h-5" />
+              <span>Personal</span>
             </Link>
             <Link
               href="/dashboard/finances/expenses"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+              className="px-4 py-2.5 min-h-[44px] bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-medium flex items-center justify-center gap-2 touch-manipulation text-sm sm:text-base"
             >
-              <Plus size={20} />
-              Nuevo Gasto
+              <Plus size={18} className="sm:w-5 sm:h-5" />
+              <span>Nuevo Gasto</span>
             </Link>
           </div>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Income */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Ingresos del Mes</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1">Ingresos del Mes</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
                 ${summary.current_month.income.toFixed(2)}
               </p>
             </div>
-            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
-              <TrendingUp className="text-green-600" size={24} />
+            <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
+              <TrendingUp className="text-green-600" size={20} className="sm:w-6 sm:h-6" />
             </div>
           </div>
         </div>
 
         {/* Total Expenses */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Gastos del Mes</p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1">Gastos del Mes</p>
+              <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">
                 ${summary.current_month.expenses.toFixed(2)}
               </p>
             </div>

@@ -31,35 +31,35 @@ export default async function SettingsPage() {
   const priceSettings = settings?.filter(s => s.key.startsWith('price_')) || [];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header with Glass Effect */}
-      <div className="glass-card p-6">
-        <div className="flex justify-between items-center">
+      <div className="glass-card p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               ⚙️ Configuración
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">Administra los parámetros del sistema</p>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Administra los parámetros del sistema</p>
           </div>
-          <Settings size={40} className="text-blue-600" />
+          <Settings size={32} className="text-blue-600 sm:w-10 sm:h-10" />
         </div>
         
-        <div className="mt-6 flex gap-3">
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
           <a 
             href="#pricing" 
-            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+            className="px-4 py-2.5 min-h-[44px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg active:bg-gray-50 dark:active:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             💰 Precios
           </a>
           <a 
             href="#payment-methods" 
-            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+            className="px-4 py-2.5 min-h-[44px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg active:bg-gray-50 dark:active:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             💳 Métodos de Pago
           </a>
           <Link
             href="/dashboard/emails"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+            className="px-4 py-2.5 min-h-[44px] bg-blue-600 text-white rounded-lg active:bg-blue-800 hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 text-sm sm:text-base touch-manipulation"
           >
             📧 Correos
           </Link>
@@ -100,13 +100,13 @@ export default async function SettingsPage() {
                         name="value"
                         step="0.01"
                         defaultValue={priceSettings.find(s => s.key === 'price_enrollment')?.value}
-                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder-gray-400"
+                        className="w-full pl-8 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-base sm:text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder-gray-400 touch-manipulation"
                         required
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2"
+                      className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto"
                       style={{
                         background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                         boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'

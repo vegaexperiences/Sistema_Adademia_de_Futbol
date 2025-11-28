@@ -87,7 +87,7 @@ export function PagueloFacilPaymentButton({
       <button
         onClick={handlePayment}
         disabled={isPending}
-        className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-blue-600 to-indigo-600 ${className}`}
+        className={`w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-[1.02] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 bg-gradient-to-r from-blue-600 to-indigo-600 touch-manipulation ${className}`}
       >
         {isPending ? (
           <>

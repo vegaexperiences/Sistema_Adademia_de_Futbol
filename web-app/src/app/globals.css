@@ -174,3 +174,41 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400/70 dark:bg-gray-500/70;
 }
+
+/* Mobile Optimizations */
+@layer utilities {
+  /* Touch-friendly targets */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Mobile-specific spacing */
+  .mobile-padding {
+    @apply px-3 sm:px-4 md:px-6;
+  }
+  
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+  
+  .mobile-heading {
+    @apply text-xl sm:text-2xl md:text-3xl;
+  }
+  
+  /* Safe area for iPhone notch */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Prevent text size adjustment on iOS */
+  @supports (-webkit-touch-callout: none) {
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+  }
+}

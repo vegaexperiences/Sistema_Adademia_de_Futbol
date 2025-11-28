@@ -48,31 +48,31 @@ export default async function ApprovalsPage({
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="glass-card p-6 space-y-4">
-        <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-in">
+      <div className="glass-card p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Aprobaciones Pendientes</h1>
-            <p className="text-gray-600 dark:text-gray-400">Revisa y aprueba solicitudes de matrícula y torneos</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Aprobaciones Pendientes</h1>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Revisa y aprueba solicitudes de matrícula y torneos</p>
           </div>
-          <div className="flex gap-3">
-            <span className="px-4 py-2 rounded-full text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg">
+          <div className="flex gap-2 sm:gap-3 flex-wrap">
+            <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg">
               {pendingPlayers.length} Matrículas
             </span>
-            <span className="px-4 py-2 rounded-full text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg">
+            <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg">
               {pendingTournaments.length} Torneos
             </span>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3 flex-wrap">
           {tabs.map((tab) => (
             <Link
               key={tab.id}
               href={`/dashboard/approvals?view=${tab.id}`}
-              className={`px-4 py-2 rounded-xl font-semibold transition-all border ${
+              className={`px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px] rounded-xl font-semibold text-sm sm:text-base transition-all border touch-manipulation ${
                 view === tab.id
                   ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg border-transparent'
-                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800'
               }`}
             >
               {tab.label} ({tab.count})
@@ -110,15 +110,15 @@ function PlayerApprovals({
             <p className="text-gray-600 dark:text-gray-400">No hay solicitudes de matrícula pendientes.</p>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-4 sm:gap-6">
           {pendingPlayers.map((player) => (
-              <div key={player.id} className="glass-card p-6 hover:shadow-2xl transition-all duration-300 animate-slide-up">
-                <div className="flex flex-col lg:flex-row gap-6">
+              <div key={player.id} className="glass-card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 animate-slide-up">
+                <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                             {player.first_name} {player.last_name}
                           </h3>
                           {(() => {

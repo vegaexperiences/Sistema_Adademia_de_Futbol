@@ -224,7 +224,7 @@ export function PaymentFormInline({ players, familyName, tutorEmail, onSuccess, 
               value={selectedPlayerId}
               onChange={(e) => setSelectedPlayerId(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="w-full px-4 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base"
             >
               <option value="">Selecciona un jugador</option>
               {eligiblePlayers.map((player) => (
@@ -246,7 +246,7 @@ export function PaymentFormInline({ players, familyName, tutorEmail, onSuccess, 
               value={formData.payment_type}
               onChange={(e) => setFormData({ ...formData, payment_type: e.target.value as any })}
               required
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="w-full px-4 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base"
             >
               <option value="monthly">Mensualidad</option>
               <option value="enrollment">Matrícula</option>
@@ -266,7 +266,7 @@ export function PaymentFormInline({ players, familyName, tutorEmail, onSuccess, 
                 value={formData.month_year}
                 onChange={(e) => setFormData({ ...formData, month_year: e.target.value })}
                 required
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full px-4 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base"
               />
             </div>
           )}
@@ -285,7 +285,7 @@ export function PaymentFormInline({ players, familyName, tutorEmail, onSuccess, 
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
               required
               placeholder="0.00"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="w-full px-4 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base"
             />
           </div>
 
@@ -299,7 +299,7 @@ export function PaymentFormInline({ players, familyName, tutorEmail, onSuccess, 
               value={formData.payment_method}
               onChange={(e) => setFormData({ ...formData, payment_method: e.target.value as any })}
               required
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="w-full px-4 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base"
             >
               <option value="cash">Efectivo</option>
               <option value="transfer">Transferencia</option>
