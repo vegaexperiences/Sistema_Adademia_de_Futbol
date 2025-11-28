@@ -286,15 +286,21 @@ export function YappyPaymentButton({
       {error && (
         <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <p className="text-xs sm:text-sm text-red-800 dark:text-red-200 font-medium mb-2">{error}</p>
-          {error.includes('no está disponible') && (
+          {error.includes('no está disponible') && typeof window !== 'undefined' && (
             <div className="text-xs text-red-700 dark:text-red-300 space-y-1">
               <p>💡 <strong>Posibles causas:</strong></p>
               <ul className="list-disc list-inside ml-2 space-y-0.5">
-                <li>El dominio <code className="bg-red-100 dark:bg-red-900/30 px-1 rounded">{typeof window !== 'undefined' ? window.location.hostname : 'N/A'}</code> no está autorizado en tu panel de Yappy</li>
+                {window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? (
+                  <li>Estás en desarrollo local. Yappy requiere que el dominio esté autorizado. En producción, verifica que el dominio esté autorizado en tu panel de Yappy.</li>
+                ) : (
+                  <li>El dominio <code className="bg-red-100 dark:bg-red-900/30 px-1 rounded">{window.location.hostname}</code> no está autorizado en tu panel de Yappy</li>
+                )}
                 <li>El merchant ID no está activo o configurado correctamente</li>
                 <li>Problema temporal con el servicio de Yappy</li>
               </ul>
-              <p className="mt-2">Verifica en tu panel de Yappy que el dominio esté autorizado para este merchant ID.</p>
+              {window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && (
+                <p className="mt-2">Verifica en tu panel de Yappy que el dominio esté autorizado para este merchant ID.</p>
+              )}
             </div>
           )}
         </div>

@@ -35,7 +35,7 @@ export default async function EmailsPage({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2 sm:gap-3">
-              <Mail className="text-blue-600" size={24} className="sm:w-8 sm:h-8" />
+              <Mail className="text-blue-600 sm:w-8 sm:h-8" size={24} />
               Sistema de Correos
             </h1>
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
