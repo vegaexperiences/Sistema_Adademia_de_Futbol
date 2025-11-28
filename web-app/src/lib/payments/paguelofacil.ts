@@ -191,7 +191,12 @@ export class PagueloFacilService {
 
       // Add optional parameters
       if (transaction.returnUrl) {
-        postData.RETURN_URL = this.encodeUrlToHex(transaction.returnUrl);
+        const encodedReturnUrl = this.encodeUrlToHex(transaction.returnUrl);
+        postData.RETURN_URL = encodedReturnUrl;
+        console.log('[PagueloFacil] Return URL:', transaction.returnUrl);
+        console.log('[PagueloFacil] Encoded RETURN_URL (hex):', encodedReturnUrl);
+      } else {
+        console.warn('[PagueloFacil] No returnUrl provided! Callback will not work.');
       }
 
       if (transaction.email) {
@@ -224,6 +229,13 @@ export class PagueloFacilService {
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join('&');
 
+      console.log('[PagueloFacil] Sending to LinkDeamon:', {
+        url,
+        postDataKeys: Object.keys(postData),
+        hasReturnUrl: !!postData.RETURN_URL,
+        returnUrlLength: postData.RETURN_URL?.length || 0,
+      });
+
       // Make POST request to LinkDeamon
       const response = await fetch(url, {
         method: 'POST',
@@ -235,11 +247,14 @@ export class PagueloFacilService {
       });
 
       const responseText = await response.text();
+      console.log('[PagueloFacil] LinkDeamon response status:', response.status);
+      console.log('[PagueloFacil] LinkDeamon response text (first 500 chars):', responseText.substring(0, 500));
 
       // Try to parse as JSON
       let result;
       try {
         result = JSON.parse(responseText);
+        console.log('[PagueloFacil] Parsed response:', result);
       } catch (e) {
         // If not JSON, might be HTML error page
         console.error('[PagueloFacil] Non-JSON response:', responseText);
@@ -251,6 +266,7 @@ export class PagueloFacilService {
 
       // Check response structure
       if (result.success && result.data?.url) {
+        console.log('[PagueloFacil] ✅ Payment link created successfully:', result.data.url);
         return {
           success: true,
           paymentUrl: result.data.url,
@@ -258,7 +274,7 @@ export class PagueloFacilService {
         };
       } else {
         const errorMsg = result.message || result.error || 'Error desconocido al generar enlace de pago';
-        console.error('[PagueloFacil] Error creating payment link:', result);
+        console.error('[PagueloFacil] ❌ Error creating payment link:', result);
         return {
           success: false,
           error: errorMsg

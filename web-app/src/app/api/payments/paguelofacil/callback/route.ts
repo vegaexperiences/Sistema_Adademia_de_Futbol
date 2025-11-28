@@ -11,6 +11,12 @@ import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation
  */
 export async function GET(request: NextRequest) {
   try {
+    // Log that callback was called
+    console.log('[PagueloFacil Callback] ========== CALLBACK CALLED ==========');
+    console.log('[PagueloFacil Callback] Request URL:', request.url);
+    console.log('[PagueloFacil Callback] Request method:', request.method);
+    console.log('[PagueloFacil Callback] Headers:', Object.fromEntries(request.headers.entries()));
+    
     const searchParams = request.nextUrl.searchParams;
     
     // Log all incoming parameters for debugging
@@ -19,6 +25,7 @@ export async function GET(request: NextRequest) {
       allParams[key] = value;
     });
     console.log('[PagueloFacil Callback] All incoming parameters:', allParams);
+    console.log('[PagueloFacil Callback] Total params count:', allParams ? Object.keys(allParams).length : 0);
     
     // Convert URLSearchParams to object
     const params: Record<string, string> = {};
