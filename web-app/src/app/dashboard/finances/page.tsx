@@ -64,7 +64,7 @@ export default async function FinancesPage() {
               </p>
             </div>
             <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
-              <TrendingUp className="text-green-600" size={20} className="sm:w-6 sm:h-6" />
+              <TrendingUp className="text-green-600 sm:w-6 sm:h-6" size={20} />
             </div>
           </div>
         </div>
