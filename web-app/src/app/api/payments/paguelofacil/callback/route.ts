@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
             player_id: playerId,
             amount: parseFloat(amount),
             payment_type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
-            payment_method: 'paguelofacil',
+            payment_method: 'paguelofacil' as const,
             payment_date: new Date().toISOString().split('T')[0],
             month_year: monthYear || undefined,
             status: 'Approved' as const, // Paguelo Fácil payments are automatically approved
