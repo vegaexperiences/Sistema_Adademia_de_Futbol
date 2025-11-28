@@ -4,6 +4,7 @@ import { Plus, TrendingUp, TrendingDown, DollarSign, Users } from 'lucide-react'
 import Link from 'next/link';
 import IncomeVsExpenseChart from '@/components/finances/IncomeVsExpenseChart';
 import ExpensePieChart from '@/components/finances/ExpensePieChart';
+import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
 
 export default async function FinancesPage() {
   const currentYear = new Date().getFullYear();
@@ -20,6 +21,7 @@ export default async function FinancesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in p-6">
+      <PagueloFacilSuccessHandler />
       {/* Header */}
       <div className="glass-card p-6">
         <div className="flex justify-between items-center">

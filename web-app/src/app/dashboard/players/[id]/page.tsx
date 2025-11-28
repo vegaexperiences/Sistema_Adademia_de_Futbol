@@ -9,6 +9,7 @@ import PlayerManagement from '@/components/payments/PlayerManagement';
 import { EmailHistoryCard } from '@/components/players/EmailHistoryCard';
 import { getPlayerEmailHistory } from '@/lib/actions/player-emails';
 import { getPlayerCategory, getCategoryColor, calculateAge } from '@/lib/utils/player-category';
+import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
 
 export default async function PlayerProfilePage({ 
   params 
@@ -56,6 +57,7 @@ export default async function PlayerProfilePage({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <PagueloFacilSuccessHandler />
       {/* Back Button */}
       <Link 
         href="/dashboard/players"
