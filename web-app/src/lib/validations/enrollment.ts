@@ -17,7 +17,7 @@ export const enrollmentSchema = z.object({
   tutorName: z.string().min(2, 'El nombre del tutor es requerido').max(100),
   tutorCedula: z.string().min(7, 'La cédula del tutor es requerida').max(20),
   tutorEmail: z.string().email('Email inválido'),
-  tutorPhone: z.string().min(8, 'Teléfono inválido').max(20),
+  tutorPhone: z.string().min(7, 'Teléfono inválido (mínimo 7 dígitos)').max(20),
   players: z.array(playerSchema).min(1, 'Debe agregar al menos un jugador'),
   cedulaTutorFile: z.string().optional(),
   paymentMethod: z.enum(['Yappy', 'Transferencia', 'Comprobante', 'Efectivo', 'Cheque', 'PagueloFacil']),
