@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { enrollmentSchema } from '@/lib/validations/enrollment';
 
+// Enrollment API endpoint - handles student enrollment requests
 export async function POST(request: Request) {
   try {
     const body = await request.json();
