@@ -6,8 +6,7 @@ import { DocumentPreview } from '@/components/ui/DocumentPreview';
 import { getPlayerPayments, calculateMonthlyFee } from '@/lib/actions/payments';
 import { PlayerPaymentSection } from '@/components/payments/PlayerPaymentSection';
 import PlayerManagement from '@/components/payments/PlayerManagement';
-import { EmailHistoryCard } from '@/components/players/EmailHistoryCard';
-import { getPlayerEmailHistory } from '@/lib/actions/player-emails';
+import { PlayerEmailHistory } from '@/components/emails/PlayerEmailHistory';
 import { getPlayerCategory, getCategoryColor, calculateAge } from '@/lib/utils/player-category';
 import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
 
@@ -53,8 +52,8 @@ export default async function PlayerProfilePage({
   // Calculate suggested monthly fee
   const suggestedFee = await calculateMonthlyFee(id);
 
-  // Get email history
-  const emailHistory = await getPlayerEmailHistory(id);
+  // Get family ID for email history filtering
+  const familyId = player.family_id || null;
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -232,7 +231,7 @@ export default async function PlayerProfilePage({
       </div>
 
       {/* Email History */}
-      <EmailHistoryCard emails={emailHistory} />
+      <PlayerEmailHistory playerId={id} familyId={familyId} />
 
       {/* Payment System */}
       <PlayerPaymentSection 

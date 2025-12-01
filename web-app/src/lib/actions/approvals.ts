@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { queueEmail } from '@/lib/actions/email-queue';
+import { sendEmailImmediately } from '@/lib/actions/email-queue';
 
 export async function getPendingPlayers() {
   const supabase = await createClient();
@@ -491,21 +491,31 @@ export async function approvePlayer(
 
     if (tutorEmailForEmail) {
       try {
-        await queueEmail('player_accepted', tutorEmailForEmail, {
-          tutorName: tutorNameForEmail,
-          playerNames: playerName,
-          monthlyFee: monthlyFee.toFixed(2),
-          scholarshipStatus: '',
-          scholarshipMessage: '',
-          scholarshipIcon: '🎉',
-          scholarshipColor: '#059669',
-          scholarshipBg: '#d1fae5',
-          scholarshipBorder: '#6ee7b7',
-          monthlyFeeSection: `<div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;"><div style="color: #0369a1; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Mensualidad</div><div style="color: #0c4a6e; font-size: 32px; font-weight: 800; margin: 5px 0;">$${monthlyFee.toFixed(2)}</div><p style="color: #64748b; font-size: 14px; margin-top: 5px;">Este monto se generará automáticamente el día 1 de cada mes</p></div>`,
-          paymentReminder: '<li>Asegúrate de completar el pago mensual antes del día 5 de cada mes</li>',
-        });
+        await sendEmailImmediately(
+          'player_accepted', 
+          tutorEmailForEmail, 
+          {
+            tutorName: tutorNameForEmail,
+            playerNames: playerName,
+            monthlyFee: monthlyFee.toFixed(2),
+            scholarshipStatus: '',
+            scholarshipMessage: '',
+            scholarshipIcon: '🎉',
+            scholarshipColor: '#059669',
+            scholarshipBg: '#d1fae5',
+            scholarshipBorder: '#6ee7b7',
+            monthlyFeeSection: `<div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;"><div style="color: #0369a1; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Mensualidad</div><div style="color: #0c4a6e; font-size: 32px; font-weight: 800; margin: 5px 0;">$${monthlyFee.toFixed(2)}</div><p style="color: #64748b; font-size: 14px; margin-top: 5px;">Este monto se generará automáticamente el día 1 de cada mes</p></div>`,
+            paymentReminder: '<li>Asegúrate de completar el pago mensual antes del día 5 de cada mes</li>',
+          },
+          {
+            player_id: insertedPlayer?.id || playerId,
+            family_id: insertedPlayer?.family_id || familyId || null,
+            email_type: 'player_accepted',
+            approval_type: 'Active',
+          }
+        );
       } catch (emailError) {
-        console.error('Error queuing acceptance email:', emailError);
+        console.error('Error sending acceptance email:', emailError);
         // Don't fail the approval if email fails
       }
     }
@@ -522,21 +532,31 @@ export async function approvePlayer(
 
     if (tutorEmailForScholarship) {
       try {
-        await queueEmail('player_accepted', tutorEmailForScholarship, {
-          tutorName: tutorNameForScholarship,
-          playerNames: playerName,
-          monthlyFee: '0.00', // Scholarship players don't pay
-          scholarshipStatus: ' - BECADO',
-          scholarshipMessage: '<br><strong style="color: #2563eb; font-size: 18px;">🎓 Tu jugador ha sido aprobado como BECADO</strong>',
-          scholarshipIcon: '🎓',
-          scholarshipColor: '#2563eb',
-          scholarshipBg: '#dbeafe',
-          scholarshipBorder: '#93c5fd',
-          monthlyFeeSection: '<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;"><div style="color: #1e40af; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Estado de Beca</div><div style="color: #1e3a8a; font-size: 24px; font-weight: 800; margin: 5px 0;">🎓 BECADO</div><p style="color: #64748b; font-size: 14px; margin-top: 5px;">Tu jugador tiene una beca completa. No se generarán cargos mensuales.</p></div>',
-          paymentReminder: '', // No payment reminder for scholarships
-        });
+        await sendEmailImmediately(
+          'player_accepted', 
+          tutorEmailForScholarship, 
+          {
+            tutorName: tutorNameForScholarship,
+            playerNames: playerName,
+            monthlyFee: '0.00', // Scholarship players don't pay
+            scholarshipStatus: ' - BECADO',
+            scholarshipMessage: '<br><strong style="color: #2563eb; font-size: 18px;">🎓 Tu jugador ha sido aprobado como BECADO</strong>',
+            scholarshipIcon: '🎓',
+            scholarshipColor: '#2563eb',
+            scholarshipBg: '#dbeafe',
+            scholarshipBorder: '#93c5fd',
+            monthlyFeeSection: '<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;"><div style="color: #1e40af; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Estado de Beca</div><div style="color: #1e3a8a; font-size: 24px; font-weight: 800; margin: 5px 0;">🎓 BECADO</div><p style="color: #64748b; font-size: 14px; margin-top: 5px;">Tu jugador tiene una beca completa. No se generarán cargos mensuales.</p></div>',
+            paymentReminder: '', // No payment reminder for scholarships
+          },
+          {
+            player_id: insertedPlayer?.id || playerId,
+            family_id: insertedPlayer?.family_id || familyId || null,
+            email_type: 'player_accepted',
+            approval_type: 'Scholarship',
+          }
+        );
       } catch (emailError) {
-        console.error('Error queuing scholarship acceptance email:', emailError);
+        console.error('Error sending scholarship acceptance email:', emailError);
         // Don't fail the approval if email fails
       }
     }

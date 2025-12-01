@@ -140,18 +140,28 @@ export async function POST(request: Request) {
         const count = data.players.length;
         const totalAmount = baseRate * count;
 
-        // Send Email using queue system
-        console.log('[enrollment] Attempting to send pre-enrollment email to:', data.tutorEmail);
+        // Send Email immediately (even for duplicates, in case it wasn't sent before)
+        console.log('[enrollment] Attempting to send pre-enrollment email immediately to:', data.tutorEmail);
         try {
-          const { queueEmail } = await import('@/lib/actions/email-queue');
+          const { sendEmailImmediately } = await import('@/lib/actions/email-queue');
           const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
           
-          const emailResult = await queueEmail('pre_enrollment', data.tutorEmail, {
-            tutorName: data.tutorName,
-            playerNames: playerNames,
-            amount: totalAmount.toFixed(2),
-            paymentMethod: data.paymentMethod,
-          });
+          const emailResult = await sendEmailImmediately(
+            'pre_enrollment', 
+            data.tutorEmail, 
+            {
+              tutorName: data.tutorName,
+              playerNames: playerNames,
+              amount: totalAmount.toFixed(2),
+              paymentMethod: data.paymentMethod,
+            },
+            {
+              family_id: familyId,
+              email_type: 'pre_enrollment',
+              player_count: data.players.length,
+              is_duplicate: true,
+            }
+          );
 
           if (emailResult?.error) {
             console.error('[enrollment] Error queuing enrollment confirmation email:', emailResult.error);
@@ -297,10 +307,10 @@ export async function POST(request: Request) {
 
     console.log('[enrollment] ✅ Payment record created:', payment?.id);
 
-    // 6. Send Email using queue system
-    console.log('[enrollment] Attempting to send pre-enrollment email to:', data.tutorEmail);
+    // 6. Send Email immediately (not queued)
+    console.log('[enrollment] Attempting to send pre-enrollment email immediately to:', data.tutorEmail);
     try {
-      const { queueEmail } = await import('@/lib/actions/email-queue');
+      const { sendEmailImmediately } = await import('@/lib/actions/email-queue');
       const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
       
       console.log('[enrollment] Email variables:', {
@@ -310,28 +320,42 @@ export async function POST(request: Request) {
         paymentMethod: data.paymentMethod,
       });
       
-      const emailResult = await queueEmail('pre_enrollment', data.tutorEmail, {
-        tutorName: data.tutorName,
-        playerNames: playerNames,
-        amount: totalAmount.toFixed(2),
-        paymentMethod: data.paymentMethod,
-      });
+      // Get pending player IDs for metadata
+      const pendingPlayerIds = createdPlayers.map(p => p.id);
+      
+      const emailResult = await sendEmailImmediately(
+        'pre_enrollment', 
+        data.tutorEmail, 
+        {
+          tutorName: data.tutorName,
+          playerNames: playerNames,
+          amount: totalAmount.toFixed(2),
+          paymentMethod: data.paymentMethod,
+        },
+        {
+          family_id: familyId,
+          email_type: 'pre_enrollment',
+          pending_player_ids: pendingPlayerIds,
+          player_count: data.players.length,
+        }
+      );
 
       if (emailResult?.error) {
-        console.error('[enrollment] ❌ Error queuing enrollment confirmation email:', {
+        console.error('[enrollment] ❌ Error sending enrollment confirmation email:', {
           error: emailResult.error,
           email: data.tutorEmail,
           template: 'pre_enrollment',
         });
         // Log but don't fail enrollment - email can be sent manually later
       } else {
-        console.log('[enrollment] ✅ Pre-enrollment email queued successfully:', {
+        console.log('[enrollment] ✅ Pre-enrollment email sent immediately:', {
           email: data.tutorEmail,
           template: 'pre_enrollment',
+          messageId: emailResult.messageId,
         });
       }
     } catch (emailError: any) {
-      console.error('[enrollment] ❌ Exception queuing enrollment confirmation email:', {
+      console.error('[enrollment] ❌ Exception sending enrollment confirmation email:', {
         error: emailError,
         message: emailError?.message,
         stack: emailError?.stack,

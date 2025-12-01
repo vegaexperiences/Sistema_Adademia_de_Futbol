@@ -20,11 +20,176 @@ export interface QueuedEmail {
 
 const DAILY_LIMIT = 300;
 
+/**
+ * Send email immediately without using the queue
+ * Used for single notifications like enrollment confirmations and player acceptances
+ */
+export async function sendEmailImmediately(
+  templateName: string,
+  recipientEmail: string,
+  variables: Record<string, any>,
+  metadata?: { player_id?: string; family_id?: string; email_type?: string; [key: string]: any }
+) {
+  const supabase = await createClient();
+  
+  // Get template
+  const { data: template, error: templateError } = await supabase
+    .from('email_templates')
+    .select('*')
+    .eq('name', templateName)
+    .eq('is_active', true)
+    .single();
+  
+  if (templateError || !template) {
+    console.error(`[sendEmailImmediately] Template '${templateName}' not found or inactive:`, {
+      error: templateError,
+      templateName,
+      message: templateError?.message || 'Template not found or is_active = false',
+    });
+    
+    // Check if template exists but is inactive
+    const { data: inactiveTemplate } = await supabase
+      .from('email_templates')
+      .select('id, name, is_active')
+      .eq('name', templateName)
+      .single();
+    
+    if (inactiveTemplate) {
+      return { error: `Template '${templateName}' exists but is inactive (is_active = false)` };
+    }
+    
+    return { error: `Template '${templateName}' not found in database` };
+  }
+  
+  console.log(`[sendEmailImmediately] Template '${templateName}' found, sending immediately to ${recipientEmail}`);
+  
+  // Use production URL for logo
+  const defaultLogoUrl =
+    process.env.NEXT_PUBLIC_LOGO_URL ||
+    'https://sistema-adademia-de-futbol-tura.vercel.app/logo.png';
+
+  const logoUrl = defaultLogoUrl.startsWith('http')
+    ? defaultLogoUrl
+    : `https://${defaultLogoUrl.replace(/^\/+/, '')}`;
+
+  const mergedVariables = {
+    logoUrl: logoUrl,
+    ...variables,
+  };
+
+  // Replace variables in template
+  let htmlContent = template.html_template;
+  let subject = template.subject;
+
+  Object.entries(mergedVariables).forEach(([key, value]) => {
+    const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g');
+    htmlContent = htmlContent.replace(regex, String(value));
+    subject = subject.replace(regex, String(value));
+  });
+
+  try {
+    // Send email immediately via Brevo
+    const sendSmtpEmail: SendSmtpEmail = {
+      sender: { 
+        name: 'Suarez Academy', 
+        email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' 
+      },
+      to: [{ email: recipientEmail }],
+      subject: subject,
+      htmlContent: htmlContent,
+    };
+
+    const result = await brevo.sendTransacEmail(sendSmtpEmail);
+    
+    // Get messageId from Brevo response
+    let messageId = result.body?.messageId || (result as any).messageId;
+    if (messageId) {
+      messageId = messageId.replace(/^<|>$/g, '').trim();
+    }
+    
+    const sentAt = new Date().toISOString();
+    
+    // Prepare metadata with player_id and family_id if provided
+    const emailMetadata = {
+      ...metadata,
+      email_type: metadata?.email_type || templateName,
+      ...variables,
+    };
+    
+    // Save to email_queue with status='sent' immediately
+    const { data: emailRecord, error: insertError } = await supabase
+      .from('email_queue')
+      .insert({
+        template_id: template.id,
+        to_email: recipientEmail,
+        subject: subject,
+        html_content: htmlContent,
+        status: 'sent',
+        sent_at: sentAt,
+        scheduled_for: new Date().toISOString().split('T')[0],
+        brevo_email_id: messageId || null,
+        metadata: emailMetadata,
+      })
+      .select()
+      .single();
+    
+    if (insertError) {
+      console.error('[sendEmailImmediately] Error saving email record:', insertError);
+      // Email was sent but record failed - still return success but log error
+    }
+    
+    console.log(`[sendEmailImmediately] ✅ Email sent immediately: ${recipientEmail} (messageId: ${messageId || 'N/A'})`);
+    
+    return { 
+      success: true, 
+      messageId: messageId,
+      emailQueueId: emailRecord?.id,
+    };
+  } catch (error: any) {
+    console.error('[sendEmailImmediately] ❌ Error sending email immediately:', {
+      error: error,
+      message: error?.message,
+      stack: error?.stack,
+      recipient: recipientEmail,
+      template: templateName,
+    });
+    
+    // Save failed record to email_queue
+    try {
+      await supabase
+        .from('email_queue')
+        .insert({
+          template_id: template.id,
+          to_email: recipientEmail,
+          subject: subject,
+          html_content: htmlContent,
+          status: 'failed',
+          error_message: error?.message || 'Unknown error',
+          scheduled_for: new Date().toISOString().split('T')[0],
+          metadata: {
+            ...metadata,
+            email_type: metadata?.email_type || templateName,
+            ...variables,
+          },
+        });
+    } catch (saveError) {
+      console.error('[sendEmailImmediately] Error saving failed email record:', saveError);
+    }
+    
+    return { 
+      error: error?.message || 'Error sending email immediately',
+      details: error,
+    };
+  }
+}
+
 export async function queueEmail(
   templateName: string,
   recipientEmail: string,
   variables: Record<string, any>,
-  scheduledFor?: Date
+  scheduledFor?: Date,
+  metadata?: { player_id?: string; family_id?: string; email_type?: string; [key: string]: any }
 ) {
   const supabase = await createClient();
   
@@ -103,12 +268,71 @@ export async function queueEmail(
     console.warn('⚠️ logoUrl was not replaced in template! Template may be missing the variable.');
   }
   
+  // Calculate estimated send date and queue position for bulk emails
+  const today = new Date().toISOString().split('T')[0];
+  const todayStart = `${today}T00:00:00.000Z`;
+  const todayEnd = `${today}T23:59:59.999Z`;
+  
+  // Get today's sent count
+  const { count: todaySentCount } = await supabase
+    .from('email_queue')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'sent')
+    .not('sent_at', 'is', null)
+    .gte('sent_at', todayStart)
+    .lte('sent_at', todayEnd);
+  
+  // Get pending emails count
+  const { count: pendingCount } = await supabase
+    .from('email_queue')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending')
+    .lte('scheduled_for', today);
+  
+  const sentToday = todaySentCount || 0;
+  const pendingEmails = pendingCount || 0;
+  const remainingToday = Math.max(0, DAILY_LIMIT - sentToday);
+  
+  // Determine if email can be sent today or needs to be scheduled for tomorrow
+  let scheduledDate = scheduledFor || new Date();
+  let estimatedSendDate: string | null = null;
+  let queuePosition: number | null = null;
+  let queuedForTomorrow = false;
+  
+  if (remainingToday === 0) {
+    // No capacity today, schedule for tomorrow
+    scheduledDate = new Date();
+    scheduledDate.setDate(scheduledDate.getDate() + 1);
+    queuedForTomorrow = true;
+    estimatedSendDate = scheduledDate.toISOString().split('T')[0];
+    queuePosition = null; // Will be calculated tomorrow
+  } else if (pendingEmails >= remainingToday) {
+    // Will overflow to tomorrow
+    const overflowCount = pendingEmails - remainingToday + 1;
+    const daysNeeded = Math.ceil(overflowCount / DAILY_LIMIT);
+    scheduledDate = new Date();
+    scheduledDate.setDate(scheduledDate.getDate() + daysNeeded);
+    queuedForTomorrow = daysNeeded > 0;
+    estimatedSendDate = scheduledDate.toISOString().split('T')[0];
+    queuePosition = pendingEmails + 1;
+  } else {
+    // Can be sent today
+    estimatedSendDate = today;
+    queuePosition = pendingEmails + 1;
+  }
+  
   // Queue the email
   // scheduled_for should be a DATE (not TIMESTAMPTZ), so we extract just the date part
-  const scheduledDate = scheduledFor || new Date();
   const scheduledDateOnly = scheduledDate instanceof Date 
     ? scheduledDate.toISOString().split('T')[0]
     : scheduledDate;
+  
+  // Prepare metadata with player_id and family_id if provided
+  const emailMetadata = {
+    ...metadata,
+    email_type: metadata?.email_type || templateName,
+    ...variables,
+  };
   
   const { error } = await supabase
     .from('email_queue')
@@ -118,7 +342,7 @@ export async function queueEmail(
       subject,
       html_content: htmlContent,
       scheduled_for: scheduledDateOnly,
-      metadata: variables
+      metadata: emailMetadata
     });
   
   if (error) {
@@ -126,7 +350,15 @@ export async function queueEmail(
     return { error: 'Error al encolar correo' };
   }
   
-  return { success: true };
+  console.log(`[queueEmail] Email queued: ${recipientEmail}, scheduled for: ${scheduledDateOnly}, queue position: ${queuePosition}, estimated send: ${estimatedSendDate}`);
+  
+  return { 
+    success: true,
+    estimatedSendDate: estimatedSendDate,
+    queuePosition: queuePosition,
+    queuedForTomorrow: queuedForTomorrow,
+    remainingToday: remainingToday,
+  };
 }
 
 export async function queueBatchEmails(
@@ -174,6 +406,9 @@ export async function processEmailQueue() {
   const today = new Date().toISOString().split('T')[0];
   const todayStart = `${today}T00:00:00.000Z`;
   const todayEnd = `${today}T23:59:59.999Z`;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDate = tomorrow.toISOString().split('T')[0];
   
   const { count: todaySentCount } = await supabase
     .from('email_queue')
@@ -183,29 +418,83 @@ export async function processEmailQueue() {
     .gte('sent_at', todayStart)
     .lte('sent_at', todayEnd);
   
-  const remainingToday = Math.max(0, DAILY_LIMIT - (todaySentCount || 0));
+  const sentToday = todaySentCount || 0;
+  const remainingToday = Math.max(0, DAILY_LIMIT - sentToday);
+  
+  console.log(`[processEmailQueue] Daily limit status: ${sentToday}/${DAILY_LIMIT} sent today, ${remainingToday} remaining`);
   
   if (remainingToday === 0) {
-    return { error: 'Límite diario alcanzado', sent: 0, failed: 0, total: 0 };
+    console.log('[processEmailQueue] Daily limit reached. Rescheduling pending emails for tomorrow...');
+    
+    // Reschedule all pending emails for today to tomorrow
+    const { data: pendingEmails, error: pendingError } = await supabase
+      .from('email_queue')
+      .select('id')
+      .eq('status', 'pending')
+      .lte('scheduled_for', today);
+    
+    if (pendingEmails && pendingEmails.length > 0) {
+      const { error: rescheduleError } = await supabase
+        .from('email_queue')
+        .update({ scheduled_for: tomorrowDate })
+        .in('id', pendingEmails.map(e => e.id));
+      
+      if (rescheduleError) {
+        console.error('[processEmailQueue] Error rescheduling emails:', rescheduleError);
+      } else {
+        console.log(`[processEmailQueue] Rescheduled ${pendingEmails.length} emails for tomorrow`);
+      }
+    }
+    
+    return { 
+      error: 'Límite diario alcanzado', 
+      sent: 0, 
+      failed: 0, 
+      total: 0,
+      remainingToday: 0,
+      queuedForTomorrow: pendingEmails?.length || 0,
+    };
   }
   
-  // Get pending emails for today, limited to remaining quota
-  const { data: emails, error } = await supabase
+  // Get all pending emails for today (not just limited)
+  const { data: allPendingEmails, error: allPendingError } = await supabase
     .from('email_queue')
     .select('*')
     .eq('status', 'pending')
     .lte('scheduled_for', today)
-    .order('created_at')
-    .limit(remainingToday);
+    .order('created_at');
   
-  if (error || !emails) {
-    console.error('Error fetching email queue:', error);
+  if (allPendingError) {
+    console.error('[processEmailQueue] Error fetching all pending emails:', allPendingError);
     return { error: 'Error al obtener cola de correos' };
   }
   
-  if (emails.length === 0) {
-    return { success: true, sent: 0, failed: 0, total: 0, message: 'No hay correos pendientes' };
+  if (!allPendingEmails || allPendingEmails.length === 0) {
+    return { success: true, sent: 0, failed: 0, total: 0, message: 'No hay correos pendientes', remainingToday };
   }
+  
+  // Split emails into: ones we can send today, ones to reschedule for tomorrow
+  const emailsToSendToday = allPendingEmails.slice(0, remainingToday);
+  const emailsToReschedule = allPendingEmails.slice(remainingToday);
+  
+  // Reschedule excess emails for tomorrow
+  let queuedForTomorrow = 0;
+  if (emailsToReschedule.length > 0) {
+    const { error: rescheduleError } = await supabase
+      .from('email_queue')
+      .update({ scheduled_for: tomorrowDate })
+      .in('id', emailsToReschedule.map(e => e.id));
+    
+    if (rescheduleError) {
+      console.error('[processEmailQueue] Error rescheduling excess emails:', rescheduleError);
+    } else {
+      queuedForTomorrow = emailsToReschedule.length;
+      console.log(`[processEmailQueue] Rescheduled ${queuedForTomorrow} emails for tomorrow (exceeded daily limit)`);
+    }
+  }
+  
+  // Get pending emails for today, limited to remaining quota
+  const emails = emailsToSendToday;
   
   let sent = 0;
   let failed = 0;
@@ -323,7 +612,20 @@ export async function processEmailQueue() {
   }
   
   revalidatePath('/dashboard/settings/emails');
-  return { success: true, sent, failed, total: emails.length };
+  
+  const remainingAfter = Math.max(0, remainingToday - sent);
+  
+  console.log(`[processEmailQueue] Processed ${emails.length} emails: ${sent} sent, ${failed} failed, ${queuedForTomorrow} queued for tomorrow, ${remainingAfter} remaining today`);
+  
+  return { 
+    success: true, 
+    sent, 
+    failed, 
+    total: emails.length,
+    remainingToday: remainingAfter,
+    queuedForTomorrow: queuedForTomorrow,
+    totalPending: allPendingEmails?.length || 0,
+  };
 }
 
 /**
