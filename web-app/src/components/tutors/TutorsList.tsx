@@ -35,9 +35,7 @@ export default function TutorsList({ tutors }: { tutors: Tutor[] }) {
       {/* Header */}
       <div className="glass-card p-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 rounded-xl" style={{
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          }}>
+          <div className="p-3 rounded-xl icon-bg-green">
             <User className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
@@ -52,9 +50,7 @@ export default function TutorsList({ tutors }: { tutors: Tutor[] }) {
       {/* Stats */}
       <div className="glass-card p-6">
         <div className="flex items-center gap-4">
-          <div className="p-4 rounded-xl" style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          }}>
+          <div className="p-4 rounded-xl icon-bg-purple">
             <Users className="h-8 w-8 text-white" />
           </div>
           <div>
@@ -96,9 +92,7 @@ export default function TutorsList({ tutors }: { tutors: Tutor[] }) {
               className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up cursor-pointer"
             >
               <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl" style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                }}>
+                <div className="p-3 rounded-xl icon-bg-green">
                   <User className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">

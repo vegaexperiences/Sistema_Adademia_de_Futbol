@@ -6,9 +6,7 @@ export default function FinancePage() {
       {/* Header */}
       <div className="glass-card p-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 rounded-xl" style={{
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          }}>
+          <div className="p-3 rounded-xl icon-bg-green">
             <DollarSign className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
@@ -24,19 +22,14 @@ export default function FinancePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            }}>
+            <div className="p-3 rounded-xl icon-bg-green">
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
           </div>
           <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">Ingresos del Mes</p>
           <p className="text-3xl font-bold text-gray-900 dark:text-white">$0.00</p>
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-            <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
-              background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
-              color: '#065f46'
-            }}>
+            <span className="text-xs font-bold px-2 py-1 rounded-full badge-gradient-active">
               📈 En desarrollo
             </span>
           </div>
@@ -44,9 +37,7 @@ export default function FinancePage() {
 
         <div className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-            }}>
+            <div className="p-3 rounded-xl icon-bg-blue">
               <CreditCard className="h-6 w-6 text-white" />
             </div>
           </div>
@@ -64,9 +55,7 @@ export default function FinancePage() {
 
         <div className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-            }}>
+            <div className="p-3 rounded-xl icon-bg-orange">
               <Calendar className="h-6 w-6 text-white" />
             </div>
           </div>

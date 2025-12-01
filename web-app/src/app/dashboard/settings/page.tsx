@@ -69,9 +69,7 @@ export default async function SettingsPage() {
       {/* Pricing Settings */}
       <div id="pricing" className="glass-card p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg" style={{
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          }}>
+          <div className="p-2 rounded-lg icon-bg-green">
             <DollarSign className="h-6 w-6 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -106,11 +104,7 @@ export default async function SettingsPage() {
                     </div>
                     <button
                       type="submit"
-                      className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto"
-                      style={{
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
-                      }}
+                      className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto btn-primary shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20"
                     >
                       <Save size={18} />
                       Guardar
@@ -147,11 +141,7 @@ export default async function SettingsPage() {
                     </div>
                     <button
                       type="submit"
-                      className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2"
-                      style={{
-                        background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-                        boxShadow: '0 4px 15px rgba(168, 85, 247, 0.3)'
-                      }}
+                      className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2 gradient-purple shadow-lg shadow-purple-500/30 dark:shadow-purple-500/20"
                     >
                       <Save size={18} />
                       Guardar

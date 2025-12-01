@@ -42,12 +42,15 @@ export default async function DashboardLayout({
         {/* Logo Section */}
         <div className="p-6 border-b border-gray-200/20 dark:border-gray-700/50">
           <div className="flex items-center gap-3 mb-4">
-            <div className="relative w-12 h-12">
+            <div className="relative w-12 h-12 bg-transparent">
               <Image 
                 src="/logo.png" 
                 alt="Suarez Academy Logo" 
                 fill
                 className="object-contain"
+                style={{ objectFit: 'contain' }}
+                priority
+                unoptimized
               />
             </div>
             <span className="text-gray-900 dark:text-white font-bold text-xl">SUAREZ ACADEMY</span>
@@ -162,7 +165,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-8 pt-20 md:pt-4 safe-area-top min-h-screen">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:px-8 md:pb-8 md:pt-4 md:mt-4 pt-20 safe-area-top min-h-screen">
         <div className="animate-fade-in max-w-7xl mx-auto">
           {children}
         </div>

@@ -8,12 +8,15 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex flex-col items-center md:items-start mb-4 md:mb-0">
             <div className="flex items-center gap-2 mb-2">
-              <div className="relative w-8 h-8">
+              <div className="relative w-8 h-8 bg-transparent">
                 <Image 
                   src="/logo.png" 
                   alt="Suarez Academy Logo" 
                   fill
                   className="object-contain"
+                  style={{ objectFit: 'contain' }}
+                  priority
+                  unoptimized
                 />
               </div>
               <span className="text-gray-900 dark:text-white font-bold text-lg">SUAREZ ACADEMY</span>

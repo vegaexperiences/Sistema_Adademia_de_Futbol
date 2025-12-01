@@ -2,19 +2,19 @@
 
 ## Credenciales
 
-- **ID del comercio**: `1aad55ae-d1bc-49d6-bed2-4de16d69759d`
-- **Clave secreta**: `WVBfM0E4QkJDNzQtRDFDNi0zMEMwLTkxNzEtOEI1ODlDRUU4NUU4LjFhYWQ1NWFlLWQxYmMtNDlkNi1iZWQyLTRkZTE2ZDY5NzU5ZA==`
+- **ID del comercio**: `352eef93-b7d9-445b-a584-3915d9e27236`
+- **Clave secreta**: `WVBfOTA1RUZDQjUtRDBEMS0zNTNFLTg4NDYtRjdBODU1N0QyQzZBLjM1MmVlZjkzLWI3ZDktNDQ1Yi1hNTg0LTM5MTVkOWUyNzIzNg==`
 - **URL del dominio**: `sistema-adademia-de-futbol-tura.vercel.app`
-- **Ambiente**: Producción
+- **Ambiente**: Pruebas (Testing)
 
 ## Variables de Entorno
 
 Agrega estas variables en Vercel (Settings → Environment Variables):
 
 ```bash
-YAPPY_MERCHANT_ID=1aad55ae-d1bc-49d6-bed2-4de16d69759d
-YAPPY_SECRET_KEY=WVBfM0E4QkJDNzQtRDFDNi0zMEMwLTkxNzEtOEI1ODlDRUU4NUU4LjFhYWQ1NWFlLWQxYmMtNDlkNi1iZWQyLTRkZTE2ZDY5NzU5ZA==
-YAPPY_ENVIRONMENT=production
+YAPPY_MERCHANT_ID=352eef93-b7d9-445b-a584-3915d9e27236
+YAPPY_SECRET_KEY=WVBfOTA1RUZDQjUtRDBEMS0zNTNFLTg4NDYtRjdBODU1N0QyQzZBLjM1MmVlZjkzLWI3ZDktNDQ1Yi1hNTg0LTM5MTVkOWUyNzIzNg==
+YAPPY_ENVIRONMENT=testing
 YAPPY_DOMAIN_URL=sistema-adademia-de-futbol-tura.vercel.app
 ```
 

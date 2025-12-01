@@ -74,13 +74,16 @@ export function MobileHeader({ userEmail }: MobileHeaderProps) {
               <Menu size={24} className="text-gray-700 dark:text-gray-300" />
             </button>
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="relative w-8 h-8 flex-shrink-0">
+              <div className="relative w-8 h-8 flex-shrink-0 bg-transparent">
                 <Image 
                   src="/logo.png" 
                   alt="Suarez Academy Logo" 
                   fill
                   className="object-contain"
                   sizes="32px"
+                  style={{ objectFit: 'contain' }}
+                  priority
+                  unoptimized
                 />
               </div>
               <span className="text-gray-900 dark:text-white font-bold text-sm sm:text-base truncate">SUAREZ ACADEMY</span>
@@ -113,12 +116,15 @@ export function MobileHeader({ userEmail }: MobileHeaderProps) {
           {/* Header inside sidebar */}
           <div className="p-4 border-b border-gray-200/20 dark:border-gray-700/50 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10">
+              <div className="relative w-10 h-10 bg-transparent">
                 <Image 
                   src="/logo.png" 
                   alt="Suarez Academy Logo" 
                   fill
                   className="object-contain"
+                  style={{ objectFit: 'contain' }}
+                  priority
+                  unoptimized
                 />
               </div>
               <span className="text-gray-900 dark:text-white font-bold text-lg">SUAREZ ACADEMY</span>

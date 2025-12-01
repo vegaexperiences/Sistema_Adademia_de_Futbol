@@ -72,9 +72,7 @@ export default async function PlayerProfilePage({
       <div className="glass-card p-4 sm:p-6 md:p-8">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-            <div className="p-3 sm:p-4 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            }}>
+            <div className="p-3 sm:p-4 rounded-xl icon-bg-purple">
               <User className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
             </div>
             <div className="min-w-0 flex-1">
@@ -86,12 +84,11 @@ export default async function PlayerProfilePage({
                  </h1>
               <div className="flex gap-2 flex-wrap">
                 {player.gender && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
-                    background: player.gender === 'M' || player.gender === 'Masculino'
-                      ? 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)'
-                      : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                    color: player.gender === 'M' || player.gender === 'Masculino' ? '#5b21b6' : '#be185d'
-                  }}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    player.gender === 'M' || player.gender === 'Masculino'
+                      ? 'badge-gradient-male'
+                      : 'badge-gradient-female'
+                  }`}>
                     {(() => {
                       const isMale = player.gender === 'M' || player.gender === 'Masculino';
                       return isMale ? '👦 Masculino' : '👧 Femenino';
@@ -101,18 +98,13 @@ export default async function PlayerProfilePage({
               </div>
             </div>
           </div>
-          <span className="px-4 py-2 rounded-full text-sm font-bold" style={{
-            background: player.status === 'Active' 
-              ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
+          <span className={`px-4 py-2 rounded-full text-sm font-bold ${
+            player.status === 'Active' 
+              ? 'badge-gradient-active'
               : player.status === 'Scholarship'
-              ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
-              : 'linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)',
-            color: player.status === 'Active' 
-              ? '#065f46'
-              : player.status === 'Scholarship'
-              ? '#1e3a8a'
-              : '#92400e'
-          }}>
+              ? 'badge-gradient-scholarship'
+              : 'badge-gradient-pending'
+          }`}>
             {player.status === 'Active' ? '✅ Activo' : player.status === 'Scholarship' ? '🎓 Becado' : '⏳ Pendiente'}
           </span>
         </div>

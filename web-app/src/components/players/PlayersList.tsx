@@ -269,25 +269,15 @@ export default function PlayersList({ players, initialView = 'active' }: Players
                     </div>
                     <div className="flex items-center gap-2">
                       <span
-                        className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap"
-                        style={{
-                          background:
-                            player.status === 'Active'
-                          ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
-                          : player.status === 'Scholarship'
-                          ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
-                              : player.status === 'Rejected'
-                              ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
-                          : 'linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)',
-                          color:
-                            player.status === 'Active'
-                          ? '#065f46'
-                              : player.status === 'Scholarship'
-                              ? '#1e3a8a'
-                              : player.status === 'Rejected'
-                              ? '#b91c1c'
-                              : '#92400e',
-                        }}
+                        className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ${
+                          player.status === 'Active'
+                            ? 'badge-gradient-active'
+                            : player.status === 'Scholarship'
+                            ? 'badge-gradient-scholarship'
+                            : player.status === 'Rejected'
+                            ? 'badge-gradient-rejected'
+                            : 'badge-gradient-pending'
+                        }`}
                       >
                         {player.status === 'Active'
                           ? '✅ Activo'

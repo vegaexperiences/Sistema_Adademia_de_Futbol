@@ -18,12 +18,15 @@ export function Navbar() {
             <div className="flex-shrink-0 flex items-center">
               <Link href="/" className="flex items-center gap-2">
                 {/* Placeholder for Logo - using text for now */}
-                <div className="relative w-10 h-10">
+                <div className="relative w-10 h-10 bg-transparent">
                   <Image 
                     src="/logo.png" 
                     alt="Suarez Academy Logo" 
                     fill
                     className="object-contain"
+                    style={{ objectFit: 'contain' }}
+                    priority
+                    unoptimized
                   />
                 </div>
                 <div className="flex flex-col">

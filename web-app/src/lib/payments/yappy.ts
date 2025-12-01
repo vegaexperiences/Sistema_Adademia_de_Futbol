@@ -54,9 +54,10 @@ export class YappyService {
     if (!this.config) {
       const merchantId = process.env.YAPPY_MERCHANT_ID || '';
       const secretKey = process.env.YAPPY_SECRET_KEY || '';
-      // Get domain URL - ensure it doesn't include protocol for Yappy
+      // Get domain URL - Yappy panel shows it with https://, but web component expects domain only
       let domainUrl = process.env.YAPPY_DOMAIN_URL || process.env.NEXT_PUBLIC_APP_URL || '';
-      // Remove protocol if present (Yappy expects just the domain)
+      // Remove protocol and trailing slash for component attribute (Yappy web component expects domain only)
+      // Example: https://sistema-adademia-de-futbol-tura.vercel.app -> sistema-adademia-de-futbol-tura.vercel.app
       domainUrl = domainUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
       const environment = (process.env.YAPPY_ENVIRONMENT || 'production') as 'production' | 'testing';
 

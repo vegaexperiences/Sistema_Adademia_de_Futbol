@@ -350,11 +350,7 @@ export function CreatePaymentModal({ players, familyName, tutorEmail, onClose }:
             <button
               type="submit"
               disabled={isPending || success}
-              className="flex-1 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
-              }}
+              className="flex-1 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 btn-success shadow-lg shadow-green-500/30 dark:shadow-green-500/20"
             >
               {isPending ? (
                 <>

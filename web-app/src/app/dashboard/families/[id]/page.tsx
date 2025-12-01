@@ -76,9 +76,7 @@ export default async function FamilyProfilePage({
       <div className="glass-card p-8">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-            }}>
+            <div className="p-4 rounded-xl icon-bg-orange">
               <Users className="h-10 w-10 text-white" />
             </div>
             <div>
@@ -97,9 +95,7 @@ export default async function FamilyProfilePage({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            }}>
+            <div className="p-3 rounded-xl icon-bg-purple">
               <Users className="h-6 w-6 text-white" />
             </div>
             <div>
@@ -111,9 +107,7 @@ export default async function FamilyProfilePage({
 
         <div className="glass-card p-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl" style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            }}>
+            <div className="p-3 rounded-xl icon-bg-green">
               <User className="h-6 w-6 text-white" />
             </div>
             <div>

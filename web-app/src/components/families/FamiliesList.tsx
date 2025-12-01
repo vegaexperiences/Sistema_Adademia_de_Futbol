@@ -33,9 +33,7 @@ export default function FamiliesList({ families }: { families: Family[] }) {
       {/* Header */}
       <div className="glass-card p-4 sm:p-6 md:p-8">
         <div className="flex items-center gap-2 sm:gap-3 mb-2">
-          <div className="p-2 sm:p-3 rounded-xl" style={{
-            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-          }}>
+          <div className="p-2 sm:p-3 rounded-xl icon-bg-orange">
             <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
@@ -50,9 +48,7 @@ export default function FamiliesList({ families }: { families: Family[] }) {
       {/* Stats */}
       <div className="glass-card p-4 sm:p-6">
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-3 sm:p-4 rounded-xl" style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          }}>
+          <div className="p-3 sm:p-4 rounded-xl icon-bg-purple">
             <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
           </div>
           <div>
@@ -91,9 +87,7 @@ export default function FamiliesList({ families }: { families: Family[] }) {
               className="glass-card p-6 hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-slide-up cursor-pointer"
             >
               <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl" style={{
-                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                }}>
+                <div className="p-3 rounded-xl icon-bg-orange">
                   <Users className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">

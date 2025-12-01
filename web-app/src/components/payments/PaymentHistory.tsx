@@ -123,14 +123,13 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
               <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-1 rounded-full text-xs font-bold" style={{
-                      background: payment.payment_type === 'enrollment' 
-                        ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold text-white ${
+                      payment.payment_type === 'enrollment' 
+                        ? 'gradient-orange'
                         : payment.payment_type === 'monthly'
-                        ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
-                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white'
-                    }}>
+                        ? 'gradient-blue'
+                        : 'gradient-purple'
+                    }`}>
                       {getPaymentTypeLabel(payment.payment_type)}
                     </span>
                     {payment.month_year && (

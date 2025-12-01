@@ -159,27 +159,16 @@ function PlayerApprovals({
                         </div>
                         <div className="flex gap-2 flex-wrap">
                           {player.category && (
-                          <span
-                            className="px-3 py-1 rounded-full text-xs font-bold"
-                            style={{
-                              background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-                              color: '#1e3a8a',
-                            }}
-                          >
+                          <span className="px-3 py-1 rounded-full text-xs font-bold badge-gradient-scholarship">
                               📚 {player.category}
                             </span>
                           )}
                           {player.gender && (
-                          <span
-                            className="px-3 py-1 rounded-full text-xs font-bold"
-                            style={{
-                              background:
-                                player.gender === 'M' || player.gender === 'Masculino'
-                                ? 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)'
-                                : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                              color: player.gender === 'M' || player.gender === 'Masculino' ? '#5b21b6' : '#be185d',
-                            }}
-                          >
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            player.gender === 'M' || player.gender === 'Masculino'
+                              ? 'badge-gradient-male'
+                              : 'badge-gradient-female'
+                          }`}>
                               {(() => {
                                 const isMale = player.gender === 'M' || player.gender === 'Masculino';
                                 return isMale ? '👦 Masculino' : '👧 Femenino';
@@ -188,14 +177,7 @@ function PlayerApprovals({
                           )}
                         </div>
                       </div>
-                    <span
-                      className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap"
-                      style={{
-                        background: 'linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)',
-                        color: '#92400e',
-                        border: '2px solid #fbbf24',
-                      }}
-                    >
+                    <span className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap badge-gradient-pending border-2 border-orange-400 dark:border-orange-500">
                         ⏳ PENDIENTE
                       </span>
                     </div>

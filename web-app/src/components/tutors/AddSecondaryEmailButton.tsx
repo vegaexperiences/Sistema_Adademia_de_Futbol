@@ -109,11 +109,7 @@ export function AddSecondaryEmailButton({ familyId, currentSecondaryEmail }: Add
               <button
                 type="submit"
                 disabled={isPending || success}
-                className="flex-1 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                style={{
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                  boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
-                }}
+                className="flex-1 px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 btn-primary shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20"
               >
                 {isPending ? (
                   <>
@@ -139,15 +135,11 @@ export function AddSecondaryEmailButton({ familyId, currentSecondaryEmail }: Add
   return (
     <button
       onClick={() => setIsOpen(true)}
-      className="px-4 py-2 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-2"
-      style={{
-        background: currentSecondaryEmail 
-          ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
-          : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-        boxShadow: currentSecondaryEmail 
-          ? '0 4px 15px rgba(59, 130, 246, 0.3)'
-          : '0 4px 15px rgba(16, 185, 129, 0.3)'
-      }}
+      className={`px-4 py-2 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-2 shadow-lg ${
+        currentSecondaryEmail 
+          ? 'btn-primary shadow-blue-500/30 dark:shadow-blue-500/20'
+          : 'btn-success shadow-green-500/30 dark:shadow-green-500/20'
+      }`}
     >
       <Plus size={18} />
       {currentSecondaryEmail ? 'Editar Email Secundario' : 'Agregar Email Secundario'}
