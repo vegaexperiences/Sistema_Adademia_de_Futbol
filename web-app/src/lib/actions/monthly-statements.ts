@@ -173,7 +173,7 @@ export async function sendMonthlyStatement(statement: PlayerStatement): Promise<
       undefined, // scheduledFor - will be calculated by queueEmail
       {
         player_id: statement.playerId,
-        family_id: statement.familyId,
+        family_id: statement.familyId || undefined,
         email_type: 'monthly_statement',
         month_year: statement.monthYear,
       }
