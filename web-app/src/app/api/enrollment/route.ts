@@ -4,20 +4,25 @@ import { enrollmentSchema } from '@/lib/validations/enrollment';
 
 // Enrollment API endpoint - handles student enrollment requests
 export async function POST(request: Request) {
+  const startTime = Date.now();
   console.log('[enrollment] ========== ENROLLMENT REQUEST STARTED ==========');
+  console.log('[enrollment] Timestamp:', new Date().toISOString());
   console.log('[enrollment] Request method:', request.method);
   console.log('[enrollment] Request URL:', request.url);
+  console.log('[enrollment] Environment:', process.env.NODE_ENV);
   
   try {
-    console.log('[enrollment] Parsing request body...');
+    console.log('[enrollment] Step 0: Parsing request body...');
     let body;
     try {
       body = await request.json();
-      console.log('[enrollment] ✅ Request body parsed successfully');
+      console.log('[enrollment] ✅ Step 0: Request body parsed successfully');
+      console.log('[enrollment] Body keys:', Object.keys(body || {}));
     } catch (jsonError: any) {
-      console.error('[enrollment] ❌ Error parsing JSON:', {
+      console.error('[enrollment] ❌ Step 0: Error parsing JSON:', {
         error: jsonError?.message,
         stack: jsonError?.stack,
+        name: jsonError?.name,
       });
       return NextResponse.json(
         { error: 'Error al procesar los datos del formulario. Por favor, intente nuevamente.' },
@@ -25,7 +30,7 @@ export async function POST(request: Request) {
       );
     }
     
-    console.log('[enrollment] Received request body:', JSON.stringify(body, null, 2));
+    console.log('[enrollment] Received request body (truncated):', JSON.stringify(body, null, 2).substring(0, 500));
     
     // Validate input data
     const validationResult = enrollmentSchema.safeParse(body);
