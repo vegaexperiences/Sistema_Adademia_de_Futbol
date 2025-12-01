@@ -23,7 +23,6 @@ export async function GET(request: Request) {
     console.log('[send-monthly-statements] Cron job completed:', result);
     
     return NextResponse.json({
-      success: result.success,
       ...result,
       timestamp: new Date().toISOString(),
     });
@@ -50,7 +49,6 @@ export async function POST() {
     console.log('[send-monthly-statements] Manual trigger completed:', result);
     
     return NextResponse.json({
-      success: result.success,
       ...result,
       timestamp: new Date().toISOString(),
     });
