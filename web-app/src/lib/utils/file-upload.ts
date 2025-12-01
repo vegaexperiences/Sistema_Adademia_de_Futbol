@@ -10,6 +10,28 @@ export interface UploadResult {
 }
 
 /**
+ * Sanitize a string to be safe for use in file paths
+ * Removes special characters, normalizes accents, and ensures valid characters only
+ */
+function sanitizePathSegment(segment: string): string {
+  return segment
+    .toLowerCase()
+    .normalize('NFD') // Normalize to NFD form to separate base characters from accents
+    .replace(/[\u0300-\u036f]/g, '') // Remove accent marks (ñ -> n, á -> a, etc.)
+    .replace(/[^a-z0-9-]/g, '-') // Replace any non-alphanumeric (except hyphen) with hyphen
+    .replace(/-+/g, '-') // Replace multiple hyphens with a single hyphen
+    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+}
+
+/**
+ * Sanitize a full file path for Supabase Storage
+ */
+function sanitizeFilePath(path: string): string {
+  const segments = path.split('/').filter(Boolean); // Remove empty segments
+  return segments.map(sanitizePathSegment).join('/');
+}
+
+/**
  * Upload a file to Supabase Storage
  * @param file - The file to upload
  * @param path - The path where to store the file (e.g., 'cedulas/player-123-front.jpg')
@@ -19,16 +41,22 @@ export async function uploadFile(file: File, path: string): Promise<UploadResult
   try {
     const supabase = createClient();
 
+    // Sanitize the input path
+    const sanitizedPath = sanitizeFilePath(path);
+    
     // Upload the file directly - if bucket doesn't exist, we'll get an error
-    const fileExt = file.name.split('.').pop();
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'bin';
     const timestamp = Date.now();
-    // Get the last part of the path (e.g., 'cedulaFrontFile' from 'players/olga-tañon/cedulaFrontFile')
-    const pathSegments = path.split('/');
+    
+    // Get the last part of the path (e.g., 'cedulaFrontFile' from 'players/olga-tanon/cedulaFrontFile')
+    const pathSegments = sanitizedPath.split('/');
     const lastSegment = pathSegments[pathSegments.length - 1];
-    // Create filename with timestamp
+    
+    // Create filename with timestamp - sanitize the segment name too
     const fileName = `${lastSegment}-${timestamp}.${fileExt}`;
-    // Full path: path + filename
-    const filePath = `${path}/${fileName}`;
+    
+    // Full path: sanitized path + filename
+    const filePath = `${sanitizedPath}/${fileName}`;
 
     const { data, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
