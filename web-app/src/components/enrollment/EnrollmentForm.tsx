@@ -120,6 +120,23 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
       });
 
       const result = await response.json();
+      console.log('[EnrollmentForm] Response status:', response.status);
+      console.log('[EnrollmentForm] Response data:', result);
+
+      if (!response.ok) {
+        // Handle error responses
+        const errorMessage = result.error || 'Error al procesar la matrícula';
+        const errorDetails = result.details || result.issues || '';
+        console.error('[EnrollmentForm] Error response:', {
+          status: response.status,
+          error: errorMessage,
+          details: errorDetails,
+        });
+        
+        alert(`${errorMessage}${errorDetails ? '\n\nDetalles: ' + JSON.stringify(errorDetails, null, 2) : ''}`);
+        setIsSubmitting(false); // Allow retry on error
+        return;
+      }
 
       if (result.success) {
         // In a real app, we would redirect to result.paymentUrl

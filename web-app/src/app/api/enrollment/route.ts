@@ -5,14 +5,20 @@ import { enrollmentSchema } from '@/lib/validations/enrollment';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    console.log('[enrollment] Received request body:', JSON.stringify(body, null, 2));
     
     // Validate input data
     const validationResult = enrollmentSchema.safeParse(body);
     if (!validationResult.success) {
+      console.error('[enrollment] Validation error:', {
+        errors: validationResult.error.flatten().fieldErrors,
+        issues: validationResult.error.issues,
+      });
       return NextResponse.json(
         { 
           error: 'Datos inválidos', 
-          details: validationResult.error.flatten().fieldErrors 
+          details: validationResult.error.flatten().fieldErrors,
+          issues: validationResult.error.issues,
         },
         { status: 400 }
       );
@@ -135,71 +141,104 @@ export async function POST(request: Request) {
     const totalAmount = baseRate * count; // No discount for enrollment
 
     // 5. Create Payment Records - one per player or one combined
-    // Using combined approach: one payment for all players in enrollment
+    // Note: player_id must be NULL because players are in pending_players, not players table yet
+    // The payment will be linked to the player when they are approved
+    // Map to valid status values: 'Approved', 'Pending', 'Rejected', 'Cancelled'
     const paymentStatus = (data.paymentMethod === 'Comprobante' || 
                           data.paymentMethod === 'Transferencia' || 
                           data.paymentMethod === 'Yappy') 
-                          ? 'Pending Approval' 
+                          ? 'Pending' // Needs approval
                           : data.paymentMethod === 'PagueloFacil'
-                          ? 'Paid' // PagueloFacil payments are immediate
+                          ? 'Approved' // PagueloFacil payments are immediate
                           : 'Pending';
 
-    // Insert payment record linked to the first player (primary)
+    // Map payment method to valid enum values
+    const paymentMethodMap: Record<string, string> = {
+      'Comprobante': 'cash',
+      'Transferencia': 'transfer',
+      'Yappy': 'yappy',
+      'PagueloFacil': 'paguelofacil',
+      'ACH': 'ach',
+    };
+    const mappedPaymentMethod = paymentMethodMap[data.paymentMethod] || 'other';
+
+    // Insert payment record - player_id is NULL because players are still pending
+    // The payment will be linked when the player is approved
+    // Store pending player IDs in notes for later linking
+    const paymentData: any = {
+      player_id: null, // NULL because player is in pending_players, not players table
+      amount: totalAmount,
+      payment_type: 'enrollment', // Use correct field name and enum value
+      payment_method: mappedPaymentMethod,
+      payment_date: new Date().toISOString().split('T')[0],
+      notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}. Pending Player IDs: ${createdPlayers.map(p => p.id).join(', ')}`,
+      status: paymentStatus, // Already mapped to valid values ('Approved' or 'Pending')
+    };
+
+    // Add proof_url if provided
+    if (data.paymentProofFile) {
+      paymentData.proof_url = data.paymentProofFile;
+    }
+
+    console.log('[enrollment] Creating payment record:', paymentData);
+
     const { data: payment, error: paymentError } = await supabase
       .from('payments')
-      .insert({
-        player_id: createdPlayers[0].id, // Link to first player
-        amount: totalAmount,
-        type: 'Matrícula',
-        status: paymentStatus,
-        method: data.paymentMethod,
-        notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}. Jugadores: ${createdPlayers.map(p => p.id).join(', ')}`,
-        proof_url: data.paymentProofFile,
-      })
+      .insert(paymentData)
       .select()
       .single();
 
     if (paymentError) {
-      console.error('Payment record error:', paymentError);
+      console.error('[enrollment] Payment record error:', {
+        error: paymentError,
+        code: paymentError.code,
+        message: paymentError.message,
+        details: paymentError.details,
+        hint: paymentError.hint,
+      });
       throw paymentError;
     }
 
-    // If multiple players, create additional payment records for tracking
-    if (count > 1) {
-      for (let i = 1; i < createdPlayers.length; i++) {
-        await supabase
-          .from('payments')
-          .insert({
-            player_id: createdPlayers[i].id,
-            amount: 0, // No additional charge, already included in main payment
-            type: 'Matrícula',
-            status: paymentStatus,
-            method: data.paymentMethod,
-            notes: `Matrícula compartida (pago principal registrado en jugador principal). Tutor: ${data.tutorName}`,
-            proof_url: data.paymentProofFile,
-      });
-      }
-    }
+    console.log('[enrollment] ✅ Payment record created:', payment?.id);
 
     // 6. Send Email using queue system
+    console.log('[enrollment] Attempting to send pre-enrollment email to:', data.tutorEmail);
     try {
       const { queueEmail } = await import('@/lib/actions/email-queue');
       const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
       
-      await queueEmail('pre_enrollment', data.tutorEmail, {
+      const emailResult = await queueEmail('pre_enrollment', data.tutorEmail, {
         tutorName: data.tutorName,
         playerNames: playerNames,
         amount: totalAmount.toFixed(2),
         paymentMethod: data.paymentMethod,
       });
-    } catch (emailError) {
-      console.error('Error queuing enrollment confirmation email:', emailError);
+
+      if (emailResult?.error) {
+        console.error('[enrollment] Error queuing enrollment confirmation email:', emailResult.error);
+      } else {
+        console.log('[enrollment] ✅ Pre-enrollment email queued successfully');
+      }
+    } catch (emailError: any) {
+      console.error('[enrollment] ❌ Error queuing enrollment confirmation email:', {
+        error: emailError,
+        message: emailError?.message,
+        stack: emailError?.stack,
+      });
       // Don't fail the enrollment if email fails, but log it
     }
 
+    console.log('[enrollment] ✅ Enrollment completed successfully');
     return NextResponse.json({ success: true, familyId: familyId });
   } catch (error: any) {
-    console.error('Enrollment error:', error);
+    console.error('[enrollment] ❌ Enrollment error:', {
+      message: error?.message,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    });
     
     // Don't expose internal error details to client in production
     const isDevelopment = process.env.NODE_ENV === 'development';
@@ -207,7 +246,11 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { 
         error: 'Error procesando la matrícula',
-        ...(isDevelopment && { details: error.message || JSON.stringify(error) })
+        ...(isDevelopment && { 
+          details: error?.message || JSON.stringify(error),
+          code: error?.code,
+          hint: error?.hint,
+        })
       },
       { status: 500 }
     );

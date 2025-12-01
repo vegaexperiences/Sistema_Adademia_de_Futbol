@@ -30,14 +30,14 @@ export default function PlayersList({ players, initialView = 'active' }: Players
   const [retiringId, setRetiringId] = useState<string | null>(null);
   const router = useRouter();
   
-  // Count only approved players
-  // Note: players table now only contains Active/Scholarship players (no Pending/Rejected)
+  // Count players by status
+  // Note: getPlayers() returns all players including rejected/retired
   const activeCount = players?.filter(p => p.status === 'Active').length || 0;
   const scholarshipCount = players?.filter(p => p.status === 'Scholarship').length || 0;
-  const rejectedCount = 0; // Rejected players are now in rejected_players table
+  const rejectedCount = players?.filter(p => p.status === 'Rejected').length || 0;
 
   // Filter players based on view and search
-  // Note: players table only contains Active/Scholarship players
+  // Note: players table contains Active, Scholarship, and Rejected players
   const filteredPlayers = players?.filter(player => {
     // Filter by view
     if (view === 'active') {

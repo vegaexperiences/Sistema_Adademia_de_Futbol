@@ -110,15 +110,34 @@ export async function approvePlayer(
       return { error: `Error al obtener datos del jugador: ${playerError?.message || 'Jugador no encontrado'}` };
     }
 
+    console.log('[approvePlayer] Starting approval for player:', {
+      playerId,
+      type,
+      hasFamilyId: !!pendingPlayer.family_id,
+      tutorName: pendingPlayer.tutor_name,
+      tutorEmail: pendingPlayer.tutor_email,
+      tutorCedula: pendingPlayer.tutor_cedula,
+    });
+
     // Get family info if player has family_id
     let familyData = null;
     if (pendingPlayer.family_id) {
-      const { data: family } = await supabase
+      const { data: family, error: familyError } = await supabase
         .from('families')
-        .select('id, tutor_name, tutor_email, tutor_cedula')
+        .select('id, tutor_name, tutor_email, tutor_cedula, tutor_phone')
         .eq('id', pendingPlayer.family_id)
         .single();
-      familyData = family;
+      
+      if (familyError) {
+        console.error('[approvePlayer] Error fetching family:', familyError);
+      } else {
+        familyData = family;
+        console.log('[approvePlayer] Family data found:', {
+          familyId: family?.id,
+          tutorName: family?.tutor_name,
+          tutorEmail: family?.tutor_email,
+        });
+      }
     }
 
     const player = {
@@ -126,33 +145,31 @@ export async function approvePlayer(
       families: familyData ? [familyData] : null,
     };
 
-    // Get tutor cedula from family or player notes (fallback)
+    // Get tutor cedula - prioritize from family, then pendingPlayer
     let tutorCedula: string | null = null;
-    if (Array.isArray(player.families)) {
-      tutorCedula = player.families[0]?.tutor_cedula || null;
-    } else if (player.families) {
-      tutorCedula = player.families.tutor_cedula || null;
+    if (familyData?.tutor_cedula) {
+      tutorCedula = familyData.tutor_cedula;
+    } else if (pendingPlayer.tutor_cedula) {
+      tutorCedula = pendingPlayer.tutor_cedula;
     }
-    
-    // If no cedula in family, try to get from players with same family_id
-    if (!tutorCedula && player.family_id) {
-      const { data: familyPlayers } = await supabase
-        .from('players')
-        .select('families(tutor_cedula)')
-        .eq('family_id', player.family_id)
-        .limit(1)
-        .single();
-      
-      if (familyPlayers?.families) {
-        if (Array.isArray(familyPlayers.families)) {
-          tutorCedula = familyPlayers.families[0]?.tutor_cedula || null;
-        } else if (familyPlayers.families && typeof familyPlayers.families === 'object' && 'tutor_cedula' in familyPlayers.families) {
-          tutorCedula = (familyPlayers.families as { tutor_cedula?: string | null }).tutor_cedula || null;
-        } else {
-          tutorCedula = null;
-        }
-      }
+
+    // Get tutor data - prioritize from family if exists, otherwise use pendingPlayer data
+    let tutorName = familyData?.tutor_name || pendingPlayer.tutor_name || null;
+    let tutorEmail = familyData?.tutor_email || pendingPlayer.tutor_email || null;
+    let tutorPhone = familyData?.tutor_phone || pendingPlayer.tutor_phone || null;
+
+    // If still no tutor_cedula, use from pendingPlayer
+    if (!tutorCedula) {
+      tutorCedula = pendingPlayer.tutor_cedula || null;
     }
+
+    console.log('[approvePlayer] Tutor data to be saved:', {
+      tutorName,
+      tutorEmail,
+      tutorCedula,
+      tutorPhone,
+      source: familyData ? 'family' : 'pendingPlayer',
+    });
 
     // Prepare player data for insertion into players table
     const playerData: any = {
@@ -170,10 +187,10 @@ export async function approvePlayer(
       notes: type === 'Scholarship' ? 'Becado aprobado desde panel de control' : pendingPlayer.notes,
       created_at: pendingPlayer.created_at,
       updated_at: new Date().toISOString(),
-      tutor_name: pendingPlayer.tutor_name,
-      tutor_cedula: pendingPlayer.tutor_cedula,
-      tutor_email: pendingPlayer.tutor_email,
-      tutor_phone: pendingPlayer.tutor_phone,
+      tutor_name: tutorName,
+      tutor_cedula: tutorCedula,
+      tutor_email: tutorEmail,
+      tutor_phone: tutorPhone,
       custom_monthly_fee: pendingPlayer.custom_monthly_fee,
       payment_status: pendingPlayer.payment_status,
       last_payment_date: pendingPlayer.last_payment_date,
@@ -184,14 +201,31 @@ export async function approvePlayer(
     };
 
     // Insert player into players table
-    const { error: insertError } = await supabase
+    console.log('[approvePlayer] Inserting player data:', {
+      id: playerData.id,
+      first_name: playerData.first_name,
+      last_name: playerData.last_name,
+      tutor_name: playerData.tutor_name,
+      tutor_email: playerData.tutor_email,
+      tutor_cedula: playerData.tutor_cedula,
+      status: playerData.status,
+    });
+
+    const { data: insertedPlayer, error: insertError } = await supabase
       .from('players')
-      .insert(playerData);
+      .insert(playerData)
+      .select()
+      .single();
 
     if (insertError) {
-      console.error('Error inserting player:', insertError);
+      console.error('[approvePlayer] ❌ Error inserting player:', insertError);
       return { error: `Error al aprobar jugador: ${insertError.message}` };
     }
+
+    console.log('[approvePlayer] ✅ Player inserted successfully:', {
+      playerId: insertedPlayer?.id,
+      status: insertedPlayer?.status,
+    });
 
     // Delete from pending_players
     const { error: deleteError } = await supabase
@@ -356,6 +390,7 @@ export async function approvePlayer(
       payment_method: paymentMethod,
       payment_date: now.toISOString().split('T')[0],
       notes: paymentNotes,
+      status: 'Approved', // Ensure payment is marked as approved
     };
 
     // Add proof_url if it's a URL (for cash/transfer/ach), or store transaction ID in notes
@@ -366,11 +401,52 @@ export async function approvePlayer(
       // For yappy/paguelofacil, transaction ID is already in notes
     }
 
-    const { error: paymentError } = await supabase.from('payments').insert(paymentData);
+    // Verify player exists before creating payment
+    const { data: verifyPlayer, error: verifyError } = await supabase
+      .from('players')
+      .select('id')
+      .eq('id', playerId)
+      .single();
+
+    if (verifyError || !verifyPlayer) {
+      console.error('[approvePlayer] ❌ Player not found when creating payment:', verifyError);
+      return { error: `Error: Jugador no encontrado al crear el pago: ${verifyError?.message || 'Jugador no existe'}` };
+    }
+
+    console.log('[approvePlayer] Creating enrollment payment:', {
+      playerId,
+      amount: enrollmentFee,
+      paymentMethod,
+      paymentData,
+    });
+
+    const { data: createdPayment, error: paymentError } = await supabase
+      .from('payments')
+      .insert(paymentData)
+      .select()
+      .single();
 
     if (paymentError) {
-      console.error('Error creating enrollment payment:', paymentError);
-      // Continue even if payment creation fails, but log it
+      console.error('[approvePlayer] ❌ Error creating enrollment payment:', {
+        error: paymentError,
+        code: paymentError.code,
+        message: paymentError.message,
+        details: paymentError.details,
+        hint: paymentError.hint,
+      });
+      return { error: `Error al crear el pago de matrícula: ${paymentError.message}` };
+    } else {
+      console.log('[approvePlayer] ✅ Enrollment payment created successfully:', {
+        paymentId: createdPayment?.id,
+        playerId: createdPayment?.player_id,
+        amount: createdPayment?.amount,
+        status: createdPayment?.status,
+      });
+      // Revalidate payment-related paths
+      revalidatePath('/dashboard/families');
+      revalidatePath('/dashboard/finances');
+      revalidatePath('/dashboard/finance');
+      revalidatePath(`/dashboard/players/${playerId}`);
     }
 
     // Calculate monthly fee for email
@@ -404,18 +480,19 @@ export async function approvePlayer(
     }
 
     // Send acceptance email with monthly fee
-    const tutorEmail = Array.isArray(player.families) 
+    // Use the tutor data we already obtained (from family or pendingPlayer)
+    const tutorEmailForEmail = tutorEmail || (Array.isArray(player.families) 
       ? player.families[0]?.tutor_email 
-      : player.families?.tutor_email;
-    const tutorName = Array.isArray(player.families)
+      : player.families?.tutor_email);
+    const tutorNameForEmail = tutorName || (Array.isArray(player.families)
       ? player.families[0]?.tutor_name || 'Familia'
-      : player.families?.tutor_name || 'Familia';
+      : player.families?.tutor_name || 'Familia');
     const playerName = `${player.first_name} ${player.last_name}`;
 
-    if (tutorEmail) {
+    if (tutorEmailForEmail) {
       try {
-        await queueEmail('player_accepted', tutorEmail, {
-          tutorName,
+        await queueEmail('player_accepted', tutorEmailForEmail, {
+          tutorName: tutorNameForEmail,
           playerNames: playerName,
           monthlyFee: monthlyFee.toFixed(2),
           scholarshipStatus: '',
@@ -434,18 +511,19 @@ export async function approvePlayer(
     }
   } else if (type === 'Scholarship') {
     // Send acceptance email for scholarship players (indicating BECADO)
-    const tutorEmail = Array.isArray(player.families) 
+    // Use the tutor data we already obtained (from family or pendingPlayer)
+    const tutorEmailForScholarship = tutorEmail || (Array.isArray(player.families) 
       ? player.families[0]?.tutor_email 
-      : player.families?.tutor_email;
-    const tutorName = Array.isArray(player.families)
+      : player.families?.tutor_email);
+    const tutorNameForScholarship = tutorName || (Array.isArray(player.families)
       ? player.families[0]?.tutor_name || 'Familia'
-      : player.families?.tutor_name || 'Familia';
+      : player.families?.tutor_name || 'Familia');
     const playerName = `${player.first_name} ${player.last_name}`;
 
-    if (tutorEmail) {
+    if (tutorEmailForScholarship) {
       try {
-        await queueEmail('player_accepted', tutorEmail, {
-          tutorName,
+        await queueEmail('player_accepted', tutorEmailForScholarship, {
+          tutorName: tutorNameForScholarship,
           playerNames: playerName,
           monthlyFee: '0.00', // Scholarship players don't pay
           scholarshipStatus: ' - BECADO',
