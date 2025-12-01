@@ -16,11 +16,23 @@ export interface UploadResult {
 function sanitizePathSegment(segment: string): string {
   return segment
     .toLowerCase()
-    .normalize('NFD') // Normalize to NFD form to separate base characters from accents
-    .replace(/[\u0300-\u036f]/g, '') // Remove accent marks (ñ -> n, á -> a, etc.)
-    .replace(/[^a-z0-9-]/g, '-') // Replace any non-alphanumeric (except hyphen) with hyphen
-    .replace(/-+/g, '-') // Replace multiple hyphens with a single hyphen
-    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+    .trim()
+    // Replace Spanish characters with ASCII equivalents
+    .replace(/ñ/g, 'n')
+    .replace(/[áàäâ]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    // Normalize to NFD and remove remaining diacritics
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    // Replace any non-alphanumeric (except hyphen) with hyphen
+    .replace(/[^a-z0-9-]/g, '-')
+    // Replace multiple hyphens with a single hyphen
+    .replace(/-+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-|-$/g, '');
 }
 
 /**
