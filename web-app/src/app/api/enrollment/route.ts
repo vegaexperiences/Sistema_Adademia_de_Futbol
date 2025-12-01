@@ -11,6 +11,50 @@ export async function POST(request: Request) {
   console.log('[enrollment] Request URL:', request.url);
   console.log('[enrollment] Environment:', process.env.NODE_ENV);
   
+  // Track created resources for rollback
+  const createdResources: {
+    familyId?: string;
+    familyWasNew?: boolean;
+    playerIds: string[];
+    paymentId?: string;
+  } = {
+    playerIds: [],
+  };
+
+  const supabase = await createClient();
+
+  // Helper function to cleanup created resources on error
+  async function cleanupOnError() {
+    console.log('[enrollment] 🧹 Starting cleanup of created resources...');
+    
+    try {
+      // Delete payment if it was created
+      if (createdResources.paymentId) {
+        console.log(`[enrollment] 🧹 Deleting payment: ${createdResources.paymentId}`);
+        await supabase.from('payments').delete().eq('id', createdResources.paymentId);
+      }
+
+      // Delete players if they were created
+      if (createdResources.playerIds.length > 0) {
+        console.log(`[enrollment] 🧹 Deleting ${createdResources.playerIds.length} players:`, createdResources.playerIds);
+        await supabase.from('pending_players').delete().in('id', createdResources.playerIds);
+      }
+
+      // Delete family only if it was newly created (not if it existed before)
+      if (createdResources.familyId && createdResources.familyWasNew) {
+        console.log(`[enrollment] 🧹 Deleting newly created family: ${createdResources.familyId}`);
+        await supabase.from('families').delete().eq('id', createdResources.familyId);
+      }
+
+      console.log('[enrollment] ✅ Cleanup completed');
+    } catch (cleanupError: any) {
+      console.error('[enrollment] ❌ Error during cleanup:', {
+        error: cleanupError?.message,
+        stack: cleanupError?.stack,
+      });
+    }
+  }
+
   try {
     console.log('[enrollment] Step 0: Parsing request body...');
     let body;
@@ -82,20 +126,6 @@ export async function POST(request: Request) {
     }
     
     console.log('[enrollment] ✅ Validation passed, processing enrollment...');
-    
-    console.log('[enrollment] Creating Supabase client...');
-    let supabase;
-    try {
-      supabase = await createClient();
-      console.log('[enrollment] ✅ Supabase client created successfully');
-    } catch (supabaseError: any) {
-      console.error('[enrollment] ❌ Error creating Supabase client:', {
-        error: supabaseError?.message,
-        stack: supabaseError?.stack,
-      });
-      throw new Error(`Error de conexión a la base de datos: ${supabaseError?.message}`);
-    }
-    
     console.log('[enrollment] Starting enrollment process...');
 
     // 1. Check if Family exists or Create new
@@ -112,6 +142,8 @@ export async function POST(request: Request) {
 
     if (existingFamily) {
       familyId = existingFamily.id;
+      createdResources.familyId = familyId;
+      createdResources.familyWasNew = false;
       console.log('[enrollment] Using existing family:', familyId);
       // Optional: Update tutor info if needed
       const { error: updateError } = await supabase
@@ -153,6 +185,8 @@ export async function POST(request: Request) {
         throw familyError;
       }
       familyId = newFamily.id;
+      createdResources.familyId = familyId;
+      createdResources.familyWasNew = true;
       console.log('[enrollment] ✅ Family created:', familyId);
     }
 
@@ -180,13 +214,6 @@ export async function POST(request: Request) {
 
       if (existingPendingPlayer) {
         console.warn(`[enrollment] Duplicate pending player detected: ${player.firstName} ${player.lastName} (${existingPendingPlayer.id})`);
-        // Continue processing but mark as duplicate - we'll still send email in case it wasn't sent before
-        // Store duplicate flag to return later
-        const isDuplicate = true;
-        
-        // Still send email even if duplicate (in case email wasn't sent before)
-        console.log('[enrollment] Duplicate detected, but will still attempt to send email');
-        
         // Calculate amount for email
         const { data: priceSetting } = await supabase
           .from('settings') 
@@ -222,12 +249,12 @@ export async function POST(request: Request) {
           );
 
           if (emailResult?.error) {
-            console.error('[enrollment] Error queuing enrollment confirmation email:', emailResult.error);
+            console.error('[enrollment] Error sending enrollment confirmation email:', emailResult.error);
           } else {
-            console.log('[enrollment] ✅ Pre-enrollment email queued successfully (duplicate case)');
+            console.log('[enrollment] ✅ Pre-enrollment email sent successfully (duplicate case)');
           }
         } catch (emailError: any) {
-          console.error('[enrollment] ❌ Error queuing enrollment confirmation email:', {
+          console.error('[enrollment] ❌ Error sending enrollment confirmation email:', {
             error: emailError,
             message: emailError?.message,
             stack: emailError?.stack,
@@ -260,12 +287,12 @@ export async function POST(request: Request) {
         first_name: player.firstName,
         last_name: player.lastName,
         birth_date: player.birthDate,
-        gender: player.gender, // Should be "Masculino" or "Femenino" from form
-        cedula: player.cedula || null, // Optional for kids sometimes
-        category: player.category || 'Pendiente', // Logic to determine category could go here
+        gender: player.gender,
+        cedula: player.cedula || null,
+        category: player.category || 'Pendiente',
         family_id: familyId,
-        cedula_front_url: player.cedulaFrontFile || null, // Save front ID
-        cedula_back_url: player.cedulaBackFile || null,   // Save back ID
+        cedula_front_url: player.cedulaFrontFile || null,
+        cedula_back_url: player.cedulaBackFile || null,
       };
     });
     
@@ -291,6 +318,7 @@ export async function POST(request: Request) {
         hint: playersError.hint,
         playersToInsert: JSON.stringify(playersToInsert, null, 2),
       });
+      await cleanupOnError();
       throw playersError;
     }
 
@@ -300,14 +328,16 @@ export async function POST(request: Request) {
         created: createdPlayers?.length || 0,
         createdPlayers: createdPlayers,
       });
+      await cleanupOnError();
       throw new Error('Error al crear los jugadores. No se obtuvieron todos los IDs.');
     }
     
-    console.log('[enrollment] ✅ Players created successfully:', createdPlayers.map(p => p.id));
+    // Track created player IDs for rollback
+    createdResources.playerIds = createdPlayers.map(p => p.id);
+    console.log('[enrollment] ✅ Players created successfully:', createdResources.playerIds);
 
     // 4. Calculate Amount
     console.log('[enrollment] Step 4: Calculating amount...');
-    // Fetch enrollment price from settings or use default
     const { data: priceSetting } = await supabase
       .from('settings') 
       .select('value')
@@ -316,22 +346,18 @@ export async function POST(request: Request) {
 
     const baseRate = priceSetting ? Number(priceSetting.value) : 130;
     const count = data.players.length;
-    const totalAmount = baseRate * count; // No discount for enrollment
+    const totalAmount = baseRate * count;
     console.log('[enrollment] Amount calculated:', { baseRate, count, totalAmount });
 
-    // 5. Create Payment Records - one per player or one combined
-    // Note: player_id must be NULL because players are in pending_players, not players table yet
-    // The payment will be linked to the player when they are approved
-    // Map to valid status values: 'Approved', 'Pending', 'Rejected', 'Cancelled'
+    // 5. Create Payment Records
     const paymentStatus = (data.paymentMethod === 'Comprobante' || 
                           data.paymentMethod === 'Transferencia' || 
                           data.paymentMethod === 'Yappy') 
-                          ? 'Pending' // Needs approval
+                          ? 'Pending'
                           : data.paymentMethod === 'PagueloFacil'
-                          ? 'Approved' // PagueloFacil payments are immediate
+                          ? 'Approved'
                           : 'Pending';
 
-    // Map payment method to valid enum values
     const paymentMethodMap: Record<string, string> = {
       'Comprobante': 'cash',
       'Transferencia': 'transfer',
@@ -341,20 +367,16 @@ export async function POST(request: Request) {
     };
     const mappedPaymentMethod = paymentMethodMap[data.paymentMethod] || 'other';
 
-    // Insert payment record - player_id is NULL because players are still pending
-    // The payment will be linked when the player is approved
-    // Store pending player IDs in notes for later linking
     const paymentData: any = {
-      player_id: null, // NULL because player is in pending_players, not players table
+      player_id: null,
       amount: totalAmount,
-      type: 'enrollment', // Use 'type' instead of 'payment_type' based on schema
-      method: mappedPaymentMethod, // Use 'method' instead of 'payment_method' based on schema
+      type: 'enrollment',
+      method: mappedPaymentMethod,
       payment_date: new Date().toISOString().split('T')[0],
-      notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}. Pending Player IDs: ${createdPlayers.map(p => p.id).join(', ')}`,
-      status: paymentStatus, // Already mapped to valid values ('Approved' or 'Pending')
+      notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}. Pending Player IDs: ${createdResources.playerIds.join(', ')}`,
+      status: paymentStatus,
     };
 
-    // Add proof_url if provided
     if (data.paymentProofFile) {
       paymentData.proof_url = data.paymentProofFile;
     }
@@ -377,13 +399,15 @@ export async function POST(request: Request) {
         hint: paymentError.hint,
         paymentData: JSON.stringify(paymentData, null, 2),
       });
+      await cleanupOnError();
       throw paymentError;
     }
 
-    console.log('[enrollment] ✅ Payment record created:', payment?.id);
+    createdResources.paymentId = payment?.id;
+    console.log('[enrollment] ✅ Payment record created:', createdResources.paymentId);
 
     // 6. Send Email immediately (not queued)
-    console.log('[enrollment] Attempting to send pre-enrollment email immediately to:', data.tutorEmail);
+    console.log('[enrollment] Step 6: Attempting to send pre-enrollment email immediately to:', data.tutorEmail);
     try {
       const { sendEmailImmediately } = await import('@/lib/actions/email-queue');
       const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
@@ -394,9 +418,6 @@ export async function POST(request: Request) {
         amount: totalAmount.toFixed(2),
         paymentMethod: data.paymentMethod,
       });
-      
-      // Get pending player IDs for metadata
-      const pendingPlayerIds = createdPlayers.map(p => p.id);
       
       const emailResult = await sendEmailImmediately(
         'pre_enrollment', 
@@ -410,7 +431,7 @@ export async function POST(request: Request) {
         {
           family_id: familyId,
           email_type: 'pre_enrollment',
-          pending_player_ids: pendingPlayerIds,
+          pending_player_ids: createdResources.playerIds,
           player_count: data.players.length,
         }
       );
@@ -418,6 +439,7 @@ export async function POST(request: Request) {
       if (emailResult?.error) {
         console.error('[enrollment] ❌ Error sending enrollment confirmation email:', {
           error: emailResult.error,
+          details: emailResult.details,
           email: data.tutorEmail,
           template: 'pre_enrollment',
         });
@@ -433,6 +455,8 @@ export async function POST(request: Request) {
       console.error('[enrollment] ❌ Exception sending enrollment confirmation email:', {
         error: emailError,
         message: emailError?.message,
+        response: emailError?.response,
+        responseData: emailError?.response?.data,
         stack: emailError?.stack,
         email: data.tutorEmail,
       });
@@ -442,6 +466,9 @@ export async function POST(request: Request) {
     console.log('[enrollment] ✅ Enrollment completed successfully');
     return NextResponse.json({ success: true, familyId: familyId });
   } catch (error: any) {
+    // Cleanup on error
+    await cleanupOnError();
+    
     const errorDetails = {
       message: error?.message,
       code: error?.code,
@@ -459,20 +486,15 @@ export async function POST(request: Request) {
     console.error('[enrollment] ❌ Error details:', error?.details);
     console.error('[enrollment] ❌ Error hint:', error?.hint);
     
-    // Always log full error details for debugging (even in production)
-    // But don't expose to client
     const errorMessage = error?.message || 'Error desconocido';
     const errorCode = error?.code;
     
-    // Always include error details in response for debugging (even in production)
-    // This helps us diagnose issues faster
     return NextResponse.json(
       { 
         error: 'Error procesando la matrícula',
         details: errorMessage,
         code: errorCode,
         hint: error?.hint,
-        // Include timestamp for correlation with server logs
         timestamp: new Date().toISOString(),
       },
       { status: 500 }

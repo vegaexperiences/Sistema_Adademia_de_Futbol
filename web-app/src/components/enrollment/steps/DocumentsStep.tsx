@@ -56,6 +56,7 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
 
     try {
       const player = data.players[index];
+      // Sanitize player name for path (already handled in uploadFile, but keep simple here)
       const playerId = `${player.firstName}-${player.lastName}`.toLowerCase().replace(/\s+/g, '-') || `player-${index}`;
       const path = `players/${playerId}/${field}`;
       

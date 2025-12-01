@@ -147,16 +147,40 @@ export async function sendEmailImmediately(
       emailQueueId: emailRecord?.id,
     };
   } catch (error: any) {
-    console.error('[sendEmailImmediately] ❌ Error sending email immediately:', {
+    // Enhanced error logging for Brevo 400 errors
+    const errorInfo: any = {
       error: error,
       message: error?.message,
       stack: error?.stack,
       recipient: recipientEmail,
       template: templateName,
-    });
+    };
+
+    // Capture Brevo-specific error details
+    if (error?.response) {
+      errorInfo.responseStatus = error.response?.status;
+      errorInfo.responseStatusText = error.response?.statusText;
+      errorInfo.responseData = error.response?.data;
+      errorInfo.responseHeaders = error.response?.headers;
+    }
+
+    // Capture axios error details if present
+    if (error?.response?.data) {
+      errorInfo.brevoErrorCode = error.response.data.code;
+      errorInfo.brevoErrorMessage = error.response.data.message;
+      errorInfo.brevoErrorDetails = error.response.data;
+    }
+
+    // Log error with all available details
+    console.error('[sendEmailImmediately] ❌ Error sending email immediately:', errorInfo);
     
-    // Save failed record to email_queue
+    // Save failed record to email_queue with detailed error message
     try {
+      const errorMessage = error?.response?.data?.message 
+        || error?.response?.data?.error 
+        || error?.message 
+        || 'Unknown error';
+      
       await supabase
         .from('email_queue')
         .insert({
@@ -165,12 +189,13 @@ export async function sendEmailImmediately(
           subject: subject,
           html_content: htmlContent,
           status: 'failed',
-          error_message: error?.message || 'Unknown error',
+          error_message: errorMessage,
           scheduled_for: new Date().toISOString().split('T')[0],
           metadata: {
             ...metadata,
             email_type: metadata?.email_type || templateName,
             ...variables,
+            error_details: errorInfo,
           },
         });
     } catch (saveError) {
@@ -178,8 +203,8 @@ export async function sendEmailImmediately(
     }
     
     return { 
-      error: error?.message || 'Error sending email immediately',
-      details: error,
+      error: error?.response?.data?.message || error?.message || 'Error sending email immediately',
+      details: errorInfo,
     };
   }
 }
