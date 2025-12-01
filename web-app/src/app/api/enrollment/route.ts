@@ -25,6 +25,38 @@ export async function POST(request: Request) {
     }
     
     const data = validationResult.data;
+    
+    // Additional validation: ensure players have required fields
+    if (!data.players || data.players.length === 0) {
+      console.error('[enrollment] No players provided');
+      return NextResponse.json(
+        { error: 'Debe agregar al menos un jugador' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate each player has required fields
+    for (let i = 0; i < data.players.length; i++) {
+      const player = data.players[i];
+      if (!player.firstName || !player.lastName || !player.birthDate || !player.gender) {
+        console.error(`[enrollment] Player ${i} missing required fields:`, player);
+        return NextResponse.json(
+          { error: `Jugador ${i + 1} tiene campos incompletos` },
+          { status: 400 }
+        );
+      }
+      
+      // Ensure gender is valid
+      if (!['Masculino', 'Femenino', 'Otro'].includes(player.gender)) {
+        console.error(`[enrollment] Player ${i} has invalid gender:`, player.gender);
+        return NextResponse.json(
+          { error: `Jugador ${i + 1} tiene un género inválido` },
+          { status: 400 }
+        );
+      }
+    }
+    
+    console.log('[enrollment] ✅ Validation passed, processing enrollment...');
     const supabase = await createClient();
 
     // 1. Check if Family exists or Create new
@@ -101,17 +133,30 @@ export async function POST(request: Request) {
     }
 
     // 3. Create Players in pending_players table (not players table)
-    const playersToInsert = data.players.map((player: any) => ({
-      first_name: player.firstName,
-      last_name: player.lastName,
-      birth_date: player.birthDate,
-      gender: player.gender, // Should be "Masculino" or "Femenino" from form
-      cedula: player.cedula || null, // Optional for kids sometimes
-      category: player.category || 'Pendiente', // Logic to determine category could go here
-      family_id: familyId,
-      cedula_front_url: player.cedulaFrontFile, // Save front ID
-      cedula_back_url: player.cedulaBackFile,   // Save back ID
-    }));
+    const playersToInsert = data.players.map((player: any) => {
+      console.log(`[enrollment] Processing player: ${player.firstName} ${player.lastName}`, {
+        firstName: player.firstName,
+        lastName: player.lastName,
+        birthDate: player.birthDate,
+        gender: player.gender,
+        cedula: player.cedula,
+        category: player.category,
+      });
+      
+      return {
+        first_name: player.firstName,
+        last_name: player.lastName,
+        birth_date: player.birthDate,
+        gender: player.gender, // Should be "Masculino" or "Femenino" from form
+        cedula: player.cedula || null, // Optional for kids sometimes
+        category: player.category || 'Pendiente', // Logic to determine category could go here
+        family_id: familyId,
+        cedula_front_url: player.cedulaFrontFile || null, // Save front ID
+        cedula_back_url: player.cedulaBackFile || null,   // Save back ID
+      };
+    });
+    
+    console.log('[enrollment] Players to insert:', JSON.stringify(playersToInsert, null, 2));
 
     // Insert and get the created player IDs directly
     const { data: createdPlayers, error: playersError } = await supabase
@@ -120,7 +165,14 @@ export async function POST(request: Request) {
       .select('id');
 
     if (playersError) {
-      console.error('[enrollment] Error inserting players:', playersError);
+      console.error('[enrollment] Error inserting players:', {
+        error: playersError,
+        code: playersError.code,
+        message: playersError.message,
+        details: playersError.details,
+        hint: playersError.hint,
+        playersToInsert: JSON.stringify(playersToInsert, null, 2),
+      });
       throw playersError;
     }
 
@@ -231,14 +283,17 @@ export async function POST(request: Request) {
     console.log('[enrollment] ✅ Enrollment completed successfully');
     return NextResponse.json({ success: true, familyId: familyId });
   } catch (error: any) {
-    console.error('[enrollment] ❌ Enrollment error:', {
+    const errorDetails = {
       message: error?.message,
       code: error?.code,
       details: error?.details,
       hint: error?.hint,
       stack: error?.stack,
+      name: error?.name,
       error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-    });
+    };
+    
+    console.error('[enrollment] ❌ Enrollment error:', errorDetails);
     
     // Don't expose internal error details to client in production
     const isDevelopment = process.env.NODE_ENV === 'development';
@@ -247,9 +302,10 @@ export async function POST(request: Request) {
       { 
         error: 'Error procesando la matrícula',
         ...(isDevelopment && { 
-          details: error?.message || JSON.stringify(error),
+          details: error?.message || 'Error desconocido',
           code: error?.code,
           hint: error?.hint,
+          fullError: errorDetails,
         })
       },
       { status: 500 }

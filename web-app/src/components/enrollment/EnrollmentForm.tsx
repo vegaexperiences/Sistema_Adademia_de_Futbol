@@ -126,14 +126,21 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
       if (!response.ok) {
         // Handle error responses
         const errorMessage = result.error || 'Error al procesar la matrícula';
-        const errorDetails = result.details || result.issues || '';
+        const errorDetails = result.details || result.issues || result.fullError || '';
         console.error('[EnrollmentForm] Error response:', {
           status: response.status,
           error: errorMessage,
           details: errorDetails,
+          fullResult: result,
         });
         
-        alert(`${errorMessage}${errorDetails ? '\n\nDetalles: ' + JSON.stringify(errorDetails, null, 2) : ''}`);
+        // Show detailed error in development, simplified in production
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        const detailsText = errorDetails 
+          ? (typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails, null, 2))
+          : '';
+        
+        alert(`${errorMessage}${detailsText ? '\n\nDetalles: ' + detailsText : ''}`);
         setIsSubmitting(false); // Allow retry on error
         return;
       }
