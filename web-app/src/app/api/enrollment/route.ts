@@ -58,20 +58,25 @@ export async function POST(request: Request) {
     
     console.log('[enrollment] ✅ Validation passed, processing enrollment...');
     const supabase = await createClient();
+    console.log('[enrollment] Starting enrollment process...');
 
     // 1. Check if Family exists or Create new
     let familyId;
+    console.log('[enrollment] Step 1: Checking for existing family with cedula:', data.tutorCedula);
     
     const { data: existingFamily } = await supabase
       .from('families')
       .select('id')
       .eq('tutor_cedula', data.tutorCedula)
       .single();
+    
+    console.log('[enrollment] Existing family check result:', { found: !!existingFamily, id: existingFamily?.id });
 
     if (existingFamily) {
       familyId = existingFamily.id;
+      console.log('[enrollment] Using existing family:', familyId);
       // Optional: Update tutor info if needed
-      await supabase
+      const { error: updateError } = await supabase
         .from('families')
         .update({
           tutor_name: data.tutorName,
@@ -80,7 +85,13 @@ export async function POST(request: Request) {
           tutor_cedula_url: data.cedulaTutorFile || undefined,
         })
         .eq('id', familyId);
+      
+      if (updateError) {
+        console.error('[enrollment] Error updating family:', updateError);
+        // Continue anyway, update is optional
+      }
     } else {
+      console.log('[enrollment] Creating new family...');
       const { data: newFamily, error: familyError } = await supabase
         .from('families')
         .insert({
@@ -94,8 +105,17 @@ export async function POST(request: Request) {
         .select()
         .single();
 
-      if (familyError) throw familyError;
+      if (familyError) {
+        console.error('[enrollment] ❌ Error creating family:', {
+          error: familyError,
+          code: familyError.code,
+          message: familyError.message,
+          details: familyError.details,
+        });
+        throw familyError;
+      }
       familyId = newFamily.id;
+      console.log('[enrollment] ✅ Family created:', familyId);
     }
 
     // 2. Check for duplicate pending players before inserting
@@ -187,6 +207,7 @@ export async function POST(request: Request) {
     }
 
     // 3. Create Players in pending_players table (not players table)
+    console.log('[enrollment] Step 3: Creating pending players...');
     const playersToInsert = data.players.map((player: any) => {
       console.log(`[enrollment] Processing player: ${player.firstName} ${player.lastName}`, {
         firstName: player.firstName,
@@ -217,9 +238,14 @@ export async function POST(request: Request) {
       .from('pending_players')
       .insert(playersToInsert)
       .select('id');
+    
+    console.log('[enrollment] Players insert result:', { 
+      created: createdPlayers?.length || 0, 
+      error: playersError ? { code: playersError.code, message: playersError.message } : null 
+    });
 
     if (playersError) {
-      console.error('[enrollment] Error inserting players:', {
+      console.error('[enrollment] ❌ Error inserting players:', {
         error: playersError,
         code: playersError.code,
         message: playersError.message,
@@ -231,10 +257,18 @@ export async function POST(request: Request) {
     }
 
     if (!createdPlayers || createdPlayers.length !== data.players.length) {
+      console.error('[enrollment] ❌ Players count mismatch:', {
+        expected: data.players.length,
+        created: createdPlayers?.length || 0,
+        createdPlayers: createdPlayers,
+      });
       throw new Error('Error al crear los jugadores. No se obtuvieron todos los IDs.');
     }
+    
+    console.log('[enrollment] ✅ Players created successfully:', createdPlayers.map(p => p.id));
 
     // 4. Calculate Amount
+    console.log('[enrollment] Step 4: Calculating amount...');
     // Fetch enrollment price from settings or use default
     const { data: priceSetting } = await supabase
       .from('settings') 
@@ -245,6 +279,7 @@ export async function POST(request: Request) {
     const baseRate = priceSetting ? Number(priceSetting.value) : 130;
     const count = data.players.length;
     const totalAmount = baseRate * count; // No discount for enrollment
+    console.log('[enrollment] Amount calculated:', { baseRate, count, totalAmount });
 
     // 5. Create Payment Records - one per player or one combined
     // Note: player_id must be NULL because players are in pending_players, not players table yet
@@ -286,7 +321,8 @@ export async function POST(request: Request) {
       paymentData.proof_url = data.paymentProofFile;
     }
 
-    console.log('[enrollment] Creating payment record:', paymentData);
+    console.log('[enrollment] Step 5: Creating payment record...');
+    console.log('[enrollment] Payment data:', JSON.stringify(paymentData, null, 2));
 
     const { data: payment, error: paymentError } = await supabase
       .from('payments')
@@ -295,12 +331,13 @@ export async function POST(request: Request) {
       .single();
 
     if (paymentError) {
-      console.error('[enrollment] Payment record error:', {
+      console.error('[enrollment] ❌ Payment record error:', {
         error: paymentError,
         code: paymentError.code,
         message: paymentError.message,
         details: paymentError.details,
         hint: paymentError.hint,
+        paymentData: JSON.stringify(paymentData, null, 2),
       });
       throw paymentError;
     }
@@ -378,6 +415,16 @@ export async function POST(request: Request) {
     };
     
     console.error('[enrollment] ❌ Enrollment error:', errorDetails);
+    console.error('[enrollment] ❌ Full error stack:', error?.stack);
+    console.error('[enrollment] ❌ Error message:', error?.message);
+    console.error('[enrollment] ❌ Error code:', error?.code);
+    console.error('[enrollment] ❌ Error details:', error?.details);
+    console.error('[enrollment] ❌ Error hint:', error?.hint);
+    
+    // Always log full error details for debugging (even in production)
+    // But don't expose to client
+    const errorMessage = error?.message || 'Error desconocido';
+    const errorCode = error?.code;
     
     // Don't expose internal error details to client in production
     const isDevelopment = process.env.NODE_ENV === 'development';
@@ -386,10 +433,9 @@ export async function POST(request: Request) {
       { 
         error: 'Error procesando la matrícula',
         ...(isDevelopment && { 
-          details: error?.message || 'Error desconocido',
-          code: error?.code,
+          details: errorMessage,
+          code: errorCode,
           hint: error?.hint,
-          fullError: errorDetails,
         })
       },
       { status: 500 }
