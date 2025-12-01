@@ -14,6 +14,9 @@ type PendingPayment = {
   player_id: string | null;
   proof_url?: string | null;
   type?: string | null;
+  payment_method?: string | null;
+  notes?: string | null;
+  amount?: number | null;
 };
 
 type SearchParams = {
@@ -111,20 +114,47 @@ function PlayerApprovals({
           </div>
         ) : (
           <div className="grid gap-4 sm:gap-6">
-          {pendingPlayers.map((player) => (
+          {pendingPlayers.map((player, index) => {
+            // Check for potential duplicates by name
+            const duplicateNames = pendingPlayers.filter(
+              (p) => p.id !== player.id && 
+              `${p.first_name} ${p.last_name}`.toLowerCase() === `${player.first_name} ${player.last_name}`.toLowerCase()
+            );
+            const isDuplicate = duplicateNames.length > 0;
+            
+            return (
               <div key={player.id} className="glass-card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 animate-slide-up">
                 <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-4">
                       <div>
+                        {isDuplicate && (
+                          <div className="mb-2 p-2 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg">
+                            <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-200">
+                              ⚠️ Posible duplicado: Existe otro jugador con el mismo nombre
+                            </p>
+                            <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                              ID: {player.id.substring(0, 8)}... | Fecha: {player.created_at ? new Date(player.created_at).toLocaleDateString('es-ES') : 'N/A'}
+                            </p>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 flex-wrap mb-2">
                           <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                             {player.first_name} {player.last_name}
                           </h3>
                           {(() => {
-                            const category = getPlayerCategory(player.birth_date, player.gender);
+                            // Normalize gender format for getPlayerCategory
+                            const normalizedGender = player.gender === 'M' || player.gender === 'Masculino' 
+                              ? 'Masculino' 
+                              : player.gender === 'F' || player.gender === 'Femenino' 
+                              ? 'Femenino' 
+                              : null;
+                            if (!normalizedGender || !player.birth_date) {
+                              return <span className="px-3 py-1 rounded-full text-sm font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Pendiente</span>;
+                            }
+                            const category = getPlayerCategory(player.birth_date, normalizedGender);
                             const colorClass = getCategoryColor(category);
-                          return <span className={`px-3 py-1 rounded-full text-sm font-bold ${colorClass}`}>{category}</span>;
+                            return <span className={`px-3 py-1 rounded-full text-sm font-bold ${colorClass}`}>{category}</span>;
                           })()}
                         </div>
                         <div className="flex gap-2 flex-wrap">
@@ -144,13 +174,16 @@ function PlayerApprovals({
                             className="px-3 py-1 rounded-full text-xs font-bold"
                             style={{
                               background:
-                                player.gender === 'M'
+                                player.gender === 'M' || player.gender === 'Masculino'
                                 ? 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)'
                                 : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                              color: player.gender === 'M' ? '#5b21b6' : '#be185d',
+                              color: player.gender === 'M' || player.gender === 'Masculino' ? '#5b21b6' : '#be185d',
                             }}
                           >
-                              {player.gender === 'M' ? '👦' : '👧'} {player.gender === 'M' ? 'Masculino' : 'Femenino'}
+                              {(() => {
+                                const isMale = player.gender === 'M' || player.gender === 'Masculino';
+                                return isMale ? '👦 Masculino' : '👧 Femenino';
+                              })()}
                             </span>
                           )}
                         </div>
@@ -201,7 +234,7 @@ function PlayerApprovals({
                             const tutorUrl = player.families?.tutor_cedula_url || (player.notes ? JSON.parse(player.notes).tutor_doc : null);
 
                           const playerPayments = (pendingPayments || []).filter(
-                            (payment) => payment.player_id === player.id && payment.proof_url
+                            (payment) => payment.player_id === player.id
                           );
 
                           const hasDocuments = frontUrl || backUrl || tutorUrl || playerPayments.length > 0;
@@ -229,17 +262,78 @@ function PlayerApprovals({
 
                               {playerPayments.length > 0 && (
                                 <div>
-                                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">💳 Comprobantes de Pago</p>
-                                  <div className="flex gap-2 flex-wrap">
+                                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">💳 Información de Pago</p>
+                                  <div className="space-y-3">
                                     {playerPayments.map((payment, idx) => {
-                                      if (!payment.proof_url) return null;
                                       const key = payment.id ?? `${player.id}-payment-${idx}`;
+                                      const paymentMethod = payment.payment_method || 'cash';
+                                      const methodLabels: Record<string, string> = {
+                                        cash: 'Efectivo',
+                                        transfer: 'Transferencia',
+                                        ach: 'ACH',
+                                        yappy: 'Yappy Comercial',
+                                        paguelofacil: 'Paguelo Fácil',
+                                        other: 'Otro',
+                                      };
+                                      
+                                      // Extract transaction ID from notes if available
+                                      const notes = payment.notes || '';
+                                      let transactionInfo = null;
+                                      if (paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') {
+                                        // Try to extract transaction ID from notes
+                                        const transactionMatch = notes.match(/ID Transacción: ([^\s.]+)/i) || 
+                                                               notes.match(/Transacción: ([^\s.]+)/i) ||
+                                                               notes.match(/Operación: ([^\s.]+)/i);
+                                        if (transactionMatch) {
+                                          transactionInfo = transactionMatch[1];
+                                        }
+                                      }
+
                                       return (
-                                        <DocumentPreview
-                                          key={key}
-                                          url={payment.proof_url}
-                                          title={`Comprobante de Pago - ${payment.type ?? 'Pago'} (${idx + 1})`}
-                                        />
+                                        <div key={key} className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                                          <div className="flex items-start justify-between mb-2">
+                                            <div>
+                                              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                                {payment.type || 'Pago'} {payment.amount ? `- $${payment.amount.toFixed(2)}` : ''}
+                                              </p>
+                                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                                Método: {methodLabels[paymentMethod] || paymentMethod}
+                                              </p>
+                                            </div>
+                                          </div>
+                                          
+                                          {/* Show proof URL for cash/transfer/ach */}
+                                          {(paymentMethod === 'cash' || paymentMethod === 'transfer' || paymentMethod === 'ach') && payment.proof_url && (
+                                            <div className="mt-2">
+                                              <DocumentPreview
+                                                url={payment.proof_url}
+                                                title={`Comprobante - ${methodLabels[paymentMethod]}`}
+                                              />
+                                            </div>
+                                          )}
+                                          
+                                          {/* Show transaction info for Yappy/Paguelo Fácil */}
+                                          {(paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') && (
+                                            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                                              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">
+                                                {paymentMethod === 'yappy' ? 'Yappy Comercial' : 'Paguelo Fácil'}
+                                              </p>
+                                              {transactionInfo ? (
+                                                <p className="text-xs text-blue-600 dark:text-blue-400">
+                                                  ID Transacción: <span className="font-mono font-bold">{transactionInfo}</span>
+                                                </p>
+                                              ) : notes ? (
+                                                <p className="text-xs text-blue-600 dark:text-blue-400 break-words">
+                                                  {notes.substring(0, 100)}{notes.length > 100 ? '...' : ''}
+                                                </p>
+                                              ) : (
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                  Información de transacción no disponible
+                                                </p>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
                                       );
                                     })}
                                   </div>
@@ -260,7 +354,8 @@ function PlayerApprovals({
                 <PlayerApprovalButtons playerId={player.id} />
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
       </div>

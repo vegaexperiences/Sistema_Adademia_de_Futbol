@@ -180,8 +180,10 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 updateData({ 
                   paymentProofFile: `yappy:${transactionId}` // Store transaction ID as proof
                 });
-                // Submit the enrollment form
-                onSubmit();
+                // Submit the enrollment form (only once)
+                if (onSubmit) {
+                  onSubmit();
+                }
               }}
               onError={(errorMsg: string) => {
                 alert('Error en Yappy: ' + errorMsg);
@@ -317,8 +319,10 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               paymentProofFile: `paguelofacil:${transactionId}` // Store transaction ID as proof
             });
             setShowPagueloFacilCheckout(false);
-            // Submit the enrollment form
-            onSubmit();
+            // Submit the enrollment form (only once)
+            if (onSubmit) {
+              onSubmit();
+            }
           }}
           onError={(errorMsg: string) => {
             alert('Error en Paguelo Fácil: ' + errorMsg);

@@ -8,11 +8,13 @@ export default async function DashboardPage() {
   // Get stats
   const { data: players } = await supabase.from('players').select('status, family_id');
   const { data: families } = await supabase.from('families').select('id, players(status)');
+  const { data: pendingPlayersData } = await supabase.from('pending_players').select('id');
   
   // Only count approved players (Active or Scholarship) for total
-  const totalPlayers = players?.filter(p => p.status === 'Active' || p.status === 'Scholarship').length || 0;
+  // Note: players table now only contains Active/Scholarship players
+  const totalPlayers = players?.length || 0;
   const activePlayers = players?.filter(p => p.status === 'Active').length || 0;
-  const pendingPlayers = players?.filter(p => p.status === 'Pending').length || 0;
+  const pendingPlayers = pendingPlayersData?.length || 0;
   const scholarships = players?.filter(p => p.status === 'Scholarship').length || 0;
   
   // Only count families with at least one approved player

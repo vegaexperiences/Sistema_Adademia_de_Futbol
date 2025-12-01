@@ -30,22 +30,18 @@ export default function PlayersList({ players, initialView = 'active' }: Players
   const [retiringId, setRetiringId] = useState<string | null>(null);
   const router = useRouter();
   
-  // Count only approved players (exclude Pending - they're in approvals section)
+  // Count only approved players
+  // Note: players table now only contains Active/Scholarship players (no Pending/Rejected)
   const activeCount = players?.filter(p => p.status === 'Active').length || 0;
   const scholarshipCount = players?.filter(p => p.status === 'Scholarship').length || 0;
-  const rejectedCount = players?.filter(p => p.status === 'Rejected').length || 0;
+  const rejectedCount = 0; // Rejected players are now in rejected_players table
 
   // Filter players based on view and search
-  // Note: Pending players should NEVER appear here - they only appear in approvals
+  // Note: players table only contains Active/Scholarship players
   const filteredPlayers = players?.filter(player => {
-    // Always exclude Pending players from the players list
-    if (player.status === 'Pending') {
-      return false;
-    }
-    
     // Filter by view
     if (view === 'active') {
-      // Show only Active and Scholarship (no Pending)
+      // Show only Active and Scholarship
       if (!['Active', 'Scholarship'].includes(player.status)) {
         return false;
       }
@@ -258,12 +254,15 @@ export default function PlayersList({ players, initialView = 'active' }: Players
                         )}
                         {player.gender && (
                           <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
-                            background: player.gender === 'M' 
+                            background: player.gender === 'M' || player.gender === 'Masculino'
                               ? 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)'
                               : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                            color: player.gender === 'M' ? '#5b21b6' : '#be185d'
+                            color: player.gender === 'M' || player.gender === 'Masculino' ? '#5b21b6' : '#be185d'
                           }}>
-                            {player.gender === 'M' ? '👦' : '👧'} {player.gender === 'M' ? 'Masculino' : 'Femenino'}
+                            {(() => {
+                              const isMale = player.gender === 'M' || player.gender === 'Masculino';
+                              return isMale ? '👦 Masculino' : '👧 Femenino';
+                            })()}
                           </span>
                         )}
                       </div>

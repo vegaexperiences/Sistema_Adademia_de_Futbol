@@ -42,8 +42,9 @@ export default async function PlayerProfilePage({
   // Calculate age using utility
   const age = player.birth_date ? calculateAge(player.birth_date) : null;
   
-  // Get player category
-  const category = getPlayerCategory(player.birth_date, player.gender);
+  // Get player category (normalize gender format)
+  const normalizedGender = player.gender === 'M' || player.gender === 'Masculino' ? 'Masculino' : 'Femenino';
+  const category = getPlayerCategory(player.birth_date, normalizedGender);
   const categoryColor = getCategoryColor(category);
 
   // Get payments
@@ -86,12 +87,15 @@ export default async function PlayerProfilePage({
               <div className="flex gap-2 flex-wrap">
                 {player.gender && (
                   <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
-                    background: player.gender === 'M' 
+                    background: player.gender === 'M' || player.gender === 'Masculino'
                       ? 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)'
                       : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                    color: player.gender === 'M' ? '#5b21b6' : '#be185d'
+                    color: player.gender === 'M' || player.gender === 'Masculino' ? '#5b21b6' : '#be185d'
                   }}>
-                    {player.gender === 'M' ? '👦' : '👧'} {player.gender === 'M' ? 'Masculino' : 'Femenino'}
+                    {(() => {
+                      const isMale = player.gender === 'M' || player.gender === 'Masculino';
+                      return isMale ? '👦 Masculino' : '👧 Femenino';
+                    })()}
                   </span>
                 )}
               </div>

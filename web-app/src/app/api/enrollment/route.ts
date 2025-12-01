@@ -60,27 +60,69 @@ export async function POST(request: Request) {
       familyId = newFamily.id;
     }
 
-    // 2. Create Players linked to Family
+    // 2. Check for duplicate pending players before inserting
+    // This prevents duplicate enrollments if the form is submitted multiple times
+    for (const player of data.players) {
+      let duplicateQuery = supabase
+        .from('pending_players')
+        .select('id')
+        .eq('family_id', familyId)
+        .eq('first_name', player.firstName)
+        .eq('last_name', player.lastName)
+        .eq('birth_date', player.birthDate);
+
+      // Only check cedula if it's provided (it can be null for kids)
+      if (player.cedula) {
+        duplicateQuery = duplicateQuery.eq('cedula', player.cedula);
+      } else {
+        duplicateQuery = duplicateQuery.is('cedula', null);
+      }
+
+      const { data: existingPendingPlayer } = await duplicateQuery
+        .limit(1)
+        .maybeSingle();
+
+      if (existingPendingPlayer) {
+        console.warn(`[enrollment] Duplicate pending player detected: ${player.firstName} ${player.lastName} (${existingPendingPlayer.id})`);
+        // Return success but indicate it's a duplicate to prevent re-submission
+        return NextResponse.json({ 
+          success: true, 
+          familyId: familyId,
+          duplicate: true,
+          message: 'Esta solicitud ya fue registrada anteriormente.'
+        });
+      }
+    }
+
+    // 3. Create Players in pending_players table (not players table)
     const playersToInsert = data.players.map((player: any) => ({
       first_name: player.firstName,
       last_name: player.lastName,
       birth_date: player.birthDate,
-      gender: player.gender,
+      gender: player.gender, // Should be "Masculino" or "Femenino" from form
       cedula: player.cedula || null, // Optional for kids sometimes
       category: player.category || 'Pendiente', // Logic to determine category could go here
       family_id: familyId,
-      status: 'Pending', // Pending payment verification
       cedula_front_url: player.cedulaFrontFile, // Save front ID
       cedula_back_url: player.cedulaBackFile,   // Save back ID
     }));
 
-    const { error: playersError } = await supabase
-      .from('players')
-      .insert(playersToInsert);
+    // Insert and get the created player IDs directly
+    const { data: createdPlayers, error: playersError } = await supabase
+      .from('pending_players')
+      .insert(playersToInsert)
+      .select('id');
 
-    if (playersError) throw playersError;
+    if (playersError) {
+      console.error('[enrollment] Error inserting players:', playersError);
+      throw playersError;
+    }
 
-    // 3. Calculate Amount
+    if (!createdPlayers || createdPlayers.length !== data.players.length) {
+      throw new Error('Error al crear los jugadores. No se obtuvieron todos los IDs.');
+    }
+
+    // 4. Calculate Amount
     // Fetch enrollment price from settings or use default
     const { data: priceSetting } = await supabase
       .from('settings') 
@@ -92,19 +134,7 @@ export async function POST(request: Request) {
     const count = data.players.length;
     const totalAmount = baseRate * count; // No discount for enrollment
 
-    // Get created player IDs
-    const { data: createdPlayers, error: fetchPlayersError } = await supabase
-      .from('players')
-      .select('id')
-      .eq('family_id', familyId)
-      .order('created_at', { ascending: false })
-      .limit(count);
-
-    if (fetchPlayersError || !createdPlayers || createdPlayers.length !== count) {
-      throw new Error('Error al obtener los jugadores creados');
-    }
-
-    // 4. Create Payment Records - one per player or one combined
+    // 5. Create Payment Records - one per player or one combined
     // Using combined approach: one payment for all players in enrollment
     const paymentStatus = (data.paymentMethod === 'Comprobante' || 
                           data.paymentMethod === 'Transferencia' || 
@@ -151,7 +181,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 5. Send Email using queue system
+    // 6. Send Email using queue system
     try {
       const { queueEmail } = await import('@/lib/actions/email-queue');
       const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');

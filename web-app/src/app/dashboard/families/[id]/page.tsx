@@ -40,7 +40,8 @@ export default async function FamilyProfilePage({
     // If category is missing or is 'Pendiente', calculate it from birth date
     if (!p.category || p.category === 'Pendiente') {
       if (p.birth_date && p.gender) {
-        const genderForCategory = p.gender === 'M' ? 'Masculino' : 'Femenino';
+        // Normalize gender format
+        const genderForCategory = p.gender === 'M' || p.gender === 'Masculino' ? 'Masculino' : 'Femenino';
         p.category = getPlayerCategory(p.birth_date, genderForCategory);
       } else {
         p.category = null;
@@ -234,12 +235,15 @@ export default async function FamilyProfilePage({
                       )}
                       {player.gender && (
                         <span className="px-3 py-1 rounded-full text-xs font-bold" style={{
-                          background: player.gender === 'M' 
+                          background: player.gender === 'M' || player.gender === 'Masculino'
                             ? 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)'
                             : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                          color: player.gender === 'M' ? '#5b21b6' : '#be185d'
+                          color: player.gender === 'M' || player.gender === 'Masculino' ? '#5b21b6' : '#be185d'
                         }}>
-                          {player.gender === 'M' ? '👦' : '👧'} {player.gender === 'M' ? 'Masculino' : 'Femenino'}
+                          {(() => {
+                            const isMale = player.gender === 'M' || player.gender === 'Masculino';
+                            return isMale ? '👦 Masculino' : '👧 Femenino';
+                          })()}
                         </span>
                       )}
                     </div>

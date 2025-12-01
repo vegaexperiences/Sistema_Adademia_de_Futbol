@@ -123,8 +123,8 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                     onChange={(e) => updatePlayer(index, { gender: e.target.value })}
                   >
                     <option value="">Seleccionar...</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
                   </select>
                 </div>
               </div>

@@ -277,7 +277,10 @@ export default async function TutorProfilePage({
                     )}
                     {player.gender && (
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                        {player.gender === 'M' ? '👦' : '👧'} {player.gender === 'M' ? 'Masculino' : 'Femenino'}
+                        {(() => {
+                          const isMale = player.gender === 'M' || player.gender === 'Masculino';
+                          return isMale ? '👦 Masculino' : '👧 Femenino';
+                        })()}
                       </span>
                     )}
                   </div>

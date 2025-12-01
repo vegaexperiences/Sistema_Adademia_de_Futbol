@@ -7,45 +7,124 @@ import { queueEmail } from '@/lib/actions/email-queue';
 export async function getPendingPlayers() {
   const supabase = await createClient();
   
-  const { data, error } = await supabase
-    .from('players')
-    .select(`
-      *,
-      families (
-        name,
-        tutor_name,
-        tutor_email,
-        tutor_phone,
-        tutor_cedula,
-        tutor_cedula_url
-      )
-    `)
-    .eq('status', 'Pending')
+  // Query from pending_players table instead of players with status filter
+  const { data: playersData, error: playersError } = await supabase
+    .from('pending_players')
+    .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching pending players:', error);
+  if (playersError) {
+    console.error('Error fetching pending players:', playersError);
     return [];
   }
 
-  return data;
+  if (!playersData || playersData.length === 0) {
+    return [];
+  }
+
+  // Get unique player IDs
+  const playerIds = [...new Set(playersData.map((p: any) => p.id))];
+  
+  // Fetch family data separately for each player
+  const { data: familiesData, error: familiesError } = await supabase
+    .from('families')
+    .select('id, name, tutor_name, tutor_email, tutor_phone, tutor_cedula, tutor_cedula_url')
+    .in('id', playersData.map((p: any) => p.family_id).filter(Boolean));
+
+  if (familiesError) {
+    console.error('Error fetching families:', familiesError);
+  }
+
+  // Create a map of family_id to family data
+  const familiesMap = new Map();
+  if (familiesData) {
+    familiesData.forEach((family: any) => {
+      familiesMap.set(family.id, family);
+    });
+  }
+
+  // Combine player data with family data
+  const result = playersData.map((player: any) => {
+    const family = player.family_id ? familiesMap.get(player.family_id) : null;
+    return {
+      ...player,
+      families: family ? [family] : null, // Keep as array for consistency with previous format
+    };
+  });
+
+  // Final check for duplicates by ID (shouldn't happen now, but just in case)
+  const seen = new Set<string>();
+  const seenNames = new Map<string, string[]>(); // Track names to detect duplicates
+  const unique = result.filter((player: any) => {
+    if (!player || !player.id) return false;
+    
+    // Check for duplicate IDs
+    if (seen.has(player.id)) {
+      console.warn(`[getPendingPlayers] ⚠️ Duplicate player ID detected: ${player.id} - ${player.first_name} ${player.last_name}`);
+      return false;
+    }
+    
+    // Track by name to detect potential duplicates with different IDs
+    const fullName = `${player.first_name} ${player.last_name}`.toLowerCase();
+    if (seenNames.has(fullName)) {
+      const existingIds = seenNames.get(fullName)!;
+      console.warn(`[getPendingPlayers] ⚠️ Duplicate player name detected: "${fullName}" with IDs: [${existingIds.join(', ')}, ${player.id}]`);
+      seenNames.set(fullName, [...existingIds, player.id]);
+    } else {
+      seenNames.set(fullName, [player.id]);
+    }
+    
+    seen.add(player.id);
+    return true;
+  });
+
+  console.log(`[getPendingPlayers] ✅ Found ${unique.length} unique pending players (from ${playersData.length} raw records)`);
+  if (unique.length > 0) {
+    console.log(`[getPendingPlayers] Player IDs:`, unique.map((p: any) => `${p.id} (${p.first_name} ${p.last_name})`));
+  }
+  
+  return unique;
 }
 
-export async function approvePlayer(playerId: string, type: 'Active' | 'Scholarship') {
+export async function approvePlayer(
+  playerId: string, 
+  type: 'Active' | 'Scholarship',
+  options?: {
+    customEnrollmentPrice?: number;
+    paymentMethod?: 'cash' | 'transfer' | 'yappy' | 'paguelofacil' | 'ach' | 'other';
+    paymentProof?: string; // URL de comprobante o ID de transacción
+  }
+) {
   try {
   const supabase = await createClient();
 
-    // Get player data with family info including tutor email and cedula
-    const { data: player, error: playerError } = await supabase
-      .from('players')
-      .select('*, families(id, tutor_name, tutor_email, tutor_cedula)')
+    // Get player data from pending_players table
+    const { data: pendingPlayer, error: playerError } = await supabase
+      .from('pending_players')
+      .select('*')
       .eq('id', playerId)
       .single();
 
-    if (playerError || !player) {
-      console.error('Error fetching player:', playerError);
+    if (playerError || !pendingPlayer) {
+      console.error('Error fetching pending player:', playerError);
       return { error: `Error al obtener datos del jugador: ${playerError?.message || 'Jugador no encontrado'}` };
     }
+
+    // Get family info if player has family_id
+    let familyData = null;
+    if (pendingPlayer.family_id) {
+      const { data: family } = await supabase
+        .from('families')
+        .select('id, tutor_name, tutor_email, tutor_cedula')
+        .eq('id', pendingPlayer.family_id)
+        .single();
+      familyData = family;
+    }
+
+    const player = {
+      ...pendingPlayer,
+      families: familyData ? [familyData] : null,
+    };
 
     // Get tutor cedula from family or player notes (fallback)
     let tutorCedula: string | null = null;
@@ -75,24 +154,54 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
       }
     }
 
-  const updateData: any = {
-    status: type === 'Scholarship' ? 'Scholarship' : 'Active',
-  };
+    // Prepare player data for insertion into players table
+    const playerData: any = {
+      id: pendingPlayer.id,
+      family_id: pendingPlayer.family_id,
+      first_name: pendingPlayer.first_name,
+      last_name: pendingPlayer.last_name,
+      birth_date: pendingPlayer.birth_date,
+      gender: pendingPlayer.gender,
+      cedula: pendingPlayer.cedula,
+      category: pendingPlayer.category,
+      discount_percent: type === 'Scholarship' ? 100 : pendingPlayer.discount_percent || 0,
+      monthly_fee_override: pendingPlayer.monthly_fee_override,
+      image_url: pendingPlayer.image_url,
+      notes: type === 'Scholarship' ? 'Becado aprobado desde panel de control' : pendingPlayer.notes,
+      created_at: pendingPlayer.created_at,
+      updated_at: new Date().toISOString(),
+      tutor_name: pendingPlayer.tutor_name,
+      tutor_cedula: pendingPlayer.tutor_cedula,
+      tutor_email: pendingPlayer.tutor_email,
+      tutor_phone: pendingPlayer.tutor_phone,
+      custom_monthly_fee: pendingPlayer.custom_monthly_fee,
+      payment_status: pendingPlayer.payment_status,
+      last_payment_date: pendingPlayer.last_payment_date,
+      cedula_front_url: pendingPlayer.cedula_front_url,
+      cedula_back_url: pendingPlayer.cedula_back_url,
+      monthly_statement_sent_at: pendingPlayer.monthly_statement_sent_at,
+      status: type === 'Scholarship' ? 'Scholarship' : 'Active',
+    };
 
-  if (type === 'Scholarship') {
-    updateData.discount_percent = 100;
-    updateData.notes = 'Becado aprobado desde panel de control';
-  }
+    // Insert player into players table
+    const { error: insertError } = await supabase
+      .from('players')
+      .insert(playerData);
 
-    // Update player status
-    const { error: updateError } = await supabase
-    .from('players')
-    .update(updateData)
-    .eq('id', playerId);
+    if (insertError) {
+      console.error('Error inserting player:', insertError);
+      return { error: `Error al aprobar jugador: ${insertError.message}` };
+    }
 
-    if (updateError) {
-      console.error('Error updating player status:', updateError);
-      return { error: `Error al actualizar el estado del jugador: ${updateError.message}` };
+    // Delete from pending_players
+    const { error: deleteError } = await supabase
+      .from('pending_players')
+      .delete()
+      .eq('id', playerId);
+
+    if (deleteError) {
+      console.error('Error deleting from pending_players:', deleteError);
+      // Continue even if deletion fails, but log it
     }
 
     // Manage family creation/removal based on approved players count
@@ -219,17 +328,45 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
         acc[s.key] = parseFloat(s.value);
         return acc;
       }, {}) || {};
-    const enrollmentFee = settingsMap['price_enrollment'] ?? 80;
+    
+    // Use custom price if provided, otherwise use default
+    const enrollmentFee = options?.customEnrollmentPrice ?? (settingsMap['price_enrollment'] ?? 80);
+    const paymentMethod = options?.paymentMethod || 'cash'; // Require payment method
+    const paymentProof = options?.paymentProof || null;
     const now = new Date();
 
-    const { error: paymentError } = await supabase.from('payments').insert({
+    // Build notes with payment details
+    let paymentNotes = `Matrícula confirmada al aprobar jugador. Monto: $${enrollmentFee.toFixed(2)}`;
+    if (options?.customEnrollmentPrice) {
+      paymentNotes += ` (Precio custom)`;
+    }
+    paymentNotes += `. Método de pago: ${paymentMethod}`;
+    if (paymentProof) {
+      if (paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') {
+        paymentNotes += `. ID Transacción: ${paymentProof}`;
+      } else {
+        paymentNotes += `. Comprobante: ${paymentProof}`;
+      }
+    }
+
+    const paymentData: any = {
       player_id: playerId,
       amount: enrollmentFee,
-      payment_type: 'enrollment', // Use payment_type to match PaymentHistory filter
-      payment_method: 'cash', // Default method for enrollment
-      payment_date: now.toISOString().split('T')[0], // Use date format (YYYY-MM-DD)
-      notes: `Matrícula confirmada al aprobar jugador. Monto: $${enrollmentFee.toFixed(2)}`,
-    });
+      payment_type: 'enrollment',
+      payment_method: paymentMethod,
+      payment_date: now.toISOString().split('T')[0],
+      notes: paymentNotes,
+    };
+
+    // Add proof_url if it's a URL (for cash/transfer/ach), or store transaction ID in notes
+    if (paymentProof) {
+      if (paymentMethod === 'cash' || paymentMethod === 'transfer' || paymentMethod === 'ach') {
+        paymentData.proof_url = paymentProof;
+      }
+      // For yappy/paguelofacil, transaction ID is already in notes
+    }
+
+    const { error: paymentError } = await supabase.from('payments').insert(paymentData);
 
     if (paymentError) {
       console.error('Error creating enrollment payment:', paymentError);
@@ -281,9 +418,47 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
           tutorName,
           playerNames: playerName,
           monthlyFee: monthlyFee.toFixed(2),
+          scholarshipStatus: '',
+          scholarshipMessage: '',
+          scholarshipIcon: '🎉',
+          scholarshipColor: '#059669',
+          scholarshipBg: '#d1fae5',
+          scholarshipBorder: '#6ee7b7',
+          monthlyFeeSection: `<div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;"><div style="color: #0369a1; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Mensualidad</div><div style="color: #0c4a6e; font-size: 32px; font-weight: 800; margin: 5px 0;">$${monthlyFee.toFixed(2)}</div><p style="color: #64748b; font-size: 14px; margin-top: 5px;">Este monto se generará automáticamente el día 1 de cada mes</p></div>`,
+          paymentReminder: '<li>Asegúrate de completar el pago mensual antes del día 5 de cada mes</li>',
         });
       } catch (emailError) {
         console.error('Error queuing acceptance email:', emailError);
+        // Don't fail the approval if email fails
+      }
+    }
+  } else if (type === 'Scholarship') {
+    // Send acceptance email for scholarship players (indicating BECADO)
+    const tutorEmail = Array.isArray(player.families) 
+      ? player.families[0]?.tutor_email 
+      : player.families?.tutor_email;
+    const tutorName = Array.isArray(player.families)
+      ? player.families[0]?.tutor_name || 'Familia'
+      : player.families?.tutor_name || 'Familia';
+    const playerName = `${player.first_name} ${player.last_name}`;
+
+    if (tutorEmail) {
+      try {
+        await queueEmail('player_accepted', tutorEmail, {
+          tutorName,
+          playerNames: playerName,
+          monthlyFee: '0.00', // Scholarship players don't pay
+          scholarshipStatus: ' - BECADO',
+          scholarshipMessage: '<br><strong style="color: #2563eb; font-size: 18px;">🎓 Tu jugador ha sido aprobado como BECADO</strong>',
+          scholarshipIcon: '🎓',
+          scholarshipColor: '#2563eb',
+          scholarshipBg: '#dbeafe',
+          scholarshipBorder: '#93c5fd',
+          monthlyFeeSection: '<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;"><div style="color: #1e40af; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Estado de Beca</div><div style="color: #1e3a8a; font-size: 24px; font-weight: 800; margin: 5px 0;">🎓 BECADO</div><p style="color: #64748b; font-size: 14px; margin-top: 5px;">Tu jugador tiene una beca completa. No se generarán cargos mensuales.</p></div>',
+          paymentReminder: '', // No payment reminder for scholarships
+        });
+      } catch (emailError) {
+        console.error('Error queuing scholarship acceptance email:', emailError);
         // Don't fail the approval if email fails
       }
     }
@@ -302,13 +477,67 @@ export async function approvePlayer(playerId: string, type: 'Active' | 'Scholars
 export async function rejectPlayer(playerId: string) {
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from('players')
-    .update({ status: 'Rejected' })
+  // Get player data from pending_players
+  const { data: pendingPlayer, error: fetchError } = await supabase
+    .from('pending_players')
+    .select('*')
+    .eq('id', playerId)
+    .single();
+
+  if (fetchError || !pendingPlayer) {
+    console.error('Error fetching pending player:', fetchError);
+    return { error: `Error al obtener datos del jugador: ${fetchError?.message || 'Jugador no encontrado'}` };
+  }
+
+  // Prepare player data for insertion into rejected_players table
+  const rejectedPlayerData: any = {
+    id: pendingPlayer.id,
+    family_id: pendingPlayer.family_id,
+    first_name: pendingPlayer.first_name,
+    last_name: pendingPlayer.last_name,
+    birth_date: pendingPlayer.birth_date,
+    gender: pendingPlayer.gender,
+    cedula: pendingPlayer.cedula,
+    category: pendingPlayer.category,
+    discount_percent: pendingPlayer.discount_percent,
+    monthly_fee_override: pendingPlayer.monthly_fee_override,
+    image_url: pendingPlayer.image_url,
+    notes: pendingPlayer.notes,
+    created_at: pendingPlayer.created_at,
+    updated_at: new Date().toISOString(),
+    tutor_name: pendingPlayer.tutor_name,
+    tutor_cedula: pendingPlayer.tutor_cedula,
+    tutor_email: pendingPlayer.tutor_email,
+    tutor_phone: pendingPlayer.tutor_phone,
+    custom_monthly_fee: pendingPlayer.custom_monthly_fee,
+    payment_status: pendingPlayer.payment_status,
+    last_payment_date: pendingPlayer.last_payment_date,
+    cedula_front_url: pendingPlayer.cedula_front_url,
+    cedula_back_url: pendingPlayer.cedula_back_url,
+    monthly_statement_sent_at: pendingPlayer.monthly_statement_sent_at,
+    rejected_at: new Date().toISOString(),
+    rejection_reason: 'Rechazado desde panel de control',
+  };
+
+  // Insert into rejected_players
+  const { error: insertError } = await supabase
+    .from('rejected_players')
+    .insert(rejectedPlayerData);
+
+  if (insertError) {
+    console.error('Error inserting into rejected_players:', insertError);
+    return { error: `Error al rechazar jugador: ${insertError.message}` };
+  }
+
+  // Delete from pending_players
+  const { error: deleteError } = await supabase
+    .from('pending_players')
+    .delete()
     .eq('id', playerId);
 
-  if (error) {
-    return { error: 'Error al rechazar jugador' };
+  if (deleteError) {
+    console.error('Error deleting from pending_players:', deleteError);
+    return { error: `Error al eliminar jugador pendiente: ${deleteError.message}` };
   }
 
   revalidatePath('/dashboard/approvals');

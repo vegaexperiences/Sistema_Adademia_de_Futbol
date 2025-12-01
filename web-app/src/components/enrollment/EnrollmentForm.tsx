@@ -47,6 +47,7 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
     paymentProofFile: ''
   });
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateData = (newData: any) => {
     setFormData(prev => ({ ...prev, ...newData }));
@@ -100,7 +101,14 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
   };
 
   const handleSubmit = async () => {
+    // Prevent double submission
+    if (isSubmitting) {
+      console.warn('[EnrollmentForm] Submission already in progress, ignoring duplicate call');
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       console.log('Submitting form data:', formData);
       
       const response = await fetch('/api/enrollment', {
@@ -117,13 +125,21 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
         // In a real app, we would redirect to result.paymentUrl
         // For this demo, we just show the success screen and log the URL
         console.log('Redirecting to payment:', result.paymentUrl);
+        
+        // If it's a duplicate, show a message but still mark as completed
+        if (result.duplicate) {
+          alert(result.message || 'Esta solicitud ya fue registrada anteriormente.');
+        }
+        
         setIsCompleted(true);
       } else {
         alert('Error al procesar la matrícula. Por favor intente nuevamente.');
+        setIsSubmitting(false); // Allow retry on error
       }
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('Ocurrió un error inesperado.');
+      setIsSubmitting(false); // Allow retry on error
     }
   };
 
