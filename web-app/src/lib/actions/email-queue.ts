@@ -90,10 +90,19 @@ export async function sendEmailImmediately(
 
   try {
     // Send email immediately via Brevo
+    const senderEmail = process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com';
+    
+    console.log(`[sendEmailImmediately] Sending email via Brevo:`, {
+      from: senderEmail,
+      to: recipientEmail,
+      subject: subject.substring(0, 100), // Log first 100 chars of subject
+      htmlContentLength: htmlContent?.length || 0,
+    });
+    
     const sendSmtpEmail: SendSmtpEmail = {
       sender: { 
         name: 'Suarez Academy', 
-        email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' 
+        email: senderEmail
       },
       to: [{ email: recipientEmail }],
       subject: subject,
