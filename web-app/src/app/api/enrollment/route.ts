@@ -122,12 +122,56 @@ export async function POST(request: Request) {
 
       if (existingPendingPlayer) {
         console.warn(`[enrollment] Duplicate pending player detected: ${player.firstName} ${player.lastName} (${existingPendingPlayer.id})`);
-        // Return success but indicate it's a duplicate to prevent re-submission
+        // Continue processing but mark as duplicate - we'll still send email in case it wasn't sent before
+        // Store duplicate flag to return later
+        const isDuplicate = true;
+        
+        // Still send email even if duplicate (in case email wasn't sent before)
+        console.log('[enrollment] Duplicate detected, but will still attempt to send email');
+        
+        // Calculate amount for email
+        const { data: priceSetting } = await supabase
+          .from('settings') 
+          .select('value')
+          .eq('key', 'price_enrollment')
+          .single();
+
+        const baseRate = priceSetting ? Number(priceSetting.value) : 130;
+        const count = data.players.length;
+        const totalAmount = baseRate * count;
+
+        // Send Email using queue system
+        console.log('[enrollment] Attempting to send pre-enrollment email to:', data.tutorEmail);
+        try {
+          const { queueEmail } = await import('@/lib/actions/email-queue');
+          const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
+          
+          const emailResult = await queueEmail('pre_enrollment', data.tutorEmail, {
+            tutorName: data.tutorName,
+            playerNames: playerNames,
+            amount: totalAmount.toFixed(2),
+            paymentMethod: data.paymentMethod,
+          });
+
+          if (emailResult?.error) {
+            console.error('[enrollment] Error queuing enrollment confirmation email:', emailResult.error);
+          } else {
+            console.log('[enrollment] ✅ Pre-enrollment email queued successfully (duplicate case)');
+          }
+        } catch (emailError: any) {
+          console.error('[enrollment] ❌ Error queuing enrollment confirmation email:', {
+            error: emailError,
+            message: emailError?.message,
+            stack: emailError?.stack,
+          });
+        }
+
+        // Return success but indicate it's a duplicate
         return NextResponse.json({ 
           success: true, 
           familyId: familyId,
           duplicate: true,
-          message: 'Esta solicitud ya fue registrada anteriormente.'
+          message: 'Esta solicitud ya fue registrada anteriormente. Se ha intentado enviar el correo de confirmación nuevamente.'
         });
       }
     }
@@ -259,6 +303,13 @@ export async function POST(request: Request) {
       const { queueEmail } = await import('@/lib/actions/email-queue');
       const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
       
+      console.log('[enrollment] Email variables:', {
+        tutorName: data.tutorName,
+        playerNames: playerNames,
+        amount: totalAmount.toFixed(2),
+        paymentMethod: data.paymentMethod,
+      });
+      
       const emailResult = await queueEmail('pre_enrollment', data.tutorEmail, {
         tutorName: data.tutorName,
         playerNames: playerNames,
@@ -267,15 +318,24 @@ export async function POST(request: Request) {
       });
 
       if (emailResult?.error) {
-        console.error('[enrollment] Error queuing enrollment confirmation email:', emailResult.error);
+        console.error('[enrollment] ❌ Error queuing enrollment confirmation email:', {
+          error: emailResult.error,
+          email: data.tutorEmail,
+          template: 'pre_enrollment',
+        });
+        // Log but don't fail enrollment - email can be sent manually later
       } else {
-        console.log('[enrollment] ✅ Pre-enrollment email queued successfully');
+        console.log('[enrollment] ✅ Pre-enrollment email queued successfully:', {
+          email: data.tutorEmail,
+          template: 'pre_enrollment',
+        });
       }
     } catch (emailError: any) {
-      console.error('[enrollment] ❌ Error queuing enrollment confirmation email:', {
+      console.error('[enrollment] ❌ Exception queuing enrollment confirmation email:', {
         error: emailError,
         message: emailError?.message,
         stack: emailError?.stack,
+        email: data.tutorEmail,
       });
       // Don't fail the enrollment if email fails, but log it
     }
