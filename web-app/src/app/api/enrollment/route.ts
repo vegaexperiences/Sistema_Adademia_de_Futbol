@@ -347,8 +347,8 @@ export async function POST(request: Request) {
     const paymentData: any = {
       player_id: null, // NULL because player is in pending_players, not players table
       amount: totalAmount,
-      payment_type: 'enrollment', // Use correct field name and enum value
-      payment_method: mappedPaymentMethod,
+      type: 'enrollment', // Use 'type' instead of 'payment_type' based on schema
+      method: mappedPaymentMethod, // Use 'method' instead of 'payment_method' based on schema
       payment_date: new Date().toISOString().split('T')[0],
       notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}. Pending Player IDs: ${createdPlayers.map(p => p.id).join(', ')}`,
       status: paymentStatus, // Already mapped to valid values ('Approved' or 'Pending')
