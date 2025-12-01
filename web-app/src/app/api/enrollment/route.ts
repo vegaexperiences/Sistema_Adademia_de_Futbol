@@ -464,17 +464,16 @@ export async function POST(request: Request) {
     const errorMessage = error?.message || 'Error desconocido';
     const errorCode = error?.code;
     
-    // Don't expose internal error details to client in production
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    
+    // Always include error details in response for debugging (even in production)
+    // This helps us diagnose issues faster
     return NextResponse.json(
       { 
         error: 'Error procesando la matrícula',
-        ...(isDevelopment && { 
-          details: errorMessage,
-          code: errorCode,
-          hint: error?.hint,
-        })
+        details: errorMessage,
+        code: errorCode,
+        hint: error?.hint,
+        // Include timestamp for correlation with server logs
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
