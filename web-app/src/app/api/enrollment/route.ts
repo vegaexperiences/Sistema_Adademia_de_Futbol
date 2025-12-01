@@ -4,8 +4,27 @@ import { enrollmentSchema } from '@/lib/validations/enrollment';
 
 // Enrollment API endpoint - handles student enrollment requests
 export async function POST(request: Request) {
+  console.log('[enrollment] ========== ENROLLMENT REQUEST STARTED ==========');
+  console.log('[enrollment] Request method:', request.method);
+  console.log('[enrollment] Request URL:', request.url);
+  
   try {
-    const body = await request.json();
+    console.log('[enrollment] Parsing request body...');
+    let body;
+    try {
+      body = await request.json();
+      console.log('[enrollment] ✅ Request body parsed successfully');
+    } catch (jsonError: any) {
+      console.error('[enrollment] ❌ Error parsing JSON:', {
+        error: jsonError?.message,
+        stack: jsonError?.stack,
+      });
+      return NextResponse.json(
+        { error: 'Error al procesar los datos del formulario. Por favor, intente nuevamente.' },
+        { status: 400 }
+      );
+    }
+    
     console.log('[enrollment] Received request body:', JSON.stringify(body, null, 2));
     
     // Validate input data
@@ -58,7 +77,20 @@ export async function POST(request: Request) {
     }
     
     console.log('[enrollment] ✅ Validation passed, processing enrollment...');
-    const supabase = await createClient();
+    
+    console.log('[enrollment] Creating Supabase client...');
+    let supabase;
+    try {
+      supabase = await createClient();
+      console.log('[enrollment] ✅ Supabase client created successfully');
+    } catch (supabaseError: any) {
+      console.error('[enrollment] ❌ Error creating Supabase client:', {
+        error: supabaseError?.message,
+        stack: supabaseError?.stack,
+      });
+      throw new Error(`Error de conexión a la base de datos: ${supabaseError?.message}`);
+    }
+    
     console.log('[enrollment] Starting enrollment process...');
 
     // 1. Check if Family exists or Create new
