@@ -21,7 +21,13 @@ export async function uploadFile(file: File, path: string): Promise<UploadResult
 
     // Upload the file directly - if bucket doesn't exist, we'll get an error
     const fileExt = file.name.split('.').pop();
-    const fileName = `${path}-${Date.now()}.${fileExt}`;
+    const timestamp = Date.now();
+    // Get the last part of the path (e.g., 'cedulaFrontFile' from 'players/olga-tañon/cedulaFrontFile')
+    const pathSegments = path.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    // Create filename with timestamp
+    const fileName = `${lastSegment}-${timestamp}.${fileExt}`;
+    // Full path: path + filename
     const filePath = `${path}/${fileName}`;
 
     const { data, error: uploadError } = await supabase.storage
