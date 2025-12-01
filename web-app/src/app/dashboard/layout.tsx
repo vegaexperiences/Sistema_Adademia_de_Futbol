@@ -162,7 +162,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-8 pt-20 md:pt-4">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-8 pt-20 md:pt-4 safe-area-top min-h-screen">
         <div className="animate-fade-in max-w-7xl mx-auto">
           {children}
         </div>

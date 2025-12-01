@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
+import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
+import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,11 +37,11 @@ export default function RootLayout({
           disableTransitionOnChange
           storageKey="theme"
         >
-          <Navbar />
+          <ConditionalNavbar />
           <main className="flex-grow">
             {children}
           </main>
-          <Footer />
+          <ConditionalFooter />
         </ThemeProvider>
       </body>
     </html>
