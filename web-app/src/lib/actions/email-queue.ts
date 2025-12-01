@@ -29,16 +29,38 @@ export async function queueEmail(
   const supabase = await createClient();
   
   // Get template
-  const { data: template } = await supabase
+  const { data: template, error: templateError } = await supabase
     .from('email_templates')
     .select('*')
     .eq('name', templateName)
     .eq('is_active', true)
     .single();
   
-  if (!template) {
-    return { error: 'Template not found' };
+  if (templateError || !template) {
+    console.error(`[queueEmail] Template '${templateName}' not found or inactive:`, {
+      error: templateError,
+      templateName,
+      message: templateError?.message || 'Template not found or is_active = false',
+    });
+    
+    // Check if template exists but is inactive
+    const { data: inactiveTemplate } = await supabase
+      .from('email_templates')
+      .select('id, name, is_active')
+      .eq('name', templateName)
+      .single();
+    
+    if (inactiveTemplate) {
+      return { error: `Template '${templateName}' exists but is inactive (is_active = false)` };
+    }
+    
+    return { error: `Template '${templateName}' not found in database` };
   }
+  
+  console.log(`[queueEmail] Template '${templateName}' found and active:`, {
+    templateId: template.id,
+    templateName: template.name,
+  });
   
   // Use production URL for logo - must be publicly accessible
   // Ensure it's a full HTTPS URL for email clients
