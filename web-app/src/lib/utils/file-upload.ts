@@ -43,12 +43,14 @@ export async function uploadFile(file: File, path: string): Promise<UploadResult
 
     // Sanitize the input path
     const sanitizedPath = sanitizeFilePath(path);
+    console.log('[uploadFile] Original path:', path);
+    console.log('[uploadFile] Sanitized path:', sanitizedPath);
     
     // Upload the file directly - if bucket doesn't exist, we'll get an error
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'bin';
     const timestamp = Date.now();
     
-    // Get the last part of the path (e.g., 'cedulaFrontFile' from 'players/olga-tanon/cedulaFrontFile')
+    // Get the last part of the path (e.g., 'cedulafrontfile' from 'players/olga-tanon/cedulafrontfile')
     const pathSegments = sanitizedPath.split('/');
     const lastSegment = pathSegments[pathSegments.length - 1];
     
@@ -57,6 +59,7 @@ export async function uploadFile(file: File, path: string): Promise<UploadResult
     
     // Full path: sanitized path + filename
     const filePath = `${sanitizedPath}/${fileName}`;
+    console.log('[uploadFile] Final file path:', filePath);
 
     const { data, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
