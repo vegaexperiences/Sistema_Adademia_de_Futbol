@@ -62,8 +62,8 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments }: Pl
         await createPayment({
           player_id: playerId,
           amount: parseFloat(formData.amount),
-          payment_type: formData.payment_type,
-          payment_method: formData.payment_method,
+          type: formData.payment_type,
+          method: formData.payment_method,
           payment_date: formData.payment_date,
           month_year: formData.payment_type === 'monthly' ? formData.month_year : undefined,
           notes: formData.notes || undefined
