@@ -63,6 +63,25 @@ export async function sendEmailImmediately(
   
   console.log(`[sendEmailImmediately] Template '${templateName}' found, sending immediately to ${recipientEmail}`);
   
+  // VALIDATE: Check if template has HTML content
+  if (!template.html_template || template.html_template.trim().length === 0) {
+    const errorMsg = `Template '${templateName}' has empty html_template. Template ID: ${template.id}`;
+    console.error(`[sendEmailImmediately] ❌ ${errorMsg}`);
+    console.error(`[sendEmailImmediately] Template details:`, {
+      id: template.id,
+      name: template.name,
+      subject: template.subject,
+      html_template_length: template.html_template?.length || 0,
+      html_template_is_null: template.html_template === null,
+      html_template_is_undefined: template.html_template === undefined,
+      html_template_type: typeof template.html_template,
+    });
+    return { 
+      error: `El template '${templateName}' no tiene contenido HTML. Por favor, configure el template en la base de datos.`,
+      details: { templateId: template.id, templateName: template.name },
+    };
+  }
+  
   // Use production URL for logo
   const defaultLogoUrl =
     process.env.NEXT_PUBLIC_LOGO_URL ||
@@ -81,12 +100,36 @@ export async function sendEmailImmediately(
   let htmlContent = template.html_template;
   let subject = template.subject;
 
+  // Log template before replacement for debugging
+  console.log(`[sendEmailImmediately] Template before replacement:`, {
+    templateId: template.id,
+    subjectLength: subject?.length || 0,
+    htmlContentLength: htmlContent?.length || 0,
+    htmlContentPreview: htmlContent?.substring(0, 200) || 'EMPTY',
+  });
+
   Object.entries(mergedVariables).forEach(([key, value]) => {
     const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g');
     htmlContent = htmlContent.replace(regex, String(value));
     subject = subject.replace(regex, String(value));
   });
+
+  // VALIDATE: Check if htmlContent is still valid after replacement
+  if (!htmlContent || htmlContent.trim().length === 0) {
+    const errorMsg = `Template '${templateName}' htmlContent is empty after variable replacement.`;
+    console.error(`[sendEmailImmediately] ❌ ${errorMsg}`);
+    console.error(`[sendEmailImmediately] After replacement:`, {
+      htmlContentLength: htmlContent?.length || 0,
+      htmlContentIsNull: htmlContent === null,
+      htmlContentIsUndefined: htmlContent === undefined,
+      variables: mergedVariables,
+    });
+    return { 
+      error: `El contenido HTML del template '${templateName}' está vacío después de reemplazar variables.`,
+      details: { templateId: template.id, templateName: template.name },
+    };
+  }
 
   try {
     // Send email immediately via Brevo
@@ -97,6 +140,7 @@ export async function sendEmailImmediately(
       to: recipientEmail,
       subject: subject.substring(0, 100), // Log first 100 chars of subject
       htmlContentLength: htmlContent?.length || 0,
+      htmlContentPreview: htmlContent?.substring(0, 200) || 'EMPTY',
     });
     
     const sendSmtpEmail: SendSmtpEmail = {
