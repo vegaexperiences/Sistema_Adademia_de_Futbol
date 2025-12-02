@@ -462,7 +462,18 @@ export async function approvePlayer(
       revalidatePath(`/dashboard/players/${playerId}`);
     }
 
-    // Calculate monthly fee for email
+    // Prepare email variables (used for both Active and Scholarship)
+    const tutorEmailForEmail = tutorEmail || (Array.isArray(player.families) 
+      ? player.families[0]?.tutor_email 
+      : player.families?.tutor_email);
+    const tutorEmailForScholarship = tutorEmailForEmail; // Same email for both types
+    const tutorNameForEmail = tutorName || (Array.isArray(player.families)
+      ? player.families[0]?.tutor_name || 'Familia'
+      : player.families?.tutor_name || 'Familia');
+    const tutorNameForScholarship = tutorNameForEmail; // Same name for both types
+    const playerName = `${player.first_name} ${player.last_name}`;
+    
+    // Calculate monthly fee for email (only for Active type)
     let monthlyFee = settingsMap['price_monthly'] || 130;
     
     // Check for custom fee
@@ -471,15 +482,15 @@ export async function approvePlayer(
     } else {
       // Check if part of family with 2+ players
       const familyFee = settingsMap['price_monthly_family'] || 110.50;
-      const familyId = Array.isArray(player.families) 
+      const familyIdForFee = Array.isArray(player.families) 
         ? player.families[0]?.id 
         : player.families?.id;
       
-      if (familyId) {
+      if (familyIdForFee) {
         const { data: familyPlayers } = await supabase
           .from('players')
           .select('id')
-          .eq('family_id', familyId)
+          .eq('family_id', familyIdForFee)
           .in('status', ['Active', 'Scholarship'])
           .order('created_at');
         
@@ -494,13 +505,6 @@ export async function approvePlayer(
 
     // Send acceptance email with monthly fee
     // Use the tutor data we already obtained (from family or pendingPlayer)
-    const tutorEmailForEmail = tutorEmail || (Array.isArray(player.families) 
-      ? player.families[0]?.tutor_email 
-      : player.families?.tutor_email);
-    const tutorNameForEmail = tutorName || (Array.isArray(player.families)
-      ? player.families[0]?.tutor_name || 'Familia'
-      : player.families?.tutor_name || 'Familia');
-    const playerName = `${player.first_name} ${player.last_name}`;
 
     if (tutorEmailForEmail) {
       console.log('[approvePlayer] Sending player_accepted email to:', {
@@ -567,13 +571,6 @@ export async function approvePlayer(
   } else if (type === 'Scholarship') {
     // Send acceptance email for scholarship players (indicating BECADO)
     // Use the tutor data we already obtained (from family or pendingPlayer)
-    const tutorEmailForScholarship = tutorEmail || (Array.isArray(player.families) 
-      ? player.families[0]?.tutor_email 
-      : player.families?.tutor_email);
-    const tutorNameForScholarship = tutorName || (Array.isArray(player.families)
-      ? player.families[0]?.tutor_name || 'Familia'
-      : player.families?.tutor_name || 'Familia');
-    const playerName = `${player.first_name} ${player.last_name}`;
 
     if (tutorEmailForScholarship) {
       console.log('[approvePlayer] Sending player_accepted email (Scholarship) to:', {
