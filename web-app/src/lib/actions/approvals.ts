@@ -227,15 +227,28 @@ export async function approvePlayer(
       status: insertedPlayer?.status,
     });
 
-    // Delete from pending_players
-    const { error: deleteError } = await supabase
+    // Delete from pending_players - CRITICAL: Must delete to remove from approvals list
+    console.log('[approvePlayer] Deleting player from pending_players:', playerId);
+    const { data: deletedData, error: deleteError } = await supabase
       .from('pending_players')
       .delete()
-      .eq('id', playerId);
+      .eq('id', playerId)
+      .select();
 
     if (deleteError) {
-      console.error('Error deleting from pending_players:', deleteError);
-      // Continue even if deletion fails, but log it
+      console.error('[approvePlayer] ❌ CRITICAL: Error deleting from pending_players:', {
+        error: deleteError,
+        code: deleteError.code,
+        message: deleteError.message,
+        playerId,
+      });
+      // This is critical - if we can't delete, the player will still show in approvals
+      return { error: `Error al eliminar jugador de aprobaciones: ${deleteError.message}. El jugador fue aprobado pero aún aparece en la lista.` };
+    } else {
+      console.log('[approvePlayer] ✅ Successfully deleted from pending_players:', {
+        deletedCount: deletedData?.length || 0,
+        playerId,
+      });
     }
 
     // Manage family creation/removal based on approved players count
@@ -490,8 +503,15 @@ export async function approvePlayer(
     const playerName = `${player.first_name} ${player.last_name}`;
 
     if (tutorEmailForEmail) {
+      console.log('[approvePlayer] Sending player_accepted email to:', {
+        email: tutorEmailForEmail,
+        tutorName: tutorNameForEmail,
+        playerName: playerName,
+        monthlyFee: monthlyFee.toFixed(2),
+      });
+      
       try {
-        await sendEmailImmediately(
+        const emailResult = await sendEmailImmediately(
           'player_accepted', 
           tutorEmailForEmail, 
           {
@@ -514,10 +534,35 @@ export async function approvePlayer(
             approval_type: 'Active',
           }
         );
-      } catch (emailError) {
-        console.error('Error sending acceptance email:', emailError);
+        
+        if (emailResult?.error) {
+          console.error('[approvePlayer] ❌ Error sending player_accepted email:', {
+            error: emailResult.error,
+            details: emailResult.details,
+            email: tutorEmailForEmail,
+          });
+          // Log error but don't fail approval - email is not critical for approval process
+        } else {
+          console.log('[approvePlayer] ✅ player_accepted email sent successfully:', {
+            email: tutorEmailForEmail,
+            messageId: emailResult?.messageId,
+          });
+        }
+      } catch (emailError: any) {
+        console.error('[approvePlayer] ❌ Exception sending acceptance email:', {
+          error: emailError,
+          message: emailError?.message,
+          stack: emailError?.stack,
+          email: tutorEmailForEmail,
+        });
         // Don't fail the approval if email fails
       }
+    } else {
+      console.warn('[approvePlayer] ⚠️ No tutor email found, skipping player_accepted email:', {
+        playerId,
+        tutorEmail: tutorEmail,
+        familyEmail: familyData?.tutor_email,
+      });
     }
   } else if (type === 'Scholarship') {
     // Send acceptance email for scholarship players (indicating BECADO)
@@ -531,8 +576,14 @@ export async function approvePlayer(
     const playerName = `${player.first_name} ${player.last_name}`;
 
     if (tutorEmailForScholarship) {
+      console.log('[approvePlayer] Sending player_accepted email (Scholarship) to:', {
+        email: tutorEmailForScholarship,
+        tutorName: tutorNameForScholarship,
+        playerName: playerName,
+      });
+      
       try {
-        await sendEmailImmediately(
+        const emailResult = await sendEmailImmediately(
           'player_accepted', 
           tutorEmailForScholarship, 
           {
@@ -555,17 +606,56 @@ export async function approvePlayer(
             approval_type: 'Scholarship',
           }
         );
-      } catch (emailError) {
-        console.error('Error sending scholarship acceptance email:', emailError);
+        
+        if (emailResult?.error) {
+          console.error('[approvePlayer] ❌ Error sending player_accepted email (Scholarship):', {
+            error: emailResult.error,
+            details: emailResult.details,
+            email: tutorEmailForScholarship,
+          });
+        } else {
+          console.log('[approvePlayer] ✅ player_accepted email (Scholarship) sent successfully:', {
+            email: tutorEmailForScholarship,
+            messageId: emailResult?.messageId,
+          });
+        }
+      } catch (emailError: any) {
+        console.error('[approvePlayer] ❌ Exception sending scholarship acceptance email:', {
+          error: emailError,
+          message: emailError?.message,
+          stack: emailError?.stack,
+          email: tutorEmailForScholarship,
+        });
         // Don't fail the approval if email fails
       }
+    } else {
+      console.warn('[approvePlayer] ⚠️ No tutor email found, skipping player_accepted email (Scholarship):', {
+        playerId,
+        tutorEmail: tutorEmail,
+        familyEmail: familyData?.tutor_email,
+      });
     }
   }
 
+  // Revalidate all relevant paths to ensure UI updates
   revalidatePath('/dashboard/approvals');
   revalidatePath('/dashboard/players');
-    revalidatePath('/dashboard/finances');
-  return { success: true };
+  revalidatePath('/dashboard/finances');
+  revalidatePath('/dashboard/finance');
+  
+  console.log('[approvePlayer] ✅ Approval completed successfully:', {
+    playerId,
+    type,
+    deletedFromPending: true,
+    emailSent: !!tutorEmailForEmail || !!tutorEmailForScholarship,
+  });
+  
+  return { 
+    success: true,
+    message: type === 'Active' 
+      ? `Jugador aprobado como Normal. ${tutorEmailForEmail ? 'Correo enviado.' : '⚠️ No se pudo enviar correo (email no encontrado).'}`
+      : `Jugador aprobado como Becado. ${tutorEmailForScholarship ? 'Correo enviado.' : '⚠️ No se pudo enviar correo (email no encontrado).'}`,
+  };
   } catch (error: any) {
     console.error('Unexpected error in approvePlayer:', error);
     return { error: `Error inesperado: ${error.message || 'Error desconocido'}` };

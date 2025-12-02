@@ -80,11 +80,21 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
           }, 5000);
         } else if (result?.success || !result?.error) {
           setStatus('success');
-          setMessage(type === 'Active' ? 'Jugador aprobado como Normal' : 'Jugador aprobado como Becado');
+          const successMessage = result?.message || (type === 'Active' 
+            ? '✅ Jugador aprobado como Normal y eliminado de aprobaciones' 
+            : '✅ Jugador aprobado como Becado y eliminado de aprobaciones');
+          setMessage(successMessage);
           setShowApprovalModal(false);
+          
+          // Refresh after showing success message
           setTimeout(() => {
             router.refresh();
-          }, 1500);
+            // Keep success message visible for a bit longer
+            setTimeout(() => {
+              setStatus('idle');
+              setMessage('');
+            }, 2000);
+          }, 2000);
         } else {
           setStatus('error');
           setMessage('Error desconocido al procesar la solicitud');
@@ -155,12 +165,19 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
     <>
       <div className="flex flex-col justify-center gap-3 lg:min-w-[200px]">
         {status !== 'idle' && (
-          <div className={`p-3 rounded-lg text-sm font-medium ${
+          <div className={`p-4 rounded-xl text-sm font-semibold shadow-lg animate-slide-in ${
             status === 'success' 
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' 
-              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 text-green-800 dark:text-green-200 border-2 border-green-300 dark:border-green-700' 
+              : 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/30 dark:to-rose-900/30 text-red-800 dark:text-red-200 border-2 border-red-300 dark:border-red-700'
           }`}>
-            {message}
+            <div className="flex items-center gap-2">
+              {status === 'success' ? (
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+              )}
+              <span>{message}</span>
+            </div>
           </div>
         )}
         
