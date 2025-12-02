@@ -406,62 +406,53 @@ export async function POST(request: Request) {
     createdResources.paymentId = payment?.id;
     console.log('[enrollment] ✅ Payment record created:', createdResources.paymentId);
 
-    // 6. Send Email immediately (not queued)
+    // 6. Send Email immediately (not queued) - CRITICAL: Enrollment fails if email fails
     console.log('[enrollment] Step 6: Attempting to send pre-enrollment email immediately to:', data.tutorEmail);
-    try {
-      const { sendEmailImmediately } = await import('@/lib/actions/email-queue');
-      const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
-      
-      console.log('[enrollment] Email variables:', {
+    const { sendEmailImmediately } = await import('@/lib/actions/email-queue');
+    const playerNames = data.players.map(p => `${p.firstName} ${p.lastName}`).join(', ');
+    
+    console.log('[enrollment] Email variables:', {
+      tutorName: data.tutorName,
+      playerNames: playerNames,
+      amount: totalAmount.toFixed(2),
+      paymentMethod: data.paymentMethod,
+    });
+    
+    const emailResult = await sendEmailImmediately(
+      'pre_enrollment', 
+      data.tutorEmail, 
+      {
         tutorName: data.tutorName,
         playerNames: playerNames,
         amount: totalAmount.toFixed(2),
         paymentMethod: data.paymentMethod,
+      },
+      {
+        family_id: familyId,
+        email_type: 'pre_enrollment',
+        pending_player_ids: createdResources.playerIds,
+        player_count: data.players.length,
+      }
+    );
+
+    // CRITICAL: If email fails, enrollment must fail and rollback will be triggered
+    if (emailResult?.error) {
+      console.error('[enrollment] ❌ CRITICAL: Error sending enrollment confirmation email:', {
+        error: emailResult.error,
+        details: emailResult.details,
+        email: data.tutorEmail,
+        template: 'pre_enrollment',
       });
       
-      const emailResult = await sendEmailImmediately(
-        'pre_enrollment', 
-        data.tutorEmail, 
-        {
-          tutorName: data.tutorName,
-          playerNames: playerNames,
-          amount: totalAmount.toFixed(2),
-          paymentMethod: data.paymentMethod,
-        },
-        {
-          family_id: familyId,
-          email_type: 'pre_enrollment',
-          pending_player_ids: createdResources.playerIds,
-          player_count: data.players.length,
-        }
-      );
-
-      if (emailResult?.error) {
-        console.error('[enrollment] ❌ Error sending enrollment confirmation email:', {
-          error: emailResult.error,
-          details: emailResult.details,
-          email: data.tutorEmail,
-          template: 'pre_enrollment',
-        });
-        // Log but don't fail enrollment - email can be sent manually later
-      } else {
-        console.log('[enrollment] ✅ Pre-enrollment email sent immediately:', {
-          email: data.tutorEmail,
-          template: 'pre_enrollment',
-          messageId: emailResult.messageId,
-        });
-      }
-    } catch (emailError: any) {
-      console.error('[enrollment] ❌ Exception sending enrollment confirmation email:', {
-        error: emailError,
-        message: emailError?.message,
-        response: emailError?.response,
-        responseData: emailError?.response?.data,
-        stack: emailError?.stack,
-        email: data.tutorEmail,
-      });
-      // Don't fail the enrollment if email fails, but log it
+      // Throw error to trigger rollback - enrollment cannot succeed without email
+      throw new Error(`No se pudo enviar el correo de confirmación de matrícula: ${emailResult.error}. La matrícula ha sido cancelada y los datos no se han guardado.`);
     }
+
+    console.log('[enrollment] ✅ Pre-enrollment email sent immediately:', {
+      email: data.tutorEmail,
+      template: 'pre_enrollment',
+      messageId: emailResult.messageId,
+    });
 
     console.log('[enrollment] ✅ Enrollment completed successfully');
     return NextResponse.json({ success: true, familyId: familyId });
