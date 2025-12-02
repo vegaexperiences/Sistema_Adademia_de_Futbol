@@ -19,6 +19,7 @@ import {
 import { logout } from '@/app/auth/actions';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { MobileHeader } from '@/components/layout/MobileHeader';
+import { getPendingPlayersCount } from '@/lib/actions/approvals';
 
 export default async function DashboardLayout({
   children,
@@ -32,10 +33,12 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
+  const pendingCount = await getPendingPlayersCount();
+
   return (
     <div className="min-h-screen flex">
       {/* Mobile Header */}
-      <MobileHeader userEmail={user.email || ''} />
+      <MobileHeader userEmail={user.email || ''} pendingCount={pendingCount} />
 
       {/* Sidebar with Glass Effect */}
       <aside className="w-64 glass-card m-4 p-0 hidden md:flex flex-col animate-slide-up overflow-hidden">
@@ -70,10 +73,15 @@ export default async function DashboardLayout({
 
           <Link
             href="/dashboard/approvals"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] relative"
           >
             <CheckCircle size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Aprobaciones</span>
+            {pendingCount > 0 && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {pendingCount > 99 ? '99+' : pendingCount}
+              </span>
+            )}
           </Link>
           
           <Link

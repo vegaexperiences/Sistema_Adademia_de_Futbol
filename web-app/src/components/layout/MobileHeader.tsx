@@ -23,9 +23,10 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface MobileHeaderProps {
   userEmail: string;
+  pendingCount?: number;
 }
 
-export function MobileHeader({ userEmail }: MobileHeaderProps) {
+export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const pathname = usePathname();
 
@@ -143,11 +144,12 @@ export function MobileHeader({ userEmail }: MobileHeaderProps) {
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
+              const showBadge = link.href === '/dashboard/approvals' && pendingCount > 0;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 touch-manipulation ${
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 touch-manipulation relative ${
                     isActive
                       ? 'gradient-purple text-white shadow-lg'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
@@ -156,6 +158,13 @@ export function MobileHeader({ userEmail }: MobileHeaderProps) {
                 >
                   <Icon size={22} />
                   <span className="font-medium text-base">{link.label}</span>
+                  {showBadge && (
+                    <span className={`ml-auto text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'
+                    }`}>
+                      {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

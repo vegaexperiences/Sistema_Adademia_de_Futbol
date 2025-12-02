@@ -80,7 +80,14 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
             setMessage('');
           }, 5000);
         } else if (result?.success || !result?.error) {
-          // Close modal immediately on success
+          // Show success message first
+          setStatus('success');
+          const successMessage = result?.message || (type === 'Active' 
+            ? '✅ Jugador aprobado como Normal y eliminado de aprobaciones' 
+            : '✅ Jugador aprobado como Becado y eliminado de aprobaciones');
+          setMessage(successMessage);
+          
+          // Close modal immediately
           setShowApprovalModal(false);
           
           // Reset form fields
@@ -90,21 +97,11 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
           setPaymentProof('');
           setApprovalType(null);
           
-          // Show success message briefly, then refresh immediately
-          setStatus('success');
-          const successMessage = result?.message || (type === 'Active' 
-            ? '✅ Jugador aprobado como Normal y eliminado de aprobaciones' 
-            : '✅ Jugador aprobado como Becado y eliminado de aprobaciones');
-          setMessage(successMessage);
-          
-          // Refresh immediately to remove player from list
-          router.refresh();
-          
-          // Clear success message after a short delay
+          // Force page reload to update the approvals list and remove the player
+          // Using setTimeout to ensure modal closes before reload
           setTimeout(() => {
-            setStatus('idle');
-            setMessage('');
-          }, 3000);
+            window.location.reload();
+          }, 500);
         } else {
           setStatus('error');
           setMessage('Error desconocido al procesar la solicitud');

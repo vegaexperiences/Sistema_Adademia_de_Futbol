@@ -4,6 +4,21 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendEmailImmediately } from '@/lib/actions/email-queue';
 
+export async function getPendingPlayersCount() {
+  const supabase = await createClient();
+  
+  const { count, error } = await supabase
+    .from('pending_players')
+    .select('*', { count: 'exact', head: true });
+  
+  if (error) {
+    console.error('[getPendingPlayersCount] Error:', error);
+    return 0;
+  }
+  
+  return count || 0;
+}
+
 export async function getPendingPlayers() {
   const supabase = await createClient();
   
@@ -421,19 +436,41 @@ export async function approvePlayer(
 
     // CRITICAL: Search for existing enrollment payment with player_id = null
     // Look for payments that have this pending_player_id in the notes
-    console.log('[approvePlayer] Searching for existing enrollment payment for player:', playerId);
+    // The notes format is: "Matrícula para X jugador(es). Tutor: Y. Pending Player IDs: uuid1, uuid2, ..."
+    console.log('[approvePlayer] Searching for existing enrollment payment for pending_player_id:', playerId);
     
-    const { data: existingPayments, error: searchError } = await supabase
+    // First, get all unlinked enrollment payments
+    const { data: allUnlinkedPayments, error: fetchError } = await supabase
       .from('payments')
       .select('*')
       .is('player_id', null)
-      .or(`type.eq.enrollment,type.eq.Matrícula`)
-      .like('notes', `%${playerId}%`);
+      .or(`type.eq.enrollment,type.eq.Matrícula`);
 
-    if (searchError) {
-      console.error('[approvePlayer] ❌ Error searching for existing payment:', searchError);
-      return { error: `Error al buscar pago existente: ${searchError.message}` };
+    if (fetchError) {
+      console.error('[approvePlayer] ❌ Error fetching unlinked payments:', fetchError);
+      return { error: `Error al buscar pagos existentes: ${fetchError.message}` };
     }
+
+    // Filter in JavaScript to find payments with this pending_player_id in notes
+    // This is more reliable than complex Supabase queries
+    const existingPayments = (allUnlinkedPayments || []).filter((payment: any) => {
+      if (!payment.notes) return false;
+      const notes = payment.notes.toLowerCase();
+      // Check if the playerId appears in the notes (various formats)
+      return notes.includes(playerId.toLowerCase()) || 
+             notes.includes(`pending player ids: ${playerId.toLowerCase()}`) ||
+             notes.includes(`pending player ids:${playerId.toLowerCase()}`);
+    });
+
+    console.log('[approvePlayer] Search results:', {
+      totalUnlinked: allUnlinkedPayments?.length || 0,
+      foundPayments: existingPayments?.length || 0,
+      payments: existingPayments?.map((p: any) => ({ 
+        id: p.id, 
+        amount: p.amount, 
+        notes: p.notes?.substring(0, 100) 
+      }))
+    });
 
     let paymentUpdated = false;
     let paymentCreated = false;
@@ -516,8 +553,12 @@ export async function approvePlayer(
         status: updatedPayment?.status,
       });
     } else {
-      // No existing payment found - create new one (for manual methods like ACH/Transferencia)
-      console.log('[approvePlayer] No existing payment found, creating new enrollment payment');
+      // No existing payment found - ALWAYS create new one
+      // This handles cases where:
+      // 1. Payment was not created during enrollment (manual methods like ACH/Transferencia)
+      // 2. Payment was created but doesn't have the pending_player_id in notes
+      // 3. Payment was deleted or never existed
+      console.log('[approvePlayer] ⚠️ No existing payment found, creating new enrollment payment (this is normal for manual payment methods)');
 
       const paymentData: any = {
         player_id: playerId,
