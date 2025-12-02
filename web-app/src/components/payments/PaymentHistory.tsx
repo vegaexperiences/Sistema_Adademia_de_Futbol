@@ -6,8 +6,10 @@ import { DollarSign, Calendar, CreditCard, FileText } from 'lucide-react';
 interface Payment {
   id: string;
   amount: number;
-  payment_type: string;
-  payment_method: string | null;
+  type?: string; // Use 'type' to match database schema
+  method?: string | null; // Use 'method' to match database schema
+  payment_type?: string; // Legacy field for backward compatibility
+  payment_method?: string | null; // Legacy field for backward compatibility
   payment_date: string;
   month_year: string | null;
   notes: string | null;
@@ -27,7 +29,8 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
   
   const filteredPayments = payments.filter(p => {
     if (filter === 'all') return true;
-    return p.payment_type === filter;
+    const paymentType = p.type || p.payment_type; // Support both field names
+    return paymentType === filter;
   });
   
   const total = filteredPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
@@ -124,13 +127,13 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold text-white ${
-                      payment.payment_type === 'enrollment' 
+                      (payment.type || payment.payment_type) === 'enrollment' 
                         ? 'gradient-orange'
-                        : payment.payment_type === 'monthly'
+                        : (payment.type || payment.payment_type) === 'monthly'
                         ? 'gradient-blue'
                         : 'gradient-purple'
                     }`}>
-                      {getPaymentTypeLabel(payment.payment_type)}
+                      {getPaymentTypeLabel(payment.type || payment.payment_type || 'custom')}
                     </span>
                     {payment.month_year && (
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
@@ -155,7 +158,7 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
                     <div className="flex items-center gap-1">
                       <CreditCard className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                       <span className="text-gray-700 dark:text-gray-300">
-                        {getPaymentMethodLabel(payment.payment_method)}
+                        {getPaymentMethodLabel(payment.method || payment.payment_method || null)}
                       </span>
                     </div>
                   </div>

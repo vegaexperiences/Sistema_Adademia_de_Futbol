@@ -34,6 +34,7 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
     supabase
       .from('payments')
       .select('amount, payment_date, status')
+      .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
       .gte('payment_date', startDate)
       .lte('payment_date', endDate),
     supabase
@@ -140,6 +141,7 @@ export async function getCashFlow(startDate: string, endDate: string) {
   const { data: payments } = await supabase
     .from('payments')
     .select('amount, payment_date, status')
+    .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
     .gte('payment_date', startDate)
     .lte('payment_date', endDate)
     .order('payment_date');
@@ -188,6 +190,7 @@ export async function getFinancialSummary() {
     supabase
       .from('payments')
       .select('amount, status')
+      .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
       .gte('payment_date', startOfMonth)
       .lte('payment_date', endOfMonth),
     supabase

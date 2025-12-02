@@ -7,12 +7,15 @@ export interface Payment {
   id?: string;
   player_id: string;
   amount: number;
-  payment_type: 'enrollment' | 'monthly' | 'custom';
-  payment_method?: 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'other';
+  type: 'enrollment' | 'monthly' | 'custom' | 'Matrícula'; // Use 'type' to match database schema
+  method?: 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'ach' | 'other'; // Use 'method' to match database schema
   payment_date: string;
   month_year?: string;
   notes?: string;
-  status?: 'Approved' | 'Pending' | 'Rejected' | 'Cancelled';
+  status?: 'Approved' | 'Pending' | 'Rejected' | 'Cancelled' | 'Paid' | 'Overdue';
+  // Legacy fields for backward compatibility (will be mapped)
+  payment_type?: 'enrollment' | 'monthly' | 'custom';
+  payment_method?: 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'ach' | 'other';
 }
 
 // Get all payments for a player
@@ -57,13 +60,22 @@ export async function createPayment(payment: Payment) {
   
   const { data: { user } } = await supabase.auth.getUser();
   
+  // Map legacy fields to correct field names
+  const paymentData: any = {
+    ...payment,
+    type: payment.type || payment.payment_type || 'custom', // Use 'type' field
+    method: payment.method || payment.payment_method, // Use 'method' field
+    status: payment.status || 'Approved', // Default to 'Approved' if not specified
+    created_by: user?.id
+  };
+  
+  // Remove legacy fields if they exist
+  delete paymentData.payment_type;
+  delete paymentData.payment_method;
+  
   const { data, error } = await supabase
     .from('payments')
-    .insert({
-      ...payment,
-      status: payment.status || 'Approved', // Default to 'Approved' if not specified
-      created_by: user?.id
-    })
+    .insert(paymentData)
     .select()
     .single();
   
@@ -191,7 +203,7 @@ export async function getPaymentSummary(playerId: string) {
   
   const { data: payments } = await supabase
     .from('payments')
-    .select('amount, payment_type, payment_date')
+    .select('amount, type, payment_date') // Use 'type' not 'payment_type'
     .eq('player_id', playerId);
   
   const total = payments?.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0) || 0;

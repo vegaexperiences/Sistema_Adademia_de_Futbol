@@ -407,25 +407,7 @@ export async function approvePlayer(
       }
     }
 
-    const paymentData: any = {
-      player_id: playerId,
-      amount: enrollmentFee,
-      payment_type: 'enrollment',
-      payment_method: paymentMethod,
-      payment_date: now.toISOString().split('T')[0],
-      notes: paymentNotes,
-      status: 'Approved', // Ensure payment is marked as approved
-    };
-
-    // Add proof_url if it's a URL (for cash/transfer/ach), or store transaction ID in notes
-    if (paymentProof) {
-      if (paymentMethod === 'cash' || paymentMethod === 'transfer' || paymentMethod === 'ach') {
-        paymentData.proof_url = paymentProof;
-      }
-      // For yappy/paguelofacil, transaction ID is already in notes
-    }
-
-    // Verify player exists before creating payment
+    // Verify player exists before processing payment
     const { data: verifyPlayer, error: verifyError } = await supabase
       .from('players')
       .select('id')
@@ -433,45 +415,173 @@ export async function approvePlayer(
       .single();
 
     if (verifyError || !verifyPlayer) {
-      console.error('[approvePlayer] ❌ Player not found when creating payment:', verifyError);
-      return { error: `Error: Jugador no encontrado al crear el pago: ${verifyError?.message || 'Jugador no existe'}` };
+      console.error('[approvePlayer] ❌ Player not found when processing payment:', verifyError);
+      return { error: `Error: Jugador no encontrado al procesar el pago: ${verifyError?.message || 'Jugador no existe'}` };
     }
 
-    console.log('[approvePlayer] Creating enrollment payment:', {
-      playerId,
-      amount: enrollmentFee,
-      paymentMethod,
-      paymentData,
-    });
-
-    const { data: createdPayment, error: paymentError } = await supabase
+    // CRITICAL: Search for existing enrollment payment with player_id = null
+    // Look for payments that have this pending_player_id in the notes
+    console.log('[approvePlayer] Searching for existing enrollment payment for player:', playerId);
+    
+    const { data: existingPayments, error: searchError } = await supabase
       .from('payments')
-      .insert(paymentData)
-      .select()
-      .single();
+      .select('*')
+      .is('player_id', null)
+      .or(`type.eq.enrollment,type.eq.Matrícula`)
+      .like('notes', `%${playerId}%`);
 
-    if (paymentError) {
-      console.error('[approvePlayer] ❌ Error creating enrollment payment:', {
-        error: paymentError,
-        code: paymentError.code,
-        message: paymentError.message,
-        details: paymentError.details,
-        hint: paymentError.hint,
+    if (searchError) {
+      console.error('[approvePlayer] ❌ Error searching for existing payment:', searchError);
+      return { error: `Error al buscar pago existente: ${searchError.message}` };
+    }
+
+    let paymentUpdated = false;
+    let paymentCreated = false;
+    let finalPayment: any = null;
+
+    // If existing payment found, update it
+    if (existingPayments && existingPayments.length > 0) {
+      const existingPayment = existingPayments[0]; // Use first match
+      console.log('[approvePlayer] ✅ Found existing enrollment payment:', {
+        paymentId: existingPayment.id,
+        amount: existingPayment.amount,
+        method: existingPayment.method,
+        status: existingPayment.status,
       });
-      return { error: `Error al crear el pago de matrícula: ${paymentError.message}` };
+
+      // Build updated notes
+      let updatedNotes = `Matrícula confirmada al aprobar jugador. Monto: $${enrollmentFee.toFixed(2)}`;
+      if (options?.customEnrollmentPrice) {
+        updatedNotes += ` (Precio custom)`;
+      }
+      updatedNotes += `. Método de pago: ${paymentMethod}`;
+      if (paymentProof) {
+        if (paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') {
+          updatedNotes += `. ID Transacción: ${paymentProof}`;
+        } else {
+          updatedNotes += `. Comprobante: ${paymentProof}`;
+        }
+      }
+
+      const updateData: any = {
+        player_id: playerId,
+        status: 'Approved',
+        notes: updatedNotes,
+      };
+
+      // Update method if provided and different
+      if (paymentMethod && existingPayment.method !== paymentMethod) {
+        updateData.method = paymentMethod;
+      }
+
+      // Update amount if custom price was provided
+      if (options?.customEnrollmentPrice && existingPayment.amount !== enrollmentFee) {
+        updateData.amount = enrollmentFee;
+      }
+
+      // Add proof_url if it's a URL (for cash/transfer/ach)
+      if (paymentProof && (paymentMethod === 'cash' || paymentMethod === 'transfer' || paymentMethod === 'ach')) {
+        updateData.proof_url = paymentProof;
+      }
+
+      console.log('[approvePlayer] Updating existing payment:', {
+        paymentId: existingPayment.id,
+        updateData,
+      });
+
+      const { data: updatedPayment, error: updateError } = await supabase
+        .from('payments')
+        .update(updateData)
+        .eq('id', existingPayment.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('[approvePlayer] ❌ CRITICAL: Error updating enrollment payment:', {
+          error: updateError,
+          code: updateError.code,
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+        });
+        return { error: `Error al actualizar el pago de matrícula: ${updateError.message}. La aprobación ha sido cancelada.` };
+      }
+
+      paymentUpdated = true;
+      finalPayment = updatedPayment;
+      console.log('[approvePlayer] ✅ Enrollment payment updated successfully:', {
+        paymentId: updatedPayment?.id,
+        playerId: updatedPayment?.player_id,
+        amount: updatedPayment?.amount,
+        status: updatedPayment?.status,
+      });
     } else {
+      // No existing payment found - create new one (for manual methods like ACH/Transferencia)
+      console.log('[approvePlayer] No existing payment found, creating new enrollment payment');
+
+      const paymentData: any = {
+        player_id: playerId,
+        amount: enrollmentFee,
+        type: 'enrollment', // Use 'type' not 'payment_type'
+        method: paymentMethod, // Use 'method' not 'payment_method'
+        payment_date: now.toISOString().split('T')[0],
+        notes: paymentNotes,
+        status: 'Approved', // Ensure payment is marked as approved
+      };
+
+      // Add proof_url if it's a URL (for cash/transfer/ach), or store transaction ID in notes
+      if (paymentProof) {
+        if (paymentMethod === 'cash' || paymentMethod === 'transfer' || paymentMethod === 'ach') {
+          paymentData.proof_url = paymentProof;
+        }
+        // For yappy/paguelofacil, transaction ID is already in notes
+      }
+
+      console.log('[approvePlayer] Creating new enrollment payment:', {
+        playerId,
+        amount: enrollmentFee,
+        paymentMethod,
+        paymentData,
+      });
+
+      const { data: createdPayment, error: paymentError } = await supabase
+        .from('payments')
+        .insert(paymentData)
+        .select()
+        .single();
+
+      if (paymentError) {
+        console.error('[approvePlayer] ❌ CRITICAL: Error creating enrollment payment:', {
+          error: paymentError,
+          code: paymentError.code,
+          message: paymentError.message,
+          details: paymentError.details,
+          hint: paymentError.hint,
+        });
+        return { error: `Error al crear el pago de matrícula: ${paymentError.message}. La aprobación ha sido cancelada.` };
+      }
+
+      paymentCreated = true;
+      finalPayment = createdPayment;
       console.log('[approvePlayer] ✅ Enrollment payment created successfully:', {
         paymentId: createdPayment?.id,
         playerId: createdPayment?.player_id,
         amount: createdPayment?.amount,
         status: createdPayment?.status,
       });
-      // Revalidate payment-related paths
-      revalidatePath('/dashboard/families');
-      revalidatePath('/dashboard/finances');
-      revalidatePath('/dashboard/finance');
-      revalidatePath(`/dashboard/players/${playerId}`);
     }
+
+    // CRITICAL: If payment processing failed, return error (should not happen due to checks above)
+    if (!paymentUpdated && !paymentCreated) {
+      console.error('[approvePlayer] ❌ CRITICAL: Payment was neither updated nor created');
+      return { error: 'Error crítico: No se pudo procesar el pago de matrícula. La aprobación ha sido cancelada.' };
+    }
+
+    // Revalidate payment-related paths
+    revalidatePath('/dashboard/families');
+    revalidatePath('/dashboard/finances');
+    revalidatePath('/dashboard/finance');
+    revalidatePath(`/dashboard/players/${playerId}`);
     
     // Calculate monthly fee for email (only for Active type)
     let monthlyFee = settingsMap['price_monthly'] || 130;

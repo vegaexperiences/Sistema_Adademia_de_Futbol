@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
           const paymentData = {
             player_id: playerId,
             amount: parseFloat(amount),
-            payment_type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
-            payment_method: 'yappy' as const,
+            type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom', // Use 'type' not 'payment_type'
+            method: 'yappy' as const, // Use 'method' not 'payment_method'
             payment_date: new Date().toISOString().split('T')[0],
             month_year: monthYear || undefined,
             status: 'Approved' as const,

@@ -133,7 +133,7 @@ async function calculateAmountDue(playerId: string, monthYear: string, monthlyFe
     .select('amount, status')
     .eq('player_id', playerId)
     .eq('month_year', monthYear)
-    .in('payment_type', ['monthly', 'custom']); // Include custom payments that might cover monthly fee
+    .in('type', ['monthly', 'custom']); // Use 'type' not 'payment_type' - Include custom payments that might cover monthly fee
   
   // Calculate total paid (only approved payments)
   const totalPaid = (payments || [])

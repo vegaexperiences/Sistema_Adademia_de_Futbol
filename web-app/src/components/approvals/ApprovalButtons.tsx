@@ -74,27 +74,37 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
         if (result?.error) {
           setStatus('error');
           setMessage(result.error);
+          // Don't close modal on error
           setTimeout(() => {
             setStatus('idle');
             setMessage('');
           }, 5000);
         } else if (result?.success || !result?.error) {
+          // Close modal immediately on success
+          setShowApprovalModal(false);
+          
+          // Reset form fields
+          setCustomPrice(defaultPrice.toString());
+          setUseDefaultPrice(true);
+          setPaymentMethod('cash');
+          setPaymentProof('');
+          setApprovalType(null);
+          
+          // Show success message briefly, then refresh immediately
           setStatus('success');
           const successMessage = result?.message || (type === 'Active' 
             ? '✅ Jugador aprobado como Normal y eliminado de aprobaciones' 
             : '✅ Jugador aprobado como Becado y eliminado de aprobaciones');
           setMessage(successMessage);
-          setShowApprovalModal(false);
           
-          // Refresh after showing success message
+          // Refresh immediately to remove player from list
+          router.refresh();
+          
+          // Clear success message after a short delay
           setTimeout(() => {
-            router.refresh();
-            // Keep success message visible for a bit longer
-            setTimeout(() => {
-              setStatus('idle');
-              setMessage('');
-            }, 2000);
-          }, 2000);
+            setStatus('idle');
+            setMessage('');
+          }, 3000);
         } else {
           setStatus('error');
           setMessage('Error desconocido al procesar la solicitud');
@@ -237,7 +247,22 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
       </div>
 
       {/* Approval Modal for Active players */}
-      <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
+      <Dialog 
+        open={showApprovalModal} 
+        onOpenChange={(open) => {
+          setShowApprovalModal(open);
+          // Reset form when modal is closed
+          if (!open) {
+            setCustomPrice(defaultPrice.toString());
+            setUseDefaultPrice(true);
+            setPaymentMethod('cash');
+            setPaymentProof('');
+            setApprovalType(null);
+            setStatus('idle');
+            setMessage('');
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
