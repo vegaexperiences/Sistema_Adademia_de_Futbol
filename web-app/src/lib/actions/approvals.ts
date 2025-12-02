@@ -367,6 +367,17 @@ export async function approvePlayer(
       }
     }
 
+    // Prepare email variables (used for both Active and Scholarship) - define BEFORE conditional blocks
+    const tutorEmailForEmail = tutorEmail || (Array.isArray(player.families) 
+      ? player.families[0]?.tutor_email 
+      : player.families?.tutor_email);
+    const tutorEmailForScholarship = tutorEmailForEmail; // Same email for both types
+    const tutorNameForEmail = tutorName || (Array.isArray(player.families)
+      ? player.families[0]?.tutor_name || 'Familia'
+      : player.families?.tutor_name || 'Familia');
+    const tutorNameForScholarship = tutorNameForEmail; // Same name for both types
+    const playerName = `${player.first_name} ${player.last_name}`;
+
     // Register enrollment payment (only for regular approvals)
     if (type === 'Active') {
     const { data: settings } = await supabase.from('settings').select('*');
@@ -461,17 +472,6 @@ export async function approvePlayer(
       revalidatePath('/dashboard/finance');
       revalidatePath(`/dashboard/players/${playerId}`);
     }
-
-    // Prepare email variables (used for both Active and Scholarship)
-    const tutorEmailForEmail = tutorEmail || (Array.isArray(player.families) 
-      ? player.families[0]?.tutor_email 
-      : player.families?.tutor_email);
-    const tutorEmailForScholarship = tutorEmailForEmail; // Same email for both types
-    const tutorNameForEmail = tutorName || (Array.isArray(player.families)
-      ? player.families[0]?.tutor_name || 'Familia'
-      : player.families?.tutor_name || 'Familia');
-    const tutorNameForScholarship = tutorNameForEmail; // Same name for both types
-    const playerName = `${player.first_name} ${player.last_name}`;
     
     // Calculate monthly fee for email (only for Active type)
     let monthlyFee = settingsMap['price_monthly'] || 130;
