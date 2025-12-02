@@ -25,32 +25,72 @@ export async function POST(request: Request) {
 
   // Helper function to cleanup created resources on error
   async function cleanupOnError() {
-    console.log('[enrollment] 🧹 Starting cleanup of created resources...');
+    console.log('[enrollment] 🧹 ========== STARTING ROLLBACK CLEANUP ==========');
+    console.log('[enrollment] 🧹 Resources to clean up:', {
+      paymentId: createdResources.paymentId,
+      playerIds: createdResources.playerIds,
+      familyId: createdResources.familyId,
+      familyWasNew: createdResources.familyWasNew,
+    });
+    
+    let cleanupCount = 0;
     
     try {
       // Delete payment if it was created
       if (createdResources.paymentId) {
         console.log(`[enrollment] 🧹 Deleting payment: ${createdResources.paymentId}`);
-        await supabase.from('payments').delete().eq('id', createdResources.paymentId);
+        const { error: paymentDeleteError } = await supabase
+          .from('payments')
+          .delete()
+          .eq('id', createdResources.paymentId);
+        
+        if (paymentDeleteError) {
+          console.error(`[enrollment] ❌ Error deleting payment ${createdResources.paymentId}:`, paymentDeleteError);
+        } else {
+          console.log(`[enrollment] ✅ Payment ${createdResources.paymentId} deleted successfully`);
+          cleanupCount++;
+        }
       }
 
       // Delete players if they were created
       if (createdResources.playerIds.length > 0) {
         console.log(`[enrollment] 🧹 Deleting ${createdResources.playerIds.length} players:`, createdResources.playerIds);
-        await supabase.from('pending_players').delete().in('id', createdResources.playerIds);
+        const { error: playersDeleteError } = await supabase
+          .from('pending_players')
+          .delete()
+          .in('id', createdResources.playerIds);
+        
+        if (playersDeleteError) {
+          console.error(`[enrollment] ❌ Error deleting players:`, playersDeleteError);
+        } else {
+          console.log(`[enrollment] ✅ ${createdResources.playerIds.length} players deleted successfully`);
+          cleanupCount += createdResources.playerIds.length;
+        }
       }
 
       // Delete family only if it was newly created (not if it existed before)
       if (createdResources.familyId && createdResources.familyWasNew) {
         console.log(`[enrollment] 🧹 Deleting newly created family: ${createdResources.familyId}`);
-        await supabase.from('families').delete().eq('id', createdResources.familyId);
+        const { error: familyDeleteError } = await supabase
+          .from('families')
+          .delete()
+          .eq('id', createdResources.familyId);
+        
+        if (familyDeleteError) {
+          console.error(`[enrollment] ❌ Error deleting family ${createdResources.familyId}:`, familyDeleteError);
+        } else {
+          console.log(`[enrollment] ✅ Family ${createdResources.familyId} deleted successfully`);
+          cleanupCount++;
+        }
       }
 
-      console.log('[enrollment] ✅ Cleanup completed');
+      console.log(`[enrollment] ✅ ========== CLEANUP COMPLETED: ${cleanupCount} resources deleted ==========`);
     } catch (cleanupError: any) {
-      console.error('[enrollment] ❌ Error during cleanup:', {
+      console.error('[enrollment] ❌ CRITICAL ERROR during cleanup:', {
         error: cleanupError?.message,
         stack: cleanupError?.stack,
+        code: cleanupError?.code,
+        details: cleanupError?.details,
       });
     }
   }
