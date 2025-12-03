@@ -40,6 +40,15 @@ export async function GET(request: NextRequest) {
     // Verify transaction status
     const isApproved = PagueloFacilService.isTransactionApproved(callbackParams);
     console.log('[PagueloFacil Callback] Transaction approved?', isApproved);
+    console.log('[PagueloFacil Callback] Detailed status check:', {
+      Estado: callbackParams.Estado,
+      EstadoRaw: callbackParams.Estado,
+      TotalPagado: callbackParams.TotalPagado,
+      TotalPagadoParsed: parseFloat(callbackParams.TotalPagado || '0'),
+      Razon: callbackParams.Razon,
+      Oper: callbackParams.Oper,
+      isApproved,
+    });
 
     // Extract custom parameters from URL (these were passed in the returnUrl)
     // Also check PARM_1, PARM_2, etc. that Paguelo Fácil returns

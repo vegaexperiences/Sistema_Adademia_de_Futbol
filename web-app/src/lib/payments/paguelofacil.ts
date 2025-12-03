@@ -326,6 +326,39 @@ export class PagueloFacilService {
    * Verify if a callback indicates an approved transaction
    */
   static isTransactionApproved(params: PagueloFacilCallbackParams): boolean {
-    return params.Estado === 'Aprobada' && parseFloat(params.TotalPagado) > 0;
+    const estado = (params.Estado || '').trim().toLowerCase();
+    const totalPagado = parseFloat(params.TotalPagado || '0');
+    
+    // Log para diagnóstico
+    console.log('[PagueloFacil] Verificando estado de transacción:', {
+      Estado: params.Estado,
+      EstadoNormalizado: estado,
+      TotalPagado: params.TotalPagado,
+      TotalPagadoParsed: totalPagado,
+      Razon: params.Razon,
+    });
+    
+    // Según documentación: TotalPagado > 0 indica transacción aprobada
+    // También verificamos que Estado no sea "Denegado" o "Denegada"
+    const isDenied = estado === 'denegado' || estado === 'denegada' || estado === 'rechazado' || estado === 'rechazada';
+    const isApproved = estado === 'aprobada' || estado === 'approved';
+    
+    // Si TotalPagado > 0, la transacción fue aprobada (según documentación)
+    // Si Estado es explícitamente "Denegado/Denegada", rechazamos
+    if (isDenied) {
+      return false;
+    }
+    
+    // Si TotalPagado > 0, consideramos aprobada (independientemente del texto de Estado)
+    if (totalPagado > 0) {
+      return true;
+    }
+    
+    // Si Estado es explícitamente "Aprobada", consideramos aprobada
+    if (isApproved) {
+      return true;
+    }
+    
+    return false;
   }
 }
