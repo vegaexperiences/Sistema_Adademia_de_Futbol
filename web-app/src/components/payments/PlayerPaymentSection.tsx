@@ -38,6 +38,27 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments }: Pl
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [autoLinking, setAutoLinking] = useState(false);
+
+  // Auto-link unlinked payments when component mounts or payments change
+  useEffect(() => {
+    // Only try to auto-link if we have no payments (might indicate unlinked payments exist)
+    if (payments.length === 0 && !autoLinking) {
+      setAutoLinking(true);
+      autoLinkUnlinkedPaymentsForPlayer(playerId)
+        .then((result) => {
+          if (result.success && result.linked && result.linked > 0) {
+            console.log('[PlayerPaymentSection] Auto-linked payments, refreshing...', result);
+            router.refresh();
+          }
+          setAutoLinking(false);
+        })
+        .catch((error) => {
+          console.error('[PlayerPaymentSection] Error auto-linking payments:', error);
+          setAutoLinking(false);
+        });
+    }
+  }, [playerId, payments.length, router, autoLinking]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
