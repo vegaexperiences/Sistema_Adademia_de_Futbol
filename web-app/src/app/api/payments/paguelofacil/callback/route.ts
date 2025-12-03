@@ -367,6 +367,7 @@ export async function GET(request: NextRequest) {
           
           if (player) {
             // Record denied payment with status 'Rejected' for audit trail
+            // We'll use minimal required fields to avoid schema issues
             const deniedPaymentData: any = {
               player_id: playerId,
               amount: parseFloat(amount),
@@ -374,13 +375,11 @@ export async function GET(request: NextRequest) {
               method: 'paguelofacil' as const,
               payment_date: new Date().toISOString().split('T')[0],
               status: 'Rejected' as const,
-              notes: `Intento de pago denegado por Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. Razón: ${callbackParams.Razon || 'Transacción denegada'}. Fecha: ${callbackParams.Fecha || 'N/A'} ${callbackParams.Hora || 'N/A'}`,
+              notes: `Intento de pago denegado por Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. Razón: ${callbackParams.Razon || 'Transacción denegada'}. Fecha: ${callbackParams.Fecha || 'N/A'} ${callbackParams.Hora || 'N/A'}${monthYear ? `. Periodo: ${monthYear}` : ''}`,
             };
             
-            // Only add month_year if it exists and has a value
-            if (monthYear && monthYear.trim() !== '') {
-              deniedPaymentData.month_year = monthYear;
-            }
+            // Note: We intentionally don't include month_year field to avoid schema cache errors
+            // The month/year info is included in notes if available
             
             const { data: deniedPayment, error: deniedError } = await supabase
               .from('payments')
