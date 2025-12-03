@@ -407,15 +407,30 @@ export async function POST(request: Request) {
     };
     const mappedPaymentMethod = paymentMethodMap[data.paymentMethod] || 'other';
 
+    // Ensure all player IDs are included in notes for proper linking
+    // Format: "Matrícula para X jugador(es). Tutor: Y. Pending Player IDs: uuid1, uuid2, ..."
+    const playerIdsString = createdResources.playerIds.length > 0 
+      ? createdResources.playerIds.join(', ')
+      : 'N/A';
+    
     const paymentData: any = {
       player_id: null,
       amount: totalAmount,
       type: 'enrollment',
       method: mappedPaymentMethod,
       payment_date: new Date().toISOString().split('T')[0],
-      notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}. Pending Player IDs: ${createdResources.playerIds.join(', ')}`,
+      notes: `Matrícula para ${count} jugador(es). Tutor: ${data.tutorName}. Pending Player IDs: ${playerIdsString}`,
       status: paymentStatus,
     };
+    
+    // Validate that we have player IDs to link
+    if (createdResources.playerIds.length === 0) {
+      console.error('[enrollment] ⚠️ WARNING: No player IDs to link payment to!', {
+        tutorName: data.tutorName,
+        count,
+        totalAmount
+      });
+    }
 
     if (data.paymentProofFile) {
       paymentData.proof_url = data.paymentProofFile;

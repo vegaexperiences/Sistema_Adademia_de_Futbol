@@ -383,15 +383,37 @@ export async function approvePlayer(
     }
 
     // Prepare email variables (used for both Active and Scholarship) - define BEFORE conditional blocks
-    const tutorEmailForEmail = tutorEmail || (Array.isArray(player.families) 
-      ? player.families[0]?.tutor_email 
-      : player.families?.tutor_email);
+    // CRITICAL: Get tutor email from multiple sources with proper fallback
+    const tutorEmailForEmail = tutorEmail || 
+                               (Array.isArray(player.families) 
+                                 ? player.families[0]?.tutor_email 
+                                 : player.families?.tutor_email) ||
+                               player.tutor_email || // Also check pending_player fields
+                               null;
     const tutorEmailForScholarship = tutorEmailForEmail; // Same email for both types
-    const tutorNameForEmail = tutorName || (Array.isArray(player.families)
-      ? player.families[0]?.tutor_name || 'Familia'
-      : player.families?.tutor_name || 'Familia');
+    
+    const tutorNameForEmail = tutorName || 
+                              (Array.isArray(player.families)
+                                ? player.families[0]?.tutor_name || 'Familia'
+                                : player.families?.tutor_name || 'Familia') ||
+                              player.tutor_name || // Also check pending_player fields
+                              'Familia';
     const tutorNameForScholarship = tutorNameForEmail; // Same name for both types
     const playerName = `${player.first_name} ${player.last_name}`;
+    
+    console.log('[approvePlayer] Email variables prepared:', {
+      tutorEmailForEmail,
+      tutorEmailForScholarship,
+      tutorNameForEmail,
+      playerName,
+      sources: {
+        fromOptions: tutorEmail,
+        fromFamilies: Array.isArray(player.families) 
+          ? player.families[0]?.tutor_email 
+          : player.families?.tutor_email,
+        fromPendingPlayer: player.tutor_email,
+      }
+    });
 
     // Register enrollment payment (only for regular approvals)
     if (type === 'Active') {
@@ -453,13 +475,100 @@ export async function approvePlayer(
 
     // Filter in JavaScript to find payments with this pending_player_id in notes
     // This is more reliable than complex Supabase queries
+    // IMPORTANT: For cash/ACH payments, we need to be VERY strict to avoid linking wrong payments
     const existingPayments = (allUnlinkedPayments || []).filter((payment: any) => {
       if (!payment.notes) return false;
       const notes = payment.notes.toLowerCase();
+      const playerIdLower = playerId.toLowerCase();
+      
       // Check if the playerId appears in the notes (various formats)
-      return notes.includes(playerId.toLowerCase()) || 
-             notes.includes(`pending player ids: ${playerId.toLowerCase()}`) ||
-             notes.includes(`pending player ids:${playerId.toLowerCase()}`);
+      // Support: "Pending Player IDs: uuid", "pending player ids:uuid", "pending player ids: uuid"
+      // Also check if UUID appears anywhere in notes (for flexibility)
+      const hasPlayerId = notes.includes(playerIdLower) || 
+             notes.includes(`pending player ids: ${playerIdLower}`) ||
+             notes.includes(`pending player ids:${playerIdLower}`) ||
+             notes.includes(`pending player ids: ${playerIdLower},`) ||
+             notes.includes(`pending player ids:${playerIdLower},`) ||
+             notes.includes(`, ${playerIdLower}`) ||
+             notes.includes(`,${playerIdLower}`);
+      
+      if (!hasPlayerId) {
+        // If no direct UUID match, try to match by tutor name and date (fallback)
+        // This helps catch payments where UUIDs weren't properly formatted
+        const tutorName = player.families?.tutor_name || 
+                         (Array.isArray(player.families) ? player.families[0]?.tutor_name : null);
+        
+        if (tutorName) {
+          const tutorNameLower = tutorName.toLowerCase();
+          const hasTutorName = notes.includes(`tutor: ${tutorNameLower}`) ||
+                              notes.includes(`tutor:${tutorNameLower}`);
+          
+          if (hasTutorName) {
+            // Check date proximity (within 7 days)
+            const paymentDate = new Date(payment.payment_date);
+            const daysDiff = Math.abs((now.getTime() - paymentDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff <= 7) {
+              // Check amount match
+              const amountDiff = Math.abs(parseFloat(payment.amount) - enrollmentFee);
+              if (amountDiff <= 1) {
+                console.log('[approvePlayer] Found payment by tutor name and date match:', {
+                  paymentId: payment.id,
+                  tutorName,
+                  daysDiff,
+                  amountDiff
+                });
+                return true;
+              }
+            }
+          }
+        }
+        
+        return false;
+      }
+      
+      // For payments with UUID match, validate additional criteria:
+      // 1. Amount must match (within $1 tolerance for rounding)
+      const amountDiff = Math.abs(parseFloat(payment.amount) - enrollmentFee);
+      if (amountDiff > 1) {
+        console.log('[approvePlayer] Payment amount mismatch:', {
+          paymentId: payment.id,
+          paymentAmount: payment.amount,
+          enrollmentFee,
+          diff: amountDiff
+        });
+        return false;
+      }
+      
+      // 2. Payment date should be recent (within last 60 days for enrollment payments)
+      const paymentDate = new Date(payment.payment_date);
+      const daysDiff = (now.getTime() - paymentDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff > 60) {
+        console.log('[approvePlayer] Payment too old:', {
+          paymentId: payment.id,
+          paymentDate: payment.payment_date,
+          daysDiff
+        });
+        return false;
+      }
+      
+      // 3. For cash/ACH, method should match if available (but be flexible)
+      if (paymentMethod === 'cash' || paymentMethod === 'ach') {
+        // Allow 'other' as a match for flexibility
+        if (payment.method && 
+            payment.method !== paymentMethod && 
+            payment.method !== 'other' &&
+            payment.method !== 'transfer') { // transfer is similar to ACH
+          console.log('[approvePlayer] Payment method mismatch:', {
+            paymentId: payment.id,
+            paymentMethod: payment.method,
+            expectedMethod: paymentMethod
+          });
+          // Don't return false here - UUID match is strong enough
+        }
+      }
+      
+      return true;
     });
 
     console.log('[approvePlayer] Search results:', {
@@ -477,7 +586,8 @@ export async function approvePlayer(
     let finalPayment: any = null;
 
     // If existing payment found, update it
-    if (existingPayments && existingPayments.length > 0) {
+    // IMPORTANT: For cash/ACH, if no exact match found, always create new payment
+    if (existingPayments && existingPayments.length > 0 && (paymentMethod !== 'cash' && paymentMethod !== 'ach')) {
       const existingPayment = existingPayments[0]; // Use first match
       console.log('[approvePlayer] ✅ Found existing enrollment payment:', {
         paymentId: existingPayment.id,
@@ -551,14 +661,41 @@ export async function approvePlayer(
         playerId: updatedPayment?.player_id,
         amount: updatedPayment?.amount,
         status: updatedPayment?.status,
+        type: updatedPayment?.type,
+        method: updatedPayment?.method,
+        payment_date: updatedPayment?.payment_date,
       });
+      
+      // CRITICAL: Verify payment was updated correctly by querying it back
+      const { data: verifyPayment, error: verifyError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', updatedPayment.id)
+        .single();
+      
+      if (verifyError || !verifyPayment) {
+        console.error('[approvePlayer] ❌ CRITICAL: Payment verification failed:', {
+          paymentId: updatedPayment.id,
+          error: verifyError,
+        });
+      } else {
+        console.log('[approvePlayer] ✅ Payment verified in database:', {
+          paymentId: verifyPayment.id,
+          playerId: verifyPayment.player_id,
+          verified: verifyPayment.player_id === playerId,
+        });
+      }
     } else {
-      // No existing payment found - ALWAYS create new one
+      // No existing payment found OR cash/ACH method - ALWAYS create new one
       // This handles cases where:
       // 1. Payment was not created during enrollment (manual methods like ACH/Transferencia)
       // 2. Payment was created but doesn't have the pending_player_id in notes
       // 3. Payment was deleted or never existed
-      console.log('[approvePlayer] ⚠️ No existing payment found, creating new enrollment payment (this is normal for manual payment methods)');
+      // 4. For cash/ACH, we always create new to ensure immediate visibility
+      const reason = (paymentMethod === 'cash' || paymentMethod === 'ach') 
+        ? 'Creating new payment for cash/ACH to ensure immediate visibility'
+        : 'No existing payment found (normal for manual payment methods)';
+      console.log(`[approvePlayer] ⚠️ ${reason}`);
 
       const paymentData: any = {
         player_id: playerId,
@@ -609,7 +746,30 @@ export async function approvePlayer(
         playerId: createdPayment?.player_id,
         amount: createdPayment?.amount,
         status: createdPayment?.status,
+        type: createdPayment?.type,
+        method: createdPayment?.method,
+        payment_date: createdPayment?.payment_date,
       });
+      
+      // CRITICAL: Verify payment was created correctly by querying it back
+      const { data: verifyPayment, error: verifyError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', createdPayment.id)
+        .single();
+      
+      if (verifyError || !verifyPayment) {
+        console.error('[approvePlayer] ❌ CRITICAL: Payment verification failed:', {
+          paymentId: createdPayment.id,
+          error: verifyError,
+        });
+      } else {
+        console.log('[approvePlayer] ✅ Payment verified in database:', {
+          paymentId: verifyPayment.id,
+          playerId: verifyPayment.player_id,
+          verified: verifyPayment.player_id === playerId,
+        });
+      }
     }
 
     // CRITICAL: If payment processing failed, return error (should not happen due to checks above)
@@ -618,11 +778,135 @@ export async function approvePlayer(
       return { error: 'Error crítico: No se pudo procesar el pago de matrícula. La aprobación ha sido cancelada.' };
     }
 
-    // Revalidate payment-related paths
+    // Post-approval: Update pre-enrollment emails to link them to the approved player
+    // This ensures emails sent during enrollment appear in the player's email history
+    try {
+      console.log('[approvePlayer] 📧 Updating pre-enrollment emails to link to approved player...');
+      
+      // Fetch all pre-enrollment emails and filter in JavaScript
+      // This is more reliable than complex JSONB queries
+      const { data: allPreEnrollmentEmails, error: emailFetchError } = await supabase
+        .from('email_queue')
+        .select('id, metadata')
+        .eq('metadata->>email_type', 'pre_enrollment');
+      
+      if (!emailFetchError && allPreEnrollmentEmails && allPreEnrollmentEmails.length > 0) {
+        const matchingEmails = allPreEnrollmentEmails.filter((email: any) => {
+          const metadata = email.metadata || {};
+          const pendingPlayerIds = metadata.pending_player_ids;
+          
+          // Check if playerId is in pending_player_ids
+          if (Array.isArray(pendingPlayerIds)) {
+            return pendingPlayerIds.includes(playerId);
+          } else if (typeof pendingPlayerIds === 'string') {
+            // Handle comma-separated string format
+            const ids = pendingPlayerIds.split(',').map(id => id.trim());
+            return ids.includes(playerId);
+          }
+          
+          return false;
+        });
+        
+        if (matchingEmails.length > 0) {
+          for (const email of matchingEmails) {
+            const metadata = email.metadata || {};
+            const updatedMetadata = {
+              ...metadata,
+              player_id: playerId, // Add player_id to metadata
+              // Keep pending_player_ids for reference
+            };
+            
+            const { error: updateError } = await supabase
+              .from('email_queue')
+              .update({ metadata: updatedMetadata })
+              .eq('id', email.id);
+            
+            if (updateError) {
+              console.error('[approvePlayer] ⚠️ Error updating pre-enrollment email:', {
+                emailId: email.id,
+                error: updateError,
+              });
+            } else {
+              console.log('[approvePlayer] ✅ Updated pre-enrollment email metadata:', {
+                emailId: email.id,
+                playerId,
+              });
+            }
+          }
+        } else {
+          console.log('[approvePlayer] No pre-enrollment emails found for player:', playerId);
+        }
+      }
+    } catch (emailLinkError) {
+      console.error('[approvePlayer] ⚠️ Error linking pre-enrollment emails (non-critical):', emailLinkError);
+    }
+
+    // Post-approval: Try to link any orphaned payments that might belong to this player
+    // This helps catch payments created by callbacks before the player was approved
+    try {
+      console.log('[approvePlayer] 🔍 Searching for orphaned payments to link...');
+      const { data: orphanedPayments, error: orphanError } = await supabase
+        .from('payments')
+        .select('*')
+        .is('player_id', null)
+        .or(`type.eq.enrollment,type.eq.Matrícula`)
+        .order('payment_date', { ascending: false })
+        .limit(10); // Only check recent payments
+      
+      if (!orphanError && orphanedPayments && orphanedPayments.length > 0) {
+        // Get player info for matching
+        const playerName = `${player.first_name} ${player.last_name}`.toLowerCase();
+        
+        for (const orphanedPayment of orphanedPayments) {
+          // Skip if we just created/updated this payment
+          if (finalPayment && orphanedPayment.id === finalPayment.id) continue;
+          
+          const notes = (orphanedPayment.notes || '').toLowerCase();
+          const paymentAmount = parseFloat(orphanedPayment.amount);
+          
+          // Check multiple criteria for matching
+          const hasPlayerId = notes.includes(playerId.toLowerCase());
+          const hasPlayerName = playerName.split(' ').some(name => name.length > 2 && notes.includes(name));
+          const amountMatches = Math.abs(paymentAmount - enrollmentFee) <= 1;
+          const isRecent = orphanedPayment.payment_date && 
+            (new Date(orphanedPayment.payment_date).getTime() > (now.getTime() - 30 * 24 * 60 * 60 * 1000));
+          
+          // Link if we have strong evidence (playerId in notes OR name + amount + recent)
+          if ((hasPlayerId || (hasPlayerName && amountMatches && isRecent)) && !orphanedPayment.player_id) {
+            console.log('[approvePlayer] 🔗 Linking orphaned payment:', {
+              paymentId: orphanedPayment.id,
+              amount: orphanedPayment.amount,
+              method: orphanedPayment.method,
+              reason: hasPlayerId ? 'playerId in notes' : 'name + amount + date match'
+            });
+            
+            await supabase
+              .from('payments')
+              .update({
+                player_id: playerId,
+                status: 'Approved'
+              })
+              .eq('id', orphanedPayment.id);
+          }
+        }
+      }
+    } catch (linkError) {
+      // Don't fail approval if linking orphaned payments fails
+      console.error('[approvePlayer] ⚠️ Error linking orphaned payments (non-critical):', linkError);
+    }
+
+    // Revalidate payment-related paths - CRITICAL for cash/ACH payments to show immediately
+    // Use both formats to ensure Next.js revalidates correctly
+    console.log('[approvePlayer] Revalidating paths after payment creation/update...');
+    revalidatePath('/dashboard/players');
+    revalidatePath('/dashboard/players/[id]', 'page');
+    revalidatePath(`/dashboard/players/${playerId}`);
+    revalidatePath(`/dashboard/players/${playerId}`, 'page');
     revalidatePath('/dashboard/families');
     revalidatePath('/dashboard/finances');
     revalidatePath('/dashboard/finance');
-    revalidatePath(`/dashboard/players/${playerId}`);
+    revalidatePath('/dashboard/finances/transactions');
+    console.log('[approvePlayer] Paths revalidated for player:', playerId);
     
     // Calculate monthly fee for email (only for Active type)
     let monthlyFee = settingsMap['price_monthly'] || 130;
@@ -657,18 +941,20 @@ export async function approvePlayer(
     // Send acceptance email with monthly fee
     // Use the tutor data we already obtained (from family or pendingPlayer)
 
-    if (tutorEmailForEmail) {
+    if (tutorEmailForEmail && tutorEmailForEmail.trim() !== '') {
       console.log('[approvePlayer] Sending player_accepted email to:', {
         email: tutorEmailForEmail,
         tutorName: tutorNameForEmail,
         playerName: playerName,
         monthlyFee: monthlyFee.toFixed(2),
+        playerId: insertedPlayer?.id || playerId,
+        familyId: insertedPlayer?.family_id || familyId || null,
       });
       
       try {
         const emailResult = await sendEmailImmediately(
           'player_accepted', 
-          tutorEmailForEmail, 
+          tutorEmailForEmail.trim(), 
           {
             tutorName: tutorNameForEmail,
             playerNames: playerName,
@@ -695,12 +981,15 @@ export async function approvePlayer(
             error: emailResult.error,
             details: emailResult.details,
             email: tutorEmailForEmail,
+            playerId: insertedPlayer?.id || playerId,
           });
           // Log error but don't fail approval - email is not critical for approval process
         } else {
           console.log('[approvePlayer] ✅ player_accepted email sent successfully:', {
             email: tutorEmailForEmail,
             messageId: emailResult?.messageId,
+            emailRecordId: emailResult?.emailRecordId,
+            playerId: insertedPlayer?.id || playerId,
           });
         }
       } catch (emailError: any) {
@@ -709,6 +998,7 @@ export async function approvePlayer(
           message: emailError?.message,
           stack: emailError?.stack,
           email: tutorEmailForEmail,
+          playerId: insertedPlayer?.id || playerId,
         });
         // Don't fail the approval if email fails
       }
@@ -716,24 +1006,35 @@ export async function approvePlayer(
       console.warn('[approvePlayer] ⚠️ No tutor email found, skipping player_accepted email:', {
         playerId,
         tutorEmail: tutorEmail,
+        tutorEmailFromPending: player.tutor_email,
         familyEmail: familyData?.tutor_email,
+        tutorEmailForEmail,
+        allSources: {
+          fromOptions: tutorEmail,
+          fromFamilies: Array.isArray(player.families) 
+            ? player.families[0]?.tutor_email 
+            : player.families?.tutor_email,
+          fromPendingPlayer: player.tutor_email,
+        }
       });
     }
   } else if (type === 'Scholarship') {
     // Send acceptance email for scholarship players (indicating BECADO)
     // Use the tutor data we already obtained (from family or pendingPlayer)
 
-    if (tutorEmailForScholarship) {
+    if (tutorEmailForScholarship && tutorEmailForScholarship.trim() !== '') {
       console.log('[approvePlayer] Sending player_accepted email (Scholarship) to:', {
         email: tutorEmailForScholarship,
         tutorName: tutorNameForScholarship,
         playerName: playerName,
+        playerId: insertedPlayer?.id || playerId,
+        familyId: insertedPlayer?.family_id || familyId || null,
       });
       
       try {
         const emailResult = await sendEmailImmediately(
           'player_accepted', 
-          tutorEmailForScholarship, 
+          tutorEmailForScholarship.trim(), 
           {
             tutorName: tutorNameForScholarship,
             playerNames: playerName,
@@ -760,11 +1061,14 @@ export async function approvePlayer(
             error: emailResult.error,
             details: emailResult.details,
             email: tutorEmailForScholarship,
+            playerId: insertedPlayer?.id || playerId,
           });
         } else {
           console.log('[approvePlayer] ✅ player_accepted email (Scholarship) sent successfully:', {
             email: tutorEmailForScholarship,
             messageId: emailResult?.messageId,
+            emailRecordId: emailResult?.emailRecordId,
+            playerId: insertedPlayer?.id || playerId,
           });
         }
       } catch (emailError: any) {
@@ -773,6 +1077,7 @@ export async function approvePlayer(
           message: emailError?.message,
           stack: emailError?.stack,
           email: tutorEmailForScholarship,
+          playerId: insertedPlayer?.id || playerId,
         });
         // Don't fail the approval if email fails
       }
@@ -780,7 +1085,16 @@ export async function approvePlayer(
       console.warn('[approvePlayer] ⚠️ No tutor email found, skipping player_accepted email (Scholarship):', {
         playerId,
         tutorEmail: tutorEmail,
+        tutorEmailFromPending: player.tutor_email,
         familyEmail: familyData?.tutor_email,
+        tutorEmailForScholarship,
+        allSources: {
+          fromOptions: tutorEmail,
+          fromFamilies: Array.isArray(player.families) 
+            ? player.families[0]?.tutor_email 
+            : player.families?.tutor_email,
+          fromPendingPlayer: player.tutor_email,
+        }
       });
     }
   }

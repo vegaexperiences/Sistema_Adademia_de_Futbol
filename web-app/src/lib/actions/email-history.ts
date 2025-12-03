@@ -227,14 +227,38 @@ export async function getPlayerEmailHistory(
     };
   }
   
-  // Filter by metadata - check if player_id or family_id matches
+  // Filter by metadata - check if player_id, family_id, or pending_player_ids matches
   const filteredData = (allData || []).filter((item: any) => {
     const metadata = item.metadata || {};
     const emailPlayerId = metadata.player_id;
     const emailFamilyId = metadata.family_id;
+    const pendingPlayerIds = metadata.pending_player_ids;
     
-    // Match if player_id matches OR family_id matches
-    return emailPlayerId === playerId || (familyId && emailFamilyId === familyId);
+    // Match if:
+    // 1. player_id matches directly
+    // 2. family_id matches
+    // 3. pending_player_ids contains this playerId (for pre-enrollment emails)
+    const playerIdInPending = Array.isArray(pendingPlayerIds) 
+      ? pendingPlayerIds.includes(playerId)
+      : typeof pendingPlayerIds === 'string'
+      ? pendingPlayerIds.split(',').map(id => id.trim()).includes(playerId)
+      : false;
+    
+    const matches = emailPlayerId === playerId || 
+                   (familyId && emailFamilyId === familyId) ||
+                   playerIdInPending;
+    
+    if (matches) {
+      console.log('[getPlayerEmailHistory] Email matched:', {
+        emailId: item.id,
+        subject: item.subject,
+        reason: emailPlayerId === playerId ? 'player_id' : 
+                (familyId && emailFamilyId === familyId) ? 'family_id' : 
+                'pending_player_ids'
+      });
+    }
+    
+    return matches;
   });
   
   // Get total count (we'll approximate it)

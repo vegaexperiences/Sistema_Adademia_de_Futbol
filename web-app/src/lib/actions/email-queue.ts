@@ -161,6 +161,12 @@ export async function sendEmailImmediately(
       messageId = messageId.replace(/^<|>$/g, '').trim();
     }
     
+    console.log('[sendEmailImmediately] Brevo response:', {
+      messageId,
+      resultBody: result.body,
+      fullResult: result,
+    });
+    
     const sentAt = new Date().toISOString();
     
     // Prepare metadata with player_id and family_id if provided
@@ -188,8 +194,23 @@ export async function sendEmailImmediately(
       .single();
     
     if (insertError) {
-      console.error('[sendEmailImmediately] Error saving email record:', insertError);
+      console.error('[sendEmailImmediately] ❌ Error saving email record:', {
+        error: insertError,
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+        messageId,
+        recipientEmail,
+      });
       // Email was sent but record failed - still return success but log error
+    } else {
+      console.log('[sendEmailImmediately] ✅ Email record saved:', {
+        emailRecordId: emailRecord?.id,
+        messageId,
+        brevo_email_id: emailRecord?.brevo_email_id,
+        recipientEmail,
+      });
     }
     
     console.log(`[sendEmailImmediately] ✅ Email sent immediately: ${recipientEmail} (messageId: ${messageId || 'N/A'})`);

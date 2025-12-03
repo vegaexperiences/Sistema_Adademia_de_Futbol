@@ -22,6 +22,8 @@ export interface Payment {
 export async function getPlayerPayments(playerId: string) {
   const supabase = await createClient();
   
+  console.log('[getPlayerPayments] Fetching payments for player:', playerId);
+  
   const { data, error } = await supabase
     .from('payments')
     .select('*')
@@ -29,11 +31,29 @@ export async function getPlayerPayments(playerId: string) {
     .order('payment_date', { ascending: false });
   
   if (error) {
-    console.error('Error fetching payments:', error);
+    console.error('[getPlayerPayments] Error fetching payments:', {
+      error,
+      playerId,
+      errorCode: error.code,
+      errorMessage: error.message
+    });
     return [];
   }
   
-  return data;
+  console.log('[getPlayerPayments] Found payments:', {
+    playerId,
+    count: data?.length || 0,
+    payments: data?.map(p => ({
+      id: p.id,
+      amount: p.amount,
+      type: p.type,
+      method: p.method,
+      status: p.status,
+      payment_date: p.payment_date
+    }))
+  });
+  
+  return data || [];
 }
 
 // Get payments for multiple players (family/tutor)
@@ -214,4 +234,58 @@ export async function getPaymentSummary(playerId: string) {
     count: payments?.length || 0,
     lastPayment: lastPayment?.payment_date || null
   };
+}
+
+// Link a payment to a player
+export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
+  const supabase = await createClient();
+  
+  // Verify payment exists and is unlinked
+  const { data: payment, error: paymentError } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('id', paymentId)
+    .single();
+
+  if (paymentError || !payment) {
+    return { error: 'Pago no encontrado' };
+  }
+
+  if (payment.player_id) {
+    return { error: 'Este pago ya está vinculado a un jugador' };
+  }
+
+  // Verify player exists
+  const { data: player, error: playerError } = await supabase
+    .from('players')
+    .select('id')
+    .eq('id', playerId)
+    .single();
+
+  if (playerError || !player) {
+    return { error: 'Jugador no encontrado' };
+  }
+
+  // Update payment
+  const { error: updateError } = await supabase
+    .from('payments')
+    .update({
+      player_id: playerId,
+      status: payment.status || 'Approved'
+    })
+    .eq('id', paymentId);
+
+  if (updateError) {
+    console.error('Error linking payment:', updateError);
+    return { error: 'Error al vincular el pago' };
+  }
+
+  // Revalidate paths
+  revalidatePath('/dashboard/players');
+  revalidatePath('/dashboard/players/[id]', 'page');
+  revalidatePath('/dashboard/families');
+  revalidatePath('/dashboard/finances');
+  revalidatePath('/dashboard/payments/unlinked');
+
+  return { success: true };
 }

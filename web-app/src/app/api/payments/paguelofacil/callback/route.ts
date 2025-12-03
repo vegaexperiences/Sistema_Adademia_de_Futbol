@@ -116,34 +116,82 @@ export async function GET(request: NextRequest) {
         console.log('[PagueloFacil Callback] Attempting to create payment record...');
         const supabase = await createClient();
         
-        // Verify player exists
+        // Verify player exists - check both players and pending_players tables
+        let playerFound = false;
+        let isPendingPlayer = false;
+        
+        // First, check in approved players table
         const { data: player, error: playerError } = await supabase
           .from('players')
           .select('id')
           .eq('id', playerId)
           .single();
 
-        if (playerError) {
-          console.error('[PagueloFacil Callback] Error finding player:', playerError);
+        if (player) {
+          playerFound = true;
+          console.log('[PagueloFacil Callback] Player found in players table');
+        } else {
+          // If not found in players, check pending_players
+          const { data: pendingPlayer, error: pendingError } = await supabase
+            .from('pending_players')
+            .select('id')
+            .eq('id', playerId)
+            .single();
+
+          if (pendingPlayer) {
+            playerFound = true;
+            isPendingPlayer = true;
+            console.log('[PagueloFacil Callback] Player found in pending_players table');
+          } else {
+            console.error('[PagueloFacil Callback] Player not found in either table:', {
+              playerError: playerError?.message,
+              pendingError: pendingError?.message
+            });
+          }
         }
 
-        if (player) {
+        if (playerFound) {
           console.log('[PagueloFacil Callback] Player found, creating payment...');
+          
+          // Build notes with appropriate format
+          let paymentNotes = `Pago procesado con Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. Fecha: ${callbackParams.Fecha || 'N/A'} ${callbackParams.Hora || 'N/A'}`;
+          
+          // If player is pending, add format for later linking
+          if (isPendingPlayer) {
+            paymentNotes += `. Pending Player IDs: ${playerId}`;
+          }
+          
           // Create payment record with Approved status
           const paymentData = {
-            player_id: playerId,
+            player_id: isPendingPlayer ? null : playerId, // Set to null if pending, will be linked later
             amount: parseFloat(amount),
             type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom', // Use 'type' not 'payment_type'
             method: 'paguelofacil' as const, // Use 'method' not 'payment_method'
             payment_date: new Date().toISOString().split('T')[0],
             month_year: monthYear || undefined,
             status: 'Approved' as const, // Paguelo Fácil payments are automatically approved
-            notes: `Pago procesado con Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. Fecha: ${callbackParams.Fecha || 'N/A'} ${callbackParams.Hora || 'N/A'}`,
+            notes: paymentNotes,
           };
           
           console.log('[PagueloFacil Callback] Payment data to create:', paymentData);
           
-          const createdPayment = await createPayment(paymentData);
+          // If player is pending, insert directly (createPayment requires player_id)
+          let createdPayment;
+          if (isPendingPlayer) {
+            const { data: insertedPayment, error: insertError } = await supabase
+              .from('payments')
+              .insert(paymentData)
+              .select()
+              .single();
+            
+            if (insertError) {
+              console.error('[PagueloFacil Callback] Error creating payment for pending player:', insertError);
+              throw insertError;
+            }
+            createdPayment = insertedPayment;
+          } else {
+            createdPayment = await createPayment(paymentData);
+          }
 
           // Revalidate all relevant paths to show updated data
           revalidatePath('/dashboard/players');
@@ -157,6 +205,8 @@ export async function GET(request: NextRequest) {
             playerId,
             amount,
             oper: callbackParams.Oper,
+            isPendingPlayer,
+            playerIdLinked: !isPendingPlayer,
           });
 
           // Send payment confirmation email to tutor
