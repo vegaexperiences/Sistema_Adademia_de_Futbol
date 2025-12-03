@@ -229,16 +229,20 @@ export async function GET(request: NextRequest) {
           
           if (isPendingPlayer) {
             // If player is pending, insert directly with player_id = null
-            const paymentData = {
+            const paymentData: any = {
               player_id: null,
               amount: parseFloat(amount),
               type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
               method: 'paguelofacil' as const,
               payment_date: new Date().toISOString().split('T')[0],
-              month_year: monthYear || undefined,
               status: 'Approved' as const,
               notes: paymentNotes,
             };
+            
+            // Only include month_year if it has a valid value (to avoid schema cache errors)
+            if (monthYear && monthYear.trim() !== '') {
+              paymentData.month_year = monthYear;
+            }
             
             console.log('[PagueloFacil Callback] Payment data to create (pending player):', paymentData);
             
@@ -255,16 +259,20 @@ export async function GET(request: NextRequest) {
             createdPayment = insertedPayment;
           } else {
             // If player is approved, use createPayment function
-            const paymentData = {
+            const paymentData: any = {
               player_id: playerId, // This is always a string when not pending
               amount: parseFloat(amount),
               type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
               method: 'paguelofacil' as const,
               payment_date: new Date().toISOString().split('T')[0],
-              month_year: monthYear || undefined,
               status: 'Approved' as const,
               notes: paymentNotes,
             };
+            
+            // Only include month_year if it has a valid value (to avoid schema cache errors)
+            if (monthYear && monthYear.trim() !== '') {
+              paymentData.month_year = monthYear;
+            }
             
             console.log('[PagueloFacil Callback] Payment data to create (approved player):', paymentData);
             createdPayment = await createPayment(paymentData);
