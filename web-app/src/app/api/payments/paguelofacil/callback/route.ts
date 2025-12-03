@@ -10,9 +10,11 @@ import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation
  * Handles the RETURN_URL callback from Paguelo Fácil after payment processing
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
   try {
-    // Log that callback was called
+    // Log that callback was called - CRITICAL for debugging
     console.log('[PagueloFacil Callback] ========== CALLBACK CALLED ==========');
+    console.log('[PagueloFacil Callback] Timestamp:', new Date().toISOString());
     console.log('[PagueloFacil Callback] Request URL:', request.url);
     console.log('[PagueloFacil Callback] Request method:', request.method);
     console.log('[PagueloFacil Callback] Headers:', Object.fromEntries(request.headers.entries()));

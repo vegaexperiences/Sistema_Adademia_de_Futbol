@@ -329,13 +329,23 @@ export class PagueloFacilService {
     const estado = (params.Estado || '').trim().toLowerCase();
     const totalPagado = parseFloat(params.TotalPagado || '0');
     
-    // Log para diagnóstico
+    // Log para diagnóstico - CRITICAL para debugging
+    console.log('[PagueloFacil] ========== VERIFICANDO ESTADO DE TRANSACCIÓN ==========');
     console.log('[PagueloFacil] Verificando estado de transacción:', {
       Estado: params.Estado,
+      EstadoRaw: params.Estado,
       EstadoNormalizado: estado,
       TotalPagado: params.TotalPagado,
+      TotalPagadoRaw: params.TotalPagado,
       TotalPagadoParsed: totalPagado,
       Razon: params.Razon,
+      Oper: params.Oper,
+      Fecha: params.Fecha,
+      Hora: params.Hora,
+      Tipo: params.Tipo,
+      Usuario: params.Usuario,
+      Email: params.Email,
+      timestamp: new Date().toISOString(),
     });
     
     // Según documentación: TotalPagado > 0 indica transacción aprobada
