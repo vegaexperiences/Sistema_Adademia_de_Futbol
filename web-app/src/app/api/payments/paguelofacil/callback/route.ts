@@ -417,13 +417,14 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      console.warn('[PagueloFacil Callback] ⚠️ Payment not created - transaction denied:', {
-        isApproved,
+      // Log transaction denial (rejected payment may have been recorded for audit above)
+      console.log('[PagueloFacil Callback] ℹ️ Transaction denied - no approved payment created:', {
         estado: callbackParams.Estado,
         razon: callbackParams.Razon,
         type,
         hasPlayerId: !!playerId,
         hasAmount: !!amount,
+        note: type === 'payment' && playerId && amount ? 'Rejected payment recorded for audit trail' : 'No audit record created (enrollment or missing data)',
       });
     }
 
