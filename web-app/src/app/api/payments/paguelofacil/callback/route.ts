@@ -315,14 +315,26 @@ export async function GET(request: NextRequest) {
               notes: `Intento de pago denegado por Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. Razón: ${callbackParams.Razon || 'Transacción denegada'}. Fecha: ${callbackParams.Fecha || 'N/A'} ${callbackParams.Hora || 'N/A'}`,
             };
             
-            const { error: deniedError } = await supabase
+            const { data: deniedPayment, error: deniedError } = await supabase
               .from('payments')
-              .insert(deniedPaymentData);
+              .insert(deniedPaymentData)
+              .select()
+              .single();
             
             if (deniedError) {
               console.error('[PagueloFacil Callback] Error recording denied payment:', deniedError);
             } else {
-              console.log('[PagueloFacil Callback] ✅ Denied payment recorded for audit trail');
+              console.log('[PagueloFacil Callback] ✅ Denied payment recorded for audit trail:', {
+                paymentId: deniedPayment?.id,
+                playerId,
+                amount,
+                status: 'Rejected',
+              });
+              
+              // Revalidate paths to show the rejected payment
+              revalidatePath('/dashboard/players');
+              revalidatePath(`/dashboard/players/${playerId}`, 'page');
+              revalidatePath('/dashboard/finances');
             }
           }
         } catch (deniedError: any) {

@@ -65,15 +65,74 @@ export async function getPlayerPayments(playerId: string) {
     .limit(10);
   
   if (!unlinkedError && unlinkedPayments && unlinkedPayments.length > 0) {
+    // Check if any unlinked payment has this playerId in notes
+    const potentiallyLinkedPayments = unlinkedPayments.filter(p => {
+      if (!p.notes) return false;
+      const notes = p.notes.toLowerCase();
+      const playerIdLower = playerId.toLowerCase();
+      return notes.includes(playerIdLower) || 
+             notes.includes(`pending player ids: ${playerIdLower}`) ||
+             notes.includes(`pending player ids:${playerIdLower}`);
+    });
+    
     console.log('[getPlayerPayments] Found unlinked payments (for reference):', {
       count: unlinkedPayments.length,
       unlinkedPayments: unlinkedPayments.map(p => ({
         id: p.id,
         amount: p.amount,
+        type: p.type,
+        method: p.method,
+        status: p.status,
         notes: p.notes,
         payment_date: p.payment_date,
       })),
+      potentiallyLinkedCount: potentiallyLinkedPayments.length,
+      potentiallyLinked: potentiallyLinkedPayments.map(p => ({
+        id: p.id,
+        amount: p.amount,
+        notes: p.notes,
+      })),
     });
+    
+    // If we found potentially linked payments, try to link them automatically
+    if (potentiallyLinkedPayments.length > 0) {
+      console.log('[getPlayerPayments] 🔗 Attempting to auto-link unlinked payments...');
+      for (const payment of potentiallyLinkedPayments) {
+        try {
+          const linkResult = await linkPaymentToPlayer(payment.id, playerId);
+          if (linkResult.success) {
+            console.log('[getPlayerPayments] ✅ Successfully auto-linked payment:', {
+              paymentId: payment.id,
+              playerId,
+            });
+          } else {
+            console.warn('[getPlayerPayments] ⚠️ Could not auto-link payment:', {
+              paymentId: payment.id,
+              error: linkResult.error,
+            });
+          }
+        } catch (linkError: any) {
+          console.error('[getPlayerPayments] ❌ Error auto-linking payment:', {
+            paymentId: payment.id,
+            error: linkError,
+          });
+        }
+      }
+      
+      // After linking, fetch payments again
+      const { data: refreshedData, error: refreshedError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('player_id', playerId)
+        .order('payment_date', { ascending: false });
+      
+      if (!refreshedError && refreshedData) {
+        console.log('[getPlayerPayments] ✅ Refreshed payments after auto-linking:', {
+          count: refreshedData.length,
+        });
+        return refreshedData;
+      }
+    }
   }
   
   console.log('[getPlayerPayments] Found payments:', {
