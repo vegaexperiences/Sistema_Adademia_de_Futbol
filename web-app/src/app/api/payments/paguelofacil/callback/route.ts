@@ -400,16 +400,32 @@ export async function GET(request: NextRequest) {
       playerId,
     });
 
+    // Log completion
+    const processingTime = Date.now() - startTime;
+    console.log('[PagueloFacil Callback] ✅ Callback processed successfully:', {
+      processingTimeMs: processingTime,
+      isApproved,
+      redirectUrl,
+      timestamp: new Date().toISOString(),
+    });
+
     // Redirect to appropriate page
     return NextResponse.redirect(redirectUrl);
   } catch (error: any) {
-    console.error('[PagueloFacil Callback] Error processing callback:', error);
+    const processingTime = Date.now() - startTime;
+    console.error('[PagueloFacil Callback] ❌ CRITICAL ERROR processing callback:', {
+      error: error.message,
+      stack: error.stack,
+      processingTimeMs: processingTime,
+      timestamp: new Date().toISOString(),
+      requestUrl: request.url,
+    });
     
     // Redirect to error page
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
                    request.headers.get('origin') || 
                    'http://localhost:3000';
-    return NextResponse.redirect(`${baseUrl}/dashboard/finances?paguelofacil=error`);
+    return NextResponse.redirect(`${baseUrl}/dashboard/finances?paguelofacil=error&message=${encodeURIComponent(error.message || 'Error desconocido')}`);
   }
 }
 
