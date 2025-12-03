@@ -94,44 +94,14 @@ export async function getPlayerPayments(playerId: string) {
       })),
     });
     
-    // If we found potentially linked payments, try to link them automatically
+    // Note: We don't auto-link here because revalidatePath can't be called during render
+    // The auto-linking should be done via a separate server action
     if (potentiallyLinkedPayments.length > 0) {
-      console.log('[getPlayerPayments] 🔗 Attempting to auto-link unlinked payments...');
-      for (const payment of potentiallyLinkedPayments) {
-        try {
-          const linkResult = await linkPaymentToPlayer(payment.id, playerId);
-          if (linkResult.success) {
-            console.log('[getPlayerPayments] ✅ Successfully auto-linked payment:', {
-              paymentId: payment.id,
-              playerId,
-            });
-          } else {
-            console.warn('[getPlayerPayments] ⚠️ Could not auto-link payment:', {
-              paymentId: payment.id,
-              error: linkResult.error,
-            });
-          }
-        } catch (linkError: any) {
-          console.error('[getPlayerPayments] ❌ Error auto-linking payment:', {
-            paymentId: payment.id,
-            error: linkError,
-          });
-        }
-      }
-      
-      // After linking, fetch payments again
-      const { data: refreshedData, error: refreshedError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('player_id', playerId)
-        .order('payment_date', { ascending: false });
-      
-      if (!refreshedError && refreshedData) {
-        console.log('[getPlayerPayments] ✅ Refreshed payments after auto-linking:', {
-          count: refreshedData.length,
-        });
-        return refreshedData;
-      }
+      console.log('[getPlayerPayments] 🔗 Found potentially linkable payments:', {
+        count: potentiallyLinkedPayments.length,
+        paymentIds: potentiallyLinkedPayments.map(p => p.id),
+        note: 'Use autoLinkUnlinkedPaymentsForPlayer() to link these',
+      });
     }
   }
   
