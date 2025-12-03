@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 export interface Payment {
   id?: string;
-  player_id: string;
+  player_id: string | null; // Can be null for orphaned payments (pending players)
   amount: number;
   type: 'enrollment' | 'monthly' | 'custom' | 'Matrícula'; // Use 'type' to match database schema
   method?: 'cash' | 'transfer' | 'yappy' | 'card' | 'paguelofacil' | 'ach' | 'other'; // Use 'method' to match database schema

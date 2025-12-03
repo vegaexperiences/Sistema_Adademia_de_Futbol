@@ -102,7 +102,7 @@ export function LinkPaymentModal({ payment, onClose }: LinkPaymentModalProps) {
               <div>
                 <span className="text-gray-600">Monto:</span>
                 <span className="font-bold text-gray-900 ml-2">
-                  ${parseFloat(payment.amount).toFixed(2)}
+                  ${Number(payment.amount).toFixed(2)}
                 </span>
               </div>
               <div>

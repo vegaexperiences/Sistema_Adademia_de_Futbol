@@ -124,22 +124,24 @@ export async function POST(request: NextRequest) {
             paymentNotes += `. Pending Player IDs: ${playerId}`;
           }
           
-          const paymentData = {
-            player_id: isPendingPlayer ? null : playerId, // Set to null if pending, will be linked later
-            amount: parseFloat(amount),
-            type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom', // Use 'type' not 'payment_type'
-            method: 'yappy' as const, // Use 'method' not 'payment_method'
-            payment_date: new Date().toISOString().split('T')[0],
-            month_year: monthYear || undefined,
-            status: 'Approved' as const,
-            notes: paymentNotes,
-          };
-          
-          console.log('[Yappy Callback] Payment data to create:', paymentData);
-          
-          // If player is pending, insert directly (createPayment requires player_id)
+          // Create payment record with Approved status
           let createdPayment;
+          
           if (isPendingPlayer) {
+            // If player is pending, insert directly with player_id = null
+            const paymentData = {
+              player_id: null,
+              amount: parseFloat(amount),
+              type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
+              method: 'yappy' as const,
+              payment_date: new Date().toISOString().split('T')[0],
+              month_year: monthYear || undefined,
+              status: 'Approved' as const,
+              notes: paymentNotes,
+            };
+            
+            console.log('[Yappy Callback] Payment data to create (pending player):', paymentData);
+            
             const { data: insertedPayment, error: insertError } = await supabase
               .from('payments')
               .insert(paymentData)
@@ -152,6 +154,19 @@ export async function POST(request: NextRequest) {
             }
             createdPayment = insertedPayment;
           } else {
+            // If player is approved, use createPayment function
+            const paymentData = {
+              player_id: playerId, // This is always a string when not pending
+              amount: parseFloat(amount),
+              type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
+              method: 'yappy' as const,
+              payment_date: new Date().toISOString().split('T')[0],
+              month_year: monthYear || undefined,
+              status: 'Approved' as const,
+              notes: paymentNotes,
+            };
+            
+            console.log('[Yappy Callback] Payment data to create (approved player):', paymentData);
             createdPayment = await createPayment(paymentData);
           }
 
@@ -177,7 +192,7 @@ export async function POST(request: NextRequest) {
               playerId: playerId,
               amount: parseFloat(amount),
               paymentType: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
-              paymentDate: paymentData.payment_date,
+              paymentDate: createdPayment?.payment_date || new Date().toISOString().split('T')[0],
               monthYear: monthYear || undefined,
               operationId: callbackParams.transactionId || callbackParams.orderId,
             });

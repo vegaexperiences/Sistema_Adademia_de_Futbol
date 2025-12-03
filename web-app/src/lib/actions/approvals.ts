@@ -626,8 +626,9 @@ export async function approvePlayer(
         updateData.amount = enrollmentFee;
       }
 
-      // Add proof_url if it's a URL (for cash/transfer/ach)
-      if (paymentProof && (paymentMethod === 'cash' || paymentMethod === 'transfer' || paymentMethod === 'ach')) {
+      // Add proof_url if it's a URL (for transfer method)
+      // Note: cash/ACH payments are handled in the else block below
+      if (paymentProof && paymentMethod === 'transfer') {
         updateData.proof_url = paymentProof;
       }
 
@@ -988,7 +989,7 @@ export async function approvePlayer(
           console.log('[approvePlayer] ✅ player_accepted email sent successfully:', {
             email: tutorEmailForEmail,
             messageId: emailResult?.messageId,
-            emailRecordId: emailResult?.emailRecordId,
+            emailQueueId: emailResult?.emailQueueId,
             playerId: insertedPlayer?.id || playerId,
           });
         }
@@ -1067,7 +1068,7 @@ export async function approvePlayer(
           console.log('[approvePlayer] ✅ player_accepted email (Scholarship) sent successfully:', {
             email: tutorEmailForScholarship,
             messageId: emailResult?.messageId,
-            emailRecordId: emailResult?.emailRecordId,
+            emailQueueId: emailResult?.emailQueueId,
             playerId: insertedPlayer?.id || playerId,
           });
         }
