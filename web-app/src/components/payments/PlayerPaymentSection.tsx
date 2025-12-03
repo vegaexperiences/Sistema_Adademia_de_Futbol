@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, DollarSign, Plus, X, Calendar } from 'lucide-react';
-import { createPayment } from '@/lib/actions/payments';
+import { createPayment, autoLinkUnlinkedPaymentsForPlayer } from '@/lib/actions/payments';
 import PaymentHistory from './PaymentHistory';
 import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
 import { YappyPaymentButton } from './YappyPaymentButton';

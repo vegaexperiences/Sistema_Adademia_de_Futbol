@@ -365,3 +365,78 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
 
   return { success: true };
 }
+
+// Auto-link unlinked payments for a player (can be called from Server Actions)
+export async function autoLinkUnlinkedPaymentsForPlayer(playerId: string) {
+  const supabase = await createClient();
+  
+  console.log('[autoLinkUnlinkedPaymentsForPlayer] Starting auto-link for player:', playerId);
+  
+  // Get all unlinked payments
+  const { data: unlinkedPayments, error: unlinkedError } = await supabase
+    .from('payments')
+    .select('*')
+    .is('player_id', null)
+    .order('payment_date', { ascending: false })
+    .limit(50);
+  
+  if (unlinkedError || !unlinkedPayments) {
+    console.error('[autoLinkUnlinkedPaymentsForPlayer] Error fetching unlinked payments:', unlinkedError);
+    return { success: false, error: 'Error al buscar pagos no vinculados', linked: 0 };
+  }
+  
+  // Filter payments that have this playerId in notes
+  const potentiallyLinkedPayments = unlinkedPayments.filter(p => {
+    if (!p.notes) return false;
+    const notes = p.notes.toLowerCase();
+    const playerIdLower = playerId.toLowerCase();
+    return notes.includes(playerIdLower) || 
+           notes.includes(`pending player ids: ${playerIdLower}`) ||
+           notes.includes(`pending player ids:${playerIdLower}`);
+  });
+  
+  if (potentiallyLinkedPayments.length === 0) {
+    console.log('[autoLinkUnlinkedPaymentsForPlayer] No linkable payments found');
+    return { success: true, linked: 0, message: 'No hay pagos para vincular' };
+  }
+  
+  console.log('[autoLinkUnlinkedPaymentsForPlayer] Found potentially linkable payments:', {
+    count: potentiallyLinkedPayments.length,
+    paymentIds: potentiallyLinkedPayments.map(p => p.id),
+  });
+  
+  let linkedCount = 0;
+  const errors: string[] = [];
+  
+  for (const payment of potentiallyLinkedPayments) {
+    try {
+      const linkResult = await linkPaymentToPlayer(payment.id, playerId);
+      if (linkResult.success) {
+        linkedCount++;
+        console.log('[autoLinkUnlinkedPaymentsForPlayer] ✅ Successfully linked payment:', {
+          paymentId: payment.id,
+          playerId,
+        });
+      } else {
+        errors.push(`Payment ${payment.id}: ${linkResult.error}`);
+        console.warn('[autoLinkUnlinkedPaymentsForPlayer] ⚠️ Could not link payment:', {
+          paymentId: payment.id,
+          error: linkResult.error,
+        });
+      }
+    } catch (linkError: any) {
+      errors.push(`Payment ${payment.id}: ${linkError.message}`);
+      console.error('[autoLinkUnlinkedPaymentsForPlayer] ❌ Error linking payment:', {
+        paymentId: payment.id,
+        error: linkError,
+      });
+    }
+  }
+  
+  return {
+    success: true,
+    linked: linkedCount,
+    total: potentiallyLinkedPayments.length,
+    errors: errors.length > 0 ? errors : undefined,
+  };
+}
