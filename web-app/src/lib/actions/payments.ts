@@ -24,6 +24,20 @@ export async function getPlayerPayments(playerId: string) {
   
   console.log('[getPlayerPayments] Fetching payments for player:', playerId);
   
+  // First, check if player exists
+  const { data: playerCheck, error: playerCheckError } = await supabase
+    .from('players')
+    .select('id')
+    .eq('id', playerId)
+    .single();
+  
+  if (playerCheckError || !playerCheck) {
+    console.warn('[getPlayerPayments] Player not found:', {
+      playerId,
+      error: playerCheckError?.message,
+    });
+  }
+  
   const { data, error } = await supabase
     .from('payments')
     .select('*')
@@ -35,9 +49,31 @@ export async function getPlayerPayments(playerId: string) {
       error,
       playerId,
       errorCode: error.code,
-      errorMessage: error.message
+      errorMessage: error.message,
+      errorDetails: error.details,
+      errorHint: error.hint,
     });
     return [];
+  }
+  
+  // Also check for unlinked payments that might belong to this player
+  const { data: unlinkedPayments, error: unlinkedError } = await supabase
+    .from('payments')
+    .select('*')
+    .is('player_id', null)
+    .order('payment_date', { ascending: false })
+    .limit(10);
+  
+  if (!unlinkedError && unlinkedPayments && unlinkedPayments.length > 0) {
+    console.log('[getPlayerPayments] Found unlinked payments (for reference):', {
+      count: unlinkedPayments.length,
+      unlinkedPayments: unlinkedPayments.map(p => ({
+        id: p.id,
+        amount: p.amount,
+        notes: p.notes,
+        payment_date: p.payment_date,
+      })),
+    });
   }
   
   console.log('[getPlayerPayments] Found payments:', {
@@ -49,8 +85,10 @@ export async function getPlayerPayments(playerId: string) {
       type: p.type,
       method: p.method,
       status: p.status,
-      payment_date: p.payment_date
-    }))
+      payment_date: p.payment_date,
+      player_id: p.player_id,
+    })),
+    queryResult: data ? 'success' : 'no data',
   });
   
   return data || [];

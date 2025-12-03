@@ -207,9 +207,42 @@ export async function GET(request: NextRequest) {
             createdPayment = await createPayment(paymentData);
           }
 
+          // CRITICAL: Verify payment was created correctly by querying it back
+          if (createdPayment?.id) {
+            const { data: verifyPayment, error: verifyError } = await supabase
+              .from('payments')
+              .select('*')
+              .eq('id', createdPayment.id)
+              .single();
+            
+            if (verifyError || !verifyPayment) {
+              console.error('[PagueloFacil Callback] ❌ CRITICAL: Payment verification failed:', {
+                paymentId: createdPayment.id,
+                error: verifyError,
+                createdPayment,
+              });
+            } else {
+              console.log('[PagueloFacil Callback] ✅ Payment verified in database:', {
+                paymentId: verifyPayment.id,
+                playerId: verifyPayment.player_id,
+                expectedPlayerId: isPendingPlayer ? null : playerId,
+                verified: verifyPayment.player_id === (isPendingPlayer ? null : playerId),
+                amount: verifyPayment.amount,
+                status: verifyPayment.status,
+                type: verifyPayment.type,
+                method: verifyPayment.method,
+              });
+            }
+          } else {
+            console.error('[PagueloFacil Callback] ❌ CRITICAL: Payment created but no ID returned:', {
+              createdPayment,
+              playerId,
+            });
+          }
+
           // Revalidate all relevant paths to show updated data
           revalidatePath('/dashboard/players');
-          revalidatePath('/dashboard/players/[id]', 'page');
+          revalidatePath(`/dashboard/players/${playerId}`, 'page');
           revalidatePath('/dashboard/families');
           revalidatePath('/dashboard/finances');
           revalidatePath('/dashboard/finances/transactions');
