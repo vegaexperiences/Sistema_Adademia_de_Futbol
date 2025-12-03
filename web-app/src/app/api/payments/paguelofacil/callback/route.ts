@@ -315,16 +315,20 @@ export async function GET(request: NextRequest) {
           
           if (player) {
             // Record denied payment with status 'Rejected' for audit trail
-            const deniedPaymentData = {
+            const deniedPaymentData: any = {
               player_id: playerId,
               amount: parseFloat(amount),
               type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
               method: 'paguelofacil' as const,
               payment_date: new Date().toISOString().split('T')[0],
-              month_year: monthYear || undefined,
               status: 'Rejected' as const,
               notes: `Intento de pago denegado por Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. Razón: ${callbackParams.Razon || 'Transacción denegada'}. Fecha: ${callbackParams.Fecha || 'N/A'} ${callbackParams.Hora || 'N/A'}`,
             };
+            
+            // Only add month_year if it exists and has a value
+            if (monthYear && monthYear.trim() !== '') {
+              deniedPaymentData.month_year = monthYear;
+            }
             
             const { data: deniedPayment, error: deniedError } = await supabase
               .from('payments')
