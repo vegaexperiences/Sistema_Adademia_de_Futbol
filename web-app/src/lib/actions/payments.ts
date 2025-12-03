@@ -363,13 +363,22 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
     return { error: 'Jugador no encontrado' };
   }
 
-  // Update payment
+  // Update payment - only update fields that exist
+  // Note: We don't explicitly set updated_at as it should be handled by trigger if it exists
+  const updateData: any = {
+    player_id: playerId,
+  };
+  
+  // Only set status if it's not already set or if we want to ensure it's Approved
+  if (!payment.status || payment.status === 'Pending') {
+    updateData.status = 'Approved';
+  } else {
+    updateData.status = payment.status;
+  }
+  
   const { error: updateError } = await supabase
     .from('payments')
-    .update({
-      player_id: playerId,
-      status: payment.status || 'Approved'
-    })
+    .update(updateData)
     .eq('id', paymentId);
 
   if (updateError) {
