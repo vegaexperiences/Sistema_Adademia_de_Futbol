@@ -373,14 +373,14 @@ export async function GET(request: NextRequest) {
         });
       }
       
-      // Log transaction denial (rejected payment may have been recorded for audit above)
-      console.log('[PagueloFacil Callback] ℹ️ Transaction denied - no approved payment created:', {
+      // Log transaction denial - rejected payments are NOT stored as payments
+      console.log('[PagueloFacil Callback] ℹ️ Transaction denied - no payment created (rejections are not real payments):', {
         estado: callbackParams.Estado,
         razon: callbackParams.Razon,
         type,
         hasPlayerId: !!playerId,
         hasAmount: !!amount,
-        note: type === 'payment' && playerId && amount ? 'Rejected payment recorded for audit trail' : 'No audit record created (enrollment or missing data)',
+        note: 'Rejected payments are logged but NOT stored as payments - they are not real payments',
       });
     }
 
