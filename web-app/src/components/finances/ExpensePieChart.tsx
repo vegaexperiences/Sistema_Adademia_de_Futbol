@@ -16,7 +16,7 @@ interface ExpensePieChartProps {
 export default function ExpensePieChart({ data }: ExpensePieChartProps) {
   if (data.length === 0) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
+      <div className="h-[300px] flex items-center justify-center text-gray-500">
         No hay datos de gastos para mostrar
       </div>
     );

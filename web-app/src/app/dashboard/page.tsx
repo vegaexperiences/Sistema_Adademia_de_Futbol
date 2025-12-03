@@ -29,10 +29,10 @@ export default async function DashboardPage() {
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Welcome Header */}
       <div className="glass-card p-4 sm:p-6 md:p-8">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
           ⚽ Dashboard - SUAREZ ACADEMY
         </h1>
-        <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
+        <p className="text-base sm:text-lg text-gray-600">
           Bienvenido al panel de administración
         </p>
       </div>
@@ -47,13 +47,13 @@ export default async function DashboardPage() {
             </div>
             <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
             {totalPlayers}
           </h3>
-          <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">
+          <p className="text-xs sm:text-sm font-semibold text-gray-600">
             Total Jugadores
           </p>
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-3 pt-3 border-t border-gray-200">
             <span className="text-xs font-bold px-2 py-1 rounded-full badge-gradient-active">
               📊 Activos
             </span>
@@ -67,13 +67,13 @@ export default async function DashboardPage() {
               <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
             {activePlayers}
           </h3>
-          <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">
+          <p className="text-xs sm:text-sm font-semibold text-gray-600">
             Jugadores Activos
           </p>
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-3 pt-3 border-t border-gray-200">
             <span className="text-xs font-bold px-2 py-1 rounded-full badge-gradient-active">
               ✅ Aprobados
             </span>
@@ -92,13 +92,13 @@ export default async function DashboardPage() {
               </span>
             )}
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
             {pendingPlayers}
           </h3>
-          <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">
+          <p className="text-xs sm:text-sm font-semibold text-gray-600">
             Aprobaciones Pendientes
           </p>
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-3 pt-3 border-t border-gray-200">
             <span className="text-xs font-bold px-2 py-1 rounded-full badge-gradient-pending">
               ⏳ En espera
             </span>
@@ -112,13 +112,13 @@ export default async function DashboardPage() {
               <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
             {scholarships}
           </h3>
-          <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">
+          <p className="text-xs sm:text-sm font-semibold text-gray-600">
             Becados
           </p>
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-3 pt-3 border-t border-gray-200">
             <span className="text-xs font-bold px-2 py-1 rounded-full badge-gradient-scholarship">
               🎓 Especial
             </span>
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="glass-card p-4 sm:p-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
           🚀 Acciones Rápidas
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

@@ -15,14 +15,14 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Información del Tutor</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-xl font-semibold text-gray-900">Información del Tutor</h2>
+        <p className="text-sm text-gray-500">
           Datos del padre, madre o acudiente responsable.
         </p>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <label htmlFor="tutorName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tutorName" className="block text-sm font-medium text-gray-700">
               Nombre Completo
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -33,7 +33,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="text"
                 id="tutorName"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
+                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
                 placeholder="Juan Pérez"
                 value={data.tutorName || ''}
                 onChange={(e) => updateData({ tutorName: e.target.value })}
@@ -42,7 +42,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
           </div>
 
           <div>
-            <label htmlFor="tutorCedula" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tutorCedula" className="block text-sm font-medium text-gray-700">
               Cédula / Pasaporte
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -53,7 +53,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="text"
                 id="tutorCedula"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
+                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
                 placeholder="8-888-8888"
                 value={data.tutorCedula || ''}
                 onChange={(e) => updateData({ tutorCedula: e.target.value })}
@@ -62,7 +62,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
           </div>
 
           <div>
-            <label htmlFor="tutorEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tutorEmail" className="block text-sm font-medium text-gray-700">
               Correo Electrónico
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -73,7 +73,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="email"
                 id="tutorEmail"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
+                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
                 placeholder="juan@ejemplo.com"
                 value={data.tutorEmail || ''}
                 onChange={(e) => updateData({ tutorEmail: e.target.value })}
@@ -82,7 +82,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
           </div>
 
           <div>
-            <label htmlFor="tutorPhone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tutorPhone" className="block text-sm font-medium text-gray-700">
               Teléfono / WhatsApp
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -93,7 +93,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="tel"
                 id="tutorPhone"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
+                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
                 placeholder="6000-0000"
                 value={data.tutorPhone || ''}
                 onChange={(e) => updateData({ tutorPhone: e.target.value })}

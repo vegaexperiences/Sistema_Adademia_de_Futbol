@@ -67,19 +67,19 @@ export function EmailHistoryManager({
     switch (status) {
       case 'pending':
         return (
-          <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs rounded-full font-medium">
+          <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
             Pendiente
           </span>
         );
       case 'sent':
         return (
-          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs rounded-full font-medium">
+          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
             Enviado
           </span>
         );
       case 'failed':
         return (
-          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs rounded-full font-medium">
+          <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
             Fallido
           </span>
         );
@@ -105,16 +105,16 @@ export function EmailHistoryManager({
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Mail className="text-blue-600" size={28} />
               Historial de Correos
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-600 mt-1">
               Gestiona y monitorea todos los correos enviados
             </p>
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Total: <span className="font-bold text-gray-900 dark:text-white">{total}</span> correos
+          <div className="text-sm text-gray-500">
+            Total: <span className="font-bold text-gray-900">{total}</span> correos
           </div>
         </div>
 
@@ -134,7 +134,7 @@ export function EmailHistoryManager({
                   handleFilterChange('search', filters.search || undefined);
                 }
               }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -142,7 +142,7 @@ export function EmailHistoryManager({
           <select
             value={filters.status || ''}
             onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Todos los estados</option>
             <option value="pending">Pendiente</option>
@@ -155,7 +155,7 @@ export function EmailHistoryManager({
             type="date"
             value={filters.dateFrom || ''}
             onChange={(e) => handleFilterChange('dateFrom', e.target.value || undefined)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Desde"
           />
 
@@ -164,7 +164,7 @@ export function EmailHistoryManager({
             type="date"
             value={filters.dateTo || ''}
             onChange={(e) => handleFilterChange('dateTo', e.target.value || undefined)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Hasta"
           />
         </div>
@@ -174,41 +174,41 @@ export function EmailHistoryManager({
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Destinatario
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Asunto
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Plantilla
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Enviado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tracking
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-white divide-y divide-gray-200">
               {isPending ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     Cargando...
                   </td>
                 </tr>
               ) : emails.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     No se encontraron correos
                   </td>
                 </tr>
@@ -216,21 +216,21 @@ export function EmailHistoryManager({
                 emails.map((email) => (
                   <tr
                     key={email.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
                     onClick={() => setSelectedEmail(email)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="text-sm font-medium text-gray-900">
                         {email.to_email}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white max-w-xs truncate" title={email.subject}>
+                      <div className="text-sm text-gray-900 max-w-xs truncate" title={email.subject}>
                         {email.subject}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="text-sm text-gray-500">
                         {email.template_name ? email.template_name.replace(/_/g, ' ') : '-'}
                       </div>
                     </td>
@@ -238,34 +238,34 @@ export function EmailHistoryManager({
                       {getStatusBadge(email.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="text-sm text-gray-500">
                         {email.sent_at ? formatDate(email.sent_at) : formatDate(email.created_at)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         {email.delivered_at && (
-                          <span className="p-1 bg-green-100 dark:bg-green-900/30 rounded" title="Entregado">
-                            <CheckCircle size={14} className="text-green-600 dark:text-green-400" />
+                          <span className="p-1 bg-green-100 rounded" title="Entregado">
+                            <CheckCircle size={14} className="text-green-600" />
                           </span>
                         )}
                         {email.opened_at && (
-                          <span className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded" title="Abierto">
-                            <Eye size={14} className="text-blue-600 dark:text-blue-400" />
+                          <span className="p-1 bg-blue-100 rounded" title="Abierto">
+                            <Eye size={14} className="text-blue-600" />
                           </span>
                         )}
                         {email.clicked_at && (
-                          <span className="p-1 bg-purple-100 dark:bg-purple-900/30 rounded" title="Click en enlace">
-                            <MousePointerClick size={14} className="text-purple-600 dark:text-purple-400" />
+                          <span className="p-1 bg-purple-100 rounded" title="Click en enlace">
+                            <MousePointerClick size={14} className="text-purple-600" />
                           </span>
                         )}
                         {email.bounced_at && (
-                          <span className="p-1 bg-red-100 dark:bg-red-900/30 rounded" title="Rebotado">
-                            <XCircle size={14} className="text-red-600 dark:text-red-400" />
+                          <span className="p-1 bg-red-100 rounded" title="Rebotado">
+                            <XCircle size={14} className="text-red-600" />
                           </span>
                         )}
                         {!email.delivered_at && !email.opened_at && !email.bounced_at && email.status === 'sent' && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500">Pendiente</span>
+                          <span className="text-xs text-gray-400">Pendiente</span>
                         )}
                       </div>
                     </td>
@@ -275,7 +275,7 @@ export function EmailHistoryManager({
                           e.stopPropagation();
                           setSelectedEmail(email);
                         }}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 text-sm font-medium"
+                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium"
                       >
                         Ver <ExternalLink size={14} />
                       </button>
@@ -289,26 +289,26 @@ export function EmailHistoryManager({
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-500">
                 Mostrando {((page - 1) * 50) + 1} a {Math.min(page * 50, total)} de {total} correos
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 1 || isPending}
-                  className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft size={18} />
                 </button>
-                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                <span className="text-sm text-gray-700 font-medium">
                   Página {page} de {totalPages}
                 </span>
                 <button
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page === totalPages || isPending}
-                  className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight size={18} />
                 </button>

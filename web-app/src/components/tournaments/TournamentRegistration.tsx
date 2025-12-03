@@ -43,13 +43,13 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
   if (success) {
     return (
       <div className="glass-card p-8 text-center animate-scale-in max-w-2xl mx-auto">
-        <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="h-10 w-10 text-green-600" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
           ¡Registro Exitoso!
         </h2>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+        <p className="text-lg text-gray-600 mb-8">
           Hemos recibido la inscripción de tu equipo <strong>{formData.team_name}</strong>.
           <br />
           Te contactaremos pronto al correo <strong>{formData.coach_email}</strong> para confirmar los detalles.
@@ -77,10 +77,10 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
   return (
     <div className="glass-card p-8 max-w-3xl mx-auto animate-fade-in">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
           Inscripción al Torneo
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Completa el formulario para inscribir a tu equipo en <strong>{tournament.name}</strong>
         </p>
       </div>
@@ -88,7 +88,7 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Team Name */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
             Nombre del Equipo
           </label>
           <div className="relative">
@@ -99,7 +99,7 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
               value={formData.team_name}
               onChange={(e) => setFormData({ ...formData, team_name: e.target.value })}
               placeholder="Ej: Los Leones FC"
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
             />
           </div>
         </div>
@@ -107,7 +107,7 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
         {/* Coach Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Nombre del Entrenador/Representante
             </label>
             <div className="relative">
@@ -118,12 +118,12 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
                 value={formData.coach_name}
                 onChange={(e) => setFormData({ ...formData, coach_name: e.target.value })}
                 placeholder="Nombre completo"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Cédula del Entrenador/Representante
             </label>
             <div className="relative">
@@ -134,7 +134,7 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
                 value={formData.coach_cedula}
                 onChange={(e) => setFormData({ ...formData, coach_cedula: e.target.value })}
                 placeholder="Ej. 8-123-456"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
               />
             </div>
           </div>
@@ -142,7 +142,7 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Teléfono de Contacto
             </label>
             <div className="relative">
@@ -153,12 +153,12 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
                 value={formData.coach_phone}
                 onChange={(e) => setFormData({ ...formData, coach_phone: e.target.value })}
                 placeholder="+507 6000-0000"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Correo Electrónico
             </label>
             <div className="relative">
@@ -169,14 +169,14 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
                 value={formData.coach_email}
                 onChange={(e) => setFormData({ ...formData, coach_email: e.target.value })}
                 placeholder="correo@ejemplo.com"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
               />
             </div>
           </div>
         </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Categoría
             </label>
             <div className="relative">
@@ -185,7 +185,7 @@ export default function TournamentRegistration({ tournament }: TournamentRegistr
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none"
               >
                 <option value="" disabled>Selecciona una categoría</option>
                 {tournament.categories.map((cat) => (

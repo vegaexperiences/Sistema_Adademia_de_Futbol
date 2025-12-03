@@ -200,28 +200,28 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
           Ver {title}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl h-[80vh] bg-white dark:bg-gray-900">
+      <DialogContent className="max-w-4xl h-[80vh] bg-white">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-white">{title}</DialogTitle>
+          <DialogTitle className="text-gray-900">{title}</DialogTitle>
           <DialogDescription className="sr-only">
             Vista previa del documento {title}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 w-full h-full min-h-[400px] bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden relative">
+        <div className="flex-1 w-full h-full min-h-[400px] bg-gray-100 rounded-md overflow-hidden relative">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              <p className="text-gray-600 dark:text-gray-400">Cargando imagen...</p>
+              <p className="text-gray-600">Cargando imagen...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 p-6">
               <FileText size={48} className="text-gray-400" />
               <div className="text-center">
-                <p className="text-gray-900 dark:text-white font-medium mb-2">Error al cargar la imagen</p>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                <p className="text-gray-900 font-medium mb-2">Error al cargar la imagen</p>
+                <p className="text-gray-600 text-sm mb-4">
                   No se pudo cargar la imagen. Verifica que el archivo exista.
                 </p>
-                <p className="text-gray-500 dark:text-gray-500 text-xs mb-2">URL: {url}</p>
+                <p className="text-gray-500 text-xs mb-2">URL: {url}</p>
                 {finalUrl && finalUrl !== url && (
                   <a href={finalUrl} target="_blank" rel="noopener noreferrer">
                     <Button>
@@ -236,8 +236,8 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
             <div className="flex flex-col items-center justify-center h-full gap-4 p-6">
               <FileText size={48} className="text-gray-400" />
               <div className="text-center">
-                <p className="text-gray-900 dark:text-white font-medium mb-2">Documento de Google Drive</p>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                <p className="text-gray-900 font-medium mb-2">Documento de Google Drive</p>
+                <p className="text-gray-600 text-sm mb-4">
                   Para ver este documento, el propietario debe compartirlo públicamente.
                 </p>
                 <a href={finalUrl} target="_blank" rel="noopener noreferrer">
@@ -265,7 +265,7 @@ export function DocumentPreview({ url, title }: DocumentPreviewProps) {
           ) : (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <FileText size={48} className="text-gray-400" />
-              <p className="text-gray-900 dark:text-white">Este documento no se puede previsualizar aquí.</p>
+              <p className="text-gray-900">Este documento no se puede previsualizar aquí.</p>
               <a href={finalUrl} target="_blank" rel="noopener noreferrer">
                 <Button>
                   <ExternalLink size={16} className="mr-2" />

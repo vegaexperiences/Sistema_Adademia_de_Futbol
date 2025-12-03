@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 
@@ -26,23 +25,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning className="light">
+    <html lang="es">
       <body
         className={`${inter.className} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-          storageKey="theme"
-        >
-          <ConditionalNavbar />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <ConditionalFooter />
-        </ThemeProvider>
+        <ConditionalNavbar />
+        <main className="flex-grow">
+          {children}
+        </main>
+        <ConditionalFooter />
       </body>
     </html>
   );

@@ -22,10 +22,10 @@ export function ResponsiveTable({ headers, rows, mobileCard, className = '' }: R
               <>
                 {headers.map((header, colIndex) => (
                   <div key={colIndex} className="flex justify-between items-start">
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                    <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
                       {header}
                     </span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white text-right flex-1 ml-4">
+                    <span className="text-sm font-medium text-gray-900 text-right flex-1 ml-4">
                       {row[colIndex]}
                     </span>
                   </div>
@@ -40,11 +40,11 @@ export function ResponsiveTable({ headers, rows, mobileCard, className = '' }: R
       <div className={`hidden md:block overflow-x-auto ${className}`}>
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
+            <tr className="border-b border-gray-200">
               {headers.map((header, index) => (
                 <th
                   key={index}
-                  className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
+                  className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide"
                 >
                   {header}
                 </th>
@@ -55,12 +55,12 @@ export function ResponsiveTable({ headers, rows, mobileCard, className = '' }: R
             {rows.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
-                className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
               >
                 {row.map((cell, colIndex) => (
                   <td
                     key={colIndex}
-                    className="px-4 py-3 text-sm text-gray-900 dark:text-white"
+                    className="px-4 py-3 text-sm text-gray-900"
                   >
                     {cell}
                   </td>

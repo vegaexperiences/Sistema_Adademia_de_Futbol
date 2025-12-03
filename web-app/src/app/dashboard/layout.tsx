@@ -17,7 +17,6 @@ import {
   Mail
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { MobileHeader } from '@/components/layout/MobileHeader';
 import { getPendingPlayersCount } from '@/lib/actions/approvals';
 
@@ -43,7 +42,7 @@ export default async function DashboardLayout({
       {/* Sidebar with Glass Effect */}
       <aside className="w-64 glass-card m-4 p-0 hidden md:flex flex-col animate-slide-up overflow-hidden">
         {/* Logo Section */}
-        <div className="p-6 border-b border-gray-200/20 dark:border-gray-700/50">
+        <div className="p-6 border-b border-gray-200/20">
           <div className="flex items-center gap-3 mb-4">
             <div className="relative w-12 h-12 bg-transparent">
               <Image 
@@ -56,16 +55,15 @@ export default async function DashboardLayout({
                 unoptimized
               />
             </div>
-            <span className="text-gray-900 dark:text-white font-bold text-xl">SUAREZ ACADEMY</span>
+            <span className="text-gray-900 font-bold text-xl">SUAREZ ACADEMY</span>
           </div>
-          <ThemeToggle />
         </div>
         
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <Link
             href="/dashboard"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <LayoutDashboard size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Dashboard</span>
@@ -73,7 +71,7 @@ export default async function DashboardLayout({
 
           <Link
             href="/dashboard/approvals"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] relative"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] relative"
           >
             <CheckCircle size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Aprobaciones</span>
@@ -86,7 +84,7 @@ export default async function DashboardLayout({
           
           <Link
             href="/dashboard/players"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <Users size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Jugadores</span>
@@ -94,7 +92,7 @@ export default async function DashboardLayout({
 
           <Link
             href="/dashboard/finances"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <TrendingUp size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Finanzas</span>
@@ -102,7 +100,7 @@ export default async function DashboardLayout({
           
           <Link
             href="/dashboard/tournaments"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <Trophy size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Torneos</span>
@@ -110,7 +108,7 @@ export default async function DashboardLayout({
 
           <Link
             href="/dashboard/tutors"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <User size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Tutores</span>
@@ -118,7 +116,7 @@ export default async function DashboardLayout({
 
           <Link
             href="/dashboard/families"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <Users size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Familias</span>
@@ -126,7 +124,7 @@ export default async function DashboardLayout({
           
           <Link
             href="/dashboard/reports"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <FileText size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Reportes</span>
@@ -134,7 +132,7 @@ export default async function DashboardLayout({
 
           <Link
             href="/dashboard/emails"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <Mail size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Correos</span>
@@ -142,7 +140,7 @@ export default async function DashboardLayout({
 
           <Link
             href="/dashboard/settings"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
           >
             <Settings size={20} className="group-hover:scale-110 transition-transform duration-300" />
             <span className="font-medium">Configuración</span>
@@ -150,20 +148,20 @@ export default async function DashboardLayout({
         </nav>
 
         {/* User Profile */}
-        <div className="p-4 border-t border-gray-200/20 dark:border-gray-700/50">
-          <div className="flex items-center gap-3 px-4 py-3 mb-2 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl">
+        <div className="p-4 border-t border-gray-200/20">
+          <div className="flex items-center gap-3 px-4 py-3 mb-2 bg-gray-100/50 rounded-xl">
             <div className="w-10 h-10 gradient-purple rounded-full flex items-center justify-center text-white font-bold shadow-lg">
               {user.email?.[0].toUpperCase()}
             </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.email}</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Administrador</span>
+              <span className="text-sm font-medium text-gray-900 truncate">{user.email}</span>
+              <span className="text-xs text-gray-600">Administrador</span>
             </div>
           </div>
           <form action={logout}>
             <button 
               type="submit"
-              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-300 text-sm font-medium hover:shadow-md border border-red-200 dark:border-red-800"
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 text-sm font-medium hover:shadow-md border border-red-200"
             >
               <LogOut size={18} />
               Cerrar Sesión

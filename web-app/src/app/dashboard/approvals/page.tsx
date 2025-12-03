@@ -55,8 +55,8 @@ export default async function ApprovalsPage({
       <div className="glass-card p-4 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Aprobaciones Pendientes</h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Revisa y aprueba solicitudes de matrícula y torneos</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Aprobaciones Pendientes</h1>
+            <p className="text-sm sm:text-base text-gray-600">Revisa y aprueba solicitudes de matrícula y torneos</p>
           </div>
           <div className="flex gap-2 sm:gap-3 flex-wrap">
             <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg">
@@ -75,7 +75,7 @@ export default async function ApprovalsPage({
               className={`px-3 sm:px-4 py-2 sm:py-2.5 min-h-[44px] rounded-xl font-semibold text-sm sm:text-base transition-all border touch-manipulation ${
                 view === tab.id
                   ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg border-transparent'
-                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800'
+                  : 'bg-white text-gray-600 border-gray-200 active:bg-gray-50'
               }`}
             >
               {tab.label} ({tab.count})
@@ -102,15 +102,15 @@ function PlayerApprovals({
 }) {
   return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <span className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-600">👤</span>
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <span className="p-2 bg-amber-100 rounded-lg text-amber-600">👤</span>
           Solicitudes de Matrícula
         </h2>
         
         {pendingPlayers.length === 0 ? (
           <div className="glass-card p-8 text-center">
             <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">No hay solicitudes de matrícula pendientes.</p>
+            <p className="text-gray-600">No hay solicitudes de matrícula pendientes.</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:gap-6">
@@ -129,17 +129,17 @@ function PlayerApprovals({
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         {isDuplicate && (
-                          <div className="mb-2 p-2 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg">
-                            <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-200">
+                          <div className="mb-2 p-2 bg-yellow-100 border border-yellow-300 rounded-lg">
+                            <p className="text-xs font-semibold text-yellow-800">
                               ⚠️ Posible duplicado: Existe otro jugador con el mismo nombre
                             </p>
-                            <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                            <p className="text-xs text-yellow-700 mt-1">
                               ID: {player.id.substring(0, 8)}... | Fecha: {player.created_at ? new Date(player.created_at).toLocaleDateString('es-ES') : 'N/A'}
                             </p>
                           </div>
                         )}
                         <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                          <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
                             {player.first_name} {player.last_name}
                           </h3>
                           {(() => {
@@ -150,7 +150,7 @@ function PlayerApprovals({
                               ? 'Femenino' 
                               : null;
                             if (!normalizedGender || !player.birth_date) {
-                              return <span className="px-3 py-1 rounded-full text-sm font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Pendiente</span>;
+                              return <span className="px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-700">Pendiente</span>;
                             }
                             const category = getPlayerCategory(player.birth_date, normalizedGender);
                             const colorClass = getCategoryColor(category);
@@ -177,37 +177,37 @@ function PlayerApprovals({
                           )}
                         </div>
                       </div>
-                    <span className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap badge-gradient-pending border-2 border-orange-400 dark:border-orange-500">
+                    <span className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap badge-gradient-pending border-2 border-orange-400">
                         ⏳ PENDIENTE
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border-l-4 border-blue-500">
-                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">📅 Fecha de Nacimiento</p>
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
+                        <p className="text-xs font-semibold text-gray-600 mb-1">📅 Fecha de Nacimiento</p>
+                        <p className="text-lg font-bold text-gray-900">
                           {player.birth_date ? new Date(player.birth_date).toLocaleDateString('es-ES') : 'N/A'}
                         </p>
                       </div>
-                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border-l-4 border-purple-500">
-                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">🆔 Cédula</p>
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">{player.cedula || 'Sin cédula'}</p>
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border-l-4 border-purple-500">
+                        <p className="text-xs font-semibold text-gray-600 mb-1">🆔 Cédula</p>
+                        <p className="text-lg font-bold text-gray-900">{player.cedula || 'Sin cédula'}</p>
                       </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500 mb-4">
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">👨‍👩‍👧‍👦 Información del Tutor</p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border-l-4 border-amber-500 mb-4">
+                      <p className="text-xs font-semibold text-gray-600 mb-2">👨‍👩‍👧‍👦 Información del Tutor</p>
+                      <p className="text-lg font-bold text-gray-900 mb-1">
                         {player.families?.tutor_name || player.tutor_name || 'Sin información'}
                       </p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                      <p className="text-sm text-gray-700">
                       🆔 {player.families?.tutor_cedula || 'Sin cédula'} • 📧 {player.families?.tutor_email || player.tutor_email || 'Sin email'} • 📱{' '}
                       {player.families?.tutor_phone || player.tutor_phone || 'Sin teléfono'}
                       </p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">📄 Documentos</p>
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
+                      <p className="text-xs font-semibold text-gray-600 mb-3">📄 Documentos</p>
                     <div className="space-y-3">
                         {(() => {
                           try {
@@ -225,7 +225,7 @@ function PlayerApprovals({
                               <>
                               {(frontUrl || backUrl) && (
                                 <div>
-                                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">👤 Documentos del Jugador</p>
+                                  <p className="text-xs font-semibold text-gray-500 mb-2">👤 Documentos del Jugador</p>
                                   <div className="flex gap-2 flex-wrap">
                                 {frontUrl && <DocumentPreview url={frontUrl} title="Cédula Jugador (Frente)" />}
                                 {backUrl && <DocumentPreview url={backUrl} title="Cédula Jugador (Reverso)" />}
@@ -235,7 +235,7 @@ function PlayerApprovals({
 
                               {tutorUrl && (
                                 <div>
-                                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">👨‍👩‍👧‍👦 Documentos del Tutor</p>
+                                  <p className="text-xs font-semibold text-gray-500 mb-2">👨‍👩‍👧‍👦 Documentos del Tutor</p>
                                   <div className="flex gap-2 flex-wrap">
                                     <DocumentPreview url={tutorUrl} title="Cédula Tutor" />
                                   </div>
@@ -244,7 +244,7 @@ function PlayerApprovals({
 
                               {playerPayments.length > 0 && (
                                 <div>
-                                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">💳 Información de Pago</p>
+                                  <p className="text-xs font-semibold text-gray-500 mb-2">💳 Información de Pago</p>
                                   <div className="space-y-3">
                                     {playerPayments.map((payment, idx) => {
                                       const key = payment.id ?? `${player.id}-payment-${idx}`;
@@ -272,13 +272,13 @@ function PlayerApprovals({
                                       }
 
                                       return (
-                                        <div key={key} className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                                        <div key={key} className="bg-white p-3 rounded-lg border border-gray-200">
                                           <div className="flex items-start justify-between mb-2">
                                             <div>
-                                              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                              <p className="text-sm font-semibold text-gray-900">
                                                 {payment.type || 'Pago'} {payment.amount ? `- $${payment.amount.toFixed(2)}` : ''}
                                               </p>
-                                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                                              <p className="text-xs text-gray-600">
                                                 Método: {methodLabels[paymentMethod] || paymentMethod}
                                               </p>
                                             </div>
@@ -296,20 +296,20 @@ function PlayerApprovals({
                                           
                                           {/* Show transaction info for Yappy/Paguelo Fácil */}
                                           {(paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') && (
-                                            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                                              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">
+                                            <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
+                                              <p className="text-xs font-semibold text-blue-700 mb-1">
                                                 {paymentMethod === 'yappy' ? 'Yappy Comercial' : 'Paguelo Fácil'}
                                               </p>
                                               {transactionInfo ? (
-                                                <p className="text-xs text-blue-600 dark:text-blue-400">
+                                                <p className="text-xs text-blue-600">
                                                   ID Transacción: <span className="font-mono font-bold">{transactionInfo}</span>
                                                 </p>
                                               ) : notes ? (
-                                                <p className="text-xs text-blue-600 dark:text-blue-400 break-words">
+                                                <p className="text-xs text-blue-600 break-words">
                                                   {notes.substring(0, 100)}{notes.length > 100 ? '...' : ''}
                                                 </p>
                                               ) : (
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                <p className="text-xs text-gray-500">
                                                   Información de transacción no disponible
                                                 </p>
                                               )}
@@ -347,15 +347,15 @@ function PlayerApprovals({
 function TournamentApprovals({ registrations }: { registrations: TournamentRegistration[] }) {
   return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <span className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600">🏆</span>
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <span className="p-2 bg-blue-100 rounded-lg text-blue-600">🏆</span>
         Solicitudes de Torneo
         </h2>
 
       {registrations.length === 0 ? (
           <div className="glass-card p-8 text-center">
             <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">No hay solicitudes de torneo pendientes.</p>
+          <p className="text-gray-600">No hay solicitudes de torneo pendientes.</p>
           </div>
         ) : (
           <div className="grid gap-6">
@@ -365,40 +365,40 @@ function TournamentApprovals({ registrations }: { registrations: TournamentRegis
                 <div className="flex items-start justify-between">
                       <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{registration.team_name}</h3>
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex items-center gap-1">
+                      <h3 className="text-2xl font-bold text-gray-900">{registration.team_name}</h3>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 flex items-center gap-1">
                         <Trophy size={14} />
                         {registration.tournaments?.name || 'Torneo'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-600">
                       Inscrito el {new Date(registration.created_at).toLocaleDateString('es-ES')}
                     </p>
                       </div>
-                  <span className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700">
+                  <span className="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap bg-yellow-50 text-yellow-700 border border-yellow-200">
                     ⏳ Pendiente
                   </span>
                           </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border-l-4 border-blue-500">
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">👤 Entrenador / Contacto</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{registration.coach_name}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
+                    <p className="text-xs font-semibold text-gray-600 mb-1">👤 Entrenador / Contacto</p>
+                    <p className="text-lg font-bold text-gray-900">{registration.coach_name}</p>
+                    <p className="text-sm text-gray-600">
                       📧 {registration.coach_email} • 📱 {registration.coach_phone}
                     </p>
                   </div>
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">📅 Detalles del torneo</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
+                    <p className="text-xs font-semibold text-gray-600 mb-1">📅 Detalles del torneo</p>
+                    <p className="text-lg font-bold text-gray-900">
                       {registration.tournaments?.start_date
                         ? new Date(registration.tournaments.start_date).toLocaleDateString('es-ES')
                         : 'Fecha por confirmar'}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-600">
                       📍 {registration.tournaments?.location || 'Lugar por confirmar'}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">🏷️ Categoría: {registration.category}</p>
+                    <p className="text-sm text-gray-600">🏷️ Categoría: {registration.category}</p>
                   </div>
                 </div>
 

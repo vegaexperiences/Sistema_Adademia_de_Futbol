@@ -103,12 +103,12 @@ export function PagueloFacilPaymentButton({
       </button>
 
       {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
 
-      <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+      <p className="text-xs text-gray-500 text-center">
         🔒 Serás redirigido a la página segura de Paguelo Fácil para completar el pago
       </p>
     </div>

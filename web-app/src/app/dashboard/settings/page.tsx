@@ -36,10 +36,10 @@ export default async function SettingsPage() {
       <div className="glass-card p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               ⚙️ Configuración
             </h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Administra los parámetros del sistema</p>
+            <p className="text-sm sm:text-base text-gray-600">Administra los parámetros del sistema</p>
           </div>
           <Settings size={32} className="text-blue-600 sm:w-10 sm:h-10" />
         </div>
@@ -47,13 +47,13 @@ export default async function SettingsPage() {
         <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
           <a 
             href="#pricing" 
-            className="px-4 py-2.5 min-h-[44px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg active:bg-gray-50 dark:active:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             💰 Precios
           </a>
           <a 
             href="#payment-methods" 
-            className="px-4 py-2.5 min-h-[44px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg active:bg-gray-50 dark:active:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             💳 Métodos de Pago
           </a>
@@ -72,7 +72,7 @@ export default async function SettingsPage() {
           <div className="p-2 rounded-lg icon-bg-green">
             <DollarSign className="h-6 w-6 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900">
             💰 Configuración de Precios
           </h2>
         </div>
@@ -80,14 +80,14 @@ export default async function SettingsPage() {
         <div className="grid gap-6">
           {/* Enrollment Price */}
           {priceSettings.find(s => s.key === 'price_enrollment') && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border-l-4 border-blue-500">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-l-4 border-blue-500">
               <form action={updateSetting} className="space-y-4">
                 <input type="hidden" name="key" value="price_enrollment" />
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
                     📝 Precio de Matrícula
                   </label>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <p className="text-xs text-gray-600 mb-3">
                     Costo único de inscripción por jugador
                   </p>
                   <div className="flex gap-3">
@@ -98,13 +98,13 @@ export default async function SettingsPage() {
                         name="value"
                         step="0.01"
                         defaultValue={priceSettings.find(s => s.key === 'price_enrollment')?.value}
-                        className="w-full pl-8 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-base sm:text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder-gray-400 touch-manipulation"
+                        className="w-full pl-8 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-blue-200 bg-white text-gray-900 font-bold text-base sm:text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder-gray-400 touch-manipulation"
                         required
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto btn-primary shadow-lg shadow-blue-500/30 dark:shadow-blue-500/20"
+                      className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto btn-primary shadow-lg shadow-blue-500/30"
                     >
                       <Save size={18} />
                       Guardar
@@ -117,14 +117,14 @@ export default async function SettingsPage() {
 
           {/* Monthly Price */}
           {priceSettings.find(s => s.key === 'price_monthly') && (
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border-l-4 border-purple-500">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-l-4 border-purple-500">
               <form action={updateSetting} className="space-y-4">
                 <input type="hidden" name="key" value="price_monthly" />
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
                     📅 Precio de Mensualidad Regular
                   </label>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <p className="text-xs text-gray-600 mb-3">
                     Costo mensual por jugador
                   </p>
                   <div className="flex gap-3">
@@ -135,13 +135,13 @@ export default async function SettingsPage() {
                         name="value"
                         step="0.01"
                         defaultValue={priceSettings.find(s => s.key === 'price_monthly')?.value}
-                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder-gray-400"
+                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 font-bold text-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder-gray-400"
                         required
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2 gradient-purple shadow-lg shadow-purple-500/30 dark:shadow-purple-500/20"
+                      className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2 gradient-purple shadow-lg shadow-purple-500/30"
                     >
                       <Save size={18} />
                       Guardar
@@ -154,14 +154,14 @@ export default async function SettingsPage() {
 
           {/* Family Monthly Price */}
           {priceSettings.find(s => s.key === 'price_monthly_family') && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-6 rounded-xl border-l-4 border-amber-500">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-xl border-l-4 border-amber-500">
               <form action={updateSetting} className="space-y-4">
                 <input type="hidden" name="key" value="price_monthly_family" />
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
                     👨‍👩‍👧‍👦 Precio de Mensualidad Familiar
                   </label>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <p className="text-xs text-gray-600 mb-3">
                     Costo mensual después del segundo jugador de la misma familia
                   </p>
                   <div className="flex gap-3">
@@ -172,7 +172,7 @@ export default async function SettingsPage() {
                         name="value"
                         step="0.01"
                         defaultValue={priceSettings.find(s => s.key === 'price_monthly_family')?.value}
-                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder-gray-400"
+                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-amber-200 bg-white text-gray-900 font-bold text-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder-gray-400"
                         required
                       />
                     </div>
@@ -195,8 +195,8 @@ export default async function SettingsPage() {
         </div>
 
         {/* Info Card */}
-        <div className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+        <div className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
+          <p className="text-sm text-gray-700">
             <span className="font-bold">💡 Nota:</span> Los cambios en los precios se aplicarán inmediatamente a todas las nuevas matrículas y pagos. Los pagos existentes no se verán afectados.
           </p>
         </div>
@@ -210,16 +210,16 @@ export default async function SettingsPage() {
           }}>
             <CreditCard className="h-6 w-6 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900">
             💳 Métodos de Pago
           </h2>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-6 rounded-xl border-l-4 border-orange-500">
+        <div className="bg-gradient-to-br from-orange-50 to-red-50 p-6 rounded-xl border-l-4 border-orange-500">
           <form action={updateSetting} className="space-y-4">
             <input type="hidden" name="key" value="payment_methods" />
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">
+              <label className="block text-sm font-bold text-gray-700 mb-4">
                 Activar/Desactivar Métodos
               </label>
               

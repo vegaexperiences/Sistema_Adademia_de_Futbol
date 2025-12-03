@@ -174,14 +174,14 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
         {status !== 'idle' && (
           <div className={`p-4 rounded-xl text-sm font-semibold shadow-lg animate-slide-in ${
             status === 'success' 
-              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 text-green-800 dark:text-green-200 border-2 border-green-300 dark:border-green-700' 
-              : 'bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/30 dark:to-rose-900/30 text-red-800 dark:text-red-200 border-2 border-red-300 dark:border-red-700'
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border-2 border-green-300' 
+              : 'bg-gradient-to-r from-red-50 to-rose-50 text-red-800 border-2 border-red-300'
           }`}>
             <div className="flex items-center gap-2">
               {status === 'success' ? (
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
               ) : (
-                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
               )}
               <span>{message}</span>
             </div>
@@ -191,7 +191,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
         <button
           onClick={() => handleApprovalClick('Active')}
           disabled={isPending}
-          className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-success shadow-lg shadow-green-500/30 dark:shadow-green-500/20"
+          className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-success shadow-lg shadow-green-500/30"
         >
           {isPending ? (
             <>
@@ -209,7 +209,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
         <button
           onClick={() => handleApprovalClick('Scholarship')}
           disabled={isPending}
-          className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-primary shadow-lg shadow-purple-500/30 dark:shadow-purple-500/20"
+          className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-primary shadow-lg shadow-purple-500/30"
         >
           {isPending ? (
             <>
@@ -227,7 +227,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
         <button
           onClick={handleReject}
           disabled={isPending}
-          className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-danger shadow-lg shadow-red-500/20 dark:shadow-red-500/10"
+          className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-danger shadow-lg shadow-red-500/20"
         >
           {isPending ? (
             <>
@@ -274,7 +274,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
           <div className="space-y-4 py-4">
             {/* Price Section */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="text-sm font-medium text-gray-700">
                 Precio de Matrícula
               </label>
               <div className="flex items-center gap-3">
@@ -290,7 +290,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
                   }}
                   className="w-4 h-4 rounded border-gray-300"
                 />
-                <label htmlFor="useDefaultPrice" className="text-sm text-gray-600 dark:text-gray-400">
+                <label htmlFor="useDefaultPrice" className="text-sm text-gray-600">
                   Usar precio por defecto (${defaultPrice.toFixed(2)})
                 </label>
               </div>
@@ -302,14 +302,14 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
                   value={customPrice}
                   onChange={(e) => setCustomPrice(e.target.value)}
                   placeholder={`Precio custom (default: $${defaultPrice.toFixed(2)})`}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[48px] text-base"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-900 min-h-[48px] text-base"
                 />
               )}
             </div>
 
             {/* Payment Method Section */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="text-sm font-medium text-gray-700">
                 Método de Pago <span className="text-red-500">*</span>
               </label>
               <select
@@ -318,7 +318,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
                   setPaymentMethod(e.target.value as any);
                   setPaymentProof(''); // Clear proof when method changes
                 }}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[48px] text-base"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-900 min-h-[48px] text-base"
                 required
               >
                 <option value="cash">Efectivo</option>
@@ -332,7 +332,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
 
             {/* Payment Proof Section */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="text-sm font-medium text-gray-700">
                 {getPaymentProofLabel()} {paymentMethod !== 'other' && <span className="text-gray-500">(opcional)</span>}
               </label>
               <input
@@ -348,7 +348,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
                     ? 'ID de transacción Paguelo Fácil'
                     : 'Información del pago'
                 }
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[48px] text-base"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-900 min-h-[48px] text-base"
               />
             </div>
           </div>
@@ -356,7 +356,7 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
           <DialogFooter>
             <button
               onClick={() => setShowApprovalModal(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-h-[44px]"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors min-h-[44px]"
             >
               Cancelar
             </button>
@@ -436,8 +436,8 @@ export function TournamentApprovalButtons({ registrationId }: TournamentApproval
       {status !== 'idle' && (
         <div className={`w-full p-3 rounded-lg text-sm font-medium ${
           status === 'success' 
-            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' 
-            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+            ? 'bg-green-50 text-green-700 border border-green-200' 
+            : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {message}
         </div>
@@ -447,7 +447,7 @@ export function TournamentApprovalButtons({ registrationId }: TournamentApproval
         <button
           onClick={() => handleAction(() => approveTournamentRegistration(registrationId), 'approve')}
           disabled={isPending}
-          className="flex-1 w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-success shadow-lg shadow-green-500/30 dark:shadow-green-500/20"
+          className="flex-1 w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-success shadow-lg shadow-green-500/30"
         >
           {isPending ? (
             <>
@@ -465,7 +465,7 @@ export function TournamentApprovalButtons({ registrationId }: TournamentApproval
         <button
           onClick={() => handleAction(() => rejectTournamentRegistration(registrationId), 'reject')}
           disabled={isPending}
-          className="flex-1 w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-danger shadow-lg shadow-red-500/20 dark:shadow-red-500/10"
+          className="flex-1 w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-danger shadow-lg shadow-red-500/20"
         >
           {isPending ? (
             <>

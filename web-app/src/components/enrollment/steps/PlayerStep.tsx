@@ -20,15 +20,15 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Información del Jugador</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <h2 className="text-xl font-semibold text-gray-900">Información del Jugador</h2>
+            <p className="text-sm text-gray-500">
               Ingrese los datos de los jugadores a matricular.
             </p>
           </div>
           <button
             type="button"
             onClick={addPlayer}
-            className="flex items-center gap-2 text-sm font-medium text-primary dark:text-blue-400 hover:text-primary/80 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 bg-blue-50 px-3 py-2 rounded-lg transition-colors"
           >
             <Plus size={16} />
             Agregar Otro Jugador
@@ -36,14 +36,14 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
         </div>
 
         {data.players.map((player: any, index: number) => (
-          <div key={index} className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 relative transition-colors">
+          <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 relative transition-colors">
             {data.players.length > 1 && (
               <div className="absolute top-4 right-4 flex items-center gap-2">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Jugador {index + 1}</span>
                 <button
                   type="button"
                   onClick={() => removePlayer(index)}
-                  className="text-red-400 hover:text-red-600 dark:hover:text-red-300 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors"
                   title="Eliminar jugador"
                 >
                   <Trash2 size={16} />
@@ -53,7 +53,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
             
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 mt-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre
                 </label>
                 <div className="relative">
@@ -63,7 +63,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="text"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
+                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
                     value={player.firstName || ''}
                     onChange={(e) => updatePlayer(index, { firstName: e.target.value })}
                     placeholder="Ej. Miguel"
@@ -72,7 +72,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Apellidos
                 </label>
                 <div className="relative">
@@ -82,7 +82,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="text"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
+                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
                     value={player.lastName || ''}
                     onChange={(e) => updatePlayer(index, { lastName: e.target.value })}
                     placeholder="Ej. González"
@@ -91,7 +91,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Fecha de Nacimiento
                 </label>
                 <div className="relative">
@@ -101,7 +101,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="date"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors relative z-20 touch-manipulation"
+                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors relative z-20 touch-manipulation"
                     value={player.birthDate || ''}
                     onChange={(e) => updatePlayer(index, { birthDate: e.target.value })}
                   />
@@ -109,7 +109,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Género
                 </label>
                 <div className="relative">
@@ -118,7 +118,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   </div>
                   <select
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 transition-colors appearance-none touch-manipulation"
+                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 bg-gray-50 transition-colors appearance-none touch-manipulation"
                     value={player.gender || ''}
                     onChange={(e) => updatePlayer(index, { gender: e.target.value })}
                   >
@@ -130,7 +130,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Cédula
                 </label>
                 <div className="relative">
@@ -139,7 +139,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   </div>
                   <input
                     type="text"
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors touch-manipulation"
+                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
                     value={player.cedula || ''}
                     onChange={(e) => updatePlayer(index, { cedula: e.target.value })}
                     placeholder="Ej. 8-123-456"
@@ -155,7 +155,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
         <button
           type="button"
           onClick={onBack}
-          className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg active:bg-gray-50 dark:active:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-base touch-manipulation w-full sm:w-auto"
+          className="bg-white text-gray-700 border border-gray-300 px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-base touch-manipulation w-full sm:w-auto"
         >
           Atrás
         </button>

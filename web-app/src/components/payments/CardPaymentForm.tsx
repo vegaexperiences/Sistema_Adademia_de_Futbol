@@ -170,7 +170,7 @@ export function CardPaymentForm({
     <div className="space-y-4">
       {/* Card Number */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
           Número de Tarjeta
         </label>
         <div className="relative">
@@ -187,13 +187,13 @@ export function CardPaymentForm({
             disabled={disabled}
             className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${
               allErrors.cardNumber
-                ? 'border-red-300 dark:border-red-700'
-                : 'border-gray-200 dark:border-gray-700'
-            } bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all`}
+                ? 'border-red-300'
+                : 'border-gray-200'
+            } bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all`}
           />
         </div>
         {allErrors.cardNumber && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
             <AlertCircle size={14} />
             {allErrors.cardNumber}
           </p>
@@ -202,7 +202,7 @@ export function CardPaymentForm({
 
       {/* Cardholder Name */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
           Nombre del Titular
         </label>
         <input
@@ -217,12 +217,12 @@ export function CardPaymentForm({
           disabled={disabled}
           className={`w-full px-4 py-3 rounded-xl border-2 ${
             allErrors.cardholderName
-              ? 'border-red-300 dark:border-red-700'
-              : 'border-gray-200 dark:border-gray-700'
-          } bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all`}
+              ? 'border-red-300'
+              : 'border-gray-200'
+          } bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all`}
         />
         {allErrors.cardholderName && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
             <AlertCircle size={14} />
             {allErrors.cardholderName}
           </p>
@@ -233,7 +233,7 @@ export function CardPaymentForm({
       <div className="grid grid-cols-2 gap-4">
         {/* Expiry Date */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Fecha de Expiración
           </label>
           <div className="flex gap-2">
@@ -247,9 +247,9 @@ export function CardPaymentForm({
               disabled={disabled}
               className={`w-full px-4 py-3 rounded-xl border-2 ${
                 allErrors.expiry
-                  ? 'border-red-300 dark:border-red-700'
-                  : 'border-gray-200 dark:border-gray-700'
-              } bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-center`}
+                  ? 'border-red-300'
+                  : 'border-gray-200'
+              } bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-center`}
             />
             <span className="self-center text-gray-400">/</span>
             <input
@@ -262,13 +262,13 @@ export function CardPaymentForm({
               disabled={disabled}
               className={`w-full px-4 py-3 rounded-xl border-2 ${
                 allErrors.expiry
-                  ? 'border-red-300 dark:border-red-700'
-                  : 'border-gray-200 dark:border-gray-700'
-              } bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-center`}
+                  ? 'border-red-300'
+                  : 'border-gray-200'
+              } bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-center`}
             />
           </div>
           {allErrors.expiry && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
               <AlertCircle size={14} />
               {allErrors.expiry}
             </p>
@@ -277,7 +277,7 @@ export function CardPaymentForm({
 
         {/* CVV */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             CVV
           </label>
           <div className="relative">
@@ -291,16 +291,16 @@ export function CardPaymentForm({
               disabled={disabled}
               className={`w-full px-4 py-3 rounded-xl border-2 ${
                 allErrors.cvv
-                  ? 'border-red-300 dark:border-red-700'
-                  : 'border-gray-200 dark:border-gray-700'
-              } bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all`}
+                  ? 'border-red-300'
+                  : 'border-gray-200'
+              } bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all`}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               <Lock className="w-4 h-4 text-gray-400" />
             </div>
           </div>
           {allErrors.cvv && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
               <AlertCircle size={14} />
               {allErrors.cvv}
             </p>
@@ -310,7 +310,7 @@ export function CardPaymentForm({
 
       {/* Save Card Option */}
       {showSaveCardOption && (
-        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <input
             type="checkbox"
             id="save-card"
@@ -322,16 +322,16 @@ export function CardPaymentForm({
             disabled={disabled}
             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
           />
-          <label htmlFor="save-card" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+          <label htmlFor="save-card" className="text-sm text-gray-700 cursor-pointer">
             Guardar esta tarjeta para pagos futuros
           </label>
         </div>
       )}
 
       {/* Security Badge */}
-      <div className="flex items-center justify-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-center gap-2 pt-2 border-t border-gray-200">
         <Lock className="w-4 h-4 text-green-600" />
-        <p className="text-xs text-gray-600 dark:text-gray-400">
+        <p className="text-xs text-gray-600">
           🔒 Pago seguro. Tus datos están protegidos y encriptados.
         </p>
       </div>

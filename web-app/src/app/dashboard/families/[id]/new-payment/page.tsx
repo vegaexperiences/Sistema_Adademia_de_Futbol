@@ -16,7 +16,7 @@ export default function NewPaymentPage() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <p className="text-gray-600 dark:text-gray-400">Redirigiendo...</p>
+        <p className="text-gray-600">Redirigiendo...</p>
       </div>
     </div>
   );

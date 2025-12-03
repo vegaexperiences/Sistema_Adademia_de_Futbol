@@ -89,14 +89,14 @@ export function BroadcastTab() {
       {/* Header */}
       <div className="glass-card p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <span className="text-green-600 dark:text-green-400 text-2xl">📢</span>
+          <div className="p-2 bg-green-100 rounded-lg">
+            <span className="text-green-600 text-2xl">📢</span>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-2xl font-bold text-gray-900">
               Envíos Masivos
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600">
               Envía correos a múltiples destinatarios a la vez
             </p>
           </div>

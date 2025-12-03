@@ -9,11 +9,11 @@ export default function FinancePage() {
           <div className="p-3 rounded-xl icon-bg-green">
             <DollarSign className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-4xl font-bold text-gray-900">
             💰 Finanzas
           </h1>
         </div>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
+        <p className="text-lg text-gray-600">
           Control de pagos y finanzas de la academia
         </p>
       </div>
@@ -26,9 +26,9 @@ export default function FinancePage() {
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
           </div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">Ingresos del Mes</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">$0.00</p>
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-semibold text-gray-600 mb-1">Ingresos del Mes</p>
+          <p className="text-3xl font-bold text-gray-900">$0.00</p>
+          <div className="mt-3 pt-3 border-t border-gray-200">
             <span className="text-xs font-bold px-2 py-1 rounded-full badge-gradient-active">
               📈 En desarrollo
             </span>
@@ -41,9 +41,9 @@ export default function FinancePage() {
               <CreditCard className="h-6 w-6 text-white" />
             </div>
           </div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">Pagos Pendientes</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">0</p>
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-semibold text-gray-600 mb-1">Pagos Pendientes</p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
+          <div className="mt-3 pt-3 border-t border-gray-200">
             <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
               background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
               color: '#1e3a8a'
@@ -59,9 +59,9 @@ export default function FinancePage() {
               <Calendar className="h-6 w-6 text-white" />
             </div>
           </div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">Vencimientos Hoy</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">0</p>
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-sm font-semibold text-gray-600 mb-1">Vencimientos Hoy</p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
+          <div className="mt-3 pt-3 border-t border-gray-200">
             <span className="text-xs font-bold px-2 py-1 rounded-full" style={{
               background: 'linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)',
               color: '#92400e'
@@ -79,10 +79,10 @@ export default function FinancePage() {
         }}>
           <DollarSign className="h-10 w-10 text-white" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">
           Módulo de Finanzas
         </h3>
-        <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+        <p className="text-gray-600 max-w-md mx-auto">
           El sistema de gestión de pagos, facturas y reportes financieros estará disponible próximamente.
         </p>
       </div>

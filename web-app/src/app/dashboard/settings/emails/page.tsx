@@ -190,10 +190,10 @@ export default async function EmailsPage() {
       <div className="glass-card p-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Sistema de Correos
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600">
               Gestiona plantillas, cola de envío y comunicaciones masivas
             </p>
           </div>
@@ -205,48 +205,48 @@ export default async function EmailsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+            <div className="p-3 bg-yellow-100 rounded-lg">
               <Clock className="text-yellow-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Pendientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{queueStatus.pending}</p>
+              <p className="text-sm text-gray-500">Pendientes</p>
+              <p className="text-2xl font-bold text-gray-900">{queueStatus.pending}</p>
             </div>
           </div>
         </div>
 
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+            <div className="p-3 bg-green-100 rounded-lg">
               <CheckCircle className="text-green-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Enviados</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{queueStatus.sent}</p>
+              <p className="text-sm text-gray-500">Enviados</p>
+              <p className="text-2xl font-bold text-gray-900">{queueStatus.sent}</p>
             </div>
           </div>
         </div>
 
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+            <div className="p-3 bg-red-100 rounded-lg">
               <XCircle className="text-red-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Fallidos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{queueStatus.failed}</p>
+              <p className="text-sm text-gray-500">Fallidos</p>
+              <p className="text-2xl font-bold text-gray-900">{queueStatus.failed}</p>
             </div>
           </div>
         </div>
 
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <div className="p-3 bg-blue-100 rounded-lg">
               <Zap className="text-blue-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Hoy / Límite</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm text-gray-500">Hoy / Límite</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {queueStatus.todaySent} / {queueStatus.dailyLimit}
               </p>
             </div>
@@ -262,8 +262,8 @@ export default async function EmailsPage() {
 
       {/* Templates List */}
       <div className="glass-card p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600">📧</span>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span className="p-2 bg-purple-100 rounded-lg text-purple-600">📧</span>
           Plantillas de Correo
         </h2>
 
@@ -271,14 +271,14 @@ export default async function EmailsPage() {
           {templates.map((template) => (
             <div
               key={template.id}
-              className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-all bg-white dark:bg-gray-800"
+              className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all bg-white"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white capitalize">
+                  <h3 className="font-bold text-lg text-gray-900 capitalize">
                     {template.name.replace(/_/g, ' ')}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-gray-600 mt-1">
                     {template.subject}
                   </p>
                   <div className="flex gap-2 mt-2">
@@ -312,23 +312,23 @@ export default async function EmailsPage() {
       />
 
       {/* Debug Panel */}
-      <details className="glass-card p-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
-        <summary className="font-bold text-yellow-900 dark:text-yellow-100 cursor-pointer">
+      <details className="glass-card p-6 bg-yellow-50 border border-yellow-200">
+        <summary className="font-bold text-yellow-900 cursor-pointer">
           🔍 Panel de Debug (Click para expandir)
         </summary>
         <div className="mt-4 space-y-4 text-sm">
           <div>
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">Estado de la Cola:</h4>
-            <pre className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto text-xs">
+            <h4 className="font-semibold text-yellow-900 mb-2">Estado de la Cola:</h4>
+            <pre className="bg-white p-3 rounded overflow-auto text-xs">
               {JSON.stringify(queueStatus, null, 2)}
             </pre>
           </div>
           
           <div>
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+            <h4 className="font-semibold text-yellow-900 mb-2">
               📊 Conteo Real en Base de Datos:
             </h4>
-            <div className="bg-white dark:bg-gray-800 p-3 rounded">
+            <div className="bg-white p-3 rounded">
               <p><strong>Total correos:</strong> {totalEmails ?? 'N/A'} {allEmailsError && <span className="text-red-600">(Error: {allEmailsError.message})</span>}</p>
               <p><strong>Pendientes:</strong> {pendingCount ?? 'N/A'} {pendingError && <span className="text-red-600">(Error: {pendingError.message})</span>}</p>
               <p><strong>Enviados:</strong> {sentCount ?? 'N/A'} {sentError && <span className="text-red-600">(Error: {sentError.message})</span>}</p>
@@ -338,11 +338,11 @@ export default async function EmailsPage() {
           
           {hasErrors && (
             <div>
-              <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2">
+              <h4 className="font-semibold text-red-900 mb-2">
                 ⚠️ Errores en Queries:
               </h4>
-              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
-                <pre className="text-xs text-red-800 dark:text-red-200 overflow-auto">
+              <div className="bg-red-50 p-3 rounded border border-red-200">
+                <pre className="text-xs text-red-800 overflow-auto">
                   {JSON.stringify(errors, null, 2)}
                 </pre>
               </div>
@@ -350,12 +350,12 @@ export default async function EmailsPage() {
           )}
           
           <div>
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+            <h4 className="font-semibold text-yellow-900 mb-2">
               📧 Últimos 20 Correos en la Base de Datos (Todos los Estados):
             </h4>
             {allEmailsError ? (
-              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
-                <p className="text-red-800 dark:text-red-200 text-xs">
+              <div className="bg-red-50 p-3 rounded border border-red-200">
+                <p className="text-red-800 text-xs">
                   <strong>Error al obtener correos:</strong> {allEmailsError.message}
                   <br />
                   <strong>Código:</strong> {allEmailsError.code}
@@ -364,14 +364,14 @@ export default async function EmailsPage() {
                 </p>
               </div>
             ) : allEmails && allEmails.length > 0 ? (
-              <div className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto max-h-64">
+              <div className="bg-white p-3 rounded overflow-auto max-h-64">
                 <pre className="text-xs">
                   {JSON.stringify(allEmails, null, 2)}
                 </pre>
               </div>
             ) : (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-200 dark:border-yellow-800">
-                <p className="text-yellow-800 dark:text-yellow-200">
+              <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                <p className="text-yellow-800">
                   No hay correos en la base de datos (count: {totalEmails ?? 'N/A'})
                   {allEmailsError && (
                     <span className="block mt-2 text-xs">
@@ -386,19 +386,19 @@ export default async function EmailsPage() {
           </div>
           
           <div>
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+            <h4 className="font-semibold text-yellow-900 mb-2">
               🔍 Query Directo sin Filtros (Prueba):
             </h4>
             {testQueryError ? (
-              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
-                <p className="text-red-800 dark:text-red-200 text-xs">
+              <div className="bg-red-50 p-3 rounded border border-red-200">
+                <p className="text-red-800 text-xs">
                   <strong>Error:</strong> {testQueryError.message}
                   <br />
                   <strong>Código:</strong> {testQueryError.code}
                 </p>
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 p-3 rounded">
+              <div className="bg-white p-3 rounded">
                 <p><strong>Count:</strong> {testQueryCount ?? 'N/A'}</p>
                 <p><strong>Data encontrados:</strong> {testQueryData?.length || 0}</p>
                 {testQueryData && testQueryData.length > 0 && (
@@ -411,8 +411,8 @@ export default async function EmailsPage() {
           </div>
           
           <div>
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">Rango de Fechas para "Hoy":</h4>
-            <div className="bg-white dark:bg-gray-800 p-3 rounded">
+            <h4 className="font-semibold text-yellow-900 mb-2">Rango de Fechas para "Hoy":</h4>
+            <div className="bg-white p-3 rounded">
               <p><strong>Fecha de hoy:</strong> {today}</p>
               <p><strong>Inicio:</strong> {todayStart}</p>
               <p><strong>Fin:</strong> {todayEnd}</p>
@@ -421,59 +421,59 @@ export default async function EmailsPage() {
           </div>
           
           <div>
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+            <h4 className="font-semibold text-yellow-900 mb-2">
               Correos Encontrados Hoy ({todayEmails?.length || 0}):
             </h4>
             {todayEmails && todayEmails.length > 0 ? (
-              <div className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto max-h-48">
+              <div className="bg-white p-3 rounded overflow-auto max-h-48">
                 <pre className="text-xs">
                   {JSON.stringify(todayEmails, null, 2)}
                 </pre>
               </div>
             ) : (
-              <p className="text-yellow-800 dark:text-yellow-200">No se encontraron correos enviados hoy</p>
+              <p className="text-yellow-800">No se encontraron correos enviados hoy</p>
             )}
           </div>
           
           <div>
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+            <h4 className="font-semibold text-yellow-900 mb-2">
               Últimos 10 Correos Enviados (status='sent'):
             </h4>
             {sentEmails && sentEmails.length > 0 ? (
-              <div className="bg-white dark:bg-gray-800 p-3 rounded overflow-auto max-h-64">
+              <div className="bg-white p-3 rounded overflow-auto max-h-64">
                 <pre className="text-xs">
                   {JSON.stringify(sentEmails, null, 2)}
                 </pre>
               </div>
             ) : (
-              <p className="text-yellow-800 dark:text-yellow-200">No hay correos enviados</p>
+              <p className="text-yellow-800">No hay correos enviados</p>
             )}
           </div>
           
           <div>
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+            <h4 className="font-semibold text-yellow-900 mb-2">
               ⚠️ Correos con status='sent' pero sent_at es NULL ({sentWithoutDate?.length || 0}):
             </h4>
             {sentWithoutDate && sentWithoutDate.length > 0 ? (
-              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
-                <p className="text-red-800 dark:text-red-200 mb-2 text-xs">
+              <div className="bg-red-50 p-3 rounded border border-red-200">
+                <p className="text-red-800 mb-2 text-xs">
                   Estos correos tienen status='sent' pero no tienen fecha de envío. Esto es un problema de datos.
                 </p>
-                <pre className="text-xs bg-white dark:bg-gray-800 p-2 rounded overflow-auto max-h-48">
+                <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-48">
                   {JSON.stringify(sentWithoutDate, null, 2)}
                 </pre>
               </div>
             ) : (
-              <p className="text-green-800 dark:text-green-200 text-xs">✓ Todos los correos enviados tienen sent_at</p>
+              <p className="text-green-800 text-xs">✓ Todos los correos enviados tienen sent_at</p>
             )}
           </div>
         </div>
       </details>
 
       {/* Info Card */}
-      <div className="glass-card p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-        <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2">ℹ️ Información Importante</h3>
-        <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+      <div className="glass-card p-6 bg-blue-50 border border-blue-200">
+        <h3 className="font-bold text-blue-900 mb-2">ℹ️ Información Importante</h3>
+        <ul className="text-sm text-blue-800 space-y-1">
           <li>• Límite diario: <strong>300 correos</strong></li>
           <li>• La cola se procesa automáticamente respetando ese tope diario</li>
           <li>• Si hay más de 300 correos, se distribuyen en los días siguientes</li>

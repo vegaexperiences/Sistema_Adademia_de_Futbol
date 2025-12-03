@@ -19,7 +19,6 @@ import {
   Mail
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface MobileHeaderProps {
   userEmail: string;
@@ -63,16 +62,16 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
   return (
     <>
       {/* Mobile Header - Fixed with glass effect, no margins */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-white/70 dark:bg-gray-800/90 backdrop-blur-xl border-none rounded-b-2xl shadow-lg m-0">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-[100] bg-white/70 backdrop-blur-xl border-none rounded-b-2xl shadow-lg m-0">
         <div className="flex items-center justify-between px-4 py-3 h-16 safe-area-top">
           {/* Menu Button and Logo */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
               onClick={() => setIsNavOpen(true)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors touch-manipulation flex-shrink-0 z-[101]"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation flex-shrink-0 z-[101]"
               aria-label="Abrir menú"
             >
-              <Menu size={24} className="text-gray-700 dark:text-gray-300" />
+              <Menu size={24} className="text-gray-700" />
             </button>
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="relative w-8 h-8 flex-shrink-0 bg-transparent">
@@ -87,7 +86,7 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
                   unoptimized
                 />
               </div>
-              <span className="text-gray-900 dark:text-white font-bold text-sm sm:text-base truncate">SUAREZ ACADEMY</span>
+              <span className="text-gray-900 font-bold text-sm sm:text-base truncate">SUAREZ ACADEMY</span>
             </div>
           </div>
 
@@ -109,13 +108,13 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
 
       {/* Sidebar Menu - Unified with header */}
       <aside
-        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white dark:bg-gray-900 backdrop-blur-md border-r border-gray-200/20 dark:border-gray-700/50 shadow-2xl z-[120] transform transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white backdrop-blur-md border-r border-gray-200/20 shadow-2xl z-[120] transform transition-transform duration-300 ease-in-out md:hidden ${
           isNavOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Header inside sidebar */}
-          <div className="p-4 border-b border-gray-200/20 dark:border-gray-700/50 flex items-center justify-between">
+          <div className="p-4 border-b border-gray-200/20 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 bg-transparent">
                 <Image 
@@ -128,14 +127,14 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
                   unoptimized
                 />
               </div>
-              <span className="text-gray-900 dark:text-white font-bold text-lg">SUAREZ ACADEMY</span>
+              <span className="text-gray-900 font-bold text-lg">SUAREZ ACADEMY</span>
             </div>
             <button
               onClick={() => setIsNavOpen(false)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors touch-manipulation"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
               aria-label="Cerrar menú"
             >
-              <X size={24} className="text-gray-700 dark:text-gray-300" />
+              <X size={24} className="text-gray-700" />
             </button>
           </div>
 
@@ -152,7 +151,7 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
                   className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 touch-manipulation relative ${
                     isActive
                       ? 'gradient-purple text-white shadow-lg'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700'
+                      : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
                   }`}
                   onClick={() => setIsNavOpen(false)}
                 >
@@ -170,30 +169,23 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
             })}
           </nav>
 
-          {/* Theme Toggle */}
-          <div className="p-4 border-t border-gray-200/20 dark:border-gray-700/50">
-            <div className="px-4 py-2">
-              <ThemeToggle />
-            </div>
-          </div>
-
           {/* User Profile */}
-          <div className="p-4 border-t border-gray-200/20 dark:border-gray-700/50">
-            <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl">
+          <div className="p-4 border-t border-gray-200/20">
+            <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-gray-100/50 rounded-xl">
               <div className="w-10 h-10 gradient-purple rounded-full flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0">
                 {userEmail?.[0]?.toUpperCase() || 'U'}
               </div>
               <div className="flex flex-col overflow-hidden min-w-0">
-                <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <span className="text-sm font-medium text-gray-900 truncate">
                   {userEmail}
                 </span>
-                <span className="text-xs text-gray-600 dark:text-gray-400">Administrador</span>
+                <span className="text-xs text-gray-600">Administrador</span>
               </div>
             </div>
             <form action={logout}>
               <button 
                 type="submit"
-                className="w-full flex items-center justify-center gap-3 px-4 py-3.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-300 text-sm font-medium active:bg-red-100 dark:active:bg-red-900/30 border border-red-200 dark:border-red-800 touch-manipulation"
+                className="w-full flex items-center justify-center gap-3 px-4 py-3.5 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 text-sm font-medium active:bg-red-100 border border-red-200 touch-manipulation"
               >
                 <LogOut size={18} />
                 Cerrar Sesión

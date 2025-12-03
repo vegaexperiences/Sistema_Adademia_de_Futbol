@@ -325,21 +325,21 @@ export function YappyPaymentButton({
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-6 sm:py-8">
           <Loader2 className="animate-spin text-blue-600 mb-2" size={24} />
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando botón de pago Yappy...</p>
+          <p className="text-xs sm:text-sm text-gray-600">Cargando botón de pago Yappy...</p>
         </div>
       )}
 
       {error && (
-        <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-xs sm:text-sm text-red-800 dark:text-red-200 font-medium mb-2">{error}</p>
+        <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-xs sm:text-sm text-red-800 font-medium mb-2">{error}</p>
           {error.includes('no está disponible') && typeof window !== 'undefined' && (
-            <div className="text-xs text-red-700 dark:text-red-300 space-y-1">
+            <div className="text-xs text-red-700 space-y-1">
               <p>💡 <strong>Posibles causas:</strong></p>
               <ul className="list-disc list-inside ml-2 space-y-0.5">
                 {window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? (
                   <li>Estás en desarrollo local. Yappy requiere que el dominio esté autorizado. En producción, verifica que el dominio esté autorizado en tu panel de Yappy.</li>
                 ) : (
-                  <li>El dominio <code className="bg-red-100 dark:bg-red-900/30 px-1 rounded">{window.location.hostname}</code> no está autorizado en tu panel de Yappy</li>
+                  <li>El dominio <code className="bg-red-100 px-1 rounded">{window.location.hostname}</code> no está autorizado en tu panel de Yappy</li>
                 )}
                 <li>El merchant ID no está activo o configurado correctamente</li>
                 <li>Problema temporal con el servicio de Yappy</li>
@@ -359,7 +359,7 @@ export function YappyPaymentButton({
       />
 
       {!isLoading && !error && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 text-center px-2">
+        <p className="text-xs text-gray-500 text-center px-2">
           🔒 Pago seguro procesado por Yappy Comercial
         </p>
       )}

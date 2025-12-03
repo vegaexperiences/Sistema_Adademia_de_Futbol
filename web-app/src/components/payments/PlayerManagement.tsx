@@ -57,22 +57,22 @@ export default function PlayerManagement({
   return (
     <div className="space-y-4">
       {/* Custom Monthly Fee */}
-      <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border-l-4 border-purple-500">
+      <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-l-4 border-purple-500">
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
               💰 Mensualidad Personalizada
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               Mensualidad sugerida: ${suggestedFee.toFixed(2)}
             </p>
           </div>
           {!editingFee && (
             <button
               onClick={() => setEditingFee(true)}
-              className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+              className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
             >
-              <Edit size={20} className="text-purple-600 dark:text-purple-400" />
+              <Edit size={20} className="text-purple-600" />
             </button>
           )}
         </div>
@@ -87,7 +87,7 @@ export default function PlayerManagement({
                 value={customFee}
                 onChange={(e) => setCustomFee(e.target.value)}
                 placeholder="Dejar vacío para usar precio sugerido"
-                className="w-full pl-8 pr-4 py-2 rounded-lg border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                className="w-full pl-8 pr-4 py-2 rounded-lg border-2 border-purple-200 bg-white text-gray-900 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
               />
             </div>
             <div className="flex gap-2">
@@ -96,7 +96,7 @@ export default function PlayerManagement({
                   setEditingFee(false);
                   setCustomFee(currentCustomFee?.toString() || '');
                 }}
-                className="flex-1 px-4 py-2 rounded-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 rounded-lg font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-all flex items-center justify-center gap-2"
               >
                 <X size={18} />
                 Cancelar
@@ -104,7 +104,7 @@ export default function PlayerManagement({
               <button
                 onClick={handleSaveCustomFee}
                 disabled={loading}
-                className="flex-1 px-4 py-2 rounded-lg font-semibold text-white transition-all hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-500 dark:to-pink-500"
+                className="flex-1 px-4 py-2 rounded-lg font-semibold text-white transition-all hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600"
               >
                 <Save size={18} />
                 {loading ? 'Guardando...' : 'Guardar'}
@@ -113,7 +113,7 @@ export default function PlayerManagement({
           </div>
         ) : (
           <div className="text-center py-2">
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            <p className="text-3xl font-bold text-gray-900">
               {currentCustomFee !== null ? `$${currentCustomFee.toFixed(2)}` : 'Usando precio sugerido'}
             </p>
           </div>
@@ -121,13 +121,13 @@ export default function PlayerManagement({
       </div>
 
       {/* Status Toggle */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border-l-4 border-blue-500">
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-l-4 border-blue-500">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
               🎓 Estado del Jugador
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600">
               {currentStatus === 'Scholarship' 
                 ? 'El jugador está becado (mensualidad $0)' 
                 : 'El jugador paga mensualidad normal'}
@@ -138,8 +138,8 @@ export default function PlayerManagement({
             disabled={loading}
             className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 flex items-center gap-2 ${
               currentStatus === 'Scholarship' 
-                ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white dark:from-green-500 dark:to-emerald-500'
-                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white dark:from-blue-500 dark:to-indigo-500'
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
+                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
             }`}
           >
             <Award size={20} />
