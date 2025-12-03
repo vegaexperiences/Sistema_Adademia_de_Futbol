@@ -255,8 +255,53 @@ export async function GET(request: NextRequest) {
         // Continue with redirect even if payment creation fails
       }
     } else {
-      console.warn('[PagueloFacil Callback] ⚠️ Payment not created - conditions not met:', {
+      // Transaction was denied/failed - optionally record it for history
+      // Only record if we have playerId and it's a payment (not enrollment)
+      if (!isApproved && type === 'payment' && playerId && amount) {
+        try {
+          console.log('[PagueloFacil Callback] Recording denied payment attempt for history...');
+          const supabase = await createClient();
+          
+          // Check if player exists
+          const { data: player } = await supabase
+            .from('players')
+            .select('id')
+            .eq('id', playerId)
+            .single();
+          
+          if (player) {
+            // Record denied payment with status 'Rejected' for audit trail
+            const deniedPaymentData = {
+              player_id: playerId,
+              amount: parseFloat(amount),
+              type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
+              method: 'paguelofacil' as const,
+              payment_date: new Date().toISOString().split('T')[0],
+              month_year: monthYear || undefined,
+              status: 'Rejected' as const,
+              notes: `Intento de pago denegado por Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. Razón: ${callbackParams.Razon || 'Transacción denegada'}. Fecha: ${callbackParams.Fecha || 'N/A'} ${callbackParams.Hora || 'N/A'}`,
+            };
+            
+            const { error: deniedError } = await supabase
+              .from('payments')
+              .insert(deniedPaymentData);
+            
+            if (deniedError) {
+              console.error('[PagueloFacil Callback] Error recording denied payment:', deniedError);
+            } else {
+              console.log('[PagueloFacil Callback] ✅ Denied payment recorded for audit trail');
+            }
+          }
+        } catch (deniedError: any) {
+          console.error('[PagueloFacil Callback] Error recording denied payment (non-critical):', deniedError);
+          // Don't fail the callback if recording denied payment fails
+        }
+      }
+      
+      console.warn('[PagueloFacil Callback] ⚠️ Payment not created - transaction denied:', {
         isApproved,
+        estado: callbackParams.Estado,
+        razon: callbackParams.Razon,
         type,
         hasPlayerId: !!playerId,
         hasAmount: !!amount,

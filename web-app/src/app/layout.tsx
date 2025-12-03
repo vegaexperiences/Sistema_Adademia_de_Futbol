@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
@@ -12,11 +12,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Suarez Academy | Sistema de Gestión",
   description: "Sistema de gestión integral para Suarez Academy",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
