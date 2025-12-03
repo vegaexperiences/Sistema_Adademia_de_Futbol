@@ -38,10 +38,12 @@ export async function getPlayerPayments(playerId: string) {
     });
   }
   
+  // Only get approved/successful payments - rejections are not real payments
   const { data, error } = await supabase
     .from('payments')
     .select('*')
     .eq('player_id', playerId)
+    .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
     .order('payment_date', { ascending: false });
   
   if (error) {
@@ -127,10 +129,12 @@ export async function getPlayerPayments(playerId: string) {
 export async function getPlayersPayments(playerIds: string[]) {
   const supabase = await createClient();
   
+  // Only get approved/successful payments - rejections are not real payments
   const { data, error } = await supabase
     .from('payments')
     .select('*, players(first_name, last_name)')
     .in('player_id', playerIds)
+    .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
     .order('payment_date', { ascending: false });
   
   if (error) {
@@ -288,10 +292,12 @@ export async function calculateMonthlyFee(playerId: string) {
 export async function getPaymentSummary(playerId: string) {
   const supabase = await createClient();
   
+  // Only get approved/successful payments - rejections are not real payments
   const { data: payments } = await supabase
     .from('payments')
     .select('amount, type, payment_date') // Use 'type' not 'payment_type'
-    .eq('player_id', playerId);
+    .eq('player_id', playerId)
+    .neq('status', 'Rejected'); // Exclude rejected payments - they are not real payments
   
   const total = payments?.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0) || 0;
   const lastPayment = payments?.[0];
