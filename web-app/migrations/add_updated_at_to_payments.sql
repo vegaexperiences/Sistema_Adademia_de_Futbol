@@ -11,14 +11,20 @@ BEGIN
     ALTER TABLE payments 
     ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
     
-    -- Update existing records to have updated_at = created_at
+    -- Update existing records to have updated_at = NOW()
+    -- Note: We use NOW() since created_at may not exist in this schema
     UPDATE payments 
-    SET updated_at = COALESCE(created_at, NOW())
+    SET updated_at = NOW()
     WHERE updated_at IS NULL;
     
     RAISE NOTICE 'Added updated_at column to payments table';
   ELSE
     RAISE NOTICE 'updated_at column already exists in payments table';
+    
+    -- If column exists but some records are NULL, update them
+    UPDATE payments 
+    SET updated_at = NOW()
+    WHERE updated_at IS NULL;
   END IF;
 END $$;
 
