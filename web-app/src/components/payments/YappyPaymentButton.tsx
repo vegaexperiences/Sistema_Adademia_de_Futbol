@@ -47,40 +47,110 @@ export function YappyPaymentButton({
   const [isLoading, setIsLoading] = useState(true);
   const [merchantId, setMerchantId] = useState<string>('');
   const [domainUrl, setDomainUrl] = useState<string>('');
+  const [validationToken, setValidationToken] = useState<string>('');
+  const [orderToken, setOrderToken] = useState<string>('');
+  const [documentName, setDocumentName] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoaded = useRef(false);
 
-  // Get merchant ID from API
+  // Step 1: Get merchant ID and validate merchant (according to Yappy manual)
   useEffect(() => {
-    const getMerchantId = async () => {
+    const initializeYappy = async () => {
       try {
-        const response = await fetch('/api/payments/yappy/config');
-        const data = await response.json();
-        console.log('[Yappy] Config response:', { success: data.success, hasMerchantId: !!data.merchantId, environment: data.environment, domainUrl: data.domainUrl });
-        if (data.success && data.merchantId) {
-          setMerchantId(data.merchantId);
-          if (data.domainUrl) {
-            setDomainUrl(data.domainUrl);
-          }
-        } else {
-          const errorMsg = data.error || 'Error al obtener configuración de Yappy';
-          console.error('[Yappy] Config error:', errorMsg);
-          throw new Error(errorMsg);
+        // First, get config
+        const configResponse = await fetch('/api/payments/yappy/config');
+        const configData = await configResponse.json();
+        console.log('[Yappy] Config response:', { 
+          success: configData.success, 
+          hasMerchantId: !!configData.merchantId, 
+          environment: configData.environment, 
+          domainUrl: configData.domainUrl 
+        });
+        
+        if (!configData.success || !configData.merchantId) {
+          throw new Error(configData.error || 'Error al obtener configuración de Yappy');
         }
-      } catch (err: any) {
-        console.error('[Yappy] Error getting config:', err);
-        setError(err.message || 'Error al obtener configuración de Yappy');
+
+        setMerchantId(configData.merchantId);
+        if (configData.domainUrl) {
+          setDomainUrl(configData.domainUrl);
+        }
+
+        // Step 2: Validate merchant to get token and epochTime
+        console.log('[Yappy] Validating merchant...');
+        const validateResponse = await fetch('/api/payments/yappy/validate', {
+          method: 'POST',
+        });
+        const validateData = await validateResponse.json();
+        
+        if (!validateData.success || !validateData.token || !validateData.epochTime) {
+          throw new Error(validateData.error || 'Error al validar credenciales de Yappy');
+        }
+
+        console.log('[Yappy] Merchant validated:', {
+          hasToken: !!validateData.token,
+          hasEpochTime: !!validateData.epochTime,
+        });
+
+        setValidationToken(validateData.token);
+
+        // Step 3: Create order using token and epochTime
+        console.log('[Yappy] Creating order...');
+        const baseReturnUrl = returnUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback`;
+        const returnUrlWithParams = new URL(baseReturnUrl);
+        returnUrlWithParams.searchParams.set('type', customParams?.type || (playerId ? 'payment' : 'enrollment'));
+        if (playerId) returnUrlWithParams.searchParams.set('playerId', playerId);
+        if (paymentType) returnUrlWithParams.searchParams.set('paymentType', paymentType);
+        returnUrlWithParams.searchParams.set('amount', amount.toString());
+        if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
+        if (notes) returnUrlWithParams.searchParams.set('notes', notes);
+
+        const orderResponse = await fetch('/api/payments/yappy/order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount,
+            description: description.substring(0, 200),
+            orderId: orderId.substring(0, 15), // Max 15 characters
+            returnUrl: returnUrlWithParams.toString(),
+            token: validateData.token,
+            paymentDate: validateData.epochTime,
+            metadata: customParams,
+          }),
+        });
+
+        const orderData = await orderResponse.json();
+        
+        if (!orderData.success || !orderData.orderData) {
+          throw new Error(orderData.error || 'Error al crear orden de pago');
+        }
+
+        console.log('[Yappy] Order created:', {
+          orderId: orderData.orderData.orderId,
+          transactionId: orderData.orderData.transactionId,
+          hasToken: !!orderData.orderData.token,
+          hasDocumentName: !!orderData.orderData.documentName,
+        });
+
+        setOrderToken(orderData.orderData.token || '');
+        setDocumentName(orderData.orderData.documentName || '');
         setIsLoading(false);
-        onError?.(err.message || 'Error al obtener configuración de Yappy');
+      } catch (err: any) {
+        console.error('[Yappy] Error initializing:', err);
+        setError(err.message || 'Error al inicializar Yappy');
+        setIsLoading(false);
+        onError?.(err.message || 'Error al inicializar Yappy');
       }
     };
 
-    getMerchantId();
-  }, [onError]);
+    initializeYappy();
+  }, [amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onError]);
 
-  // Load Yappy web component script
+  // Load Yappy web component script (only after validation and order creation)
   useEffect(() => {
-    if (!merchantId || scriptLoaded.current) return;
+    if (!merchantId || !validationToken || !orderToken || scriptLoaded.current) return;
 
     const loadScript = () => {
       try {
@@ -92,21 +162,45 @@ export function YappyPaymentButton({
         }
 
         // Load the Yappy web component script as ES module
-        const script = document.createElement('script');
-        script.src = 'https://bt-cdn.yappy.cloud/v1/cdn/web-component-btn-yappy.js';
-        script.type = 'module';
-        script.async = true;
-        script.onload = () => {
-          scriptLoaded.current = true;
-          setIsLoading(false);
-        };
-        script.onerror = () => {
-          setError('Error al cargar el componente de Yappy');
-          setIsLoading(false);
-          onError?.('Error al cargar el componente de Yappy');
-        };
+        // Get CDN URL from config
+        fetch('/api/payments/yappy/config')
+          .then(res => res.json())
+          .then(configData => {
+            const cdnUrl = configData.cdnUrl || 'https://bt-cdn.yappy.cloud/v1/cdn/web-component-btn-yappy.js';
+            const script = document.createElement('script');
+            script.src = cdnUrl;
+            script.type = 'module';
+            script.async = true;
+            script.onload = () => {
+              scriptLoaded.current = true;
+              setIsLoading(false);
+            };
+            script.onerror = () => {
+              setError('Error al cargar el componente de Yappy');
+              setIsLoading(false);
+              onError?.('Error al cargar el componente de Yappy');
+            };
 
-        document.head.appendChild(script);
+            document.head.appendChild(script);
+          })
+          .catch(err => {
+            console.error('[Yappy] Error getting CDN URL:', err);
+            // Fallback to default CDN
+            const script = document.createElement('script');
+            script.src = 'https://bt-cdn.yappy.cloud/v1/cdn/web-component-btn-yappy.js';
+            script.type = 'module';
+            script.async = true;
+            script.onload = () => {
+              scriptLoaded.current = true;
+              setIsLoading(false);
+            };
+            script.onerror = () => {
+              setError('Error al cargar el componente de Yappy');
+              setIsLoading(false);
+              onError?.('Error al cargar el componente de Yappy');
+            };
+            document.head.appendChild(script);
+          });
       } catch (err: any) {
         console.error('[Yappy] Error loading script:', err);
         setError(err.message || 'Error al inicializar Yappy');
@@ -116,11 +210,11 @@ export function YappyPaymentButton({
     };
 
     loadScript();
-  }, [merchantId, onError]);
+  }, [merchantId, validationToken, orderToken, onError]);
 
-  // Render the Yappy button component when script is loaded
+  // Render the Yappy button component when script is loaded and order is created
   useEffect(() => {
-    if (!isLoading && merchantId && containerRef.current && scriptLoaded.current) {
+    if (!isLoading && merchantId && validationToken && orderToken && containerRef.current && scriptLoaded.current) {
       // Wait a bit for the custom element to be defined
       let retryCount = 0;
       const maxRetries = 50; // 5 seconds max wait
@@ -162,14 +256,23 @@ export function YappyPaymentButton({
           // Create the btn-yappy element
           const yappyButton = document.createElement('btn-yappy');
           
-          // Set attributes based on Yappy documentation
+          // Set attributes based on Yappy manual
+          // The web component needs the token and documentName from the order creation
           yappyButton.setAttribute('merchant-id', merchantId);
           yappyButton.setAttribute('amount', amount.toFixed(2));
           yappyButton.setAttribute('description', description.substring(0, 200)); // Max 200 chars
-          yappyButton.setAttribute('order-id', orderId);
+          yappyButton.setAttribute('order-id', orderId.substring(0, 15)); // Max 15 characters
           yappyButton.setAttribute('return-url', returnUrlWithParams.toString());
           
-          // Add domain-url if available (some Yappy configurations require this)
+          // Add token and documentName from order creation (required by Yappy manual)
+          if (orderToken) {
+            yappyButton.setAttribute('token', orderToken);
+          }
+          if (documentName) {
+            yappyButton.setAttribute('document-name', documentName);
+          }
+          
+          // Add domain-url if available (domain without https://)
           if (domainUrl) {
             yappyButton.setAttribute('domain-url', domainUrl);
           }
@@ -178,9 +281,11 @@ export function YappyPaymentButton({
             merchantId,
             amount: amount.toFixed(2),
             description: description.substring(0, 200),
-            orderId,
+            orderId: orderId.substring(0, 15),
             returnUrl: returnUrlWithParams.toString(),
             domainUrl: domainUrl || 'not set',
+            hasToken: !!orderToken,
+            hasDocumentName: !!documentName,
             currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
           });
 
@@ -318,7 +423,7 @@ export function YappyPaymentButton({
       // Wait a bit for the module to fully load
       setTimeout(renderButton, 200);
     }
-  }, [isLoading, merchantId, domainUrl, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
+  }, [isLoading, merchantId, domainUrl, validationToken, orderToken, documentName, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
 
   return (
     <div className={`space-y-2 ${className}`}>

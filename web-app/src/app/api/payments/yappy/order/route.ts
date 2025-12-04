@@ -8,7 +8,7 @@ import { YappyService } from '@/lib/payments/yappy';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, description, orderId, returnUrl, metadata } = body;
+    const { amount, description, orderId, returnUrl, metadata, token, paymentDate, ipnUrl } = body;
 
     // Validate required fields
     if (!amount || amount < 0.01) {
@@ -32,25 +32,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Yappy Order] Creating order:', {
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Token de validación requerido. Debe validar el merchant primero llamando a /api/payments/yappy/validate' },
+        { status: 400 }
+      );
+    }
+
+    if (!paymentDate) {
+      return NextResponse.json(
+        { error: 'paymentDate (epochTime) requerido. Debe validar el merchant primero llamando a /api/payments/yappy/validate' },
+        { status: 400 }
+      );
+    }
+
+    // Validate orderId length (max 15 characters according to manual)
+    if (orderId.length > 15) {
+      return NextResponse.json(
+        { error: 'El orderId no puede tener más de 15 caracteres' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Yappy Order] Creating order with /payments/payment-wc:', {
       amount,
       description,
       orderId,
       returnUrl,
+      hasToken: !!token,
+      paymentDate,
     });
 
-    // Build return URL if not provided
+    // Build IPN URL if not provided
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
                    (request.headers.get('origin') || 'http://localhost:3000');
-    const finalReturnUrl = returnUrl || `${baseUrl}/api/payments/yappy/callback`;
+    const finalIpnUrl = ipnUrl || `${baseUrl}/api/payments/yappy/callback`;
 
-    // Create order
+    // Create order using the new flow
     const result = await YappyService.createOrder({
       amount: parseFloat(amount),
       description: description.trim(),
-      orderId: orderId.trim(),
-      returnUrl: finalReturnUrl,
+      orderId: orderId.trim().substring(0, 15), // Max 15 characters
+      returnUrl,
       metadata,
+      token, // Token from validation
+      paymentDate, // epochTime from validation
+      ipnUrl: finalIpnUrl, // IPN URL for callback
     });
 
     if (!result.success) {

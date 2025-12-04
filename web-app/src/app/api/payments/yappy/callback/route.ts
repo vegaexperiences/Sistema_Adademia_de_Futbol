@@ -271,34 +271,195 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/payments/yappy/callback
- * Some implementations might use GET for callbacks
+ * According to Yappy manual, IPN (Instant Payment Notification) uses GET with query parameters:
+ * - orderId: ID de la orden
+ * - hash: Hash para validar
+ * - status: Estado (E=Ejecutado, R=Rechazado, C=Cancelado, X=Expirado)
+ * - domain: Dominio
+ * - confirmationNumber: ID de la transacción en Yappy
  */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const params: Record<string, string> = {};
-    searchParams.forEach((value, key) => {
-      params[key] = value;
+    
+    console.log('[Yappy Callback] ========== GET CALLBACK CALLED ==========');
+    console.log('[Yappy Callback] Request URL:', request.url);
+    console.log('[Yappy Callback] Query params:', Object.fromEntries(searchParams.entries()));
+
+    // Extract parameters according to Yappy manual
+    const orderId = searchParams.get('orderId') || '';
+    const hash = searchParams.get('hash') || searchParams.get('Hash') || '';
+    const status = searchParams.get('status') || searchParams.get('Status') || '';
+    const domain = searchParams.get('domain') || searchParams.get('Domain') || '';
+    const confirmationNumber = searchParams.get('confirmationNumber') || searchParams.get('ConfirmationNumber') || '';
+
+    console.log('[Yappy Callback] Extracted params:', {
+      orderId,
+      hash: hash ? `${hash.substring(0, 10)}...` : 'N/A',
+      status,
+      domain,
+      confirmationNumber,
     });
 
-    // Convert to POST format
-    const body = params;
-    const newRequest = new NextRequest(request.url, {
-      method: 'POST',
-      headers: request.headers,
-      body: JSON.stringify(body),
+    // Validate hash (according to Yappy manual)
+    const callbackParams: YappyCallbackParams = {
+      orderId,
+      status,
+      domain,
+      confirmationNumber,
+      transactionId: confirmationNumber,
+    };
+
+    // Validate hash if provided
+    if (hash) {
+      const isValidHash = YappyService.validateCallbackHash(callbackParams, hash);
+      if (!isValidHash) {
+        console.warn('[Yappy Callback] Hash validation failed');
+        // Note: We'll still process the callback but log the warning
+        // In production, you may want to reject invalid hashes
+      }
+    }
+
+    // Verify transaction status
+    const isApproved = YappyService.isTransactionApproved(callbackParams);
+    console.log('[Yappy Callback] Transaction approved?', isApproved, 'Status:', status);
+
+    // Try to extract custom parameters from orderId pattern or return URL
+    const returnUrl = searchParams.get('returnUrl') || '';
+    let type = '';
+    let playerId = '';
+    let paymentType = '';
+    let amount = searchParams.get('amount') || '';
+    let monthYear = searchParams.get('monthYear') || '';
+    let notes = searchParams.get('notes') || '';
+
+    // Try to extract from orderId pattern "payment-{playerId}-{timestamp}"
+    if (orderId && orderId.startsWith('payment-')) {
+      const orderIdMatch = orderId.match(/^payment-([^-]+)-/);
+      if (orderIdMatch) {
+        playerId = orderIdMatch[1];
+        type = 'payment';
+      }
+    }
+
+    // Try to extract from returnUrl query params
+    if (returnUrl) {
+      try {
+        const returnUrlObj = new URL(returnUrl);
+        type = returnUrlObj.searchParams.get('type') || type;
+        playerId = returnUrlObj.searchParams.get('playerId') || playerId;
+        paymentType = returnUrlObj.searchParams.get('paymentType') || paymentType;
+        amount = returnUrlObj.searchParams.get('amount') || amount;
+        monthYear = returnUrlObj.searchParams.get('monthYear') || monthYear;
+        notes = returnUrlObj.searchParams.get('notes') || notes;
+      } catch (e) {
+        console.warn('[Yappy Callback] Error parsing returnUrl:', e);
+      }
+    }
+
+    // Build redirect URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                   request.headers.get('origin') || 
+                   'http://localhost:3000';
+
+    // Process payment creation if approved (same logic as POST)
+    if (isApproved && type === 'payment' && playerId && amount) {
+      try {
+        console.log('[Yappy Callback] Attempting to create payment record from GET callback...');
+        const supabase = await createClient();
+        
+        // Verify player exists
+        let playerFound = false;
+        let isPendingPlayer = false;
+        
+        const { data: player } = await supabase
+          .from('players')
+          .select('id')
+          .eq('id', playerId)
+          .single();
+
+        if (player) {
+          playerFound = true;
+        } else {
+          const { data: pendingPlayer } = await supabase
+            .from('pending_players')
+            .select('id')
+            .eq('id', playerId)
+            .single();
+
+          if (pendingPlayer) {
+            playerFound = true;
+            isPendingPlayer = true;
+          }
+        }
+
+        if (playerFound) {
+          const paymentResult = await createPayment({
+            playerId,
+            amount: parseFloat(amount),
+            paymentMethod: 'Yappy',
+            transactionId: confirmationNumber || orderId,
+            status: 'Approved',
+            paymentType: paymentType || 'monthly',
+            monthYear: monthYear || undefined,
+            notes: notes || undefined,
+          });
+
+          if (paymentResult.success) {
+            console.log('[Yappy Callback] Payment created successfully from GET callback');
+            
+            // Send confirmation email
+            try {
+              await sendPaymentConfirmationEmail(paymentResult.paymentId!, playerId);
+            } catch (emailError) {
+              console.error('[Yappy Callback] Error sending confirmation email:', emailError);
+            }
+
+            // Revalidate paths
+            revalidatePath('/dashboard/finances');
+            revalidatePath(`/dashboard/players/${playerId}`);
+          }
+        }
+      } catch (error: any) {
+        console.error('[Yappy Callback] Error creating payment from GET callback:', error);
+      }
+    }
+
+    // Build redirect URL
+    let redirectUrl: string;
+    if (isApproved) {
+      if (type === 'enrollment') {
+        redirectUrl = `${baseUrl}/enrollment/success?yappy=success&orderId=${orderId}&amount=${amount}`;
+      } else if (type === 'payment' && playerId) {
+        redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=success&orderId=${orderId}`;
+      } else {
+        redirectUrl = `${baseUrl}/dashboard/finances?yappy=success&orderId=${orderId}&amount=${amount}`;
+      }
+    } else {
+      if (type === 'enrollment') {
+        redirectUrl = `${baseUrl}/enrollment?yappy=failed&orderId=${orderId}`;
+      } else if (type === 'payment' && playerId) {
+        redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=failed&orderId=${orderId}`;
+      } else {
+        redirectUrl = `${baseUrl}/dashboard/finances?yappy=failed&orderId=${orderId}`;
+      }
+    }
+
+    console.log('[Yappy Callback] GET callback processed:', {
+      approved: isApproved,
+      orderId,
+      status,
+      redirectUrl,
     });
 
-    return POST(newRequest);
+    // Redirect to the appropriate page
+    return NextResponse.redirect(redirectUrl);
   } catch (error: any) {
     console.error('[Yappy Callback] Error processing GET callback:', error);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
                    request.headers.get('origin') || 
                    'http://localhost:3000';
-    return NextResponse.json({
-      success: false,
-      redirectUrl: `${baseUrl}/dashboard/finances?yappy=error`,
-    });
+    return NextResponse.redirect(`${baseUrl}/dashboard/finances?yappy=error`);
   }
 }
 

@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       token: result.token,
+      epochTime: result.epochTime, // Required for creating orders
       cdnUrl: YappyService.getCdnUrl(),
       merchantId: YappyService.getConfig().merchantId,
     });
