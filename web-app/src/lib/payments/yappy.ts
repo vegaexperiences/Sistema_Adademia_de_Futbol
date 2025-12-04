@@ -276,12 +276,12 @@ export class YappyService {
 
       // Calculate subtotal, taxes, shipping, discount, total
       // For simplicity, we'll set shipping, discount, taxes to 0.00 and subtotal = total = amount
-      // Try as numbers first (some APIs expect numeric values)
-      const subtotal = parseFloat(request.amount.toFixed(2));
-      const taxes = 0.00;
-      const shipping = 0.00;
-      const discount = 0.00;
-      const total = parseFloat(request.amount.toFixed(2));
+      // Yappy expects these as strings with decimal format "0.00"
+      const subtotal = request.amount.toFixed(2);
+      const taxes = '0.00';
+      const shipping = '0.00';
+      const discount = '0.00';
+      const total = request.amount.toFixed(2);
 
       // Create order payload according to Yappy manual
       // Note: For payment-wc, domain should be without https:// (just the domain name)
