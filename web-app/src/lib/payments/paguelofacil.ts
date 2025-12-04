@@ -48,6 +48,8 @@ export interface PagueloFacilTransaction {
   expiresIn?: number;
   customParams?: Record<string, string>;
   metadata?: Record<string, any>;
+  cardType?: string; // CARD_TYPE parameter: NEQUI,CASH,CLAVE,CARD,CRYPTO
+  pfCf?: string; // PF_CF parameter: JSON encoded in hexadecimal
 }
 
 export class PagueloFacilService {
@@ -67,6 +69,22 @@ export class PagueloFacilService {
       const apiKey = rawApiKey.replace(/[^\x20-\x7E]/g, '').trim();
       const cclw = rawCclw.replace(/[^\x20-\x7E]/g, '').trim();
       const sandbox = process.env.PAGUELOFACIL_SANDBOX === 'true';
+
+      // Validate sandbox configuration
+      if (sandbox) {
+        // Verify that URLs match sandbox environment
+        const linkDeamonUrl = sandbox
+          ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
+          : 'https://secure.paguelofacil.com/LinkDeamon.cfm';
+        
+        console.log('[PagueloFacil] Sandbox mode enabled:', {
+          sandbox,
+          linkDeamonUrl,
+          note: 'Using sandbox credentials and endpoints',
+        });
+      } else {
+        console.log('[PagueloFacil] Production mode enabled');
+      }
 
       // Log sandbox status for debugging
       console.log('[PagueloFacil] Configuration loaded:', {
@@ -164,9 +182,19 @@ export class PagueloFacilService {
    */
   static getLinkDeamonUrl(): string {
     const config = this.getConfig();
-    return config.sandbox
+    const url = config.sandbox
       ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
       : 'https://secure.paguelofacil.com/LinkDeamon.cfm';
+    
+    // Validate that sandbox configuration is consistent
+    if (config.sandbox && !url.includes('sandbox')) {
+      console.error('[PagueloFacil] ⚠️ WARNING: Sandbox mode enabled but URL does not contain "sandbox"');
+    }
+    if (!config.sandbox && url.includes('sandbox')) {
+      console.error('[PagueloFacil] ⚠️ WARNING: Production mode but URL contains "sandbox"');
+    }
+    
+    return url;
   }
 
   /**
@@ -183,6 +211,20 @@ export class PagueloFacilService {
     try {
       const config = this.getConfig();
       const url = this.getLinkDeamonUrl();
+      
+      // Validate sandbox configuration
+      if (config.sandbox) {
+        console.log('[PagueloFacil] Creating payment link in SANDBOX mode:', {
+          url,
+          cclwLength: config.cclw.length,
+          note: 'Using sandbox credentials and endpoints',
+        });
+      } else {
+        console.log('[PagueloFacil] Creating payment link in PRODUCTION mode:', {
+          url,
+          cclwLength: config.cclw.length,
+        });
+      }
 
       // Validate amount (minimum is $1.00)
       if (transaction.amount < 1.0) {
@@ -232,6 +274,19 @@ export class PagueloFacilService {
           postData[paramKey] = String(value).substring(0, 150); // Max 150 characters
           paramIndex++;
         });
+      }
+
+      // Add CARD_TYPE parameter if specified (to filter payment methods)
+      // Values: NEQUI,CASH,CLAVE,CARD,CRYPTO
+      if (transaction.cardType) {
+        postData.CARD_TYPE = transaction.cardType;
+        console.log('[PagueloFacil] CARD_TYPE specified:', transaction.cardType);
+      }
+
+      // Add PF_CF (custom fields) if specified (JSON encoded in hexadecimal)
+      if (transaction.pfCf) {
+        postData.PF_CF = transaction.pfCf;
+        console.log('[PagueloFacil] PF_CF specified (custom fields)');
       }
 
       // Build query string for POST
@@ -328,6 +383,7 @@ export class PagueloFacilService {
   static isTransactionApproved(params: PagueloFacilCallbackParams): boolean {
     const estado = (params.Estado || '').trim().toLowerCase();
     const totalPagado = parseFloat(params.TotalPagado || '0');
+    const razon = params.Razon || '';
     
     // Log para diagnóstico - CRITICAL para debugging
     console.log('[PagueloFacil] ========== VERIFICANDO ESTADO DE TRANSACCIÓN ==========');
@@ -338,7 +394,7 @@ export class PagueloFacilService {
       TotalPagado: params.TotalPagado,
       TotalPagadoRaw: params.TotalPagado,
       TotalPagadoParsed: totalPagado,
-      Razon: params.Razon,
+      Razon: razon,
       Oper: params.Oper,
       Fecha: params.Fecha,
       Hora: params.Hora,
@@ -348,6 +404,19 @@ export class PagueloFacilService {
       timestamp: new Date().toISOString(),
     });
     
+    // Check for 3DS authentication errors
+    const is3DSError = razon.toLowerCase().includes('authentication') || 
+                       razon.toLowerCase().includes('3ds') ||
+                       razon.toLowerCase().includes('issuer is rejecting');
+    
+    if (is3DSError) {
+      console.warn('[PagueloFacil] ⚠️ 3DS Authentication Error detected:', {
+        razon,
+        note: 'This may indicate a problem with 3D Secure authentication. Check if you are using the correct test cards for sandbox environment.',
+        suggestion: 'Verify that you are using sandbox test cards and that 3DS is properly configured in your PagueloFacil merchant account.',
+      });
+    }
+    
     // Según documentación: TotalPagado > 0 indica transacción aprobada
     // También verificamos que Estado no sea "Denegado" o "Denegada"
     const isDenied = estado === 'denegado' || estado === 'denegada' || estado === 'rechazado' || estado === 'rechazada';
@@ -356,19 +425,38 @@ export class PagueloFacilService {
     // Si TotalPagado > 0, la transacción fue aprobada (según documentación)
     // Si Estado es explícitamente "Denegado/Denegada", rechazamos
     if (isDenied) {
+      console.log('[PagueloFacil] Transaction denied:', {
+        estado,
+        totalPagado,
+        razon,
+        is3DSError,
+      });
       return false;
     }
     
     // Si TotalPagado > 0, consideramos aprobada (independientemente del texto de Estado)
     if (totalPagado > 0) {
+      console.log('[PagueloFacil] Transaction approved (TotalPagado > 0):', {
+        totalPagado,
+        estado,
+      });
       return true;
     }
     
     // Si Estado es explícitamente "Aprobada", consideramos aprobada
     if (isApproved) {
+      console.log('[PagueloFacil] Transaction approved (Estado = Aprobada):', {
+        estado,
+        totalPagado,
+      });
       return true;
     }
     
+    console.log('[PagueloFacil] Transaction status unclear:', {
+      estado,
+      totalPagado,
+      razon,
+    });
     return false;
   }
 }

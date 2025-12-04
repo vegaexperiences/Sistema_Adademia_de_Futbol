@@ -374,9 +374,31 @@ export async function GET(request: NextRequest) {
       }
       
       // Log transaction denial - rejected payments are NOT stored as payments
+      const is3DSError = callbackParams.Razon?.toLowerCase().includes('authentication') || 
+                        callbackParams.Razon?.toLowerCase().includes('3ds') ||
+                        callbackParams.Razon?.toLowerCase().includes('issuer is rejecting');
+      
+      if (is3DSError) {
+        console.warn('[PagueloFacil Callback] ⚠️ 3DS Authentication Error:', {
+          estado: callbackParams.Estado,
+          razon: callbackParams.Razon,
+          oper: callbackParams.Oper,
+          tipo: callbackParams.Tipo,
+          note: 'This transaction was denied due to 3DS authentication failure. This may indicate:',
+          possibleCauses: [
+            'Using incorrect test cards for sandbox environment',
+            '3DS not properly configured in PagueloFacil merchant account',
+            'Test cards requiring 3DS authentication that is not being completed',
+            'Sandbox environment configuration issue',
+          ],
+          suggestion: 'Verify that you are using the correct sandbox test cards and that 3DS is properly configured.',
+        });
+      }
+      
       console.log('[PagueloFacil Callback] ℹ️ Transaction denied - no payment created (rejections are not real payments):', {
         estado: callbackParams.Estado,
         razon: callbackParams.Razon,
+        is3DSError,
         type,
         hasPlayerId: !!playerId,
         hasAmount: !!amount,
