@@ -32,31 +32,50 @@ export function PagueloFacilSuccessHandler() {
     const hasOtherParams = !!(oper || monto || razon);
     
     if (hasValidParams && hasOtherParams) {
-      setMessageType(status as 'success' | 'failed' | 'error');
-      setMessageData({
-        amount: monto || undefined,
-        operationId: oper || undefined,
-        reason: razon ? decodeURIComponent(razon) : undefined,
-      });
-      setShowMessage(true);
+      // Check if we've already shown this message for this operation ID
+      // Use sessionStorage to track shown messages (cleared when browser tab closes)
+      const shownKey = `paguelofacil_shown_${oper || 'unknown'}`;
+      const alreadyShown = sessionStorage.getItem(shownKey);
       
-      // Remove the query parameters from URL immediately
-      const url = new URL(window.location.href);
-      url.searchParams.delete('paguelofacil');
-      url.searchParams.delete('oper');
-      url.searchParams.delete('monto');
-      url.searchParams.delete('razon');
-      
-      // Replace URL without query params
-      window.history.replaceState({}, '', url.toString());
-      
-      // Refresh the page data
-      router.refresh();
-      
-      // Hide message after 5 seconds
-      setTimeout(() => {
-        setShowMessage(false);
-      }, 5000);
+      // Only show if we haven't shown it before AND we have a valid operation ID
+      if (!alreadyShown && oper) {
+        // Mark as shown immediately to prevent duplicate displays
+        sessionStorage.setItem(shownKey, 'true');
+        
+        setMessageType(status as 'success' | 'failed' | 'error');
+        setMessageData({
+          amount: monto || undefined,
+          operationId: oper || undefined,
+          reason: razon ? decodeURIComponent(razon) : undefined,
+        });
+        setShowMessage(true);
+        
+        // Remove the query parameters from URL immediately
+        const url = new URL(window.location.href);
+        url.searchParams.delete('paguelofacil');
+        url.searchParams.delete('oper');
+        url.searchParams.delete('monto');
+        url.searchParams.delete('razon');
+        
+        // Replace URL without query params
+        window.history.replaceState({}, '', url.toString());
+        
+        // Refresh the page data
+        router.refresh();
+        
+        // Hide message after 5 seconds
+        setTimeout(() => {
+          setShowMessage(false);
+        }, 5000);
+      } else {
+        // Already shown or no operation ID - just clean up URL params silently
+        const url = new URL(window.location.href);
+        url.searchParams.delete('paguelofacil');
+        url.searchParams.delete('oper');
+        url.searchParams.delete('monto');
+        url.searchParams.delete('razon');
+        window.history.replaceState({}, '', url.toString());
+      }
     } else if (hasValidParams && !hasOtherParams) {
       // If we only have status but no other params, it's likely a stale parameter
       // Clean it up silently without showing a message
