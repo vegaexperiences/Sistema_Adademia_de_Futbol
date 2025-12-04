@@ -456,7 +456,18 @@ export async function GET(request: NextRequest) {
             
             // Send confirmation email
             try {
-              await sendPaymentConfirmationEmail(createdPayment.id, playerId);
+              const emailResult = await sendPaymentConfirmationEmail({
+                playerId: playerId,
+                amount: parseFloat(amount),
+                paymentType: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
+                paymentDate: createdPayment?.payment_date || new Date().toISOString().split('T')[0],
+                monthYear: monthYear || undefined,
+                operationId: confirmationNumber || orderId,
+              });
+              
+              if (emailResult?.error) {
+                console.warn('[Yappy Callback] Email notification issue:', emailResult.error);
+              }
             } catch (emailError) {
               console.error('[Yappy Callback] Error sending confirmation email:', emailError);
             }
