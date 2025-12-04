@@ -394,30 +394,79 @@ export async function GET(request: NextRequest) {
         }
 
         if (playerFound) {
-          const paymentResult = await createPayment({
-            playerId,
-            amount: parseFloat(amount),
-            paymentMethod: 'Yappy',
-            transactionId: confirmationNumber || orderId,
-            status: 'Approved',
-            paymentType: paymentType || 'monthly',
-            monthYear: monthYear || undefined,
-            notes: notes || undefined,
-          });
+          // Build notes with appropriate format
+          let paymentNotes = `Pago procesado con Yappy Comercial. Orden: ${orderId}. Transacción: ${confirmationNumber || 'N/A'}. ${notes || ''}`;
+          
+          // If player is pending, add format for later linking
+          if (isPendingPlayer) {
+            paymentNotes += `. Pending Player IDs: ${playerId}`;
+          }
+          
+          // Create payment record with Approved status
+          let createdPayment;
+          
+          if (isPendingPlayer) {
+            // If player is pending, insert directly with player_id = null
+            const paymentData = {
+              player_id: null,
+              amount: parseFloat(amount),
+              type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
+              method: 'yappy' as const,
+              payment_date: new Date().toISOString().split('T')[0],
+              month_year: monthYear || undefined,
+              status: 'Approved' as const,
+              notes: paymentNotes,
+            };
+            
+            console.log('[Yappy Callback] Payment data to create (pending player from GET):', paymentData);
+            
+            const { data: insertedPayment, error: insertError } = await supabase
+              .from('payments')
+              .insert(paymentData)
+              .select()
+              .single();
+            
+            if (insertError) {
+              console.error('[Yappy Callback] Error creating payment for pending player:', insertError);
+              throw insertError;
+            }
+            createdPayment = insertedPayment;
+          } else {
+            // If player is approved, use createPayment function
+            const paymentData = {
+              player_id: playerId, // This is always a string when not pending
+              amount: parseFloat(amount),
+              type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
+              method: 'yappy' as const,
+              payment_date: new Date().toISOString().split('T')[0],
+              month_year: monthYear || undefined,
+              status: 'Approved' as const,
+              notes: paymentNotes,
+            };
+            
+            console.log('[Yappy Callback] Payment data to create (approved player from GET):', paymentData);
+            createdPayment = await createPayment(paymentData);
+          }
 
-          if (paymentResult.success) {
-            console.log('[Yappy Callback] Payment created successfully from GET callback');
+          if (createdPayment?.id) {
+            console.log('[Yappy Callback] Payment created successfully from GET callback:', {
+              paymentId: createdPayment.id,
+              playerId,
+            });
             
             // Send confirmation email
             try {
-              await sendPaymentConfirmationEmail(paymentResult.paymentId!, playerId);
+              await sendPaymentConfirmationEmail(createdPayment.id, playerId);
             } catch (emailError) {
               console.error('[Yappy Callback] Error sending confirmation email:', emailError);
             }
 
             // Revalidate paths
+            revalidatePath('/dashboard/players');
+            revalidatePath('/dashboard/players/[id]', 'page');
+            revalidatePath('/dashboard/families');
             revalidatePath('/dashboard/finances');
-            revalidatePath(`/dashboard/players/${playerId}`);
+            revalidatePath('/dashboard/finances/transactions');
           }
         }
       } catch (error: any) {
