@@ -319,12 +319,12 @@ export class YappyService {
       }
 
       // Create order payload according to Yappy manual
-      // paymentDate should be a number (epochTime)
+      // Try paymentDate as string (some APIs expect epochTime as string)
       const orderPayload = {
         merchantId: config.merchantId.trim(),
         orderId: request.orderId.substring(0, 15).trim(), // Max 15 characters
         domain: domainForOrder.trim(), // Domain without https:// (just domain name)
-        paymentDate: Number(request.paymentDate), // epochTime from validation as number
+        paymentDate: String(request.paymentDate), // epochTime from validation as string
         ipnUrl: ipnUrl.trim(), // URL for Instant Payment Notification (callback)
         shipping: shipping, // Format: "0.00"
         discount: discount, // Format: "0.00"
@@ -390,6 +390,21 @@ export class YappyService {
       // According to Yappy manual, endpoint is /payments/payment-wc
       // Authorization header must contain the token from validation
       // Try without "Bearer" prefix first, as some APIs use just the token
+      
+      // Log the exact request being sent
+      const requestBody = JSON.stringify(orderPayload);
+      console.log('[Yappy] Sending request to /payments/payment-wc:', {
+        url: `${baseUrl}/payments/payment-wc`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': request.token ? `${request.token.substring(0, 20)}...` : 'MISSING',
+        },
+        body: requestBody,
+        bodyParsed: JSON.parse(requestBody), // Parse to show exact structure
+      });
+      
       const response = await fetch(`${baseUrl}/payments/payment-wc`, {
         method: 'POST',
         headers: {
@@ -397,7 +412,7 @@ export class YappyService {
           'Accept': 'application/json',
           'Authorization': request.token, // Token from validation (without Bearer prefix)
         },
-        body: JSON.stringify(orderPayload),
+        body: requestBody,
       });
 
       const result = await response.json();
