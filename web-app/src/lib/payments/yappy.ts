@@ -135,11 +135,10 @@ export class YappyService {
       // According to Yappy manual, the endpoint is /payments/validate/merchant
       // It requires: merchantId and urlDomain (NOT domainUrl)
       // The domain must be without https:// (just the domain name)
-      // Note: Based on error YAPPY-004, we'll try including secretKey as well
+      // Note: secretKey is NOT sent in the body for this endpoint
       const requestBody: Record<string, string> = {
         merchantId: config.merchantId,
         urlDomain: config.domainUrl, // Manual requires urlDomain (domain without https://)
-        secretKey: config.secretKey, // May be required for validation
       };
 
       // Validate that required fields are not empty
@@ -151,6 +150,8 @@ export class YappyService {
         throw new Error('Yappy urlDomain is empty. Please check YAPPY_DOMAIN_URL or NEXT_PUBLIC_APP_URL environment variable.');
       }
 
+      // Log the exact request body being sent
+      const requestBodyString = JSON.stringify(requestBody);
       console.log('[Yappy] Validate merchant request:', {
         baseUrl,
         endpoint: `${baseUrl}/payments/validate/merchant`,
@@ -162,6 +163,9 @@ export class YappyService {
           merchantIdEmpty: !requestBody.merchantId || requestBody.merchantId.trim().length === 0,
           urlDomainEmpty: !requestBody.urlDomain || requestBody.urlDomain.trim().length === 0,
         },
+        requestBodyString,
+        merchantIdFull: requestBody.merchantId, // Log full merchantId for debugging
+        urlDomainFull: requestBody.urlDomain, // Log full urlDomain for debugging
       });
 
       const response = await fetch(`${baseUrl}/payments/validate/merchant`, {
