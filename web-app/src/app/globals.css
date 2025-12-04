@@ -28,6 +28,17 @@
     color: #1f2937 !important; /* gray-800 */
     border-color: #e5e7eb; /* gray-200 */
   }
+  
+  /* Hide number input spinners to prevent accidental changes when scrolling */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
 
 
 }
