@@ -290,9 +290,9 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               onSubmit();
             }
           }}
-          disabled={!data.paymentMethod || (['Comprobante', 'Transferencia'].includes(data.paymentMethod) && !data.paymentProofFile) || data.paymentMethod === 'Yappy' || data.paymentMethod === 'PagueloFacil'}
+          disabled={!data.paymentMethod || (['Comprobante', 'Transferencia'].includes(data.paymentMethod) && !data.paymentProofFile) || data.paymentMethod === 'Yappy'}
           className={`px-6 py-2 rounded-lg font-bold transition-all shadow-md hover:scale-105 duration-300 ${
-            !data.paymentMethod || (['Comprobante', 'Transferencia'].includes(data.paymentMethod) && !data.paymentProofFile) || data.paymentMethod === 'Yappy' || data.paymentMethod === 'PagueloFacil'
+            !data.paymentMethod || (['Comprobante', 'Transferencia'].includes(data.paymentMethod) && !data.paymentProofFile) || data.paymentMethod === 'Yappy'
               ? 'bg-gray-300 cursor-not-allowed text-gray-500 shadow-none hover:scale-100' 
               : 'bg-primary text-white hover:bg-primary/90 hover:shadow-lg'
           }`}
