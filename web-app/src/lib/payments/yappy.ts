@@ -276,11 +276,12 @@ export class YappyService {
 
       // Calculate subtotal, taxes, shipping, discount, total
       // For simplicity, we'll set shipping, discount, taxes to 0.00 and subtotal = total = amount
-      const subtotal = request.amount.toFixed(2);
-      const taxes = '0.00';
-      const shipping = '0.00';
-      const discount = '0.00';
-      const total = request.amount.toFixed(2);
+      // Try as numbers first (some APIs expect numeric values)
+      const subtotal = parseFloat(request.amount.toFixed(2));
+      const taxes = 0.00;
+      const shipping = 0.00;
+      const discount = 0.00;
+      const total = parseFloat(request.amount.toFixed(2));
 
       // Create order payload according to Yappy manual
       // Note: For payment-wc, domain should be without https:// (just the domain name)
@@ -317,13 +318,13 @@ export class YappyService {
         };
       }
 
-      // paymentDate might need to be a string instead of number
-      // Try as string first (some APIs expect epochTime as string)
-      const orderPayload: Record<string, string | number> = {
+      // Create order payload according to Yappy manual
+      // paymentDate should be a number (epochTime)
+      const orderPayload = {
         merchantId: config.merchantId.trim(),
         orderId: request.orderId.substring(0, 15).trim(), // Max 15 characters
         domain: domainForOrder.trim(), // Domain without https:// (just domain name)
-        paymentDate: String(request.paymentDate), // epochTime from validation as string
+        paymentDate: Number(request.paymentDate), // epochTime from validation as number
         ipnUrl: ipnUrl.trim(), // URL for Instant Payment Notification (callback)
         shipping: shipping, // Format: "0.00"
         discount: discount, // Format: "0.00"
