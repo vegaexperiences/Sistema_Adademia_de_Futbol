@@ -284,9 +284,11 @@ export class YappyService {
       const total = request.amount.toFixed(2);
 
       // Create order payload according to Yappy manual
-      // Note: For payment-wc, domain should be without https:// (just the domain name)
-      // This is different from validate/merchant which requires https://
-      const domainForOrder = config.domainUrl; // Use domain without https:// (as stored in config)
+      // Try sending domain WITH https:// (same as validate/merchant uses urlDomain with https://)
+      // The manual might be ambiguous, but since validate/merchant works with https://, let's try it here too
+      const domainForOrder = config.domainUrl.startsWith('https://') 
+        ? config.domainUrl 
+        : `https://${config.domainUrl}`; // Ensure domain has https://
       
       // Validate that domain is not empty
       if (!domainForOrder || domainForOrder.trim().length === 0) {
@@ -325,7 +327,7 @@ export class YappyService {
       const orderPayload: Record<string, string | number> = {
         merchantId: config.merchantId.trim(),
         orderId: request.orderId.substring(0, 15).trim(), // Max 15 characters
-        domain: domainForOrder.trim(), // Domain without https:// (just domain name)
+        domain: domainForOrder.trim(), // Domain with https:// (same format as urlDomain in validate/merchant)
         paymentDate: Number(request.paymentDate), // epochTime from validation as number
         ipnUrl: ipnUrl.trim(), // URL for Instant Payment Notification (callback)
         shipping: shipping, // Format: "0.00"
