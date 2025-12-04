@@ -230,11 +230,8 @@ export async function POST(request: NextRequest) {
               notes: paymentNotes,
             };
 
-            // Only include month_year if it has a valid value
-            if (monthYear && monthYear.trim() !== '') {
-              paymentData.month_year = monthYear;
-            }
-
+            // Note: month_year column does not exist in payments table, so we don't include it
+            
             console.log('[PagueloFacil Webhook] Payment data to create (pending player):', paymentData);
 
             const { data: insertedPayment, error: insertError } = await supabase
