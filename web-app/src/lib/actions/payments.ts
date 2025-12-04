@@ -157,7 +157,7 @@ export async function createPayment(payment: Payment) {
     type: payment.type || payment.payment_type || 'custom', // Use 'type' field
     method: payment.method || payment.payment_method, // Use 'method' field
     status: payment.status || 'Approved', // Default to 'Approved' if not specified
-    created_by: user?.id
+    // Note: created_by column does not exist in payments table, removed to avoid schema errors
   };
   
   // Remove legacy fields if they exist
