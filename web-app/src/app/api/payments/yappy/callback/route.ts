@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { YappyService } from '@/lib/payments/yappy';
+import { YappyService, YappyCallbackParams } from '@/lib/payments/yappy';
 import { createPayment } from '@/lib/actions/payments';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
