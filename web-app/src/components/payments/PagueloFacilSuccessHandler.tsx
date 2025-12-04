@@ -26,7 +26,12 @@ export function PagueloFacilSuccessHandler() {
     const monto = searchParams.get('monto');
     const razon = searchParams.get('razon');
     
-    if (status === 'success' || status === 'failed' || status === 'error') {
+    // Only show message if we have a valid status AND at least one other parameter
+    // This prevents showing messages from stale URL parameters
+    const hasValidParams = status === 'success' || status === 'failed' || status === 'error';
+    const hasOtherParams = !!(oper || monto || razon);
+    
+    if (hasValidParams && hasOtherParams) {
       setMessageType(status as 'success' | 'failed' | 'error');
       setMessageData({
         amount: monto || undefined,
@@ -35,7 +40,7 @@ export function PagueloFacilSuccessHandler() {
       });
       setShowMessage(true);
       
-      // Remove the query parameters from URL
+      // Remove the query parameters from URL immediately
       const url = new URL(window.location.href);
       url.searchParams.delete('paguelofacil');
       url.searchParams.delete('oper');
@@ -52,6 +57,15 @@ export function PagueloFacilSuccessHandler() {
       setTimeout(() => {
         setShowMessage(false);
       }, 5000);
+    } else if (hasValidParams && !hasOtherParams) {
+      // If we only have status but no other params, it's likely a stale parameter
+      // Clean it up silently without showing a message
+      const url = new URL(window.location.href);
+      url.searchParams.delete('paguelofacil');
+      url.searchParams.delete('oper');
+      url.searchParams.delete('monto');
+      url.searchParams.delete('razon');
+      window.history.replaceState({}, '', url.toString());
     }
   }, [searchParams, router]);
 
