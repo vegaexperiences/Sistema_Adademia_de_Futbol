@@ -6,6 +6,7 @@
 DO $$
 DECLARE
   rejected_count INTEGER;
+  rec RECORD;
 BEGIN
   SELECT COUNT(*) INTO rejected_count
   FROM payments
@@ -24,7 +25,7 @@ BEGIN
     ) LOOP
       RAISE NOTICE '  - Payment ID: %, Player: %, Amount: %, Type: %, Date: %, Notes: %',
         rec.id, rec.player_id, rec.amount, rec.type, rec.payment_date, 
-        LEFT(rec.notes, 50) || CASE WHEN LENGTH(rec.notes) > 50 THEN '...' ELSE '' END;
+        LEFT(COALESCE(rec.notes, ''), 50) || CASE WHEN LENGTH(COALESCE(rec.notes, '')) > 50 THEN '...' ELSE '' END;
     END LOOP;
   ELSE
     RAISE NOTICE 'No rejected payments found. Nothing to delete.';
