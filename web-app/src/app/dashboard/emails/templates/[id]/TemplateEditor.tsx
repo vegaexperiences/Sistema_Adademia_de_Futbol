@@ -188,7 +188,7 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
             <div>
               <p className="text-sm text-gray-600 mb-4">
                 Este template usa HTML completo. El contenido se muestra en la vista previa a la derecha.
-                Las variables disponibles son: <code className="bg-gray-100 px-2 py-1 rounded">{{tutorName}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{playerName}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{amount}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{paymentType}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{paymentDate}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{operationId}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{logoUrl}}</code>
+                Las variables disponibles son: <code className="bg-gray-100 px-2 py-1 rounded">{'{{tutorName}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{playerName}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{amount}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{paymentType}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{paymentDate}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{operationId}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{logoUrl}}'}</code>
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
