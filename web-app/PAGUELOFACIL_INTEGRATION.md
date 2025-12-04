@@ -108,27 +108,42 @@ Los webhooks son más confiables que los callbacks porque PagueloFacil los enví
 "Issuer is rejecting authentication and requesting that authorization not be attempted"
 ```
 
+**Diagnóstico:**
+1. ✅ **Credenciales verificadas:** El CCLW coincide con el proporcionado desde demo.paguelofacil.com
+2. ✅ **Endpoint correcto:** Se está usando `https://sandbox.paguelofacil.com/LinkDeamon.cfm`
+3. ✅ **Tarjetas de prueba:** Se están usando las tarjetas oficiales del sandbox
+4. ⚠️ **Problema identificado:** Configuración de 3DS en el comercio sandbox
+
 **Posibles Causas:**
-1. **Tarjetas de prueba incorrectas:** Asegúrate de usar las tarjetas de prueba correctas del sandbox
-2. **Configuración de 3DS:** El comercio puede no tener 3DS configurado correctamente
-3. **Credenciales incorrectas:** Verifica que estés usando credenciales del ambiente correcto (sandbox vs producción)
+1. **Configuración de 3DS en el comercio:** El comercio sandbox puede no tener 3DS configurado correctamente o puede estar habilitado cuando debería estar deshabilitado para tarjetas de prueba
+2. **Credenciales incorrectas:** Aunque verificadas, asegúrate de que el CCLW en Vercel sea exactamente el mismo que el de demo.paguelofacil.com
+3. **Variables de entorno:** Verifica que `PAGUELOFACIL_SANDBOX=true` esté configurado correctamente en Vercel
 
 **Soluciones:**
-1. **Verificar tarjetas de prueba:**
-   - Usa las tarjetas de prueba oficiales de PagueloFacil para sandbox
-   - Asegúrate de que las fechas de vencimiento sean válidas (mes/año >= actual)
-   - CVV puede ser cualquier 3 dígitos
 
-2. **Verificar configuración:**
-   ```bash
-   # Asegúrate de que estas variables estén configuradas correctamente
-   PAGUELOFACIL_SANDBOX=true  # Para ambiente de pruebas
-   PAGUELOFACIL_CCLW=tu_cclw_de_sandbox  # CCLW del ambiente de sandbox
-   ```
+1. **Verificar variables de entorno en Vercel:**
+   - Ve a Settings → Environment Variables
+   - Verifica que `PAGUELOFACIL_SANDBOX=true` (exactamente "true", no "True" ni "TRUE")
+   - Verifica que `PAGUELOFACIL_CCLW` sea exactamente el mismo que el de demo.paguelofacil.com
+   - Verifica que `PAGUELOFACIL_ACCESS_TOKEN` sea el correcto del sandbox
 
-3. **Revisar logs:**
-   - Busca en los logs mensajes con `[PagueloFacil] ⚠️ 3DS Authentication Error`
-   - Los logs indicarán si el problema es con la configuración o con las tarjetas
+2. **Revisar logs detallados:**
+   - Busca en los logs: `[PagueloFacil] ========== CONFIGURATION LOADED ==========`
+   - Verifica que `sandbox: true` aparezca en los logs
+   - Busca: `[PagueloFacil] ========== LINKDEAMON REQUEST ==========`
+   - Revisa todos los parámetros enviados
+   - Busca mensajes con `[PagueloFacil] ⚠️ 3DS Authentication Error`
+
+3. **Contactar a PagueloFacil:**
+   - Ver documento `PAGUELOFACIL_3DS_TROUBLESHOOTING.md` para mensaje completo
+   - Solicitar verificación de configuración de 3DS en el comercio sandbox
+   - Preguntar si 3DS debe estar deshabilitado para tarjetas de prueba
+   - Solicitar orientación sobre cómo resolver el problema
+
+4. **Alternativa técnica - Endpoint /AUTH:**
+   - Según documentación, existe `LinkDeamon.cfm/AUTH` para pre-autorizar
+   - Esto requeriría implementar un flujo de dos pasos (AUTH + CAPTURE)
+   - Consultar con PagueloFacil si esto es necesario para evitar problemas de 3DS
 
 ### Tarjetas de Prueba del Sandbox
 
@@ -194,6 +209,8 @@ Permite especificar qué métodos de pago mostrar en el enlace de pago:
 }
 ```
 
+**Nota:** Si especificas `CARD`, solo se mostrarán opciones de tarjeta de crédito/débito, lo que podría ayudar a evitar problemas con otros métodos de pago.
+
 ### PF_CF (Custom Fields)
 
 Permite enviar campos personalizados en formato JSON codificado en hexadecimal:
@@ -204,10 +221,85 @@ Permite enviar campos personalizados en formato JSON codificado en hexadecimal:
 }
 ```
 
+### Parámetros Adicionales Investigados
+
+Según la documentación y el análisis del código, estos son todos los parámetros disponibles:
+
+**Requeridos:**
+- `CCLW`: Código Web del comercio
+- `CMTN`: Monto de la transacción
+- `CDSC`: Descripción (máx. 150 caracteres)
+
+**Opcionales:**
+- `RETURN_URL`: URL de retorno codificada en hexadecimal
+- `EMAIL`: Email del cliente
+- `EXPIRES_IN`: Tiempo de expiración en segundos (default: 3600)
+- `PARM_1` a `PARM_N`: Parámetros personalizados (máx. 150 caracteres cada uno)
+- `CARD_TYPE`: Filtro de métodos de pago (NEQUI,CASH,CLAVE,CARD,CRYPTO)
+- `PF_CF`: Campos personalizados en JSON codificado en hexadecimal
+- `CTAX`: Monto del ITBMS (opcional)
+
+**Nota sobre parámetros de sandbox:**
+- No se encontró un parámetro específico para indicar que es sandbox
+- El ambiente se determina por la URL del endpoint y las credenciales (CCLW)
+- Si PagueloFacil indica que hay parámetros adicionales para sandbox, se pueden agregar fácilmente
+
+## Endpoint Alternativo: /AUTH
+
+Según la documentación, existe un endpoint alternativo para pre-autorizar:
+
+```
+https://sandbox.paguelofacil.com/LinkDeamon.cfm/AUTH
+```
+
+Este endpoint permite:
+- Pre-autorizar una transacción
+- Capturar después en un paso separado
+
+**Cuándo usar:**
+- Si PagueloFacil recomienda usar este endpoint para evitar problemas de 3DS
+- Si necesitas más control sobre el proceso de autorización
+
+**Implementación requerida:**
+- Modificar `createPaymentLink()` para usar el endpoint `/AUTH`
+- Implementar endpoint para capturar después de la autorización
+- Manejar el flujo de dos pasos en el frontend
+
+**Nota:** Consultar con PagueloFacil antes de implementar, ya que requiere cambios significativos en el código.
+
+## Logging y Debugging
+
+El sistema incluye logging detallado para facilitar el debugging:
+
+### Logs de Configuración
+```
+[PagueloFacil] ========== CONFIGURATION LOADED ==========
+```
+Muestra la configuración cargada, incluyendo sandbox mode, previews de credenciales, y URLs.
+
+### Logs de Solicitud
+```
+[PagueloFacil] ========== LINKDEAMON REQUEST ==========
+```
+Muestra todos los parámetros enviados a LinkDeamon (sin exponer credenciales completas por seguridad).
+
+### Logs de Respuesta
+```
+[PagueloFacil] ========== LINKDEAMON RESPONSE ==========
+```
+Muestra la respuesta completa de LinkDeamon, incluyendo status, headers, y contenido.
+
+### Logs de Errores 3DS
+```
+[PagueloFacil] ⚠️ 3DS Authentication Error detected
+```
+Aparece cuando se detecta un error relacionado con 3DS.
+
 ## Documentación de Referencia
 
 - Documentación oficial: https://developers.paguelofacil.com/guias/enlace-de-pago
 - Método: POST a `LinkDeamon.cfm`
 - Respuesta: JSON con `url` y `code` para redirección
 - Webhooks: POST a tu endpoint con JSON body
+- Endpoint alternativo: `LinkDeamon.cfm/AUTH` para pre-autorización
 
