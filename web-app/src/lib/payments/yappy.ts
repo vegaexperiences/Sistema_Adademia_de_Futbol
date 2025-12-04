@@ -283,19 +283,14 @@ export class YappyService {
       const total = request.amount.toFixed(2);
 
       // Create order payload according to Yappy manual
-      // Note: Testing environment might require domain with https:// (same as validation)
-      const baseDomainUrl = process.env.YAPPY_DOMAIN_URL || process.env.NEXT_PUBLIC_APP_URL || '';
-      let domainForOrder = baseDomainUrl.replace(/\/$/, '').trim();
-      
-      // If domain doesn't start with http:// or https://, add https://
-      if (!domainForOrder.match(/^https?:\/\//)) {
-        domainForOrder = `https://${domainForOrder}`;
-      }
+      // Note: For payment-wc, domain should be without https:// (just the domain name)
+      // This is different from validate/merchant which requires https://
+      const domainForOrder = config.domainUrl; // Use domain without https:// (as stored in config)
       
       const orderPayload = {
         merchantId: config.merchantId,
         orderId: request.orderId.substring(0, 15), // Max 15 characters
-        domain: domainForOrder, // Try with https:// for testing environment
+        domain: domainForOrder, // Domain without https:// (just domain name)
         paymentDate: request.paymentDate, // epochTime from validation
         ipnUrl: ipnUrl, // URL for Instant Payment Notification (callback)
         shipping: shipping, // Format: "0.00"
@@ -311,22 +306,27 @@ export class YappyService {
         merchantId: config.merchantId,
         orderId: orderPayload.orderId,
         domain: orderPayload.domain,
+        domainLength: orderPayload.domain?.length || 0,
+        domainHasHttps: orderPayload.domain?.startsWith('https://') || false,
         paymentDate: orderPayload.paymentDate,
         ipnUrl: orderPayload.ipnUrl,
         total: orderPayload.total,
         hasToken: !!request.token,
         tokenPreview: request.token ? `${request.token.substring(0, 20)}...` : 'MISSING',
+        tokenLength: request.token?.length || 0,
+        authorizationHeader: request.token ? `${request.token.substring(0, 20)}...` : 'MISSING',
         requestBodyString: JSON.stringify(orderPayload),
       });
 
       // According to Yappy manual, endpoint is /payments/payment-wc
       // Authorization header must contain the token from validation
+      // Try without "Bearer" prefix first, as some APIs use just the token
       const response = await fetch(`${baseUrl}/payments/payment-wc`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': `Bearer ${request.token}`, // Token from validation
+          'Authorization': request.token, // Token from validation (without Bearer prefix)
         },
         body: JSON.stringify(orderPayload),
       });

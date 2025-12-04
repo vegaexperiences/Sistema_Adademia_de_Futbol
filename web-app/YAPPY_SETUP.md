@@ -97,14 +97,16 @@ Después de configurar, verifica que:
 
 ### Validar Merchant
 - **Endpoint**: `/payments/validate/merchant` (POST)
-- **Request**: `{ merchantId, urlDomain }` (urlDomain sin https://)
+- **Request**: `{ merchantId, urlDomain }` 
+  - **Nota**: En ambiente de testing, `urlDomain` puede requerir `https://` (el código lo agrega automáticamente)
 - **Response**: `{ status, body: { token, epochTime } }`
 - **Vigencia del token**: 10 minutos
 
 ### Crear Orden
 - **Endpoint**: `/payments/payment-wc` (POST)
-- **Header**: `Authorization: Bearer {token}` (token de validación)
+- **Header**: `Authorization: {token}` (token de validación, sin prefijo "Bearer")
 - **Request**: `{ merchantId, orderId, domain, paymentDate, ipnUrl, shipping, discount, taxes, subtotal, total }`
+  - **Nota importante**: El campo `domain` debe ser solo el dominio (sin `https://`), diferente de `urlDomain` en validate/merchant
 - **Response**: `{ status, body: { transactionId, token, documentName } }`
 
 ### Callback (IPN)
