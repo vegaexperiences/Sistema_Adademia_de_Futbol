@@ -283,10 +283,19 @@ export class YappyService {
       const total = request.amount.toFixed(2);
 
       // Create order payload according to Yappy manual
+      // Note: Testing environment might require domain with https:// (same as validation)
+      const baseDomainUrl = process.env.YAPPY_DOMAIN_URL || process.env.NEXT_PUBLIC_APP_URL || '';
+      let domainForOrder = baseDomainUrl.replace(/\/$/, '').trim();
+      
+      // If domain doesn't start with http:// or https://, add https://
+      if (!domainForOrder.match(/^https?:\/\//)) {
+        domainForOrder = `https://${domainForOrder}`;
+      }
+      
       const orderPayload = {
         merchantId: config.merchantId,
         orderId: request.orderId.substring(0, 15), // Max 15 characters
-        domain: config.domainUrl, // Manual requires 'domain' (not domainUrl), without https://
+        domain: domainForOrder, // Try with https:// for testing environment
         paymentDate: request.paymentDate, // epochTime from validation
         ipnUrl: ipnUrl, // URL for Instant Payment Notification (callback)
         shipping: shipping, // Format: "0.00"
@@ -306,6 +315,8 @@ export class YappyService {
         ipnUrl: orderPayload.ipnUrl,
         total: orderPayload.total,
         hasToken: !!request.token,
+        tokenPreview: request.token ? `${request.token.substring(0, 20)}...` : 'MISSING',
+        requestBodyString: JSON.stringify(orderPayload),
       });
 
       // According to Yappy manual, endpoint is /payments/payment-wc
@@ -329,9 +340,15 @@ export class YappyService {
         hasTransactionId: !!result.body?.transactionId,
         hasToken: !!result.body?.token,
         hasDocumentName: !!result.body?.documentName,
+        fullResponse: result,
       });
 
-      if (response.ok && result.success && result.body) {
+      // Yappy returns success with status code '0000' and description 'Correct execution'
+      const isSuccess = response.ok && 
+                       (result.status?.code === '0000' || result.success) && 
+                       result.body?.transactionId;
+
+      if (isSuccess) {
         return {
           success: true,
           orderData: {
