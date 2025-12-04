@@ -160,9 +160,10 @@ export async function createPayment(payment: Payment) {
     // Note: created_by column does not exist in payments table, removed to avoid schema errors
   };
   
-  // Remove legacy fields if they exist
+  // Remove legacy fields and non-existent columns if they exist
   delete paymentData.payment_type;
   delete paymentData.payment_method;
+  delete paymentData.month_year; // month_year column does not exist in payments table
   
   const { data, error } = await supabase
     .from('payments')
