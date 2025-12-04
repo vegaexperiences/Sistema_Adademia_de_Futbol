@@ -40,6 +40,9 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
         greeting: vars.greeting || 'Aquí está el resumen de pagos del mes.',
         footer: vars.footer || 'Si tienes alguna duda, no dudes en contactarnos.'
       };
+    } else if (name === 'payment_thank_you' || name === 'payment_confirmation') {
+      // For payment templates, return empty object - we'll show the full HTML template
+      return {};
     }
     return {};
   };
@@ -52,6 +55,21 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
       process.env.NEXT_PUBLIC_LOGO_URL ||
       'https://sistema-adademia-de-futbol-tura.vercel.app/logo.png';
     const name = template.name;
+    
+    // For payment templates, use the full HTML template with example variables
+    if (name === 'payment_thank_you' || name === 'payment_confirmation') {
+      let html = template.html_template || '';
+      // Replace variables with example values
+      html = html.replace(/\{\{logoUrl\}\}/g, logoUrl);
+      html = html.replace(/\{\{tutorName\}\}/g, 'Juan Pérez');
+      html = html.replace(/\{\{playerName\}\}/g, 'Carlos Pérez');
+      html = html.replace(/\{\{amount\}\}/g, '100.00');
+      html = html.replace(/\{\{paymentType\}\}/g, 'Mensualidad');
+      html = html.replace(/\{\{paymentDate\}\}/g, '4 de diciembre de 2025');
+      html = html.replace(/\{\{operationId\}\}/g, 'LK-ABC123XYZ');
+      html = html.replace(/\{\{monthYear\}\}/g, '');
+      return html;
+    }
     
     if (name === 'pre_enrollment') {
       return `
@@ -134,7 +152,12 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave({ subject, fields });
+      // For payment templates, we only save the subject (HTML is stored in html_template column)
+      if (template.name === 'payment_thank_you' || template.name === 'payment_confirmation') {
+        await onSave({ subject, fields: {} });
+      } else {
+        await onSave({ subject, fields });
+      }
     } finally {
       setSaving(false);
     }
@@ -161,19 +184,33 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
             📝 Contenido Editable
           </h3>
           
-          {Object.entries(fields).map(([key, value]) => (
-            <div key={key}>
-              <label className="block mb-2 font-medium text-gray-700 capitalize">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </label>
-              <textarea
-                value={value as string}
-                onChange={(e) => setFields({ ...fields, [key]: e.target.value })}
-                rows={key === 'greeting' ? 2 : 3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-              />
+          {(template.name === 'payment_thank_you' || template.name === 'payment_confirmation') ? (
+            <div>
+              <p className="text-sm text-gray-600 mb-4">
+                Este template usa HTML completo. El contenido se muestra en la vista previa a la derecha.
+                Las variables disponibles son: <code className="bg-gray-100 px-2 py-1 rounded">{{tutorName}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{playerName}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{amount}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{paymentType}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{paymentDate}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{operationId}}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{{logoUrl}}</code>
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Nota:</strong> Para editar el HTML completo de este template, contacta al administrador del sistema o modifica directamente en la base de datos.
+                </p>
+              </div>
             </div>
-          ))}
+          ) : (
+            Object.entries(fields).map(([key, value]) => (
+              <div key={key}>
+                <label className="block mb-2 font-medium text-gray-700 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </label>
+                <textarea
+                  value={value as string}
+                  onChange={(e) => setFields({ ...fields, [key]: e.target.value })}
+                  rows={key === 'greeting' ? 2 : 3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+            ))
+          )}
         </div>
 
         <div className="flex justify-end gap-3">
