@@ -161,7 +161,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
         </button>
         <button
           type="submit"
-          className="bg-primary text-white px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg font-bold text-base hover:bg-primary/90 hover:shadow-lg active:scale-95 hover:scale-105 transition-all duration-300 touch-manipulation w-full sm:w-auto"
+          className="bg-blue-600 text-white px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg font-bold text-base hover:bg-blue-700 hover:shadow-lg active:scale-95 hover:scale-105 transition-all duration-300 touch-manipulation w-full sm:w-auto"
         >
           Siguiente
         </button>
