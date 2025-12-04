@@ -13,6 +13,7 @@ interface PagueloFacilPaymentButtonProps {
   className?: string;
   returnUrl?: string;
   customParams?: Record<string, string>;
+  beforeRedirect?: () => Promise<void> | void; // Callback to execute before redirecting
 }
 
 /**
@@ -29,6 +30,7 @@ export function PagueloFacilPaymentButton({
   className = '',
   returnUrl,
   customParams,
+  beforeRedirect,
 }: PagueloFacilPaymentButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +40,11 @@ export function PagueloFacilPaymentButton({
 
     startTransition(async () => {
       try {
+        // Execute beforeRedirect callback if provided (e.g., submit enrollment)
+        if (beforeRedirect) {
+          await beforeRedirect();
+        }
+
         // Call API to create payment link
         const response = await fetch('/api/payments/paguelofacil/link', {
           method: 'POST',
