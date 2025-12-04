@@ -319,12 +319,14 @@ export class YappyService {
       }
 
       // Create order payload according to Yappy manual
-      // Try paymentDate as string (some APIs expect epochTime as string)
-      const orderPayload = {
+      // Order matters for some APIs - following exact order from manual:
+      // merchantId, orderId, domain, paymentDate, ipnUrl, shipping, discount, taxes, subtotal, total
+      // Try paymentDate as number (epochTime) - some APIs expect it as number
+      const orderPayload: Record<string, string | number> = {
         merchantId: config.merchantId.trim(),
         orderId: request.orderId.substring(0, 15).trim(), // Max 15 characters
         domain: domainForOrder.trim(), // Domain without https:// (just domain name)
-        paymentDate: String(request.paymentDate), // epochTime from validation as string
+        paymentDate: Number(request.paymentDate), // epochTime from validation as number
         ipnUrl: ipnUrl.trim(), // URL for Instant Payment Notification (callback)
         shipping: shipping, // Format: "0.00"
         discount: discount, // Format: "0.00"
