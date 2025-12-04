@@ -71,10 +71,18 @@ export class YappyService {
         hasMerchantId: !!merchantId,
         hasSecretKey: !!secretKey,
         domainUrl,
+        merchantIdLength: merchantId.length,
+        secretKeyLength: secretKey.length,
+        domainUrlLength: domainUrl.length,
+        domainUrlPreview: domainUrl || 'EMPTY',
       });
 
       if (!merchantId || !secretKey) {
         throw new Error('Yappy credentials not configured. Please set YAPPY_MERCHANT_ID and YAPPY_SECRET_KEY environment variables.');
+      }
+
+      if (!domainUrl || domainUrl.trim().length === 0) {
+        throw new Error('Yappy domain URL not configured. Please set YAPPY_DOMAIN_URL or NEXT_PUBLIC_APP_URL environment variable.');
       }
 
       this.config = { merchantId, secretKey, domainUrl, environment };
@@ -116,16 +124,41 @@ export class YappyService {
       // According to Yappy manual, the endpoint is /payments/validate/merchant
       // It requires: merchantId and urlDomain (NOT domainUrl)
       // The domain must be without https:// (just the domain name)
+      // Note: Some implementations may also require secretKey in the body
+      const requestBody: Record<string, string> = {
+        merchantId: config.merchantId,
+        urlDomain: config.domainUrl, // Manual requires urlDomain (domain without https://)
+      };
+
+      // Validate that required fields are not empty
+      if (!requestBody.merchantId || requestBody.merchantId.trim().length === 0) {
+        throw new Error('Yappy merchantId is empty. Please check YAPPY_MERCHANT_ID environment variable.');
+      }
+
+      if (!requestBody.urlDomain || requestBody.urlDomain.trim().length === 0) {
+        throw new Error('Yappy urlDomain is empty. Please check YAPPY_DOMAIN_URL or NEXT_PUBLIC_APP_URL environment variable.');
+      }
+
+      console.log('[Yappy] Validate merchant request:', {
+        baseUrl,
+        endpoint: `${baseUrl}/payments/validate/merchant`,
+        requestBody: {
+          merchantId: requestBody.merchantId ? `${requestBody.merchantId.substring(0, 8)}...${requestBody.merchantId.substring(requestBody.merchantId.length - 4)}` : 'MISSING',
+          urlDomain: requestBody.urlDomain || 'MISSING',
+          merchantIdLength: requestBody.merchantId?.length || 0,
+          urlDomainLength: requestBody.urlDomain?.length || 0,
+          merchantIdEmpty: !requestBody.merchantId || requestBody.merchantId.trim().length === 0,
+          urlDomainEmpty: !requestBody.urlDomain || requestBody.urlDomain.trim().length === 0,
+        },
+      });
+
       const response = await fetch(`${baseUrl}/payments/validate/merchant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          merchantId: config.merchantId,
-          urlDomain: config.domainUrl, // Manual requires urlDomain (domain without https://)
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
