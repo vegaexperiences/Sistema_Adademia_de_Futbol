@@ -14,7 +14,18 @@ interface PaymentMethodsSettingsProps {
 }
 
 export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSettingsProps) {
-  const [methods, setMethods] = useState<PaymentMethods>(initialMethods);
+  // Ensure paguelofacil is included in initial methods, defaulting to true if not present
+  const defaultMethods: PaymentMethods = {
+    yappy: true,
+    transfer: true,
+    proof: false,
+    paguelofacil: true,
+  };
+  
+  const [methods, setMethods] = useState<PaymentMethods>({
+    ...defaultMethods,
+    ...initialMethods,
+  });
 
   const handleToggle = (key: keyof PaymentMethods) => {
     setMethods(prev => ({ ...prev, [key]: !prev[key] }));

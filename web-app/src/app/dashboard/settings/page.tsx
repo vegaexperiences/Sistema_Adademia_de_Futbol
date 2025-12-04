@@ -228,7 +228,7 @@ export default async function SettingsPage() {
                   ? (typeof settings.find(s => s.key === 'payment_methods')?.value === 'string' 
                       ? JSON.parse(settings.find(s => s.key === 'payment_methods')?.value) 
                       : settings.find(s => s.key === 'payment_methods')?.value)
-                  : { yappy: true, transfer: true, proof: false };
+                  : { yappy: true, transfer: true, proof: false, paguelofacil: true };
 
                 return <PaymentMethodsSettings initialMethods={methods} />;
               })()}
