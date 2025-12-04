@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const date = webhookData.date || '';
     const email = webhookData.email || '';
     const userName = webhookData.userName || webhookData.Usuario || '';
-    const type = webhookData.type || webhookData.Tipo || '';
+    const cardType = webhookData.type || webhookData.Tipo || ''; // VISA, MC, etc.
     const relatedTx = webhookData.relatedTx || '';
 
     console.log('[PagueloFacil Webhook] Extracted transaction data:', {
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       date,
       email,
       userName,
-      type,
+      cardType,
       relatedTx,
     });
 
