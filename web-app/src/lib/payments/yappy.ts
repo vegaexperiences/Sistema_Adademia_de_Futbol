@@ -124,10 +124,11 @@ export class YappyService {
       // According to Yappy manual, the endpoint is /payments/validate/merchant
       // It requires: merchantId and urlDomain (NOT domainUrl)
       // The domain must be without https:// (just the domain name)
-      // Note: Some implementations may also require secretKey in the body
+      // Note: Based on error YAPPY-004, we'll try including secretKey as well
       const requestBody: Record<string, string> = {
         merchantId: config.merchantId,
         urlDomain: config.domainUrl, // Manual requires urlDomain (domain without https://)
+        secretKey: config.secretKey, // May be required for validation
       };
 
       // Validate that required fields are not empty
