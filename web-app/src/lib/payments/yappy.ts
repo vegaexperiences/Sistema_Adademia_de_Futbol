@@ -195,7 +195,13 @@ export class YappyService {
         statusDescription: result.status?.description,
       });
 
-      if (response.ok && result.success && result.body) {
+      // Yappy returns success with status code '0000' and description 'Correct execution'
+      const isSuccess = response.ok && 
+                       (result.status?.code === '0000' || result.success) && 
+                       result.body?.token && 
+                       result.body?.epochTime;
+
+      if (isSuccess) {
         return {
           success: true,
           token: result.body.token,
