@@ -287,12 +287,44 @@ export class YappyService {
       // This is different from validate/merchant which requires https://
       const domainForOrder = config.domainUrl; // Use domain without https:// (as stored in config)
       
-      const orderPayload = {
-        merchantId: config.merchantId,
-        orderId: request.orderId.substring(0, 15), // Max 15 characters
-        domain: domainForOrder, // Domain without https:// (just domain name)
-        paymentDate: request.paymentDate, // epochTime from validation
-        ipnUrl: ipnUrl, // URL for Instant Payment Notification (callback)
+      // Validate that domain is not empty
+      if (!domainForOrder || domainForOrder.trim().length === 0) {
+        return {
+          success: false,
+          error: 'El dominio no puede estar vacío. Verifique YAPPY_DOMAIN_URL o NEXT_PUBLIC_APP_URL.',
+        };
+      }
+
+      // Validate that all required fields are present and not empty
+      if (!config.merchantId || config.merchantId.trim().length === 0) {
+        return {
+          success: false,
+          error: 'El merchantId no puede estar vacío.',
+        };
+      }
+
+      if (!request.orderId || request.orderId.trim().length === 0) {
+        return {
+          success: false,
+          error: 'El orderId no puede estar vacío.',
+        };
+      }
+
+      if (!ipnUrl || ipnUrl.trim().length === 0) {
+        return {
+          success: false,
+          error: 'El ipnUrl no puede estar vacío.',
+        };
+      }
+
+      // paymentDate might need to be a string instead of number
+      // Try as string first (some APIs expect epochTime as string)
+      const orderPayload: Record<string, string | number> = {
+        merchantId: config.merchantId.trim(),
+        orderId: request.orderId.substring(0, 15).trim(), // Max 15 characters
+        domain: domainForOrder.trim(), // Domain without https:// (just domain name)
+        paymentDate: String(request.paymentDate), // epochTime from validation as string
+        ipnUrl: ipnUrl.trim(), // URL for Instant Payment Notification (callback)
         shipping: shipping, // Format: "0.00"
         discount: discount, // Format: "0.00"
         taxes: taxes, // Format: "0.00"
@@ -302,19 +334,55 @@ export class YappyService {
         // We'll omit it and let the web component handle it
       };
 
-      console.log('[Yappy] Creating order with /payments/payment-wc:', {
-        merchantId: config.merchantId,
-        orderId: orderPayload.orderId,
-        domain: orderPayload.domain,
-        domainLength: orderPayload.domain?.length || 0,
-        domainHasHttps: orderPayload.domain?.startsWith('https://') || false,
-        paymentDate: orderPayload.paymentDate,
-        ipnUrl: orderPayload.ipnUrl,
-        total: orderPayload.total,
+      // Log each field individually to check for empty values
+      console.log('[Yappy] Creating order with /payments/payment-wc - Field validation:', {
+        merchantId: {
+          value: orderPayload.merchantId,
+          length: orderPayload.merchantId?.toString().length || 0,
+          isEmpty: !orderPayload.merchantId || orderPayload.merchantId.toString().trim().length === 0,
+        },
+        orderId: {
+          value: orderPayload.orderId,
+          length: orderPayload.orderId?.toString().length || 0,
+          isEmpty: !orderPayload.orderId || orderPayload.orderId.toString().trim().length === 0,
+        },
+        domain: {
+          value: orderPayload.domain,
+          length: orderPayload.domain?.toString().length || 0,
+          isEmpty: !orderPayload.domain || orderPayload.domain.toString().trim().length === 0,
+        },
+        paymentDate: {
+          value: orderPayload.paymentDate,
+          type: typeof orderPayload.paymentDate,
+          isEmpty: orderPayload.paymentDate === null || orderPayload.paymentDate === undefined,
+        },
+        ipnUrl: {
+          value: orderPayload.ipnUrl,
+          length: orderPayload.ipnUrl?.toString().length || 0,
+          isEmpty: !orderPayload.ipnUrl || orderPayload.ipnUrl.toString().trim().length === 0,
+        },
+        shipping: {
+          value: orderPayload.shipping,
+          isEmpty: !orderPayload.shipping || orderPayload.shipping.toString().trim().length === 0,
+        },
+        discount: {
+          value: orderPayload.discount,
+          isEmpty: !orderPayload.discount || orderPayload.discount.toString().trim().length === 0,
+        },
+        taxes: {
+          value: orderPayload.taxes,
+          isEmpty: !orderPayload.taxes || orderPayload.taxes.toString().trim().length === 0,
+        },
+        subtotal: {
+          value: orderPayload.subtotal,
+          isEmpty: !orderPayload.subtotal || orderPayload.subtotal.toString().trim().length === 0,
+        },
+        total: {
+          value: orderPayload.total,
+          isEmpty: !orderPayload.total || orderPayload.total.toString().trim().length === 0,
+        },
         hasToken: !!request.token,
         tokenPreview: request.token ? `${request.token.substring(0, 20)}...` : 'MISSING',
-        tokenLength: request.token?.length || 0,
-        authorizationHeader: request.token ? `${request.token.substring(0, 20)}...` : 'MISSING',
         requestBodyString: JSON.stringify(orderPayload),
       });
 
