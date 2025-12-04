@@ -4,59 +4,7 @@ import { createPayment } from '@/lib/actions/payments';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation';
-
-/**
- * Helper function to get base URL from request headers
- * Prioritizes Vercel headers to ensure correct production URL
- */
-function getBaseUrl(request: NextRequest): string {
-  // First, try environment variable
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    console.log('[getBaseUrl] Using NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
-    return process.env.NEXT_PUBLIC_APP_URL;
-  }
-  
-  // Try to construct from Vercel headers
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
-  const host = request.headers.get('host');
-  
-  if (forwardedHost) {
-    const url = `${forwardedProto}://${forwardedHost}`;
-    console.log('[getBaseUrl] Using x-forwarded-host:', url);
-    return url;
-  }
-  
-  if (host) {
-    // Determine protocol based on host or default to https for production
-    const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-    const url = `${protocol}://${host}`;
-    console.log('[getBaseUrl] Using host header:', url);
-    return url;
-  }
-  
-  // Try origin header
-  const origin = request.headers.get('origin');
-  if (origin) {
-    console.log('[getBaseUrl] Using origin header:', origin);
-    return origin;
-  }
-  
-  // Last resort: use request URL
-  try {
-    const url = new URL(request.url);
-    const baseUrl = `${url.protocol}//${url.host}`;
-    console.log('[getBaseUrl] Using request URL:', baseUrl);
-    return baseUrl;
-  } catch {
-    // Final fallback
-    const fallback = process.env.NODE_ENV === 'production' 
-      ? 'https://sistema-adademia-de-futbol-tura.vercel.app'
-      : 'http://localhost:3000';
-    console.log('[getBaseUrl] Using fallback:', fallback);
-    return fallback;
-  }
-}
+import { getBaseUrlFromRequest } from '@/lib/utils/get-base-url';
 
 /**
  * GET /api/payments/paguelofacil/callback
@@ -159,7 +107,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Build redirect URL with transaction result
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = getBaseUrlFromRequest(request);
     console.log('[PagueloFacil Callback] Base URL determined:', baseUrl);
 
     // If transaction was approved and we have payment details, create payment record
@@ -459,7 +407,7 @@ export async function GET(request: NextRequest) {
     });
     
     // Redirect to error page
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = getBaseUrlFromRequest(request);
     return NextResponse.redirect(`${baseUrl}/dashboard/finances?paguelofacil=error&message=${encodeURIComponent(error.message || 'Error desconocido')}`);
   }
 }
@@ -493,7 +441,7 @@ export async function POST(request: NextRequest) {
     return GET(newRequest);
   } catch (error: any) {
     console.error('[PagueloFacil Callback] Error processing POST callback:', error);
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = getBaseUrlFromRequest(request);
     return NextResponse.redirect(`${baseUrl}/dashboard/finances?paguelofacil=error`);
   }
 }

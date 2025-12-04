@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PagueloFacilService } from '@/lib/payments/paguelofacil';
+import { getBaseUrlFromRequest } from '@/lib/utils/get-base-url';
 
 /**
  * POST /api/payments/paguelofacil/link
@@ -25,9 +26,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build return URL if not provided
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                   (request.headers.get('origin') || 'http://localhost:3000');
+    // Build return URL if not provided (automatically detects local/production/ngrok)
+    const baseUrl = getBaseUrlFromRequest(request);
     const finalReturnUrl = returnUrl || `${baseUrl}/api/payments/paguelofacil/callback`;
 
     console.log('[PagueloFacil Link] Creating payment link with:', {
