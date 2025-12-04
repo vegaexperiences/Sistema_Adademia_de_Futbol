@@ -244,6 +244,23 @@ Según la documentación y el análisis del código, estos son todos los paráme
 - El ambiente se determina por la URL del endpoint y las credenciales (CCLW)
 - Si PagueloFacil indica que hay parámetros adicionales para sandbox, se pueden agregar fácilmente
 
+## Problema Conocido: Error 3DS en Sandbox
+
+### Error: "Issuer is rejecting authentication and requesting that authorization not be attempted"
+
+**Estado actual (04/12/2025):**
+- El flujo de 3DS se completa correctamente (se abre la ventana de 3DS y se ingresa la clave)
+- Sin embargo, la transacción sigue siendo rechazada por el emisor
+- Esto indica un problema de configuración del comercio sandbox, no del código
+
+**Tarjeta de prueba específica para 3DS (proporcionada por PagueloFacil):**
+- **Tarjeta:** `4012000000020006`
+- **Clave 3DS:** `3ds2`
+
+**Acción requerida:**
+- Contactar a PagueloFacil para verificar la configuración del comercio sandbox para transacciones con 3DS
+- Ver documentación completa en `PAGUELOFACIL_3DS_TROUBLESHOOTING.md`
+
 ## Endpoint Alternativo: /AUTH
 
 Según la documentación, existe un endpoint alternativo para pre-autorizar:

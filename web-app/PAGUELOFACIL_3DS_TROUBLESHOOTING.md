@@ -11,6 +11,14 @@
 - Credenciales: Verificadas y correctas ✅
 - Endpoint: `https://sandbox.paguelofacil.com/LinkDeamon.cfm`
 
+**Actualización (04/12/2025):**
+- PagueloFacil proporcionó una tarjeta de prueba específica para 3DS:
+  - **Tarjeta:** `4012000000020006`
+  - **Clave 3DS:** `3ds2`
+- El 3DS se completó correctamente (se abrió la ventana de 3DS y se ingresó la clave)
+- **PERO** el resultado sigue siendo el mismo: "Issuer is rejecting authentication and requesting that authorization not be attempted"
+- Esto indica que el problema NO es con el flujo de 3DS en sí, sino con la configuración del comercio o del ambiente sandbox
+
 ## Alternativas Investigadas
 
 ### 1. **Verificar Configuración del Comercio en PagueloFacil** ⭐ (MÁS PROBABLE)
@@ -47,7 +55,80 @@ Esta es la solución más directa, ya que el problema parece ser de configuraci�
 
 ---
 
-## Mensaje para PagueloFacil
+## Mensaje de Seguimiento para PagueloFacil
+
+### Asunto:
+**Seguimiento: Problema con autenticación 3DS en Sandbox - Error persiste incluso con tarjeta de prueba específica**
+
+### Cuerpo del mensaje:
+
+Estimado equipo de soporte de PagueloFacil,
+
+Les escribo como seguimiento a mi consulta anterior sobre el problema con la autenticación 3DS en el ambiente Sandbox.
+
+**Actualización del problema:**
+
+Seguí sus indicaciones y utilicé la tarjeta de prueba específica para 3DS que me proporcionaron:
+- **Tarjeta:** `4012000000020006`
+- **Clave 3DS:** `3ds2`
+
+**Resultado:**
+- ✅ El flujo de 3DS se completó correctamente (se abrió la ventana de 3DS y se ingresó la clave `3ds2`)
+- ❌ **PERO** el resultado sigue siendo el mismo: la transacción es denegada con el error:
+  ```
+  Estado: Denegada
+  Razon: "Issuer is rejecting authentication and requesting that authorization not be attempted"
+  TotalPagado: 0
+  ```
+
+**Análisis:**
+Esto indica que el problema **NO es con el flujo de 3DS en sí** (ya que se completó correctamente), sino que parece ser un problema de configuración del comercio sandbox o del ambiente de pruebas.
+
+**Información de la transacción más reciente:**
+- **Código de operación:** `LK-7H6JPZKI8BAM`
+- **Fecha y hora:** 04/12/2025 12:16:42
+- **Tipo de tarjeta:** VISA
+- **Monto:** $100.00 USD
+- **Tarjeta utilizada:** `4012000000020006` (la proporcionada por ustedes)
+- **3DS completado:** ✅ Sí (se ingresó la clave `3ds2`)
+
+**Logs del callback:**
+```
+Estado: Denegada
+Razon: "Issuer is rejecting authentication and requesting that authorization not be attempted"
+TotalPagado: 0
+Oper: LK-7H6JPZKI8BAM
+Tipo: VISA
+```
+
+**Preguntas específicas:**
+
+1. ¿El comercio sandbox tiene alguna configuración adicional que deba habilitarse para que las transacciones con 3DS funcionen correctamente?
+
+2. ¿Hay algún parámetro adicional que deba enviar en la solicitud a LinkDeamon cuando se usa una tarjeta que requiere 3DS?
+
+3. ¿El comercio sandbox está configurado para aceptar transacciones con 3DS, o necesita alguna activación especial?
+
+4. ¿Es posible que el problema sea que el comercio sandbox no está configurado para procesar 3DS correctamente, incluso cuando el flujo se completa?
+
+5. ¿Hay alguna configuración en el panel de PagueloFacil que deba verificar o ajustar?
+
+**Solicitud:**
+
+Por favor, podrían:
+1. Verificar la configuración del comercio sandbox para transacciones con 3DS
+2. Confirmar si hay pasos adicionales necesarios para habilitar 3DS en el ambiente sandbox
+3. Proporcionar orientación específica sobre cómo resolver este problema, ya que el flujo de 3DS se completa pero la transacción sigue siendo rechazada
+
+Agradezco de antemano su ayuda y quedo atento a su respuesta.
+
+Saludos cordiales,
+[Tu nombre]
+[Tu información de contacto]
+
+---
+
+## Mensaje Inicial para PagueloFacil (Referencia)
 
 ### Asunto:
 **Problema con autenticación 3DS en ambiente Sandbox - Error al procesar transacciones de prueba**
@@ -71,6 +152,7 @@ Estoy experimentando un problema con la autenticación 3DS en el ambiente **Sand
 5. **Tarjetas de prueba utilizadas:**
    - VISA: 4059310181757001, 4916012776136988, 4716040174085053, 4143766247546688, 4929019201087046
    - Mastercard: 5517747952039692, 5451819737278230, 5161216979741515, 5372362326060103, 5527316088871226
+   - **Tarjeta específica para 3DS (proporcionada por PagueloFacil):** `4012000000020006` con clave 3DS `3ds2`
    - Todas con fechas de vencimiento válidas y CVV de 3 dígitos
 
 6. **Error recibido:**
@@ -110,9 +192,10 @@ Estoy experimentando un problema con la autenticación 3DS en el ambiente **Sand
 
 **Información adicional:**
 
-- El código de operación generado es: `LK-L57RAUF0JT64` (ejemplo de una transacción fallida)
+- El código de operación más reciente: `LK-7H6JPZKI8BAM` (con tarjeta 4012000000020006 y 3DS completado)
 - El tipo de tarjeta usado fue: VISA
 - El monto de prueba fue: $100.00 USD
+- **Nota importante:** El 3DS se completó correctamente (se ingresó la clave `3ds2`), pero la transacción sigue siendo rechazada por el emisor
 
 **Solicitud:**
 
