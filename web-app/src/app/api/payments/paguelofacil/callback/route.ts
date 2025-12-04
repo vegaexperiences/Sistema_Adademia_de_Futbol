@@ -239,10 +239,7 @@ export async function GET(request: NextRequest) {
               notes: paymentNotes,
             };
             
-            // Only include month_year if it has a valid value (to avoid schema cache errors)
-            if (monthYear && monthYear.trim() !== '') {
-              paymentData.month_year = monthYear;
-            }
+            // Note: month_year column does not exist in payments table, so we don't include it
             
             console.log('[PagueloFacil Callback] Payment data to create (pending player):', paymentData);
             
@@ -269,10 +266,8 @@ export async function GET(request: NextRequest) {
               notes: paymentNotes,
             };
             
-            // Only include month_year if it has a valid value (to avoid schema cache errors)
-            if (monthYear && monthYear.trim() !== '') {
-              paymentData.month_year = monthYear;
-            }
+            // Note: month_year column does not exist in payments table, so we don't include it
+            // The createPayment function will also remove it if it's present
             
             console.log('[PagueloFacil Callback] Payment data to create (approved player):', paymentData);
             createdPayment = await createPayment(paymentData);
