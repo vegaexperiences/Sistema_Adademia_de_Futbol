@@ -118,6 +118,8 @@ export function YappyPaymentButton({
             token: validateData.token,
             paymentDate: validateData.epochTime,
             metadata: customParams,
+            playerId: playerId || undefined, // Pass playerId to get tutor phone
+            tutorPhone: customParams?.tutorPhone || undefined, // Pass tutorPhone directly for enrollment
           }),
         });
 

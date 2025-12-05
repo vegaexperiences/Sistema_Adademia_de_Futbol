@@ -87,7 +87,7 @@ export class PagueloFacilTokenizationService {
       };
 
       // Make request to tokenization endpoint
-      // Note: Endpoint URL may need verification with Paguelo Fácil documentation
+      // TODO: Verify the exact endpoint URL with Paguelo Fácil documentation
       const response = await fetch(`${baseUrl}/api/v3/tokens`, {
         method: 'POST',
         headers: {
@@ -193,7 +193,7 @@ export class PagueloFacilTokenizationService {
       }
 
       // Make request to payment processing endpoint
-      // Note: Endpoint URL may need verification with Paguelo Fácil documentation
+      // TODO: Verify the exact endpoint URL with Paguelo Fácil documentation
       const response = await fetch(`${baseUrl}/api/v3/transactions`, {
         method: 'POST',
         headers: {

@@ -161,11 +161,18 @@ export async function sendEmailImmediately(
       messageId = messageId.replace(/^<|>$/g, '').trim();
     }
     
-    console.log('[sendEmailImmediately] Brevo response:', {
+    console.log('[sendEmailImmediately] 📧 Brevo response:', {
       messageId,
+      messageIdLength: messageId?.length || 0,
+      messageIdCleaned: messageId,
       resultBody: result.body,
+      hasMessageId: !!messageId,
       fullResult: result,
     });
+    
+    if (!messageId) {
+      console.warn('[sendEmailImmediately] ⚠️ WARNING: No messageId received from Brevo. Tracking may not work correctly.');
+    }
     
     const sentAt = new Date().toISOString();
     
@@ -638,7 +645,18 @@ export async function processEmailQueue() {
         messageId = messageId.replace(/^<|>$/g, '').trim();
       }
       
-      console.log(`Email sent via Brevo - messageId: ${messageId}, email_queue id: ${email.id}`);
+      console.log(`[processEmailQueue] 📧 Email sent via Brevo:`, {
+        messageId,
+        messageIdLength: messageId?.length || 0,
+        messageIdCleaned: messageId,
+        emailQueueId: email.id,
+        toEmail: email.to_email,
+        hasMessageId: !!messageId,
+      });
+      
+      if (!messageId) {
+        console.warn(`[processEmailQueue] ⚠️ WARNING: No messageId received from Brevo for email_queue id: ${email.id}. Tracking may not work correctly.`);
+      }
       
       // Update with Brevo message ID and sent_at timestamp
       // Try brevo_email_id first, fallback to resend_email_id if column doesn't exist
@@ -661,7 +679,7 @@ export async function processEmailQueue() {
         if (updateError) {
           // If brevo_email_id column doesn't exist, try resend_email_id
           if (updateError.message?.includes('brevo_email_id') || updateError.code === '42703') {
-            console.log('brevo_email_id column not found, using resend_email_id as fallback');
+            console.log('[processEmailQueue] brevo_email_id column not found, using resend_email_id as fallback');
             const { error: fallbackError } = await supabase
               .from('email_queue')
               .update({
@@ -673,13 +691,23 @@ export async function processEmailQueue() {
             if (fallbackError) {
               console.error('Error updating email_queue with resend_email_id:', fallbackError);
             } else {
-              console.log(`Email queue updated successfully - resend_email_id: ${messageId}`);
+              console.log(`[processEmailQueue] ✅ Email queue updated successfully (resend_email_id):`, {
+                emailQueueId: email.id,
+                resend_email_id: messageId,
+                messageIdLength: messageId?.length || 0,
+                toEmail: email.to_email,
+              });
             }
           } else {
             console.error('Error updating email_queue:', updateError);
           }
         } else {
-          console.log(`Email queue updated successfully - brevo_email_id: ${messageId}`);
+          console.log(`[processEmailQueue] ✅ Email queue updated successfully (brevo_email_id):`, {
+            emailQueueId: email.id,
+            brevo_email_id: messageId,
+            messageIdLength: messageId?.length || 0,
+            toEmail: email.to_email,
+          });
         }
       } catch (err: any) {
         console.error('Unexpected error updating email_queue:', err);

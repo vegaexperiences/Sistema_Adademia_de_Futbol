@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
     if (webhookSecret) {
       const signature = request.headers.get('svix-signature');
-      // Signature verification can be implemented when needed
+      // TODO: Implement Svix signature verification for production
+      // For now, we'll trust the webhook since it's Resend
     }
 
     const supabase = await createClient();

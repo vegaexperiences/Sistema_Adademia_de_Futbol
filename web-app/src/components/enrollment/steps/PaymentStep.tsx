@@ -173,6 +173,7 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 playerCount: data.players.length.toString(),
                 tutorName: data.tutorName || '',
                 tutorEmail: data.tutorEmail || '',
+                tutorPhone: data.tutorPhone || '',
               }}
               onSuccess={async (transactionId: string) => {
                 // Mark payment as complete and submit enrollment

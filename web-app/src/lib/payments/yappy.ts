@@ -27,8 +27,35 @@ export interface YappyOrderRequest {
   metadata?: Record<string, any>;
   token?: string; // Token obtenido de la validación
   paymentDate?: number; // epochTime obtenido de la validación
-  aliasYappy?: string; // Número de teléfono del cliente (8 dígitos, opcional)
+  aliasYappy?: string; // Número de teléfono del cliente (8 dígitos, requerido según Yappy)
   ipnUrl?: string; // URL del callback (Instant Payment Notification)
+}
+
+/**
+ * Formatea un número de teléfono a 8 dígitos para Yappy
+ * Elimina prefijos, guiones, espacios y toma los últimos 8 dígitos
+ */
+function formatPhoneForYappy(phone: string | null | undefined): string {
+  if (!phone) {
+    return '00000000'; // Valor por defecto si no hay teléfono
+  }
+  
+  // Eliminar todos los caracteres no numéricos
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  // Si no hay dígitos, retornar valor por defecto
+  if (digitsOnly.length === 0) {
+    return '00000000';
+  }
+  
+  // Tomar los últimos 8 dígitos (Panamá tiene números de 8 dígitos)
+  // Si tiene más de 8, tomar los últimos 8 (eliminar prefijo de país)
+  // Si tiene menos de 8, rellenar con ceros a la izquierda
+  if (digitsOnly.length >= 8) {
+    return digitsOnly.slice(-8);
+  } else {
+    return digitsOnly.padStart(8, '0');
+  }
 }
 
 export interface YappyOrderResponse {
@@ -320,23 +347,31 @@ export class YappyService {
         };
       }
 
-      // Create order payload according to Yappy manual
-      // Order matters for some APIs - following exact order from manual:
-      // merchantId, orderId, domain, paymentDate, ipnUrl, shipping, discount, taxes, subtotal, total
+      // Format aliasYappy - required by Yappy according to their support
+      const aliasYappy = request.aliasYappy ? formatPhoneForYappy(request.aliasYappy) : '00000000';
+      
+      console.log('[Yappy] Formatting aliasYappy:', {
+        original: request.aliasYappy,
+        formatted: aliasYappy,
+        length: aliasYappy.length,
+      });
+
+      // Create order payload according to Yappy Postman collection (official reference)
+      // Order matters for some APIs - following exact order from Postman collection:
+      // merchantId, orderId, domain, paymentDate, aliasYappy, ipnUrl, shipping, discount, taxes, subtotal, total
       // Try paymentDate as number (epochTime) - some APIs expect it as number
       const orderPayload: Record<string, string | number> = {
         merchantId: config.merchantId.trim(),
         orderId: request.orderId.substring(0, 15).trim(), // Max 15 characters
         domain: domainForOrder.trim(), // Domain with https:// (same format as urlDomain in validate/merchant)
         paymentDate: Number(request.paymentDate), // epochTime from validation as number
+        aliasYappy: aliasYappy, // Número de teléfono formateado a 8 dígitos (requerido por Yappy) - debe ir después de paymentDate
         ipnUrl: ipnUrl.trim(), // URL for Instant Payment Notification (callback)
         shipping: shipping, // Format: "0.00"
         discount: discount, // Format: "0.00"
         taxes: taxes, // Format: "0.00"
         subtotal: subtotal, // Format: "0.00"
         total: total, // Format: "0.00"
-        // aliasYappy is optional - number of phone (8 digits, no dashes, no prefixes)
-        // We'll omit it and let the web component handle it
       };
 
       // Log each field individually to check for empty values
@@ -385,6 +420,12 @@ export class YappyService {
         total: {
           value: orderPayload.total,
           isEmpty: !orderPayload.total || orderPayload.total.toString().trim().length === 0,
+        },
+        aliasYappy: {
+          value: orderPayload.aliasYappy,
+          length: orderPayload.aliasYappy?.toString().length || 0,
+          isEmpty: !orderPayload.aliasYappy || orderPayload.aliasYappy.toString().trim().length === 0,
+          original: request.aliasYappy,
         },
         hasToken: !!request.token,
         tokenPreview: request.token ? `${request.token.substring(0, 20)}...` : 'MISSING',
@@ -566,7 +607,8 @@ export class YappyService {
       
       const hashString = `${orderId}${status}${domain}${confirmationNumber}`;
       
-      // Hash validation - algorithm needs to be confirmed with Yappy documentation
+      // For now, we'll use a simple validation
+      // TODO: Implement proper HMAC-SHA256 validation once we confirm the exact algorithm with Yappy
       console.log('[Yappy] Hash validation:', {
         orderId,
         status,
@@ -577,7 +619,9 @@ export class YappyService {
         note: 'Hash validation algorithm needs to be confirmed with Yappy documentation',
       });
 
-      // Return true if hash is present (proper validation can be implemented when algorithm is confirmed)
+      // For security, we should validate the hash properly
+      // But for now, we'll log it and return true if hash is present
+      // This should be updated once we have the exact hash algorithm from Yappy
       return !!receivedHash;
     } catch (error: any) {
       console.error('[Yappy] Error validating hash:', error);
