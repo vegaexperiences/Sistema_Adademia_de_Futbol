@@ -9,6 +9,7 @@ import PlayerManagement from '@/components/payments/PlayerManagement';
 import { PlayerEmailHistory } from '@/components/emails/PlayerEmailHistory';
 import { getPlayerCategory, getCategoryColor, calculateAge } from '@/lib/utils/player-category';
 import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
+import { EditPlayerModal } from '@/components/players/EditPlayerModal';
 
 export default async function PlayerProfilePage({ 
   params 
@@ -97,15 +98,18 @@ export default async function PlayerProfilePage({
               </div>
             </div>
           </div>
-          <span className={`px-4 py-2 rounded-full text-sm font-bold ${
-            player.status === 'Active' 
-              ? 'badge-gradient-active'
-              : player.status === 'Scholarship'
-              ? 'badge-gradient-scholarship'
-              : 'badge-gradient-pending'
-          }`}>
-            {player.status === 'Active' ? '✅ Activo' : player.status === 'Scholarship' ? '🎓 Becado' : '⏳ Pendiente'}
-          </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <EditPlayerModal player={player} />
+            <span className={`px-4 py-2 rounded-full text-sm font-bold ${
+              player.status === 'Active' 
+                ? 'badge-gradient-active'
+                : player.status === 'Scholarship'
+                ? 'badge-gradient-scholarship'
+                : 'badge-gradient-pending'
+            }`}>
+              {player.status === 'Active' ? '✅ Activo' : player.status === 'Scholarship' ? '🎓 Becado' : '⏳ Pendiente'}
+            </span>
+          </div>
         </div>
       </div>
 

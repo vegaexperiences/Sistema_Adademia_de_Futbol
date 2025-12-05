@@ -6,6 +6,7 @@ import { getPlayersPayments } from '@/lib/actions/payments';
 import { getPlayerCategory } from '@/lib/utils/player-category';
 import { AddSecondaryEmailButton } from '@/components/tutors/AddSecondaryEmailButton';
 import { PaymentSection } from './PaymentSection';
+import { EditFamilyModal } from '@/components/families/EditFamilyModal';
 
 export default async function FamilyProfilePage({ 
   params 
@@ -153,10 +154,13 @@ export default async function FamilyProfilePage({
             <User className="h-6 w-6" />
             Información del Tutor
           </h2>
-          <AddSecondaryEmailButton 
-            familyId={family.id} 
-            currentSecondaryEmail={familyWithSecondaryEmail.secondary_email}
-          />
+          <div className="flex items-center gap-3">
+            <EditFamilyModal family={familyWithSecondaryEmail} />
+            <AddSecondaryEmailButton 
+              familyId={family.id} 
+              currentSecondaryEmail={familyWithSecondaryEmail.secondary_email}
+            />
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border-l-4 border-amber-500">

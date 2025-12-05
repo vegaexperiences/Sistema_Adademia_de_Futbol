@@ -93,3 +93,35 @@ export async function retirePlayer(playerId: string, reason?: string) {
   
   return { success: true, message: `Jugador ${player.first_name} ${player.last_name} retirado exitosamente` };
 }
+
+// Update player data (all fields)
+export async function updatePlayer(playerId: string, data: {
+  first_name?: string;
+  last_name?: string;
+  birth_date?: string;
+  gender?: string;
+  cedula?: string;
+  category?: string;
+  tutor_name?: string;
+  tutor_email?: string;
+  tutor_phone?: string;
+  tutor_cedula?: string;
+  notes?: string;
+}) {
+  const supabase = await createClient();
+  
+  const { error } = await supabase
+    .from('players')
+    .update(data)
+    .eq('id', playerId);
+  
+  if (error) {
+    console.error('Error updating player:', error);
+    return { error: `Error al actualizar jugador: ${error.message}` };
+  }
+  
+  revalidatePath('/dashboard/players');
+  revalidatePath(`/dashboard/players/${playerId}`);
+  
+  return { success: true };
+}

@@ -44,3 +44,30 @@ export async function createFamily(formData: FormData) {
   revalidatePath('/dashboard/families');
   return { success: true };
 }
+
+// Update family data (all fields)
+export async function updateFamily(familyId: string, data: {
+  tutor_name?: string;
+  tutor_email?: string;
+  tutor_phone?: string;
+  tutor_cedula?: string;
+  tutor_cedula_url?: string;
+  secondary_email?: string | null;
+}) {
+  const supabase = await createClient();
+  
+  const { error } = await supabase
+    .from('families')
+    .update(data)
+    .eq('id', familyId);
+  
+  if (error) {
+    console.error('Error updating family:', error);
+    return { error: `Error al actualizar familia: ${error.message}` };
+  }
+  
+  revalidatePath('/dashboard/families');
+  revalidatePath(`/dashboard/families/${familyId}`);
+  
+  return { success: true };
+}

@@ -6,6 +6,7 @@ import { getPlayersPayments } from '@/lib/actions/payments';
 import PaymentHistory from '@/components/payments/PaymentHistory';
 import { AddSecondaryEmailButton } from '@/components/tutors/AddSecondaryEmailButton';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
+import { EditTutorModal } from '@/components/tutors/EditTutorModal';
 
 export default async function TutorProfilePage({ 
   params 
@@ -189,12 +190,26 @@ export default async function TutorProfilePage({
             <User className="h-6 w-6" />
             Información de Contacto
           </h2>
-          {tutorInfo.type === 'Family' && tutorInfo.id && (
-            <AddSecondaryEmailButton 
-              familyId={tutorInfo.id} 
-              currentSecondaryEmail={tutorInfo.secondary_email}
+          <div className="flex items-center gap-3">
+            <EditTutorModal 
+              tutor={{
+                id: tutorInfo.type === 'Family' ? tutorInfo.id : undefined,
+                name: tutorInfo.name || '',
+                email: tutorInfo.email,
+                phone: tutorInfo.phone,
+                cedula: tutorInfo.cedula,
+                secondary_email: tutorInfo.secondary_email,
+                type: tutorInfo.type,
+                playerIds: tutorInfo.type === 'Individual' ? tutorPlayers.map(p => p.id) : undefined,
+              }}
             />
-          )}
+            {tutorInfo.type === 'Family' && tutorInfo.id && (
+              <AddSecondaryEmailButton 
+                familyId={tutorInfo.id} 
+                currentSecondaryEmail={tutorInfo.secondary_email}
+              />
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
