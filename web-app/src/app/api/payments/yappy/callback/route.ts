@@ -371,17 +371,48 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // First, try to retrieve order information from database
+    // This is the most reliable source since Yappy truncates orderId and doesn't send amount
+    let storedOrderInfo: any = null;
+    try {
+      const supabase = await createClient();
+      const { data: orderData, error: orderError } = await supabase
+        .from('yappy_orders')
+        .select('*')
+        .eq('order_id', orderId)
+        .single();
+
+      if (!orderError && orderData) {
+        storedOrderInfo = orderData;
+        console.log('[Yappy Callback] Order info retrieved from database:', {
+          orderId,
+          playerId: orderData.player_id,
+          amount: orderData.amount,
+          type: orderData.type,
+          paymentType: orderData.payment_type,
+        });
+      } else {
+        console.log('[Yappy Callback] Order info not found in database:', {
+          orderId,
+          error: orderError?.message,
+        });
+      }
+    } catch (dbError: any) {
+      console.error('[Yappy Callback] Error retrieving order info from database:', dbError);
+    }
+
     // Extract custom parameters - try multiple sources
-    // 1. First, try to get from query params directly (Yappy may send them)
-    let type = searchParams.get('type') || '';
-    let playerId = searchParams.get('playerId') || '';
-    let paymentType = searchParams.get('paymentType') || '';
-    let amount = searchParams.get('amount') || '';
-    let monthYear = searchParams.get('monthYear') || '';
-    let notes = searchParams.get('notes') || '';
+    // Priority: 1) Stored order info, 2) Query params, 3) returnUrl, 4) orderId pattern
+    let type = storedOrderInfo?.type || searchParams.get('type') || '';
+    let playerId = storedOrderInfo?.player_id || searchParams.get('playerId') || '';
+    let paymentType = storedOrderInfo?.payment_type || searchParams.get('paymentType') || '';
+    let amount = storedOrderInfo?.amount?.toString() || searchParams.get('amount') || '';
+    let monthYear = storedOrderInfo?.month_year || searchParams.get('monthYear') || '';
+    let notes = storedOrderInfo?.notes || searchParams.get('notes') || '';
     const returnUrl = searchParams.get('returnUrl') || '';
 
     console.log('[Yappy Callback] Initial params from query:', {
+      hasStoredInfo: !!storedOrderInfo,
       type,
       playerId,
       paymentType,
@@ -392,20 +423,21 @@ export async function GET(request: NextRequest) {
     });
 
     // 2. Try to extract from orderId pattern "payment-{playerId}" or "enrollment-{playerId}"
-    if (orderId) {
+    // Only do this if we don't have stored info (fallback)
+    if (orderId && !storedOrderInfo) {
       if (orderId.startsWith('payment-')) {
         const orderIdMatch = orderId.match(/^payment-([^-]+)/);
         if (orderIdMatch && !playerId) {
           playerId = orderIdMatch[1];
           if (!type) type = 'payment';
-          console.log('[Yappy Callback] Extracted from orderId pattern (payment):', { playerId, type });
+          console.log('[Yappy Callback] Extracted from orderId pattern (payment) - fallback:', { playerId, type });
         }
       } else if (orderId.startsWith('enrollment-')) {
         const orderIdMatch = orderId.match(/^enrollment-([^-]+)/);
         if (orderIdMatch && !playerId) {
           playerId = orderIdMatch[1];
           if (!type) type = 'enrollment';
-          console.log('[Yappy Callback] Extracted from orderId pattern (enrollment):', { playerId, type });
+          console.log('[Yappy Callback] Extracted from orderId pattern (enrollment) - fallback:', { playerId, type });
         }
       }
     }

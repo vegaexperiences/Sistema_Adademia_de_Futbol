@@ -128,11 +128,14 @@ export async function POST(request: NextRequest) {
                    (request.headers.get('origin') || 'http://localhost:3000');
     const finalIpnUrl = ipnUrl || `${baseUrl}/api/payments/yappy/callback`;
 
+    // Truncate orderId to 15 characters (Yappy limit)
+    const truncatedOrderId = orderId.trim().substring(0, 15);
+
     // Create order using the new flow
     const result = await YappyService.createOrder({
       amount: parseFloat(amount),
       description: description.trim(),
-      orderId: orderId.trim().substring(0, 15), // Max 15 characters
+      orderId: truncatedOrderId, // Max 15 characters
       returnUrl,
       metadata,
       token, // Token from validation
@@ -154,6 +157,47 @@ export async function POST(request: NextRequest) {
         },
         { status: statusCode }
       );
+    }
+
+    // Store order information in database for callback retrieval
+    // This is needed because Yappy truncates orderId and doesn't send amount in callback
+    try {
+      const supabase = await createClient();
+      
+      // Extract type from metadata or determine from context
+      const orderType = metadata?.type || (playerId ? 'payment' : 'enrollment');
+      const paymentType = metadata?.paymentType || 'custom';
+      
+      const { error: storeError } = await supabase
+        .from('yappy_orders')
+        .upsert({
+          order_id: truncatedOrderId,
+          player_id: playerId || null,
+          amount: parseFloat(amount),
+          payment_type: paymentType,
+          type: orderType,
+          month_year: metadata?.monthYear || null,
+          notes: metadata?.notes || null,
+          description: description.trim(),
+        }, {
+          onConflict: 'order_id',
+        });
+
+      if (storeError) {
+        console.error('[Yappy Order] Error storing order info:', storeError);
+        // Don't fail the order creation if storage fails, but log it
+      } else {
+        console.log('[Yappy Order] Order info stored successfully:', {
+          orderId: truncatedOrderId,
+          playerId: playerId || 'null',
+          amount: parseFloat(amount),
+          type: orderType,
+          paymentType,
+        });
+      }
+    } catch (storeError: any) {
+      console.error('[Yappy Order] Exception storing order info:', storeError);
+      // Don't fail the order creation if storage fails
     }
 
     return NextResponse.json({
