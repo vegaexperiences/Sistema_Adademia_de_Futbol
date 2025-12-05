@@ -138,7 +138,7 @@ export function YappyPaymentButton({
 
         setOrderToken(orderData.orderData.token || '');
         setDocumentName(orderData.orderData.documentName || '');
-        setIsLoading(false);
+        // Don't set isLoading to false here - let the script loading handle it
       } catch (err: any) {
         console.error('[Yappy] Error initializing:', err);
         setError(err.message || 'Error al inicializar Yappy');
@@ -159,7 +159,7 @@ export function YappyPaymentButton({
         // Check if script is already loaded
         if (document.querySelector('script[src*="btn-yappy"]')) {
           scriptLoaded.current = true;
-          setIsLoading(false);
+          // Don't set isLoading to false here - wait for button to render
           return;
         }
 
@@ -175,7 +175,8 @@ export function YappyPaymentButton({
             script.async = true;
             script.onload = () => {
               scriptLoaded.current = true;
-              setIsLoading(false);
+              // Don't set isLoading to false here - wait for button to render
+              console.log('[Yappy] Script loaded, waiting for button render...');
             };
             script.onerror = () => {
               setError('Error al cargar el componente de Yappy');
@@ -194,7 +195,8 @@ export function YappyPaymentButton({
             script.async = true;
             script.onload = () => {
               scriptLoaded.current = true;
-              setIsLoading(false);
+              // Don't set isLoading to false here - wait for button to render
+              console.log('[Yappy] Script loaded (fallback), waiting for button render...');
             };
             script.onerror = () => {
               setError('Error al cargar el componente de Yappy');
@@ -366,6 +368,10 @@ export function YappyPaymentButton({
 
           if (containerRef.current) {
             containerRef.current.appendChild(yappyButton);
+            
+            // Set loading to false only after button is rendered
+            setIsLoading(false);
+            console.log('[Yappy] Button element added to DOM');
             
             // Check after a delay if the button shows an error
             setTimeout(() => {
