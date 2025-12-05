@@ -437,12 +437,12 @@ export function YappyPaymentButton({
             }
           }, 3000); // Increased delay to give Yappy more time to validate
         }
-        } catch (err: any) {
-          console.error('[Yappy] Error rendering button:', err);
-          setError('Error al renderizar el botón de Yappy');
-          onError?.('Error al renderizar el botón de Yappy');
-        }
-      };
+      } catch (err: any) {
+        console.error('[Yappy] Error rendering button:', err);
+        setError('Error al renderizar el botón de Yappy');
+        onError?.('Error al renderizar el botón de Yappy');
+      }
+    };
 
       // Wait a bit for the module to fully load
       setTimeout(renderButton, 200);
