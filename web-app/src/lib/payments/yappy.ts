@@ -69,6 +69,8 @@ export interface YappyOrderResponse {
   };
   error?: string;
   message?: string;
+  statusCode?: string; // Yappy error code (e.g., 'E005')
+  isClientError?: boolean; // true if error is client-side (400), false if server-side (500)
 }
 
 export interface YappyCallbackParams {
@@ -493,14 +495,29 @@ export class YappyService {
         };
       } else {
         const errorMsg = result.status?.description || result.message || result.error || 'Error al crear orden de pago';
+        const yappyErrorCode = result.status?.code;
+        
+        // Determine if this is a client error (400) or server error (500)
+        // E005 = número no registrado en Yappy (client error)
+        // E004 = aliasYappy no enviado (client error)
+        // Other E0xx codes are typically client errors
+        // 5xx codes from Yappy would be server errors
+        const isClientError = yappyErrorCode?.startsWith('E0') || 
+                             (response.status >= 400 && response.status < 500);
+        
         console.error('[Yappy] Error creating order:', {
-          statusCode: result.status?.code,
+          statusCode: yappyErrorCode,
           description: errorMsg,
+          isClientError,
+          httpStatus: response.status,
           fullResponse: result,
         });
+        
         return {
           success: false,
           error: errorMsg,
+          statusCode: yappyErrorCode,
+          isClientError,
         };
       }
     } catch (error: any) {

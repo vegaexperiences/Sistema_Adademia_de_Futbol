@@ -142,9 +142,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
+      // Use appropriate status code based on error type
+      // Client errors (400) for validation issues like E005 (número no registrado)
+      // Server errors (500) for unexpected issues
+      const statusCode = result.isClientError ? 400 : 500;
+      
       return NextResponse.json(
-        { error: result.error || 'Error al crear orden de pago' },
-        { status: 500 }
+        { 
+          error: result.error || 'Error al crear orden de pago',
+          yappyErrorCode: result.statusCode,
+        },
+        { status: statusCode }
       );
     }
 
