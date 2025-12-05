@@ -109,19 +109,26 @@ export async function getApprovedEnrollmentPayment(playerId: string) {
   const supabase = await createClient();
   
   try {
-    // Buscar pagos de enrollment aprobados con método paguelofacil o yappy
+    // Buscar pagos de enrollment aprobados
+    // Primero obtener todos los pagos de enrollment aprobados y filtrar por método en JavaScript
+    // Esto evita problemas con el nombre del campo (method vs payment_method)
     const { data: payments, error } = await supabase
       .from('payments')
       .select('*')
       .eq('type', 'enrollment')
       .eq('status', 'Approved')
-      .in('method', ['paguelofacil', 'yappy'])
       .order('payment_date', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(50); // Aumentar límite para asegurar que encontramos los pagos
     
     if (error) {
-      console.error('[getApprovedEnrollmentPayment] Error fetching payments:', error);
+      console.error('[getApprovedEnrollmentPayment] Error fetching payments:', {
+        error,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
       return null;
     }
     
@@ -129,9 +136,19 @@ export async function getApprovedEnrollmentPayment(playerId: string) {
       return null;
     }
     
-    // Filtrar en JavaScript para encontrar pagos que tienen este playerId en las notas
+    // Filtrar en JavaScript para encontrar pagos con método paguelofacil o yappy
+    // y que tengan este playerId en las notas
     const playerIdLower = playerId.toLowerCase();
     const matchingPayment = payments.find((payment: any) => {
+      // Verificar método de pago (soporta ambos nombres de campo)
+      const paymentMethod = (payment.method || payment.payment_method || '').toLowerCase();
+      const isPagueloFacilOrYappy = paymentMethod === 'paguelofacil' || paymentMethod === 'yappy';
+      
+      if (!isPagueloFacilOrYappy) {
+        return false;
+      }
+      
+      // Verificar que tenga notas y contenga el playerId
       if (!payment.notes) return false;
       const notes = payment.notes.toLowerCase();
       
@@ -156,8 +173,12 @@ export async function getApprovedEnrollmentPayment(playerId: string) {
     }
     
     return matchingPayment || null;
-  } catch (error) {
-    console.error('[getApprovedEnrollmentPayment] Error:', error);
+  } catch (error: any) {
+    console.error('[getApprovedEnrollmentPayment] Error:', {
+      error,
+      message: error?.message,
+      stack: error?.stack
+    });
     return null;
   }
 }
