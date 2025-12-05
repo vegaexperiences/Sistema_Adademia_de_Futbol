@@ -594,7 +594,26 @@ export class YappyService {
   static isTransactionApproved(params: YappyCallbackParams): boolean {
     const status = params.status || '';
     // According to manual: E=Ejecutado, R=Rechazado, C=Cancelado, X=Expirado
-    return status === 'E' || status === 'Ejecutado' || status === 'approved' || status === 'completed' || status === 'success';
+    // Also check for case-insensitive and common variations
+    const statusUpper = status.toUpperCase().trim();
+    const isApproved = statusUpper === 'E' || 
+                      statusUpper === 'EJECUTADO' || 
+                      statusUpper === 'APPROVED' || 
+                      statusUpper === 'COMPLETED' || 
+                      statusUpper === 'SUCCESS' ||
+                      status === 'Ejecutado';
+    
+    // Log for debugging
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Yappy] isTransactionApproved check:', {
+        originalStatus: status,
+        statusUpper,
+        isApproved,
+        statusCharCode: status.charCodeAt(0),
+      });
+    }
+    
+    return isApproved;
   }
 
   /**

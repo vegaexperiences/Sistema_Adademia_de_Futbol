@@ -310,21 +310,29 @@ export async function GET(request: NextRequest) {
     
     console.log('[Yappy Callback] ========== GET CALLBACK CALLED ==========');
     console.log('[Yappy Callback] Request URL:', request.url);
-    console.log('[Yappy Callback] Query params:', Object.fromEntries(searchParams.entries()));
+    console.log('[Yappy Callback] Request headers:', {
+      origin: request.headers.get('origin'),
+      referer: request.headers.get('referer'),
+      userAgent: request.headers.get('user-agent')?.substring(0, 100),
+    });
+    console.log('[Yappy Callback] All query params:', Object.fromEntries(searchParams.entries()));
 
     // Extract parameters according to Yappy manual
-    const orderId = searchParams.get('orderId') || '';
+    const orderId = searchParams.get('orderId') || searchParams.get('orderid') || '';
     const hash = searchParams.get('hash') || searchParams.get('Hash') || '';
     const status = searchParams.get('status') || searchParams.get('Status') || '';
     const domain = searchParams.get('domain') || searchParams.get('Domain') || '';
-    const confirmationNumber = searchParams.get('confirmationNumber') || searchParams.get('ConfirmationNumber') || '';
+    const confirmationNumber = searchParams.get('confirmationNumber') || searchParams.get('ConfirmationNumber') || searchParams.get('confirmationnumber') || '';
 
-    console.log('[Yappy Callback] Extracted params:', {
+    console.log('[Yappy Callback] Extracted Yappy params:', {
       orderId,
       hash: hash ? `${hash.substring(0, 10)}...` : 'N/A',
+      hashLength: hash ? hash.length : 0,
       status,
+      statusCode: status ? status.charCodeAt(0) : 'N/A', // Log ASCII code to see if it's 'E', 'X', etc.
       domain,
       confirmationNumber,
+      hasAllRequiredParams: !!(orderId && status && confirmationNumber),
     });
 
     // Validate hash (according to Yappy manual)
@@ -348,28 +356,62 @@ export async function GET(request: NextRequest) {
 
     // Verify transaction status
     const isApproved = YappyService.isTransactionApproved(callbackParams);
-    console.log('[Yappy Callback] Transaction approved?', isApproved, 'Status:', status);
+    console.log('[Yappy Callback] Transaction status check:', {
+      status,
+      statusCode: status.charCodeAt(0),
+      isApproved,
+      statusMeaning: status === 'E' ? 'Ejecutado (Approved)' : 
+                     status === 'R' ? 'Rechazado (Rejected)' :
+                     status === 'C' ? 'Cancelado (Cancelled)' :
+                     status === 'X' ? 'Expirado (Expired)' : 'Unknown',
+      callbackParams: {
+        orderId: callbackParams.orderId,
+        status: callbackParams.status,
+        transactionId: callbackParams.transactionId,
+      },
+    });
 
-    // Try to extract custom parameters from orderId pattern or return URL
-    const returnUrl = searchParams.get('returnUrl') || '';
-    let type = '';
-    let playerId = '';
-    let paymentType = '';
+    // Extract custom parameters - try multiple sources
+    // 1. First, try to get from query params directly (Yappy may send them)
+    let type = searchParams.get('type') || '';
+    let playerId = searchParams.get('playerId') || '';
+    let paymentType = searchParams.get('paymentType') || '';
     let amount = searchParams.get('amount') || '';
     let monthYear = searchParams.get('monthYear') || '';
     let notes = searchParams.get('notes') || '';
+    const returnUrl = searchParams.get('returnUrl') || '';
 
-    // Try to extract from orderId pattern "payment-{playerId}-{timestamp}"
-    if (orderId && orderId.startsWith('payment-')) {
-      const orderIdMatch = orderId.match(/^payment-([^-]+)-/);
-      if (orderIdMatch) {
-        playerId = orderIdMatch[1];
-        type = 'payment';
+    console.log('[Yappy Callback] Initial params from query:', {
+      type,
+      playerId,
+      paymentType,
+      amount,
+      monthYear,
+      notes,
+      returnUrl: returnUrl ? 'present' : 'not present',
+    });
+
+    // 2. Try to extract from orderId pattern "payment-{playerId}" or "enrollment-{playerId}"
+    if (orderId) {
+      if (orderId.startsWith('payment-')) {
+        const orderIdMatch = orderId.match(/^payment-([^-]+)/);
+        if (orderIdMatch && !playerId) {
+          playerId = orderIdMatch[1];
+          if (!type) type = 'payment';
+          console.log('[Yappy Callback] Extracted from orderId pattern (payment):', { playerId, type });
+        }
+      } else if (orderId.startsWith('enrollment-')) {
+        const orderIdMatch = orderId.match(/^enrollment-([^-]+)/);
+        if (orderIdMatch && !playerId) {
+          playerId = orderIdMatch[1];
+          if (!type) type = 'enrollment';
+          console.log('[Yappy Callback] Extracted from orderId pattern (enrollment):', { playerId, type });
+        }
       }
     }
 
-    // Try to extract from returnUrl query params
-    if (returnUrl) {
+    // 3. Try to extract from returnUrl query params if available
+    if (returnUrl && (!type || !playerId || !amount)) {
       try {
         const returnUrlObj = new URL(returnUrl);
         type = returnUrlObj.searchParams.get('type') || type;
@@ -378,10 +420,26 @@ export async function GET(request: NextRequest) {
         amount = returnUrlObj.searchParams.get('amount') || amount;
         monthYear = returnUrlObj.searchParams.get('monthYear') || monthYear;
         notes = returnUrlObj.searchParams.get('notes') || notes;
+        console.log('[Yappy Callback] Extracted from returnUrl:', {
+          type,
+          playerId,
+          paymentType,
+          amount,
+          monthYear,
+        });
       } catch (e) {
         console.warn('[Yappy Callback] Error parsing returnUrl:', e);
       }
     }
+
+    console.log('[Yappy Callback] Final extracted params:', {
+      type,
+      playerId,
+      paymentType,
+      amount,
+      monthYear,
+      notes,
+    });
 
     // Build redirect URL - extract from request URL if available, otherwise use env var
     let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -403,7 +461,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Process payment creation if approved (same logic as POST)
-    if (isApproved && type === 'payment' && playerId && amount) {
+    // Handle both 'payment' and 'enrollment' types
+    const shouldCreatePayment = isApproved && (type === 'payment' || type === 'enrollment') && playerId && amount;
+    
+    console.log('[Yappy Callback] Payment creation check:', {
+      isApproved,
+      type,
+      isPaymentType: type === 'payment',
+      isEnrollmentType: type === 'enrollment',
+      hasPlayerId: !!playerId,
+      hasAmount: !!amount,
+      shouldCreatePayment,
+    });
+
+    if (shouldCreatePayment) {
       try {
         console.log('[Yappy Callback] Attempting to create payment record from GET callback...');
         const supabase = await createClient();
