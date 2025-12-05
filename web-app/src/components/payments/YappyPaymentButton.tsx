@@ -254,187 +254,189 @@ export function YappyPaymentButton({
 
         console.log('[Yappy] Custom element found, proceeding to render button');
 
-          // Clear container first
-          if (!containerRef.current) return;
-          containerRef.current.innerHTML = '';
+        console.log('[Yappy] Custom element found, proceeding to render button');
 
-          // Build return URL with custom parameters
-          const baseReturnUrl = returnUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback`;
-          const returnUrlWithParams = new URL(baseReturnUrl);
-          returnUrlWithParams.searchParams.set('type', customParams?.type || (playerId ? 'payment' : 'enrollment'));
-          if (playerId) returnUrlWithParams.searchParams.set('playerId', playerId);
-          if (paymentType) returnUrlWithParams.searchParams.set('paymentType', paymentType);
-          returnUrlWithParams.searchParams.set('amount', amount.toString());
-          if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
-          if (notes) returnUrlWithParams.searchParams.set('notes', notes);
+        // Clear container first
+        if (!containerRef.current) return;
+        containerRef.current.innerHTML = '';
 
-          console.log('[Yappy] Current domain:', window.location.hostname);
-          console.log('[Yappy] Return URL:', returnUrlWithParams.toString());
+        // Build return URL with custom parameters
+        const baseReturnUrl = returnUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback`;
+        const returnUrlWithParams = new URL(baseReturnUrl);
+        returnUrlWithParams.searchParams.set('type', customParams?.type || (playerId ? 'payment' : 'enrollment'));
+        if (playerId) returnUrlWithParams.searchParams.set('playerId', playerId);
+        if (paymentType) returnUrlWithParams.searchParams.set('paymentType', paymentType);
+        returnUrlWithParams.searchParams.set('amount', amount.toString());
+        if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
+        if (notes) returnUrlWithParams.searchParams.set('notes', notes);
 
-          // Create the btn-yappy element
-          const yappyButton = document.createElement('btn-yappy');
-          
-          // Set attributes based on Yappy manual
-          // The web component needs the token and documentName from the order creation
-          yappyButton.setAttribute('merchant-id', merchantId);
-          yappyButton.setAttribute('amount', amount.toFixed(2));
-          yappyButton.setAttribute('description', description.substring(0, 200)); // Max 200 chars
-          yappyButton.setAttribute('order-id', orderId.substring(0, 15)); // Max 15 characters
-          yappyButton.setAttribute('return-url', returnUrlWithParams.toString());
-          
-          // Add token and documentName from order creation (required by Yappy manual)
-          if (orderToken) {
-            yappyButton.setAttribute('token', orderToken);
-          }
-          if (documentName) {
-            yappyButton.setAttribute('document-name', documentName);
-          }
-          
-          // Add domain-url if available (domain without https://)
-          if (domainUrl) {
-            yappyButton.setAttribute('domain-url', domainUrl);
-          }
-          
-          console.log('[Yappy] Button attributes:', {
-            merchantId,
-            amount: amount.toFixed(2),
-            description: description.substring(0, 200),
-            orderId: orderId.substring(0, 15),
-            returnUrl: returnUrlWithParams.toString(),
-            domainUrl: domainUrl || 'not set',
-            hasToken: !!orderToken,
-            hasDocumentName: !!documentName,
-            currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+        console.log('[Yappy] Current domain:', window.location.hostname);
+        console.log('[Yappy] Return URL:', returnUrlWithParams.toString());
+
+        // Create the btn-yappy element
+        const yappyButton = document.createElement('btn-yappy');
+        
+        // Set attributes based on Yappy manual
+        // The web component needs the token and documentName from the order creation
+        yappyButton.setAttribute('merchant-id', merchantId);
+        yappyButton.setAttribute('amount', amount.toFixed(2));
+        yappyButton.setAttribute('description', description.substring(0, 200)); // Max 200 chars
+        yappyButton.setAttribute('order-id', orderId.substring(0, 15)); // Max 15 characters
+        yappyButton.setAttribute('return-url', returnUrlWithParams.toString());
+        
+        // Add token and documentName from order creation (required by Yappy manual)
+        if (orderToken) {
+          yappyButton.setAttribute('token', orderToken);
+        }
+        if (documentName) {
+          yappyButton.setAttribute('document-name', documentName);
+        }
+        
+        // Add domain-url if available (domain without https://)
+        if (domainUrl) {
+          yappyButton.setAttribute('domain-url', domainUrl);
+        }
+        
+        console.log('[Yappy] Button attributes:', {
+          merchantId,
+          amount: amount.toFixed(2),
+          description: description.substring(0, 200),
+          orderId: orderId.substring(0, 15),
+          returnUrl: returnUrlWithParams.toString(),
+          domainUrl: domainUrl || 'not set',
+          hasToken: !!orderToken,
+          hasDocumentName: !!documentName,
+          currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+        });
+
+        // Listen to all possible events from Yappy component
+        const eventTypes = ['yappy-success', 'yappy-error', 'yappy-unavailable', 'yappy-loading', 'yappy-ready', 'error', 'unavailable', 'yappy-init', 'yappy-ready', 'yappy-failed'];
+        
+        eventTypes.forEach(eventType => {
+          yappyButton.addEventListener(eventType, (event: any) => {
+            console.log(`[Yappy] Event received: ${eventType}`, event.detail || event);
+            if (eventType === 'yappy-unavailable' || eventType === 'yappy-failed' || eventType === 'error') {
+              const errorDetail = event.detail || {};
+              console.error(`[Yappy] ${eventType} details:`, errorDetail);
+            }
           });
+        });
 
-          // Listen to all possible events from Yappy component
-          const eventTypes = ['yappy-success', 'yappy-error', 'yappy-unavailable', 'yappy-loading', 'yappy-ready', 'error', 'unavailable', 'yappy-init', 'yappy-ready', 'yappy-failed'];
-          
-          eventTypes.forEach(eventType => {
-            yappyButton.addEventListener(eventType, (event: any) => {
-              console.log(`[Yappy] Event received: ${eventType}`, event.detail || event);
-              if (eventType === 'yappy-unavailable' || eventType === 'yappy-failed' || eventType === 'error') {
-                const errorDetail = event.detail || {};
-                console.error(`[Yappy] ${eventType} details:`, errorDetail);
-              }
-            });
-          });
+        // Also listen for any custom events that might be emitted
+        yappyButton.addEventListener('*', (event: any) => {
+          console.log('[Yappy] Any event:', event.type, event);
+        });
 
-          // Also listen for any custom events that might be emitted
-          yappyButton.addEventListener('*', (event: any) => {
-            console.log('[Yappy] Any event:', event.type, event);
-          });
+        // Handle success event
+        yappyButton.addEventListener('yappy-success', (event: any) => {
+          console.log('[Yappy] Payment success:', event.detail);
+          const transactionId = event.detail?.transactionId || event.detail?.orderId || orderId;
+          onSuccess?.(transactionId);
+        });
 
-          // Handle success event
-          yappyButton.addEventListener('yappy-success', (event: any) => {
-            console.log('[Yappy] Payment success:', event.detail);
-            const transactionId = event.detail?.transactionId || event.detail?.orderId || orderId;
-            onSuccess?.(transactionId);
-          });
+        // Handle error event
+        yappyButton.addEventListener('yappy-error', (event: any) => {
+          console.error('[Yappy] Payment error:', event.detail);
+          const errorMsg = event.detail?.message || event.detail?.error || 'Error al procesar el pago con Yappy';
+          setError(errorMsg);
+          onError?.(errorMsg);
+        });
 
-          // Handle error event
-          yappyButton.addEventListener('yappy-error', (event: any) => {
-            console.error('[Yappy] Payment error:', event.detail);
-            const errorMsg = event.detail?.message || event.detail?.error || 'Error al procesar el pago con Yappy';
-            setError(errorMsg);
-            onError?.(errorMsg);
-          });
+        // Listen for any messages from the Yappy component
+        yappyButton.addEventListener('yappy-unavailable', (event: any) => {
+          console.error('[Yappy] Service unavailable:', event.detail);
+          const errorMsg = event.detail?.message || 'Yappy no está disponible en este momento. Por favor, intenta más tarde o usa otro método de pago.';
+          setError(errorMsg);
+          onError?.(errorMsg);
+        });
 
-          // Listen for any messages from the Yappy component
-          yappyButton.addEventListener('yappy-unavailable', (event: any) => {
-            console.error('[Yappy] Service unavailable:', event.detail);
-            const errorMsg = event.detail?.message || 'Yappy no está disponible en este momento. Por favor, intenta más tarde o usa otro método de pago.';
-            setError(errorMsg);
-            onError?.(errorMsg);
-          });
-
-          // Monitor the button element for changes (in case Yappy shows error message in DOM)
-          const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-              if (mutation.type === 'childList' || mutation.type === 'characterData') {
-                const buttonElement = yappyButton as any;
-                const textContent = buttonElement.textContent || buttonElement.innerText || '';
-                
-                // Check if Yappy is showing an error message in the DOM
-                if (textContent.includes('no está disponible') || 
-                    textContent.includes('no disponible') ||
-                    textContent.includes('intenta más tarde') ||
-                    textContent.includes('try again later') ||
-                    textContent.includes('not available')) {
-                  console.warn('[Yappy] Error message detected in DOM:', textContent);
-                  const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
-                  if (!error) {
-                    const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
-                    setError(errorMsg);
-                    onError?.(errorMsg);
-                  }
-                }
-              }
-            });
-          });
-
-          // Start observing the button element
-          observer.observe(yappyButton, {
-            childList: true,
-            subtree: true,
-            characterData: true,
-          });
-
-          if (containerRef.current) {
-            containerRef.current.appendChild(yappyButton);
-            
-            // Set loading to false only after button is rendered
-            setIsLoading(false);
-            console.log('[Yappy] Button element added to DOM');
-            
-            // Check after a delay if the button shows an error
-            setTimeout(() => {
+        // Monitor the button element for changes (in case Yappy shows error message in DOM)
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' || mutation.type === 'characterData') {
               const buttonElement = yappyButton as any;
               const textContent = buttonElement.textContent || buttonElement.innerText || '';
-              const innerHTML = buttonElement.innerHTML || '';
               
-              // Check for unavailable label element
-              const unavailableLabel = buttonElement.querySelector?.('.unavailable-label');
-              const hasUnavailableClass = buttonElement.classList?.contains('unavailable') || 
-                                         innerHTML.includes('unavailable-label') ||
-                                         innerHTML.includes('unavailable');
-              
-              console.log('[Yappy] Button content after render:', { 
-                textContent, 
-                innerHTML: innerHTML.substring(0, 500), // Limit log size
-                hasUnavailableLabel: !!unavailableLabel,
-                hasUnavailableClass,
-                allAttributes: Array.from(buttonElement.attributes || []).map((attr: any) => ({
-                  name: attr.name,
-                  value: attr.value
-                }))
-              });
-              
+              // Check if Yappy is showing an error message in the DOM
               if (textContent.includes('no está disponible') || 
                   textContent.includes('no disponible') ||
-                  innerHTML.includes('no está disponible') ||
-                  textContent.includes('not available') ||
-                  unavailableLabel ||
-                  hasUnavailableClass) {
-                console.warn('[Yappy] Error detected in button content:', { 
-                  textContent, 
-                  hasUnavailableLabel: !!unavailableLabel,
-                  hasUnavailableClass,
-                  merchantId,
-                  domainUrl,
-                  currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
-                });
+                  textContent.includes('intenta más tarde') ||
+                  textContent.includes('try again later') ||
+                  textContent.includes('not available')) {
+                console.warn('[Yappy] Error message detected in DOM:', textContent);
                 const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
                 if (!error) {
-                  const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica en Yappy Comercial que: 1) El dominio esté exactamente como "${currentDomain}" (sin https://), 2) El merchant ID "${merchantId.substring(0, 8)}..." esté activo, 3) La clave secreta esté generada y configurada.`;
+                  const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
                   setError(errorMsg);
                   onError?.(errorMsg);
                 }
-              } else {
-                console.log('[Yappy] Button appears to be ready and available');
               }
-            }, 3000); // Increased delay to give Yappy more time to validate
-          }
+            }
+          });
+        });
+
+        // Start observing the button element
+        observer.observe(yappyButton, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+        });
+
+        if (containerRef.current) {
+          containerRef.current.appendChild(yappyButton);
+          
+          // Set loading to false only after button is rendered
+          setIsLoading(false);
+          console.log('[Yappy] Button element added to DOM');
+          
+          // Check after a delay if the button shows an error
+          setTimeout(() => {
+            const buttonElement = yappyButton as any;
+            const textContent = buttonElement.textContent || buttonElement.innerText || '';
+            const innerHTML = buttonElement.innerHTML || '';
+            
+            // Check for unavailable label element
+            const unavailableLabel = buttonElement.querySelector?.('.unavailable-label');
+            const hasUnavailableClass = buttonElement.classList?.contains('unavailable') || 
+                                       innerHTML.includes('unavailable-label') ||
+                                       innerHTML.includes('unavailable');
+            
+            console.log('[Yappy] Button content after render:', { 
+              textContent, 
+              innerHTML: innerHTML.substring(0, 500), // Limit log size
+              hasUnavailableLabel: !!unavailableLabel,
+              hasUnavailableClass,
+              allAttributes: Array.from(buttonElement.attributes || []).map((attr: any) => ({
+                name: attr.name,
+                value: attr.value
+              }))
+            });
+            
+            if (textContent.includes('no está disponible') || 
+                textContent.includes('no disponible') ||
+                innerHTML.includes('no está disponible') ||
+                textContent.includes('not available') ||
+                unavailableLabel ||
+                hasUnavailableClass) {
+              console.warn('[Yappy] Error detected in button content:', { 
+                textContent, 
+                hasUnavailableLabel: !!unavailableLabel,
+                hasUnavailableClass,
+                merchantId,
+                domainUrl,
+                currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
+              });
+              const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+              if (!error) {
+                const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica en Yappy Comercial que: 1) El dominio esté exactamente como "${currentDomain}" (sin https://), 2) El merchant ID "${merchantId.substring(0, 8)}..." esté activo, 3) La clave secreta esté generada y configurada.`;
+                setError(errorMsg);
+                onError?.(errorMsg);
+              }
+            } else {
+              console.log('[Yappy] Button appears to be ready and available');
+            }
+          }, 3000); // Increased delay to give Yappy more time to validate
+        }
         } catch (err: any) {
           console.error('[Yappy] Error rendering button:', err);
           setError('Error al renderizar el botón de Yappy');
