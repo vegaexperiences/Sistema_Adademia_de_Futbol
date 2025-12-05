@@ -175,35 +175,64 @@ export async function POST(request: NextRequest) {
       const orderType = metadata?.type || (playerId ? 'payment' : 'enrollment');
       const paymentType = metadata?.paymentType || 'custom';
       
-      const { error: storeError } = await supabase
+      const orderDataToStore = {
+        order_id: truncatedOrderId,
+        player_id: playerId || null,
+        amount: parseFloat(amount),
+        payment_type: paymentType,
+        type: orderType,
+        month_year: metadata?.monthYear || null,
+        notes: metadata?.notes || null,
+        description: description.trim(),
+      };
+      
+      console.log('[Yappy Order] Storing order info in database:', {
+        orderId: truncatedOrderId,
+        originalOrderId: orderId,
+        originalLength: orderId.length,
+        truncatedLength: truncatedOrderId.length,
+        playerId: playerId || 'null',
+        amount: parseFloat(amount),
+        type: orderType,
+        paymentType,
+        monthYear: metadata?.monthYear || 'null',
+        notes: metadata?.notes || 'null',
+      });
+      
+      const { error: storeError, data: storedData } = await supabase
         .from('yappy_orders')
-        .upsert({
-          order_id: truncatedOrderId,
-          player_id: playerId || null,
-          amount: parseFloat(amount),
-          payment_type: paymentType,
-          type: orderType,
-          month_year: metadata?.monthYear || null,
-          notes: metadata?.notes || null,
-          description: description.trim(),
-        }, {
+        .upsert(orderDataToStore, {
           onConflict: 'order_id',
-        });
+        })
+        .select();
 
       if (storeError) {
-        console.error('[Yappy Order] Error storing order info:', storeError);
+        console.error('[Yappy Order] ❌ Error storing order info:', {
+          error: storeError.message,
+          code: storeError.code,
+          details: storeError.details,
+          hint: storeError.hint,
+          orderId: truncatedOrderId,
+        });
         // Don't fail the order creation if storage fails, but log it
       } else {
-        console.log('[Yappy Order] Order info stored successfully:', {
+        console.log('[Yappy Order] ✅ Order info stored successfully:', {
           orderId: truncatedOrderId,
-          playerId: playerId || 'null',
-          amount: parseFloat(amount),
-          type: orderType,
-          paymentType,
+          storedOrderId: storedData?.[0]?.order_id,
+          playerId: storedData?.[0]?.player_id || playerId || 'null',
+          amount: storedData?.[0]?.amount || parseFloat(amount),
+          type: storedData?.[0]?.type || orderType,
+          paymentType: storedData?.[0]?.payment_type || paymentType,
+          createdAt: storedData?.[0]?.created_at,
+          note: 'This order info will be retrieved in callback using orderId: ' + truncatedOrderId,
         });
       }
     } catch (storeError: any) {
-      console.error('[Yappy Order] Exception storing order info:', storeError);
+      console.error('[Yappy Order] ❌ Exception storing order info:', {
+        error: storeError?.message,
+        stack: storeError?.stack,
+        orderId: truncatedOrderId,
+      });
       // Don't fail the order creation if storage fails
     }
 

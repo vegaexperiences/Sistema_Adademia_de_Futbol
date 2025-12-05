@@ -44,114 +44,121 @@ export function YappyPaymentButton({
   notes,
 }: YappyPaymentButtonProps) {
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start as false - no loading until user clicks
+  const [isInitializing, setIsInitializing] = useState(false); // Track if we're initializing
   const [merchantId, setMerchantId] = useState<string>('');
   const [domainUrl, setDomainUrl] = useState<string>('');
   const [validationToken, setValidationToken] = useState<string>('');
   const [orderToken, setOrderToken] = useState<string>('');
   const [documentName, setDocumentName] = useState<string>('');
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [orderCreated, setOrderCreated] = useState(false); // Track if order has been created
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false); // Keep ref for checking if script element exists
   const buttonRenderedRef = useRef(false); // Track if button has been rendered to avoid re-renders
   const observerRef = useRef<MutationObserver | null>(null); // Store observer reference for cleanup
 
-  // Step 1: Get merchant ID and validate merchant (according to Yappy manual)
-  useEffect(() => {
-    const initializeYappy = async () => {
-      try {
-        // First, get config
-        const configResponse = await fetch('/api/payments/yappy/config');
-        const configData = await configResponse.json();
-        console.log('[Yappy] Config response:', { 
-          success: configData.success, 
-          hasMerchantId: !!configData.merchantId, 
-          environment: configData.environment, 
-          domainUrl: configData.domainUrl 
-        });
-        
-        if (!configData.success || !configData.merchantId) {
-          throw new Error(configData.error || 'Error al obtener configuración de Yappy');
-        }
+  // Handle click to initialize Yappy and create order
+  const handleInitializeYappy = async () => {
+    if (isInitializing || orderCreated) return; // Prevent multiple clicks
+    
+    setIsInitializing(true);
+    setIsLoading(true);
+    setError(null);
 
-        setMerchantId(configData.merchantId);
-        if (configData.domainUrl) {
-          setDomainUrl(configData.domainUrl);
-        }
-
-        // Step 2: Validate merchant to get token and epochTime
-        console.log('[Yappy] Validating merchant...');
-        const validateResponse = await fetch('/api/payments/yappy/validate', {
-          method: 'POST',
-        });
-        const validateData = await validateResponse.json();
-        
-        if (!validateData.success || !validateData.token || !validateData.epochTime) {
-          throw new Error(validateData.error || 'Error al validar credenciales de Yappy');
-        }
-
-        console.log('[Yappy] Merchant validated:', {
-          hasToken: !!validateData.token,
-          hasEpochTime: !!validateData.epochTime,
-        });
-
-        setValidationToken(validateData.token);
-
-        // Step 3: Create order using token and epochTime
-        console.log('[Yappy] Creating order...');
-        const baseReturnUrl = returnUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback`;
-        const returnUrlWithParams = new URL(baseReturnUrl);
-        returnUrlWithParams.searchParams.set('type', customParams?.type || (playerId ? 'payment' : 'enrollment'));
-        if (playerId) returnUrlWithParams.searchParams.set('playerId', playerId);
-        if (paymentType) returnUrlWithParams.searchParams.set('paymentType', paymentType);
-        returnUrlWithParams.searchParams.set('amount', amount.toString());
-        if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
-        if (notes) returnUrlWithParams.searchParams.set('notes', notes);
-
-        const orderResponse = await fetch('/api/payments/yappy/order', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            amount,
-            description: description.substring(0, 200),
-            orderId: orderId.substring(0, 15), // Max 15 characters
-            returnUrl: returnUrlWithParams.toString(),
-            token: validateData.token,
-            paymentDate: validateData.epochTime,
-            metadata: customParams,
-            playerId: playerId || undefined, // Pass playerId to get tutor phone
-            tutorPhone: customParams?.tutorPhone || undefined, // Pass tutorPhone directly for enrollment
-          }),
-        });
-
-        const orderData = await orderResponse.json();
-        
-        if (!orderData.success || !orderData.orderData) {
-          throw new Error(orderData.error || 'Error al crear orden de pago');
-        }
-
-        console.log('[Yappy] Order created:', {
-          orderId: orderData.orderData.orderId,
-          transactionId: orderData.orderData.transactionId,
-          hasToken: !!orderData.orderData.token,
-          hasDocumentName: !!orderData.orderData.documentName,
-        });
-
-        setOrderToken(orderData.orderData.token || '');
-        setDocumentName(orderData.orderData.documentName || '');
-        // Don't set isLoading to false here - let the script loading handle it
-      } catch (err: any) {
-        console.error('[Yappy] Error initializing:', err);
-        setError(err.message || 'Error al inicializar Yappy');
-        setIsLoading(false);
-        onError?.(err.message || 'Error al inicializar Yappy');
+    try {
+      // Step 1: Get config
+      const configResponse = await fetch('/api/payments/yappy/config');
+      const configData = await configResponse.json();
+      console.log('[Yappy] Config response:', { 
+        success: configData.success, 
+        hasMerchantId: !!configData.merchantId, 
+        environment: configData.environment, 
+        domainUrl: configData.domainUrl 
+      });
+      
+      if (!configData.success || !configData.merchantId) {
+        throw new Error(configData.error || 'Error al obtener configuración de Yappy');
       }
-    };
 
-    initializeYappy();
-  }, [amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onError]);
+      setMerchantId(configData.merchantId);
+      if (configData.domainUrl) {
+        setDomainUrl(configData.domainUrl);
+      }
+
+      // Step 2: Validate merchant to get token and epochTime
+      console.log('[Yappy] Validating merchant...');
+      const validateResponse = await fetch('/api/payments/yappy/validate', {
+        method: 'POST',
+      });
+      const validateData = await validateResponse.json();
+      
+      if (!validateData.success || !validateData.token || !validateData.epochTime) {
+        throw new Error(validateData.error || 'Error al validar credenciales de Yappy');
+      }
+
+      console.log('[Yappy] Merchant validated:', {
+        hasToken: !!validateData.token,
+        hasEpochTime: !!validateData.epochTime,
+      });
+
+      setValidationToken(validateData.token);
+
+      // Step 3: Create order using token and epochTime
+      console.log('[Yappy] Creating order...');
+      const baseReturnUrl = returnUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback`;
+      const returnUrlWithParams = new URL(baseReturnUrl);
+      returnUrlWithParams.searchParams.set('type', customParams?.type || (playerId ? 'payment' : 'enrollment'));
+      if (playerId) returnUrlWithParams.searchParams.set('playerId', playerId);
+      if (paymentType) returnUrlWithParams.searchParams.set('paymentType', paymentType);
+      returnUrlWithParams.searchParams.set('amount', amount.toString());
+      if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
+      if (notes) returnUrlWithParams.searchParams.set('notes', notes);
+
+      const orderResponse = await fetch('/api/payments/yappy/order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount,
+          description: description.substring(0, 200),
+          orderId: orderId.substring(0, 15), // Max 15 characters
+          returnUrl: returnUrlWithParams.toString(),
+          token: validateData.token,
+          paymentDate: validateData.epochTime,
+          metadata: customParams,
+          playerId: playerId || undefined, // Pass playerId to get tutor phone
+          tutorPhone: customParams?.tutorPhone || undefined, // Pass tutorPhone directly for enrollment
+        }),
+      });
+
+      const orderData = await orderResponse.json();
+      
+      if (!orderData.success || !orderData.orderData) {
+        throw new Error(orderData.error || 'Error al crear orden de pago');
+      }
+
+      console.log('[Yappy] Order created:', {
+        orderId: orderData.orderData.orderId,
+        transactionId: orderData.orderData.transactionId,
+        hasToken: !!orderData.orderData.token,
+        hasDocumentName: !!orderData.orderData.documentName,
+      });
+
+      setOrderToken(orderData.orderData.token || '');
+      setDocumentName(orderData.orderData.documentName || '');
+      setOrderCreated(true);
+      setIsInitializing(false);
+      // Don't set isLoading to false here - let the script loading handle it
+    } catch (err: any) {
+      console.error('[Yappy] Error initializing:', err);
+      setError(err.message || 'Error al inicializar Yappy');
+      setIsLoading(false);
+      setIsInitializing(false);
+      onError?.(err.message || 'Error al inicializar Yappy');
+    }
+  };
 
   // Load Yappy web component script (only after validation and order creation)
   useEffect(() => {
@@ -549,7 +556,27 @@ export function YappyPaymentButton({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      {isLoading && (
+      {/* Show initial button if order hasn't been created yet */}
+      {!orderCreated && !isLoading && !error && (
+        <button
+          onClick={handleInitializeYappy}
+          disabled={isInitializing}
+          className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px] touch-manipulation"
+        >
+          {isInitializing ? (
+            <>
+              <Loader2 className="animate-spin" size={20} />
+              <span>Inicializando Yappy...</span>
+            </>
+          ) : (
+            <>
+              <span>💳 Pagar con Yappy</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {isLoading && orderCreated && (
         <div className="flex flex-col items-center justify-center py-6 sm:py-8">
           <Loader2 className="animate-spin text-blue-600 mb-2" size={24} />
           <p className="text-xs sm:text-sm text-gray-600">Cargando botón de pago Yappy...</p>
@@ -576,16 +603,27 @@ export function YappyPaymentButton({
               )}
             </div>
           )}
+          {!orderCreated && (
+            <button
+              onClick={handleInitializeYappy}
+              disabled={isInitializing}
+              className="mt-3 w-full px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Reintentar
+            </button>
+          )}
         </div>
       )}
 
-      {/* Container for Yappy web component */}
-      <div 
-        ref={containerRef}
-        className={isLoading ? 'hidden' : 'min-h-[48px] touch-manipulation'}
-      />
+      {/* Container for Yappy web component - only show when order is created */}
+      {orderCreated && (
+        <div 
+          ref={containerRef}
+          className={isLoading ? 'hidden' : 'min-h-[48px] touch-manipulation'}
+        />
+      )}
 
-      {!isLoading && !error && (
+      {orderCreated && !isLoading && !error && (
         <p className="text-xs text-gray-500 text-center px-2">
           🔒 Pago seguro procesado por Yappy Comercial
         </p>

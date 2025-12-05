@@ -405,24 +405,44 @@ export async function GET(request: NextRequest) {
           notes: orderData.notes,
         });
       } else {
-        console.log('[Yappy Callback] ❌ Order info not found in database:', {
-          orderId: truncatedOrderId,
-          originalOrderId: orderId,
-          error: orderError?.message || 'No rows returned',
-          errorCode: orderError?.code,
-          errorDetails: orderError?.details,
-          errorHint: orderError?.hint,
-        });
+        console.log('[Yappy Callback] ❌ Order info not found with exact match, trying prefix search...');
         
-        // Try to find any orders with similar orderId (for debugging)
-        const { data: similarOrders, error: similarError } = await supabase
-          .from('yappy_orders')
-          .select('order_id, player_id, amount, created_at')
-          .ilike('order_id', `%${truncatedOrderId.substring(0, 10)}%`)
-          .limit(5);
+        // Try to find order by prefix (payment- or enrollment-) and get most recent
+        const prefix = truncatedOrderId.startsWith('payment-') ? 'payment-' : 
+                      truncatedOrderId.startsWith('enrollment-') ? 'enrollment-' : null;
         
-        if (!similarError && similarOrders && similarOrders.length > 0) {
-          console.log('[Yappy Callback] Found similar orders (for debugging):', similarOrders);
+        if (prefix) {
+          const { data: prefixOrders, error: prefixError } = await supabase
+            .from('yappy_orders')
+            .select('*')
+            .like('order_id', `${prefix}%`)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (!prefixError && prefixOrders && prefixOrders.length > 0) {
+            storedOrderInfo = prefixOrders[0];
+            console.log('[Yappy Callback] ✅ Order info found by prefix search:', {
+              orderId: storedOrderInfo.order_id,
+              playerId: storedOrderInfo.player_id,
+              amount: storedOrderInfo.amount,
+              type: storedOrderInfo.type,
+            });
+          } else {
+            console.log('[Yappy Callback] ❌ Order info not found in database:', {
+              orderId: truncatedOrderId,
+              originalOrderId: orderId,
+              error: orderError?.message || 'No rows returned',
+              errorCode: orderError?.code,
+              prefixSearchError: prefixError?.message,
+            });
+          }
+        } else {
+          console.log('[Yappy Callback] ❌ Order info not found in database:', {
+            orderId: truncatedOrderId,
+            originalOrderId: orderId,
+            error: orderError?.message || 'No rows returned',
+            errorCode: orderError?.code,
+          });
         }
       }
     } catch (dbError: any) {
@@ -461,7 +481,32 @@ export async function GET(request: NextRequest) {
       if (orderId.startsWith('payment-')) {
         const orderIdMatch = orderId.match(/^payment-([^-]+)/);
         if (orderIdMatch && !playerId) {
-          playerId = orderIdMatch[1];
+          const partialPlayerId = orderIdMatch[1];
+          // Try to find full playerId by searching for players that start with this partial ID
+          try {
+            const supabase = await createClient();
+            const { data: players, error: playerSearchError } = await supabase
+              .from('players')
+              .select('id')
+              .like('id', `${partialPlayerId}%`)
+              .limit(1);
+            
+            if (!playerSearchError && players && players.length > 0) {
+              playerId = players[0].id;
+              console.log('[Yappy Callback] Found full playerId from partial match:', { 
+                partial: partialPlayerId, 
+                full: playerId 
+              });
+            } else {
+              // Fallback to partial ID if no match found
+              playerId = partialPlayerId;
+              console.log('[Yappy Callback] Using partial playerId (no full match found):', { playerId });
+            }
+          } catch (searchError: any) {
+            console.warn('[Yappy Callback] Error searching for player:', searchError);
+            playerId = partialPlayerId; // Fallback to partial
+          }
+          
           if (!type) type = 'payment';
           console.log('[Yappy Callback] Extracted from orderId pattern (payment) - fallback:', { playerId, type });
         }
@@ -530,7 +575,32 @@ export async function GET(request: NextRequest) {
     // Convert to boolean explicitly to avoid string evaluation issues
     const hasValidType = type === 'payment' || type === 'enrollment';
     const hasValidPlayerId = !!playerId && playerId.trim().length > 0;
-    const hasValidAmount = !!amount && amount.trim().length > 0 && !isNaN(parseFloat(amount));
+    
+    // If amount is missing, try to get it from returnUrl or use a default based on payment type
+    let finalAmount = amount;
+    if (!finalAmount || finalAmount.trim().length === 0 || isNaN(parseFloat(finalAmount))) {
+      // Try to extract from returnUrl if available
+      if (returnUrl) {
+        try {
+          const returnUrlObj = new URL(returnUrl);
+          const urlAmount = returnUrlObj.searchParams.get('amount');
+          if (urlAmount && !isNaN(parseFloat(urlAmount))) {
+            finalAmount = urlAmount;
+            console.log('[Yappy Callback] Amount extracted from returnUrl:', finalAmount);
+          }
+        } catch (e) {
+          console.warn('[Yappy Callback] Error parsing returnUrl for amount:', e);
+        }
+      }
+      
+      // If still no amount and we have a valid playerId, we could try to get a default amount
+      // but for now, we'll log it and not create payment without amount
+      if (!finalAmount || isNaN(parseFloat(finalAmount))) {
+        console.warn('[Yappy Callback] ⚠️ Amount is missing and could not be retrieved. Payment will not be created.');
+      }
+    }
+    
+    const hasValidAmount = !!finalAmount && finalAmount.trim().length > 0 && !isNaN(parseFloat(finalAmount));
     const shouldCreatePayment = Boolean(isApproved && hasValidType && hasValidPlayerId && hasValidAmount);
     
     console.log('[Yappy Callback] Payment creation check:', {
@@ -541,7 +611,7 @@ export async function GET(request: NextRequest) {
       hasPlayerId: hasValidPlayerId,
       playerId: playerId || 'empty',
       hasAmount: hasValidAmount,
-      amount: amount || 'empty',
+      amount: finalAmount || amount || 'empty',
       shouldCreatePayment,
     });
 
@@ -591,7 +661,7 @@ export async function GET(request: NextRequest) {
             // If player is pending, insert directly with player_id = null
             const paymentData = {
               player_id: null,
-              amount: parseFloat(amount),
+              amount: parseFloat(finalAmount),
               type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
               method: 'yappy' as const,
               payment_date: new Date().toISOString().split('T')[0],
@@ -617,7 +687,7 @@ export async function GET(request: NextRequest) {
             // If player is approved, use createPayment function
             const paymentData = {
               player_id: playerId, // This is always a string when not pending
-              amount: parseFloat(amount),
+              amount: parseFloat(finalAmount),
               type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
               method: 'yappy' as const,
               payment_date: new Date().toISOString().split('T')[0],
@@ -640,7 +710,7 @@ export async function GET(request: NextRequest) {
             try {
               const emailResult = await sendPaymentConfirmationEmail({
                 playerId: playerId,
-                amount: parseFloat(amount),
+                amount: parseFloat(finalAmount),
                 paymentType: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
                 paymentDate: createdPayment?.payment_date || new Date().toISOString().split('T')[0],
                 monthYear: monthYear || undefined,
@@ -671,11 +741,11 @@ export async function GET(request: NextRequest) {
     let redirectUrl: string;
     if (isApproved) {
       if (type === 'enrollment') {
-        redirectUrl = `${baseUrl}/enrollment/success?yappy=success&orderId=${orderId}&amount=${amount}`;
+        redirectUrl = `${baseUrl}/enrollment/success?yappy=success&orderId=${orderId}&amount=${finalAmount || amount}`;
       } else if (type === 'payment' && playerId) {
-        redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=success&orderId=${orderId}`;
+        redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=success&orderId=${orderId}&amount=${finalAmount || amount}`;
       } else {
-        redirectUrl = `${baseUrl}/dashboard/finances?yappy=success&orderId=${orderId}&amount=${amount}`;
+        redirectUrl = `${baseUrl}/dashboard/finances?yappy=success&orderId=${orderId}&amount=${finalAmount || amount}`;
       }
     } else {
       if (type === 'enrollment') {
