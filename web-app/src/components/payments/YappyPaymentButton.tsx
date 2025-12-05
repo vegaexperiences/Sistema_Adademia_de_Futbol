@@ -50,8 +50,9 @@ export function YappyPaymentButton({
   const [validationToken, setValidationToken] = useState<string>('');
   const [orderToken, setOrderToken] = useState<string>('');
   const [documentName, setDocumentName] = useState<string>('');
+  const [scriptLoaded, setScriptLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scriptLoaded = useRef(false);
+  const scriptLoadedRef = useRef(false); // Keep ref for checking if script element exists
 
   // Step 1: Get merchant ID and validate merchant (according to Yappy manual)
   useEffect(() => {
@@ -152,13 +153,14 @@ export function YappyPaymentButton({
 
   // Load Yappy web component script (only after validation and order creation)
   useEffect(() => {
-    if (!merchantId || !validationToken || !orderToken || scriptLoaded.current) return;
+    if (!merchantId || !validationToken || !orderToken || scriptLoaded) return;
 
     const loadScript = () => {
       try {
         // Check if script is already loaded
         if (document.querySelector('script[src*="btn-yappy"]')) {
-          scriptLoaded.current = true;
+          scriptLoadedRef.current = true;
+          setScriptLoaded(true);
           // Don't set isLoading to false here - wait for button to render
           return;
         }
@@ -174,7 +176,8 @@ export function YappyPaymentButton({
             script.type = 'module';
             script.async = true;
             script.onload = () => {
-              scriptLoaded.current = true;
+              scriptLoadedRef.current = true;
+              setScriptLoaded(true);
               // Don't set isLoading to false here - wait for button to render
               console.log('[Yappy] Script loaded, waiting for button render...');
             };
@@ -194,7 +197,8 @@ export function YappyPaymentButton({
             script.type = 'module';
             script.async = true;
             script.onload = () => {
-              scriptLoaded.current = true;
+              scriptLoadedRef.current = true;
+              setScriptLoaded(true);
               // Don't set isLoading to false here - wait for button to render
               console.log('[Yappy] Script loaded (fallback), waiting for button render...');
             };
@@ -214,7 +218,7 @@ export function YappyPaymentButton({
     };
 
     loadScript();
-  }, [merchantId, validationToken, orderToken, onError]);
+  }, [merchantId, validationToken, orderToken, scriptLoaded, onError]);
 
   // Render the Yappy button component when script is loaded and order is created
   useEffect(() => {
@@ -223,10 +227,10 @@ export function YappyPaymentButton({
       hasValidationToken: !!validationToken,
       hasOrderToken: !!orderToken,
       hasContainer: !!containerRef.current,
-      scriptLoaded: scriptLoaded.current,
+      scriptLoaded: scriptLoaded,
     });
 
-    if (!merchantId || !validationToken || !orderToken || !containerRef.current || !scriptLoaded.current) {
+    if (!merchantId || !validationToken || !orderToken || !containerRef.current || !scriptLoaded) {
       console.log('[Yappy] Render conditions not met, waiting...');
       return;
     }
@@ -444,7 +448,7 @@ export function YappyPaymentButton({
 
     // Wait a bit for the module to fully load
     setTimeout(renderButton, 200);
-  }, [merchantId, domainUrl, validationToken, orderToken, documentName, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
+  }, [merchantId, domainUrl, validationToken, orderToken, documentName, scriptLoaded, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
 
   return (
     <div className={`space-y-2 ${className}`}>
