@@ -218,27 +218,41 @@ export function YappyPaymentButton({
 
   // Render the Yappy button component when script is loaded and order is created
   useEffect(() => {
-    if (!isLoading && merchantId && validationToken && orderToken && containerRef.current && scriptLoaded.current) {
-      // Wait a bit for the custom element to be defined
-      let retryCount = 0;
-      const maxRetries = 50; // 5 seconds max wait
-      
-      const renderButton = () => {
-        try {
-          // Check if custom element is defined
-          if (!customElements.get('btn-yappy')) {
-            retryCount++;
-            if (retryCount >= maxRetries) {
-              console.error('[Yappy] Custom element not defined after max retries');
-              setError('El componente de Yappy no se pudo cargar. Por favor, recarga la página o intenta más tarde.');
-              setIsLoading(false);
-              onError?.('El componente de Yappy no se pudo cargar');
-              return;
-            }
-            console.log(`[Yappy] Waiting for custom element to be defined... (${retryCount}/${maxRetries})`);
-            setTimeout(renderButton, 100);
+    console.log('[Yappy] Render effect triggered:', {
+      hasMerchantId: !!merchantId,
+      hasValidationToken: !!validationToken,
+      hasOrderToken: !!orderToken,
+      hasContainer: !!containerRef.current,
+      scriptLoaded: scriptLoaded.current,
+    });
+
+    if (!merchantId || !validationToken || !orderToken || !containerRef.current || !scriptLoaded.current) {
+      console.log('[Yappy] Render conditions not met, waiting...');
+      return;
+    }
+
+    // Wait a bit for the custom element to be defined
+    let retryCount = 0;
+    const maxRetries = 50; // 5 seconds max wait
+    
+    const renderButton = () => {
+      try {
+        // Check if custom element is defined
+        if (!customElements.get('btn-yappy')) {
+          retryCount++;
+          if (retryCount >= maxRetries) {
+            console.error('[Yappy] Custom element not defined after max retries');
+            setError('El componente de Yappy no se pudo cargar. Por favor, recarga la página o intenta más tarde.');
+            setIsLoading(false);
+            onError?.('El componente de Yappy no se pudo cargar');
             return;
           }
+          console.log(`[Yappy] Waiting for custom element to be defined... (${retryCount}/${maxRetries})`);
+          setTimeout(renderButton, 100);
+          return;
+        }
+
+        console.log('[Yappy] Custom element found, proceeding to render button');
 
           // Clear container first
           if (!containerRef.current) return;
@@ -431,7 +445,7 @@ export function YappyPaymentButton({
       // Wait a bit for the module to fully load
       setTimeout(renderButton, 200);
     }
-  }, [isLoading, merchantId, domainUrl, validationToken, orderToken, documentName, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
+  }, [merchantId, domainUrl, validationToken, orderToken, documentName, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
 
   return (
     <div className={`space-y-2 ${className}`}>
