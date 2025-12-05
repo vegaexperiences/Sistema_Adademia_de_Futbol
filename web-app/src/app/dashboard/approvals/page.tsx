@@ -1,4 +1,4 @@
-import { getPendingPlayers } from '@/lib/actions/approvals';
+import { getPendingPlayers, getApprovedEnrollmentPayment } from '@/lib/actions/approvals';
 import { getPendingTournamentRegistrations } from '@/lib/actions/tournaments';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
@@ -44,6 +44,15 @@ export default async function ApprovalsPage({
     ? (pendingPaymentsData as PendingPayment[])
     : [];
 
+  // Buscar pagos aprobados de enrollment para cada jugador pendiente
+  const approvedPaymentsMap = new Map<string, any>();
+  for (const player of pendingPlayers) {
+    const approvedPayment = await getApprovedEnrollmentPayment(player.id);
+    if (approvedPayment) {
+      approvedPaymentsMap.set(player.id, approvedPayment);
+    }
+  }
+
   const view = resolvedSearchParams?.view === 'tournaments' ? 'tournaments' : 'players';
   const tabs = [
     { id: 'players', label: 'Solicitudes de Matrícula', count: pendingPlayers.length },
@@ -85,7 +94,11 @@ export default async function ApprovalsPage({
       </div>
 
       {view === 'players' ? (
-        <PlayerApprovals pendingPlayers={pendingPlayers} pendingPayments={pendingPayments} />
+        <PlayerApprovals 
+          pendingPlayers={pendingPlayers} 
+          pendingPayments={pendingPayments}
+          approvedPaymentsMap={approvedPaymentsMap}
+        />
       ) : (
         <TournamentApprovals registrations={pendingTournaments} />
       )}
@@ -96,9 +109,11 @@ export default async function ApprovalsPage({
 function PlayerApprovals({
   pendingPlayers,
   pendingPayments,
+  approvedPaymentsMap,
 }: {
   pendingPlayers: PendingPlayer[];
   pendingPayments: PendingPayment[];
+  approvedPaymentsMap: Map<string, any>;
 }) {
   return (
       <div className="space-y-4">
@@ -181,6 +196,66 @@ function PlayerApprovals({
                         ⏳ PENDIENTE
                       </span>
                     </div>
+
+                    {/* Mostrar pago verificado si existe */}
+                    {(() => {
+                      const approvedPayment = approvedPaymentsMap.get(player.id);
+                      if (approvedPayment) {
+                        const paymentMethod = approvedPayment.method || approvedPayment.payment_method || '';
+                        const methodLabels: Record<string, string> = {
+                          yappy: 'Yappy Comercial',
+                          paguelofacil: 'Paguelo Fácil',
+                        };
+                        
+                        // Extraer ID de transacción de las notas
+                        const notes = approvedPayment.notes || '';
+                        let transactionInfo = null;
+                        if (paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') {
+                          const transactionMatch = notes.match(/Operación: ([^\s.]+)/i) || 
+                                                 notes.match(/ID Transacción: ([^\s.]+)/i) ||
+                                                 notes.match(/Transacción: ([^\s.]+)/i);
+                          if (transactionMatch) {
+                            transactionInfo = transactionMatch[1];
+                          }
+                        }
+                        
+                        return (
+                          <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-300 shadow-lg">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0">
+                                <CheckCircle className="w-6 h-6 text-green-600" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="px-3 py-1 rounded-full text-sm font-bold bg-green-500 text-white">
+                                    ✅ Pago Verificado
+                                  </span>
+                                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                    {methodLabels[paymentMethod] || paymentMethod}
+                                  </span>
+                                </div>
+                                <div className="space-y-1 text-sm">
+                                  <p className="font-semibold text-gray-900">
+                                    Monto: ${approvedPayment.amount?.toFixed(2) || '0.00'}
+                                  </p>
+                                  <p className="text-gray-600">
+                                    Fecha: {approvedPayment.payment_date 
+                                      ? new Date(approvedPayment.payment_date).toLocaleDateString('es-ES')
+                                      : 'N/A'}
+                                  </p>
+                                  {transactionInfo && (
+                                    <p className="text-gray-600">
+                                      ID Transacción: <span className="font-mono font-bold">{transactionInfo}</span>
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
@@ -333,7 +408,11 @@ function PlayerApprovals({
                     </div>
                   </div>
 
-                <PlayerApprovalButtons playerId={player.id} />
+                <PlayerApprovalButtons 
+                  playerId={player.id} 
+                  hasApprovedPayment={!!approvedPaymentsMap.get(player.id)}
+                  approvedPayment={approvedPaymentsMap.get(player.id) || null}
+                />
                 </div>
               </div>
             );

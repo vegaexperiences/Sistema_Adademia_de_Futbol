@@ -11,9 +11,10 @@ interface CreatePaymentProps {
   playerId: string;
   suggestedAmount?: number;
   onSuccess?: () => void;
+  playerName?: string; // Optional player name for payment descriptions
 }
 
-export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess }: CreatePaymentProps) {
+export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess, playerName }: CreatePaymentProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -109,7 +110,7 @@ export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess
                   </div>
                   <PagueloFacilPaymentButton
                     amount={parseFloat(formData.amount)}
-                    description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - Jugador ID: ${playerId}`}
+                    description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - ${playerName || `Jugador ID: ${playerId}`}`}
                     email=""
                     orderId={`payment-${playerId}-${Date.now()}`}
                     returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/paguelofacil/callback?type=payment&playerId=${playerId}&paymentType=${formData.payment_type}&amount=${formData.amount}&monthYear=${formData.month_year || ''}&notes=${encodeURIComponent(formData.notes || '')}`}
@@ -141,7 +142,7 @@ export default function CreatePayment({ playerId, suggestedAmount = 0, onSuccess
                   </div>
                   <YappyPaymentButton
                     amount={parseFloat(formData.amount)}
-                    description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - Jugador ID: ${playerId}`}
+                    description={`${formData.payment_type === 'monthly' ? 'Mensualidad' : formData.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'} - ${playerName || `Jugador ID: ${playerId}`}`}
                     orderId={`payment-${playerId}-${Date.now()}`}
                     returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback?type=payment&playerId=${playerId}&paymentType=${formData.payment_type}&amount=${formData.amount}&monthYear=${formData.month_year || ''}&notes=${encodeURIComponent(formData.notes || '')}`}
                     customParams={{

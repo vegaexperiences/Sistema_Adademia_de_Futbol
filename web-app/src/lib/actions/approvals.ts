@@ -101,6 +101,67 @@ export async function getPendingPlayers() {
   return unique;
 }
 
+/**
+ * Busca pagos aprobados de enrollment (PagueloFacil o Yappy) vinculados a un jugador pendiente
+ * Busca por el playerId en las notas con formato "Pending Player IDs: uuid"
+ */
+export async function getApprovedEnrollmentPayment(playerId: string) {
+  const supabase = await createClient();
+  
+  try {
+    // Buscar pagos de enrollment aprobados con método paguelofacil o yappy
+    const { data: payments, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('type', 'enrollment')
+      .eq('status', 'Approved')
+      .in('method', ['paguelofacil', 'yappy'])
+      .order('payment_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(10);
+    
+    if (error) {
+      console.error('[getApprovedEnrollmentPayment] Error fetching payments:', error);
+      return null;
+    }
+    
+    if (!payments || payments.length === 0) {
+      return null;
+    }
+    
+    // Filtrar en JavaScript para encontrar pagos que tienen este playerId en las notas
+    const playerIdLower = playerId.toLowerCase();
+    const matchingPayment = payments.find((payment: any) => {
+      if (!payment.notes) return false;
+      const notes = payment.notes.toLowerCase();
+      
+      // Buscar el playerId en las notas en varios formatos
+      return notes.includes(playerIdLower) || 
+             notes.includes(`pending player ids: ${playerIdLower}`) ||
+             notes.includes(`pending player ids:${playerIdLower}`) ||
+             notes.includes(`pending player ids: ${playerIdLower},`) ||
+             notes.includes(`pending player ids:${playerIdLower},`) ||
+             notes.includes(`, ${playerIdLower}`) ||
+             notes.includes(`,${playerIdLower}`);
+    });
+    
+    if (matchingPayment) {
+      console.log('[getApprovedEnrollmentPayment] Found approved enrollment payment:', {
+        paymentId: matchingPayment.id,
+        playerId,
+        method: matchingPayment.method || matchingPayment.payment_method,
+        amount: matchingPayment.amount,
+        paymentDate: matchingPayment.payment_date
+      });
+    }
+    
+    return matchingPayment || null;
+  } catch (error) {
+    console.error('[getApprovedEnrollmentPayment] Error:', error);
+    return null;
+  }
+}
+
 export async function approvePlayer(
   playerId: string, 
   type: 'Active' | 'Scholarship',
@@ -108,6 +169,8 @@ export async function approvePlayer(
     customEnrollmentPrice?: number;
     paymentMethod?: 'cash' | 'transfer' | 'yappy' | 'paguelofacil' | 'ach' | 'other';
     paymentProof?: string; // URL de comprobante o ID de transacción
+    useExistingPayment?: boolean;
+    existingPaymentId?: string;
   }
 ) {
   try {
@@ -417,33 +480,6 @@ export async function approvePlayer(
 
     // Register enrollment payment (only for regular approvals)
     if (type === 'Active') {
-    const { data: settings } = await supabase.from('settings').select('*');
-    const settingsMap =
-      settings?.reduce((acc: Record<string, number>, s: any) => {
-        acc[s.key] = parseFloat(s.value);
-        return acc;
-      }, {}) || {};
-    
-    // Use custom price if provided, otherwise use default
-    const enrollmentFee = options?.customEnrollmentPrice ?? (settingsMap['price_enrollment'] ?? 80);
-    const paymentMethod = options?.paymentMethod || 'cash'; // Require payment method
-    const paymentProof = options?.paymentProof || null;
-    const now = new Date();
-
-    // Build notes with payment details
-    let paymentNotes = `Matrícula confirmada al aprobar jugador. Monto: $${enrollmentFee.toFixed(2)}`;
-    if (options?.customEnrollmentPrice) {
-      paymentNotes += ` (Precio custom)`;
-    }
-    paymentNotes += `. Método de pago: ${paymentMethod}`;
-    if (paymentProof) {
-      if (paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') {
-        paymentNotes += `. ID Transacción: ${paymentProof}`;
-      } else {
-        paymentNotes += `. Comprobante: ${paymentProof}`;
-      }
-    }
-
     // Verify player exists before processing payment
     const { data: verifyPlayer, error: verifyError } = await supabase
       .from('players')
@@ -456,7 +492,87 @@ export async function approvePlayer(
       return { error: `Error: Jugador no encontrado al procesar el pago: ${verifyError?.message || 'Jugador no existe'}` };
     }
 
-    // CRITICAL: Search for existing enrollment payment with player_id = null
+    // Si se debe usar un pago existente (PagueloFacil/Yappy ya aprobado)
+    if (options?.useExistingPayment && options?.existingPaymentId) {
+      console.log('[approvePlayer] Using existing approved payment:', {
+        paymentId: options.existingPaymentId,
+        playerId,
+      });
+
+      // Buscar el pago existente
+      const { data: existingPayment, error: paymentFetchError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('id', options.existingPaymentId)
+        .single();
+
+      if (paymentFetchError || !existingPayment) {
+        console.error('[approvePlayer] ❌ Error fetching existing payment:', paymentFetchError);
+        return { error: `Error al buscar el pago existente: ${paymentFetchError?.message || 'Pago no encontrado'}` };
+      }
+
+      // Verificar que el pago es de enrollment y está aprobado
+      if (existingPayment.type !== 'enrollment' || existingPayment.status !== 'Approved') {
+        console.error('[approvePlayer] ❌ Invalid payment:', {
+          type: existingPayment.type,
+          status: existingPayment.status,
+        });
+        return { error: 'El pago especificado no es válido o no está aprobado' };
+      }
+
+      // Vincular el pago al jugador si aún no está vinculado
+      if (!existingPayment.player_id || existingPayment.player_id !== playerId) {
+        const { error: linkError } = await supabase
+          .from('payments')
+          .update({ player_id: playerId })
+          .eq('id', options.existingPaymentId);
+
+        if (linkError) {
+          console.error('[approvePlayer] ❌ Error linking payment to player:', linkError);
+          return { error: `Error al vincular el pago al jugador: ${linkError.message}` };
+        }
+
+        console.log('[approvePlayer] ✅ Payment linked to player:', {
+          paymentId: options.existingPaymentId,
+          playerId,
+        });
+      } else {
+        console.log('[approvePlayer] ✅ Payment already linked to player');
+      }
+
+      // Continuar con el resto del flujo (enviar emails, etc.) sin crear nuevo pago
+      console.log('[approvePlayer] ✅ Using existing payment, skipping payment creation');
+      // El pago ya está aprobado y vinculado, continuar con el flujo normal
+    } else {
+      // Flujo normal: crear o buscar pago existente
+      const { data: settings } = await supabase.from('settings').select('*');
+      const settingsMap =
+        settings?.reduce((acc: Record<string, number>, s: any) => {
+          acc[s.key] = parseFloat(s.value);
+          return acc;
+        }, {}) || {};
+      
+      // Use custom price if provided, otherwise use default
+      const enrollmentFee = options?.customEnrollmentPrice ?? (settingsMap['price_enrollment'] ?? 80);
+      const paymentMethod = options?.paymentMethod || 'cash'; // Require payment method
+      const paymentProof = options?.paymentProof || null;
+      const now = new Date();
+
+      // Build notes with payment details
+      let paymentNotes = `Matrícula confirmada al aprobar jugador. Monto: $${enrollmentFee.toFixed(2)}`;
+      if (options?.customEnrollmentPrice) {
+        paymentNotes += ` (Precio custom)`;
+      }
+      paymentNotes += `. Método de pago: ${paymentMethod}`;
+      if (paymentProof) {
+        if (paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') {
+          paymentNotes += `. ID Transacción: ${paymentProof}`;
+        } else {
+          paymentNotes += `. Comprobante: ${paymentProof}`;
+        }
+      }
+
+      // CRITICAL: Search for existing enrollment payment with player_id = null
     // Look for payments that have this pending_player_id in the notes
     // The notes format is: "Matrícula para X jugador(es). Tutor: Y. Pending Player IDs: uuid1, uuid2, ..."
     console.log('[approvePlayer] Searching for existing enrollment payment for pending_player_id:', playerId);
@@ -771,13 +887,13 @@ export async function approvePlayer(
           verified: verifyPayment.player_id === playerId,
         });
       }
-    }
 
-    // CRITICAL: If payment processing failed, return error (should not happen due to checks above)
-    if (!paymentUpdated && !paymentCreated) {
-      console.error('[approvePlayer] ❌ CRITICAL: Payment was neither updated nor created');
-      return { error: 'Error crítico: No se pudo procesar el pago de matrícula. La aprobación ha sido cancelada.' };
-    }
+      // CRITICAL: If payment processing failed, return error (should not happen due to checks above)
+      if (!paymentUpdated && !paymentCreated) {
+        console.error('[approvePlayer] ❌ CRITICAL: Payment was neither updated nor created');
+        return { error: 'Error crítico: No se pudo procesar el pago de matrícula. La aprobación ha sido cancelada.' };
+      }
+    } // Cerrar el bloque else del flujo normal de creación de pago
 
     // Post-approval: Update pre-enrollment emails to link them to the approved player
     // This ensures emails sent during enrollment appear in the player's email history
@@ -1019,6 +1135,7 @@ export async function approvePlayer(
         }
       });
     }
+    } // Cerrar el bloque if (type === 'Active')
   } else if (type === 'Scholarship') {
     // Send acceptance email for scholarship players (indicating BECADO)
     // Use the tutor data we already obtained (from family or pendingPlayer)

@@ -238,6 +238,7 @@ export default async function PlayerProfilePage({
         playerId={id} 
         suggestedAmount={suggestedFee} 
         payments={payments}
+        playerName={`${player.first_name} ${player.last_name}`}
       />
     </div>
   );

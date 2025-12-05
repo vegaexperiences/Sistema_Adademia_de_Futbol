@@ -146,10 +146,17 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
       }
 
       if (result.success) {
-        // In a real app, we would redirect to result.paymentUrl
-        // For this demo, we just show the success screen and log the URL
-        console.log('Redirecting to payment:', result.paymentUrl);
+        // If payment method is PagueloFacil, don't show success yet
+        // The success will be shown after payment confirmation in the callback
+        if (formData.paymentMethod === 'PagueloFacil') {
+          // Enrollment is created but payment is pending
+          // Don't show success screen, let the payment button handle the redirect
+          console.log('[Enrollment] Enrollment created with pending PagueloFacil payment');
+          setIsSubmitting(false);
+          return; // Don't mark as completed, payment button will handle redirect
+        }
         
+        // For other payment methods, show success screen
         // If it's a duplicate, show a message but still mark as completed
         if (result.duplicate) {
           alert(result.message || 'Esta solicitud ya fue registrada anteriormente.');

@@ -110,6 +110,75 @@ export async function GET(request: NextRequest) {
     const baseUrl = getBaseUrlFromRequest(request);
     console.log('[PagueloFacil Callback] Base URL determined:', baseUrl);
 
+    // Handle enrollment payment confirmation
+    if (isApproved && type === 'enrollment' && amount) {
+      try {
+        console.log('[PagueloFacil Callback] Handling enrollment payment confirmation...');
+        const supabase = await createClient();
+        
+        // Find the most recent enrollment payment with status "Pending" and method "paguelofacil"
+        const paymentAmount = parseFloat(amount);
+        const { data: enrollmentPayments, error: searchError } = await supabase
+          .from('payments')
+          .select('id, amount, payment_date, notes')
+          .eq('type', 'enrollment')
+          .eq('method', 'paguelofacil')
+          .eq('status', 'Pending')
+          .order('payment_date', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (searchError) {
+          console.error('[PagueloFacil Callback] Error searching for enrollment payment:', searchError);
+        } else if (enrollmentPayments && enrollmentPayments.length > 0) {
+          // Find payment with matching amount (within $1 tolerance)
+          const matchingPayment = enrollmentPayments.find(p => {
+            const paymentAmt = parseFloat(p.amount);
+            return Math.abs(paymentAmt - paymentAmount) <= 1;
+          });
+          
+          if (matchingPayment) {
+            console.log('[PagueloFacil Callback] Found matching enrollment payment:', matchingPayment.id);
+            
+            // Update payment status to "Approved" and add operation details
+            const updatedNotes = `${matchingPayment.notes || ''}\nPaguelo Fácil Operación: ${callbackParams.Oper || 'N/A'}. Confirmado: ${new Date().toISOString()}`;
+            
+            const { error: updateError } = await supabase
+              .from('payments')
+              .update({
+                status: 'Approved',
+                notes: updatedNotes,
+              })
+              .eq('id', matchingPayment.id);
+            
+            if (updateError) {
+              console.error('[PagueloFacil Callback] Error updating enrollment payment:', updateError);
+            } else {
+              console.log('[PagueloFacil Callback] ✅ Enrollment payment updated to Approved:', matchingPayment.id);
+              
+              // Send payment confirmation email
+              try {
+                await sendPaymentConfirmationEmail(matchingPayment.id);
+              } catch (emailError) {
+                console.error('[PagueloFacil Callback] Error sending payment confirmation email:', emailError);
+              }
+              
+              // Revalidate paths
+              revalidatePath('/dashboard/finances');
+              revalidatePath('/dashboard/finances/transactions');
+            }
+          } else {
+            console.warn('[PagueloFacil Callback] No matching enrollment payment found for amount:', paymentAmount);
+          }
+        } else {
+          console.warn('[PagueloFacil Callback] No pending enrollment payments found');
+        }
+      } catch (enrollmentError: any) {
+        console.error('[PagueloFacil Callback] Error handling enrollment payment:', enrollmentError);
+        // Don't throw - continue with redirect
+      }
+    }
+
     // If transaction was approved and we have payment details, create payment record
     console.log('[PagueloFacil Callback] Checking conditions for payment creation:', {
       isApproved,

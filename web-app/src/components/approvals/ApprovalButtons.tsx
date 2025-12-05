@@ -11,9 +11,11 @@ import { createClient } from '@/lib/supabase/client';
 
 interface PlayerApprovalButtonsProps {
   playerId: string;
+  hasApprovedPayment?: boolean;
+  approvedPayment?: any;
 }
 
-export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) {
+export function PlayerApprovalButtons({ playerId, hasApprovedPayment = false, approvedPayment = null }: PlayerApprovalButtonsProps) {
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -43,6 +45,58 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
     }
     fetchDefaultPrice();
   }, []);
+
+  const handleVerifyAndApprove = () => {
+    setStatus('idle');
+    setMessage('');
+    
+    startTransition(async () => {
+      try {
+        const options: {
+          useExistingPayment: boolean;
+          existingPaymentId?: string;
+        } = {
+          useExistingPayment: true,
+          existingPaymentId: approvedPayment?.id,
+        };
+
+        const result = await approvePlayer(playerId, 'Active', options);
+        console.log('Verify and approve result:', result);
+        
+        if (result?.error) {
+          setStatus('error');
+          setMessage(result.error);
+          setTimeout(() => {
+            setStatus('idle');
+            setMessage('');
+          }, 5000);
+        } else if (result?.success || !result?.error) {
+          setStatus('success');
+          const successMessage = result?.message || '✅ Jugador verificado y aprobado usando el pago existente';
+          setMessage(successMessage);
+          
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        } else {
+          setStatus('error');
+          setMessage('Error desconocido al procesar la solicitud');
+          setTimeout(() => {
+            setStatus('idle');
+            setMessage('');
+          }, 5000);
+        }
+      } catch (error: any) {
+        console.error('Error in handleVerifyAndApprove:', error);
+        setStatus('error');
+        setMessage(error?.message || error?.toString() || 'Error al procesar la solicitud');
+        setTimeout(() => {
+          setStatus('idle');
+          setMessage('');
+        }, 5000);
+      }
+    });
+  };
 
   const handleApprovalClick = (type: 'Active' | 'Scholarship') => {
     if (type === 'Active') {
@@ -188,9 +242,29 @@ export function PlayerApprovalButtons({ playerId }: PlayerApprovalButtonsProps) 
           </div>
         )}
         
+        {hasApprovedPayment && approvedPayment && (
+          <button
+            onClick={() => handleVerifyAndApprove()}
+            disabled={isPending}
+            className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation bg-gradient-to-r from-green-600 to-emerald-600 shadow-xl shadow-green-500/50 border-2 border-green-400"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="animate-spin" size={20} />
+                Procesando...
+              </>
+            ) : (
+              <>
+                <CheckCircle size={20} />
+                Verificar y Aprobar
+              </>
+            )}
+          </button>
+        )}
+        
         <button
           onClick={() => handleApprovalClick('Active')}
-          disabled={isPending}
+          disabled={isPending || hasApprovedPayment}
           className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100 touch-manipulation btn-success shadow-lg shadow-green-500/30"
         >
           {isPending ? (

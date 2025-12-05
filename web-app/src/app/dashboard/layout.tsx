@@ -2,22 +2,10 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-  Users, 
-  CreditCard, 
-  LayoutDashboard, 
-  LogOut, 
-  Settings,
-  FileText,
-  CheckCircle,
-  User,
-  Trophy,
-  DollarSign,
-  TrendingUp,
-  Mail
-} from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
 import { MobileHeader } from '@/components/layout/MobileHeader';
+import { SidebarNav } from '@/components/layout/SidebarNav';
 import { getPendingPlayersCount } from '@/lib/actions/approvals';
 
 export default async function DashboardLayout({
@@ -60,92 +48,7 @@ export default async function DashboardLayout({
         </div>
         
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <Link
-            href="/dashboard"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <LayoutDashboard size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Dashboard</span>
-          </Link>
-
-          <Link
-            href="/dashboard/approvals"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] relative"
-          >
-            <CheckCircle size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Aprobaciones</span>
-            {pendingCount > 0 && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {pendingCount > 99 ? '99+' : pendingCount}
-              </span>
-            )}
-          </Link>
-          
-          <Link
-            href="/dashboard/players"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <Users size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Jugadores</span>
-          </Link>
-
-          <Link
-            href="/dashboard/finances"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <TrendingUp size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Finanzas</span>
-          </Link>
-          
-          <Link
-            href="/dashboard/tournaments"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <Trophy size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Torneos</span>
-          </Link>
-
-          <Link
-            href="/dashboard/tutors"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <User size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Tutores</span>
-          </Link>
-
-          <Link
-            href="/dashboard/families"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <Users size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Familias</span>
-          </Link>
-          
-          <Link
-            href="/dashboard/reports"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <FileText size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Reportes</span>
-          </Link>
-
-          <Link
-            href="/dashboard/emails"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <Mail size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Correos</span>
-          </Link>
-
-          <Link
-            href="/dashboard/settings"
-            className="group flex items-center gap-3 px-4 py-3 text-gray-700 hover:gradient-purple hover:text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-          >
-            <Settings size={20} className="group-hover:scale-110 transition-transform duration-300" />
-            <span className="font-medium">Configuración</span>
-          </Link>
-        </nav>
+        <SidebarNav pendingCount={pendingCount} />
 
         {/* User Profile */}
         <div className="p-4 border-t border-gray-200/20">

@@ -390,12 +390,12 @@ export async function POST(request: Request) {
     console.log('[enrollment] Amount calculated:', { baseRate, count, totalAmount });
 
     // 5. Create Payment Records
+    // For PagueloFacil, payment starts as "Pending" and will be updated to "Approved" after payment confirmation
     const paymentStatus = (data.paymentMethod === 'Comprobante' || 
                           data.paymentMethod === 'Transferencia' || 
-                          data.paymentMethod === 'Yappy') 
+                          data.paymentMethod === 'Yappy' ||
+                          data.paymentMethod === 'PagueloFacil') 
                           ? 'Pending'
-                          : data.paymentMethod === 'PagueloFacil'
-                          ? 'Approved'
                           : 'Pending';
 
     const paymentMethodMap: Record<string, string> = {

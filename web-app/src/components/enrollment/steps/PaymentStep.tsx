@@ -19,7 +19,7 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [enrollmentSubmitted, setEnrollmentSubmitted] = useState(false);
+  const [enrollmentToken, setEnrollmentToken] = useState<string | null>(null);
 
   const handlePaymentSelection = (method: string) => {
     updateData({ paymentMethod: method });
@@ -199,9 +199,7 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 <strong>Total a pagar:</strong> ${totalAmount.toFixed(2)}
               </p>
               <p className="text-xs text-cyan-700">
-                {enrollmentSubmitted 
-                  ? 'Serás redirigido a la página segura de Paguelo Fácil para completar el pago. El pago se registrará automáticamente.'
-                  : 'Primero se guardará tu información de matrícula, luego serás redirigido a Paguelo Fácil para completar el pago.'}
+                Serás redirigido a la página segura de Paguelo Fácil para completar el pago. Tu matrícula se procesará automáticamente después de confirmar el pago.
               </p>
             </div>
             <PagueloFacilPaymentButton
@@ -209,30 +207,56 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
               email={data.tutorEmail || ''}
               orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
-              returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}&playerCount=${data.players.length}&tutorName=${encodeURIComponent(data.tutorName || '')}&tutorEmail=${encodeURIComponent(data.tutorEmail || '')}&tutorCedula=${encodeURIComponent(data.tutorCedula || '')}`}
+              returnUrl={() => {
+                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                const token = enrollmentToken || (typeof window !== 'undefined' ? sessionStorage.getItem('enrollment_token') : null);
+                if (token) {
+                  return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}&enrollmentToken=${encodeURIComponent(token)}`;
+                }
+                return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}`;
+              }}
               customParams={{
                 type: 'enrollment',
                 amount: totalAmount.toString(),
-                playerCount: data.players.length.toString(),
-                tutorName: data.tutorName || '',
-                tutorEmail: data.tutorEmail || '',
-                tutorCedula: data.tutorCedula || '',
               }}
               beforeRedirect={async () => {
-                // Submit enrollment before redirecting if not already submitted
-                if (!enrollmentSubmitted && onSubmit) {
-                  try {
-                    await onSubmit();
-                    setEnrollmentSubmitted(true);
-                  } catch (error) {
-                    console.error('Error submitting enrollment:', error);
-                    throw new Error('Error al guardar la matrícula. Por favor intenta nuevamente.');
+                // Store enrollment data temporarily on server before redirecting
+                // The enrollment will be created AFTER payment confirmation in the callback
+                try {
+                  const enrollmentData = {
+                    ...data,
+                    totalAmount,
+                    timestamp: Date.now(),
+                  };
+                  
+                  const response = await fetch('/api/enrollment/temp', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(enrollmentData),
+                  });
+                  
+                  const result = await response.json();
+                  
+                  if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Error al preparar la matrícula');
                   }
+                  
+                  // Store token to use in returnUrl
+                  if (typeof window !== 'undefined' && result.token) {
+                    setEnrollmentToken(result.token);
+                    sessionStorage.setItem('enrollment_token', result.token);
+                  }
+                  
+                  console.log('[Enrollment] Stored enrollment data temporarily with token:', result.token);
+                } catch (error: any) {
+                  console.error('[Enrollment] Error storing enrollment data:', error);
+                  throw new Error('Error al preparar la matrícula. Por favor intenta nuevamente.');
                 }
               }}
               onError={(errorMsg: string) => {
                 alert('Error en Paguelo Fácil: ' + errorMsg);
-                setEnrollmentSubmitted(false);
               }}
             />
           </div>
