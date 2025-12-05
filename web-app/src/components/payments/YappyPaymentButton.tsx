@@ -365,13 +365,15 @@ export function YappyPaymentButton({
         // Use a flag to track if we've seen the initial "no disponible" message (which is normal during init)
         let hasSeenInitialUnavailable = false;
         let unavailableMessageTimeout: NodeJS.Timeout | null = null;
-        const INITIALIZATION_GRACE_PERIOD = 3000; // 3 seconds grace period for initialization
+        let buttonInitTime = Date.now(); // Track when button was initialized
+        const INITIALIZATION_GRACE_PERIOD = 5000; // 5 seconds grace period for initialization (increased)
 
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
             if (mutation.type === 'childList' || mutation.type === 'characterData') {
               const buttonElement = yappyButton as any;
               const textContent = buttonElement.textContent || buttonElement.innerText || '';
+              const timeSinceInit = Date.now() - buttonInitTime;
               
               // Check if Yappy is showing an error message in the DOM
               const hasUnavailableMessage = textContent.includes('no está disponible') || 
@@ -381,17 +383,26 @@ export function YappyPaymentButton({
                   textContent.includes('not available');
               
               if (hasUnavailableMessage) {
+                // If we're still in the grace period, ignore the message
+                if (timeSinceInit < INITIALIZATION_GRACE_PERIOD) {
+                  console.log('[Yappy] "No disponible" message detected during initialization (normal), ignoring...', {
+                    timeSinceInit,
+                    gracePeriod: INITIALIZATION_GRACE_PERIOD,
+                  });
+                  return; // Don't process this message during initialization
+                }
+
                 // Clear any existing timeout
                 if (unavailableMessageTimeout) {
                   clearTimeout(unavailableMessageTimeout);
                 }
 
-                // If this is the first time we see the message, mark it and wait
+                // If this is the first time we see the message after grace period, mark it and wait
                 if (!hasSeenInitialUnavailable) {
                   hasSeenInitialUnavailable = true;
-                  console.log('[Yappy] Initial "no disponible" message detected (normal during initialization), waiting...');
+                  console.log('[Yappy] "No disponible" message detected after initialization, checking if persistent...');
                   
-                  // Set a timeout to check if the message persists after initialization
+                  // Set a timeout to check if the message persists
                   unavailableMessageTimeout = setTimeout(() => {
                     const currentTextContent = buttonElement.textContent || buttonElement.innerText || '';
                     const stillUnavailable = currentTextContent.includes('no está disponible') || 
@@ -407,13 +418,11 @@ export function YappyPaymentButton({
                       setError(errorMsg);
                       onError?.(errorMsg);
                     } else {
-                      console.log('[Yappy] Button recovered from initial unavailable state');
+                      console.log('[Yappy] Button recovered from unavailable state');
                     }
-                  }, INITIALIZATION_GRACE_PERIOD);
+                  }, 2000); // Wait 2 more seconds to confirm it's persistent
                 } else {
-                  // If we've already seen the initial message and it appears again, it might be a real error
-                  // But only if enough time has passed since initialization
-                  const timeSinceInit = Date.now() - (window as any).__yappyInitTime || 0;
+                  // If we've already seen the initial message and it appears again after grace period, it's a real error
                   if (timeSinceInit > INITIALIZATION_GRACE_PERIOD && !error) {
                     console.warn('[Yappy] Error message detected in DOM after initialization:', textContent);
                     const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
@@ -430,6 +439,7 @@ export function YappyPaymentButton({
                 }
                 if (hasSeenInitialUnavailable && error) {
                   // Button recovered, clear error
+                  console.log('[Yappy] Button recovered, clearing error');
                   setError(null);
                 }
               }
@@ -454,19 +464,31 @@ export function YappyPaymentButton({
           buttonRenderedRef.current = true;
           
           // Track initialization time for error detection
+          const buttonInitTime = Date.now();
           if (typeof window !== 'undefined') {
-            (window as any).__yappyInitTime = Date.now();
+            (window as any).__yappyInitTime = buttonInitTime;
           }
           
           // Set loading to false only after button is rendered
           setIsLoading(false);
           console.log('[Yappy] Button element added to DOM');
           
-          // Check after a delay if the button shows an error
+          // Check after grace period if the button shows a persistent error
+          // Only show error if message persists after initialization grace period
           setTimeout(() => {
             const buttonElement = yappyButton as any;
             const textContent = buttonElement.textContent || buttonElement.innerText || '';
             const innerHTML = buttonElement.innerHTML || '';
+            const timeSinceInit = Date.now() - buttonInitTime;
+            
+            // Only check for errors if we're past the grace period
+            if (timeSinceInit < INITIALIZATION_GRACE_PERIOD) {
+              console.log('[Yappy] Skipping error check - still in initialization grace period', {
+                timeSinceInit,
+                gracePeriod: INITIALIZATION_GRACE_PERIOD,
+              });
+              return;
+            }
             
             // Check for unavailable label element
             const unavailableLabel = buttonElement.querySelector?.('.unavailable-label');
@@ -474,24 +496,22 @@ export function YappyPaymentButton({
                                        innerHTML.includes('unavailable-label') ||
                                        innerHTML.includes('unavailable');
             
-            console.log('[Yappy] Button content after render:', { 
-              textContent, 
-              innerHTML: innerHTML.substring(0, 500), // Limit log size
-              hasUnavailableLabel: !!unavailableLabel,
-              hasUnavailableClass,
-              allAttributes: Array.from(buttonElement.attributes || []).map((attr: any) => ({
-                name: attr.name,
-                value: attr.value
-              }))
-            });
-            
-            if (textContent.includes('no está disponible') || 
+            const hasUnavailableMessage = textContent.includes('no está disponible') || 
                 textContent.includes('no disponible') ||
                 innerHTML.includes('no está disponible') ||
-                textContent.includes('not available') ||
-                unavailableLabel ||
-                hasUnavailableClass) {
-              console.warn('[Yappy] Error detected in button content:', { 
+                textContent.includes('not available');
+            
+            console.log('[Yappy] Button content check (after grace period):', { 
+              textContent: textContent.substring(0, 100),
+              hasUnavailableMessage,
+              hasUnavailableLabel: !!unavailableLabel,
+              hasUnavailableClass,
+              timeSinceInit,
+            });
+            
+            // Only show error if message persists after grace period AND we haven't already set an error
+            if ((hasUnavailableMessage || unavailableLabel || hasUnavailableClass) && !error) {
+              console.warn('[Yappy] Persistent error detected in button content after grace period:', { 
                 textContent, 
                 hasUnavailableLabel: !!unavailableLabel,
                 hasUnavailableClass,
@@ -500,15 +520,13 @@ export function YappyPaymentButton({
                 currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
               });
               const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
-              if (!error) {
-                const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica en Yappy Comercial que: 1) El dominio esté exactamente como "${currentDomain}" (sin https://), 2) El merchant ID "${merchantId.substring(0, 8)}..." esté activo, 3) La clave secreta esté generada y configurada.`;
-                setError(errorMsg);
-                onError?.(errorMsg);
-              }
-            } else {
+              const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica en Yappy Comercial que: 1) El dominio esté exactamente como "${currentDomain}" (sin https://), 2) El merchant ID "${merchantId.substring(0, 8)}..." esté activo, 3) La clave secreta esté generada y configurada.`;
+              setError(errorMsg);
+              onError?.(errorMsg);
+            } else if (!hasUnavailableMessage && !unavailableLabel && !hasUnavailableClass) {
               console.log('[Yappy] Button appears to be ready and available');
             }
-          }, 3000); // Increased delay to give Yappy more time to validate
+          }, INITIALIZATION_GRACE_PERIOD + 1000); // Check after grace period + 1 second buffer
         }
       } catch (err: any) {
         console.error('[Yappy] Error rendering button:', err);
