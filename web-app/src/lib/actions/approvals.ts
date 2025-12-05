@@ -117,18 +117,19 @@ export async function getApprovedEnrollmentPayment(playerId: string) {
       .select('*')
       .eq('type', 'enrollment')
       .eq('status', 'Approved')
-      .order('payment_date', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(50); // Aumentar límite para asegurar que encontramos los pagos
     
     if (error) {
-      console.error('[getApprovedEnrollmentPayment] Error fetching payments:', {
-        error,
+      // Serializar el error correctamente para evitar objetos vacíos
+      const errorInfo = {
         code: error.code,
         message: error.message,
         details: error.details,
-        hint: error.hint
-      });
+        hint: error.hint,
+        playerId
+      };
+      console.error('[getApprovedEnrollmentPayment] Error fetching payments:', JSON.stringify(errorInfo, null, 2));
       return null;
     }
     
@@ -174,10 +175,11 @@ export async function getApprovedEnrollmentPayment(playerId: string) {
     
     return matchingPayment || null;
   } catch (error: any) {
-    console.error('[getApprovedEnrollmentPayment] Error:', {
-      error,
-      message: error?.message,
-      stack: error?.stack
+    console.error('[getApprovedEnrollmentPayment] Exception caught:', {
+      error: error || 'Unknown error',
+      message: error?.message || 'No error message',
+      stack: error?.stack || 'No stack trace',
+      playerId
     });
     return null;
   }
