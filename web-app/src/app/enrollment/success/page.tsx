@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-export default function EnrollmentSuccessPage() {
+function EnrollmentSuccessContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'success' | 'failed' | 'error' | null>(null);
   const [details, setDetails] = useState<{
@@ -170,5 +170,24 @@ export default function EnrollmentSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EnrollmentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen py-12 transition-colors duration-300">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="glass-card p-8 sm:p-10 text-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando información...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <EnrollmentSuccessContent />
+    </Suspense>
   );
 }
