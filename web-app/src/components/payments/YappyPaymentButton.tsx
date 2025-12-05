@@ -254,8 +254,6 @@ export function YappyPaymentButton({
 
         console.log('[Yappy] Custom element found, proceeding to render button');
 
-        console.log('[Yappy] Custom element found, proceeding to render button');
-
         // Clear container first
         if (!containerRef.current) return;
         containerRef.current.innerHTML = '';
@@ -444,9 +442,8 @@ export function YappyPaymentButton({
       }
     };
 
-      // Wait a bit for the module to fully load
-      setTimeout(renderButton, 200);
-    }
+    // Wait a bit for the module to fully load
+    setTimeout(renderButton, 200);
   }, [merchantId, domainUrl, validationToken, orderToken, documentName, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
 
   return (
