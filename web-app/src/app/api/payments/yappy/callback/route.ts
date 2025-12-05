@@ -57,10 +57,24 @@ export async function POST(request: NextRequest) {
       monthYear,
     });
 
-    // Build redirect URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                   request.headers.get('origin') || 
-                   'http://localhost:3000';
+    // Build redirect URL - extract from request URL if available, otherwise use env var
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    
+    if (!baseUrl) {
+      // Try to extract from request URL
+      try {
+        const requestUrl = new URL(request.url);
+        baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+      } catch (e) {
+        // Fallback to origin header or localhost
+        baseUrl = request.headers.get('origin') || 'http://localhost:3000';
+      }
+    }
+    
+    // Ensure HTTPS in production (Vercel)
+    if (baseUrl.includes('vercel.app') && !baseUrl.startsWith('https://')) {
+      baseUrl = baseUrl.replace('http://', 'https://');
+    }
 
     // If transaction was approved and we have payment details, create payment record
     console.log('[Yappy Callback] Checking conditions for payment creation:', {
@@ -259,9 +273,21 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('[Yappy Callback] Error processing callback:', error);
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                   request.headers.get('origin') || 
-                   'http://localhost:3000';
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    
+    if (!baseUrl) {
+      try {
+        const requestUrl = new URL(request.url);
+        baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+      } catch (e) {
+        baseUrl = request.headers.get('origin') || 'http://localhost:3000';
+      }
+    }
+    
+    if (baseUrl.includes('vercel.app') && !baseUrl.startsWith('https://')) {
+      baseUrl = baseUrl.replace('http://', 'https://');
+    }
+    
     return NextResponse.json({
       success: false,
       redirectUrl: `${baseUrl}/dashboard/finances?yappy=error`,
@@ -357,10 +383,24 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Build redirect URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                   request.headers.get('origin') || 
-                   'http://localhost:3000';
+    // Build redirect URL - extract from request URL if available, otherwise use env var
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    
+    if (!baseUrl) {
+      // Try to extract from request URL
+      try {
+        const requestUrl = new URL(request.url);
+        baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+      } catch (e) {
+        // Fallback to origin header or localhost
+        baseUrl = request.headers.get('origin') || 'http://localhost:3000';
+      }
+    }
+    
+    // Ensure HTTPS in production (Vercel)
+    if (baseUrl.includes('vercel.app') && !baseUrl.startsWith('https://')) {
+      baseUrl = baseUrl.replace('http://', 'https://');
+    }
 
     // Process payment creation if approved (same logic as POST)
     if (isApproved && type === 'payment' && playerId && amount) {

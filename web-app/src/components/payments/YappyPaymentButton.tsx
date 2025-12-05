@@ -53,6 +53,8 @@ export function YappyPaymentButton({
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false); // Keep ref for checking if script element exists
+  const buttonRenderedRef = useRef(false); // Track if button has been rendered to avoid re-renders
+  const observerRef = useRef<MutationObserver | null>(null); // Store observer reference for cleanup
 
   // Step 1: Get merchant ID and validate merchant (according to Yappy manual)
   useEffect(() => {
@@ -228,7 +230,14 @@ export function YappyPaymentButton({
       hasOrderToken: !!orderToken,
       hasContainer: !!containerRef.current,
       scriptLoaded: scriptLoaded,
+      buttonAlreadyRendered: buttonRenderedRef.current,
     });
+
+    // If button is already rendered, don't render again
+    if (buttonRenderedRef.current) {
+      console.log('[Yappy] Button already rendered, skipping re-render');
+      return;
+    }
 
     if (!merchantId || !validationToken || !orderToken || !containerRef.current || !scriptLoaded) {
       console.log('[Yappy] Render conditions not met, waiting...');
@@ -353,6 +362,11 @@ export function YappyPaymentButton({
         });
 
         // Monitor the button element for changes (in case Yappy shows error message in DOM)
+        // Use a flag to track if we've seen the initial "no disponible" message (which is normal during init)
+        let hasSeenInitialUnavailable = false;
+        let unavailableMessageTimeout: NodeJS.Timeout | null = null;
+        const INITIALIZATION_GRACE_PERIOD = 3000; // 3 seconds grace period for initialization
+
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
             if (mutation.type === 'childList' || mutation.type === 'characterData') {
@@ -360,22 +374,71 @@ export function YappyPaymentButton({
               const textContent = buttonElement.textContent || buttonElement.innerText || '';
               
               // Check if Yappy is showing an error message in the DOM
-              if (textContent.includes('no está disponible') || 
+              const hasUnavailableMessage = textContent.includes('no está disponible') || 
                   textContent.includes('no disponible') ||
                   textContent.includes('intenta más tarde') ||
                   textContent.includes('try again later') ||
-                  textContent.includes('not available')) {
-                console.warn('[Yappy] Error message detected in DOM:', textContent);
-                const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
-                if (!error) {
-                  const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
-                  setError(errorMsg);
-                  onError?.(errorMsg);
+                  textContent.includes('not available');
+              
+              if (hasUnavailableMessage) {
+                // Clear any existing timeout
+                if (unavailableMessageTimeout) {
+                  clearTimeout(unavailableMessageTimeout);
+                }
+
+                // If this is the first time we see the message, mark it and wait
+                if (!hasSeenInitialUnavailable) {
+                  hasSeenInitialUnavailable = true;
+                  console.log('[Yappy] Initial "no disponible" message detected (normal during initialization), waiting...');
+                  
+                  // Set a timeout to check if the message persists after initialization
+                  unavailableMessageTimeout = setTimeout(() => {
+                    const currentTextContent = buttonElement.textContent || buttonElement.innerText || '';
+                    const stillUnavailable = currentTextContent.includes('no está disponible') || 
+                        currentTextContent.includes('no disponible') ||
+                        currentTextContent.includes('intenta más tarde') ||
+                        currentTextContent.includes('try again later') ||
+                        currentTextContent.includes('not available');
+                    
+                    if (stillUnavailable && !error) {
+                      console.warn('[Yappy] Error message persisted after initialization:', currentTextContent);
+                      const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+                      const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
+                      setError(errorMsg);
+                      onError?.(errorMsg);
+                    } else {
+                      console.log('[Yappy] Button recovered from initial unavailable state');
+                    }
+                  }, INITIALIZATION_GRACE_PERIOD);
+                } else {
+                  // If we've already seen the initial message and it appears again, it might be a real error
+                  // But only if enough time has passed since initialization
+                  const timeSinceInit = Date.now() - (window as any).__yappyInitTime || 0;
+                  if (timeSinceInit > INITIALIZATION_GRACE_PERIOD && !error) {
+                    console.warn('[Yappy] Error message detected in DOM after initialization:', textContent);
+                    const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+                    const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
+                    setError(errorMsg);
+                    onError?.(errorMsg);
+                  }
+                }
+              } else {
+                // If the message is gone, clear the timeout and reset the flag
+                if (unavailableMessageTimeout) {
+                  clearTimeout(unavailableMessageTimeout);
+                  unavailableMessageTimeout = null;
+                }
+                if (hasSeenInitialUnavailable && error) {
+                  // Button recovered, clear error
+                  setError(null);
                 }
               }
             }
           });
         });
+
+        // Store observer reference for cleanup
+        observerRef.current = observer;
 
         // Start observing the button element
         observer.observe(yappyButton, {
@@ -386,6 +449,14 @@ export function YappyPaymentButton({
 
         if (containerRef.current) {
           containerRef.current.appendChild(yappyButton);
+          
+          // Mark button as rendered to prevent re-renders
+          buttonRenderedRef.current = true;
+          
+          // Track initialization time for error detection
+          if (typeof window !== 'undefined') {
+            (window as any).__yappyInitTime = Date.now();
+          }
           
           // Set loading to false only after button is rendered
           setIsLoading(false);
@@ -448,6 +519,14 @@ export function YappyPaymentButton({
 
     // Wait a bit for the module to fully load
     setTimeout(renderButton, 200);
+
+    // Cleanup function to disconnect observer when component unmounts or dependencies change
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+    };
   }, [merchantId, domainUrl, validationToken, orderToken, documentName, scriptLoaded, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
 
   return (
