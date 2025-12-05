@@ -130,6 +130,13 @@ export async function POST(request: NextRequest) {
 
     // Truncate orderId to 15 characters (Yappy limit)
     const truncatedOrderId = orderId.trim().substring(0, 15);
+    
+    console.log('[Yappy Order] OrderId processing:', {
+      originalOrderId: orderId,
+      originalLength: orderId.length,
+      truncatedOrderId,
+      truncatedLength: truncatedOrderId.length,
+    });
 
     // Create order using the new flow
     const result = await YappyService.createOrder({

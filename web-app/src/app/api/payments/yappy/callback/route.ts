@@ -376,29 +376,62 @@ export async function GET(request: NextRequest) {
     let storedOrderInfo: any = null;
     try {
       const supabase = await createClient();
+      
+      // Truncate orderId to 15 characters to match what was stored
+      const truncatedOrderId = orderId.trim().substring(0, 15);
+      
+      console.log('[Yappy Callback] Attempting to retrieve order info from database:', {
+        originalOrderId: orderId,
+        originalLength: orderId.length,
+        truncatedOrderId,
+        truncatedLength: truncatedOrderId.length,
+      });
+      
       const { data: orderData, error: orderError } = await supabase
         .from('yappy_orders')
         .select('*')
-        .eq('order_id', orderId)
-        .single();
+        .eq('order_id', truncatedOrderId)
+        .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
 
       if (!orderError && orderData) {
         storedOrderInfo = orderData;
-        console.log('[Yappy Callback] Order info retrieved from database:', {
-          orderId,
+        console.log('[Yappy Callback] ✅ Order info retrieved from database:', {
+          orderId: truncatedOrderId,
           playerId: orderData.player_id,
           amount: orderData.amount,
           type: orderData.type,
           paymentType: orderData.payment_type,
+          monthYear: orderData.month_year,
+          notes: orderData.notes,
         });
       } else {
-        console.log('[Yappy Callback] Order info not found in database:', {
-          orderId,
-          error: orderError?.message,
+        console.log('[Yappy Callback] ❌ Order info not found in database:', {
+          orderId: truncatedOrderId,
+          originalOrderId: orderId,
+          error: orderError?.message || 'No rows returned',
+          errorCode: orderError?.code,
+          errorDetails: orderError?.details,
+          errorHint: orderError?.hint,
         });
+        
+        // Try to find any orders with similar orderId (for debugging)
+        const { data: similarOrders, error: similarError } = await supabase
+          .from('yappy_orders')
+          .select('order_id, player_id, amount, created_at')
+          .ilike('order_id', `%${truncatedOrderId.substring(0, 10)}%`)
+          .limit(5);
+        
+        if (!similarError && similarOrders && similarOrders.length > 0) {
+          console.log('[Yappy Callback] Found similar orders (for debugging):', similarOrders);
+        }
       }
     } catch (dbError: any) {
-      console.error('[Yappy Callback] Error retrieving order info from database:', dbError);
+      console.error('[Yappy Callback] Exception retrieving order info from database:', {
+        error: dbError?.message,
+        stack: dbError?.stack,
+        orderId,
+        truncatedOrderId: orderId.trim().substring(0, 15),
+      });
     }
 
     // Extract custom parameters - try multiple sources
@@ -494,15 +527,21 @@ export async function GET(request: NextRequest) {
 
     // Process payment creation if approved (same logic as POST)
     // Handle both 'payment' and 'enrollment' types
-    const shouldCreatePayment = isApproved && (type === 'payment' || type === 'enrollment') && playerId && amount;
+    // Convert to boolean explicitly to avoid string evaluation issues
+    const hasValidType = type === 'payment' || type === 'enrollment';
+    const hasValidPlayerId = !!playerId && playerId.trim().length > 0;
+    const hasValidAmount = !!amount && amount.trim().length > 0 && !isNaN(parseFloat(amount));
+    const shouldCreatePayment = Boolean(isApproved && hasValidType && hasValidPlayerId && hasValidAmount);
     
     console.log('[Yappy Callback] Payment creation check:', {
       isApproved,
       type,
       isPaymentType: type === 'payment',
       isEnrollmentType: type === 'enrollment',
-      hasPlayerId: !!playerId,
-      hasAmount: !!amount,
+      hasPlayerId: hasValidPlayerId,
+      playerId: playerId || 'empty',
+      hasAmount: hasValidAmount,
+      amount: amount || 'empty',
       shouldCreatePayment,
     });
 
