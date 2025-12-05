@@ -9,7 +9,7 @@ import PlayerManagement from '@/components/payments/PlayerManagement';
 import { PlayerEmailHistory } from '@/components/emails/PlayerEmailHistory';
 import { getPlayerCategory, getCategoryColor, calculateAge } from '@/lib/utils/player-category';
 import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
-import { EditPlayerModal } from '@/components/players/EditPlayerModal';
+import { EditablePlayerInfo } from '@/components/players/EditablePlayerInfo';
 
 export default async function PlayerProfilePage({ 
   params 
@@ -98,90 +98,20 @@ export default async function PlayerProfilePage({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <EditPlayerModal player={player} />
-            <span className={`px-4 py-2 rounded-full text-sm font-bold ${
-              player.status === 'Active' 
-                ? 'badge-gradient-active'
-                : player.status === 'Scholarship'
-                ? 'badge-gradient-scholarship'
-                : 'badge-gradient-pending'
-            }`}>
-              {player.status === 'Active' ? '✅ Activo' : player.status === 'Scholarship' ? '🎓 Becado' : '⏳ Pendiente'}
-            </span>
-          </div>
+          <span className={`px-4 py-2 rounded-full text-sm font-bold ${
+            player.status === 'Active' 
+              ? 'badge-gradient-active'
+              : player.status === 'Scholarship'
+              ? 'badge-gradient-scholarship'
+              : 'badge-gradient-pending'
+          }`}>
+            {player.status === 'Active' ? '✅ Activo' : player.status === 'Scholarship' ? '🎓 Becado' : '⏳ Pendiente'}
+          </span>
         </div>
       </div>
 
-      {/* Personal Info */}
-      <div className="glass-card p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <User className="h-6 w-6" />
-          Información Personal
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
-            <p className="text-xs font-semibold text-gray-600 mb-1">📅 Fecha de Nacimiento</p>
-            <p className="text-lg font-bold text-gray-900">
-              {player.birth_date ? new Date(player.birth_date).toLocaleDateString('es-ES') : 'N/A'}
-            </p>
-            {age && <p className="text-sm text-gray-600 mt-1">{age} años</p>}
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border-l-4 border-purple-500">
-            <p className="text-xs font-semibold text-gray-600 mb-1">🆔 Cédula</p>
-            <p className="text-lg font-bold text-gray-900">{player.cedula || 'Sin cédula'}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
-            <p className="text-xs font-semibold text-gray-600 mb-1">📍 Dirección</p>
-            <p className="text-lg font-bold text-gray-900">{player.address || 'Sin dirección'}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tutor Info */}
-      <div className="glass-card p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <User className="h-6 w-6" />
-          Información del Tutor
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border-l-4 border-amber-500">
-            <p className="text-xs font-semibold text-gray-600 mb-1">👤 Nombre</p>
-            <p className="text-lg font-bold text-gray-900">
-              {player.families?.tutor_name || player.tutor_name || 'Sin información'}
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
-            <div className="flex items-center gap-2 mb-1">
-              <Mail className="h-4 w-4 text-blue-600" />
-              <p className="text-xs font-semibold text-gray-600">Email</p>
-            </div>
-            <p className="text-lg font-bold text-gray-900">
-              {player.families?.tutor_email || player.tutor_email || 'Sin email'}
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
-            <div className="flex items-center gap-2 mb-1">
-              <Phone className="h-4 w-4 text-green-600" />
-              <p className="text-xs font-semibold text-gray-600">Teléfono</p>
-            </div>
-            <p className="text-lg font-bold text-gray-900">
-              {player.families?.tutor_phone || player.tutor_phone || 'Sin teléfono'}
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border-l-4 border-purple-500">
-            <p className="text-xs font-semibold text-gray-600 mb-1">🆔 Cédula Tutor</p>
-            <p className="text-lg font-bold text-gray-900">
-              {player.families?.tutor_cedula || player.tutor_cedula || 'Sin cédula'}
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Editable Player Info */}
+      <EditablePlayerInfo player={player} />
 
       {/* Documents */}
       <div className="glass-card p-6">

@@ -6,7 +6,7 @@ import { getPlayersPayments } from '@/lib/actions/payments';
 import PaymentHistory from '@/components/payments/PaymentHistory';
 import { AddSecondaryEmailButton } from '@/components/tutors/AddSecondaryEmailButton';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
-import { EditTutorModal } from '@/components/tutors/EditTutorModal';
+import { EditableTutorInfo } from '@/components/tutors/EditableTutorInfo';
 
 export default async function TutorProfilePage({ 
   params 
@@ -184,69 +184,30 @@ export default async function TutorProfilePage({
       </div>
 
       {/* Contact Info */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <User className="h-6 w-6" />
-            Información de Contacto
-          </h2>
-          <div className="flex items-center gap-3">
-            <EditTutorModal 
-              tutor={{
-                id: tutorInfo.type === 'Family' ? tutorInfo.id : undefined,
-                name: tutorInfo.name || '',
-                email: tutorInfo.email,
-                phone: tutorInfo.phone,
-                cedula: tutorInfo.cedula,
-                secondary_email: tutorInfo.secondary_email,
-                type: tutorInfo.type,
-                playerIds: tutorInfo.type === 'Individual' ? tutorPlayers.map(p => p.id) : undefined,
-              }}
+      <div className="space-y-4">
+        <EditableTutorInfo 
+          tutor={{
+            id: tutorInfo.type === 'Family' ? tutorInfo.id : undefined,
+            name: tutorInfo.name || '',
+            email: tutorInfo.email,
+            phone: tutorInfo.phone,
+            cedula: tutorInfo.cedula,
+            secondary_email: tutorInfo.secondary_email,
+            type: tutorInfo.type,
+            playerIds: tutorInfo.type === 'Individual' ? tutorPlayers.map(p => p.id) : undefined,
+          }}
+        />
+        {tutorInfo.type === 'Family' && tutorInfo.id && (
+          <div className="flex justify-end">
+            <AddSecondaryEmailButton 
+              familyId={tutorInfo.id} 
+              currentSecondaryEmail={tutorInfo.secondary_email}
             />
-            {tutorInfo.type === 'Family' && tutorInfo.id && (
-              <AddSecondaryEmailButton 
-                familyId={tutorInfo.id} 
-                currentSecondaryEmail={tutorInfo.secondary_email}
-              />
-            )}
           </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
-            <div className="flex items-center gap-2 mb-1">
-              <Mail className="h-4 w-4 text-blue-600" />
-              <p className="text-xs font-semibold text-gray-600">Email Principal</p>
-            </div>
-            <p className="text-lg font-bold text-gray-900">{tutorInfo.email || 'Sin email'}</p>
-          </div>
-
-          {tutorInfo.secondary_email && (
-            <div className="bg-gradient-to-br from-cyan-50 to-sky-50 p-4 rounded-xl border-l-4 border-cyan-500">
-              <div className="flex items-center gap-2 mb-1">
-                <Mail className="h-4 w-4 text-cyan-600" />
-                <p className="text-xs font-semibold text-gray-600">Email Secundario</p>
-              </div>
-              <p className="text-lg font-bold text-gray-900">{tutorInfo.secondary_email}</p>
-            </div>
-          )}
-
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
-            <div className="flex items-center gap-2 mb-1">
-              <Phone className="h-4 w-4 text-green-600" />
-              <p className="text-xs font-semibold text-gray-600">Teléfono</p>
-            </div>
-            <p className="text-lg font-bold text-gray-900">{tutorInfo.phone || 'Sin teléfono'}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border-l-4 border-purple-500">
-            <p className="text-xs font-semibold text-gray-600 mb-1">🆔 Cédula</p>
-            <p className="text-lg font-bold text-gray-900">{tutorInfo.cedula || 'Sin cédula'}</p>
-          </div>
-        </div>
-
+        )}
         {/* Documents */}
         {tutorInfo.cedula_url && (
-          <div className="mt-6">
+          <div className="glass-card p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Documentos

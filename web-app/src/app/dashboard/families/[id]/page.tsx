@@ -6,7 +6,7 @@ import { getPlayersPayments } from '@/lib/actions/payments';
 import { getPlayerCategory } from '@/lib/utils/player-category';
 import { AddSecondaryEmailButton } from '@/components/tutors/AddSecondaryEmailButton';
 import { PaymentSection } from './PaymentSection';
-import { EditFamilyModal } from '@/components/families/EditFamilyModal';
+import { EditableFamilyInfo } from '@/components/families/EditableFamilyInfo';
 
 export default async function FamilyProfilePage({ 
   params 
@@ -148,56 +148,13 @@ export default async function FamilyProfilePage({
       </div>
 
       {/* Tutor Info */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <User className="h-6 w-6" />
-            Información del Tutor
-          </h2>
-          <div className="flex items-center gap-3">
-            <EditFamilyModal family={familyWithSecondaryEmail} />
-            <AddSecondaryEmailButton 
-              familyId={family.id} 
-              currentSecondaryEmail={familyWithSecondaryEmail.secondary_email}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border-l-4 border-amber-500">
-            <p className="text-xs font-semibold text-gray-600 mb-1">👤 Nombre Completo</p>
-            <p className="text-lg font-bold text-gray-900">{family.tutor_name}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border-l-4 border-purple-500">
-            <p className="text-xs font-semibold text-gray-600 mb-1">🆔 Cédula</p>
-            <p className="text-lg font-bold text-gray-900">{family.tutor_cedula || 'Sin cédula'}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
-            <div className="flex items-center gap-2 mb-1">
-              <Mail className="h-4 w-4 text-blue-600" />
-              <p className="text-xs font-semibold text-gray-600">Email Principal</p>
-            </div>
-            <p className="text-lg font-bold text-gray-900">{family.tutor_email || 'Sin email'}</p>
-          </div>
-
-          {familyWithSecondaryEmail.secondary_email && (
-            <div className="bg-gradient-to-br from-cyan-50 to-sky-50 p-4 rounded-xl border-l-4 border-cyan-500">
-              <div className="flex items-center gap-2 mb-1">
-                <Mail className="h-4 w-4 text-cyan-600" />
-                <p className="text-xs font-semibold text-gray-600">Email Secundario</p>
-              </div>
-              <p className="text-lg font-bold text-gray-900">{familyWithSecondaryEmail.secondary_email}</p>
-            </div>
-          )}
-
-          <div className={`bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500 ${familyWithSecondaryEmail.secondary_email ? '' : 'md:col-span-2'}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <Phone className="h-4 w-4 text-green-600" />
-              <p className="text-xs font-semibold text-gray-600">Teléfono</p>
-            </div>
-            <p className="text-lg font-bold text-gray-900">{family.tutor_phone || 'Sin teléfono'}</p>
-          </div>
+      <div className="space-y-4">
+        <EditableFamilyInfo family={familyWithSecondaryEmail} />
+        <div className="flex justify-end">
+          <AddSecondaryEmailButton 
+            familyId={family.id} 
+            currentSecondaryEmail={familyWithSecondaryEmail.secondary_email}
+          />
         </div>
       </div>
 
