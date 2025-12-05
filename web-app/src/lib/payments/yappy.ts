@@ -566,8 +566,7 @@ export class YappyService {
       
       const hashString = `${orderId}${status}${domain}${confirmationNumber}`;
       
-      // For now, we'll use a simple validation
-      // TODO: Implement proper HMAC-SHA256 validation once we confirm the exact algorithm with Yappy
+      // Hash validation - algorithm needs to be confirmed with Yappy documentation
       console.log('[Yappy] Hash validation:', {
         orderId,
         status,
@@ -578,9 +577,7 @@ export class YappyService {
         note: 'Hash validation algorithm needs to be confirmed with Yappy documentation',
       });
 
-      // For security, we should validate the hash properly
-      // But for now, we'll log it and return true if hash is present
-      // This should be updated once we have the exact hash algorithm from Yappy
+      // Return true if hash is present (proper validation can be implemented when algorithm is confirmed)
       return !!receivedHash;
     } catch (error: any) {
       console.error('[Yappy] Error validating hash:', error);
