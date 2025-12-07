@@ -107,21 +107,72 @@ export async function updatePlayer(playerId: string, data: {
   tutor_phone?: string;
   tutor_cedula?: string;
   notes?: string;
+  hasFamily?: boolean;
+  familyId?: string | null;
 }) {
   const supabase = await createClient();
   
-  const { error } = await supabase
+  // Get player to check if they have a family
+  const { data: player, error: playerError } = await supabase
     .from('players')
-    .update(data)
+    .select('family_id')
+    .eq('id', playerId)
+    .single();
+  
+  if (playerError) {
+    console.error('Error fetching player:', playerError);
+    return { error: `Error al obtener datos del jugador: ${playerError.message}` };
+  }
+  
+  // Separate player data from tutor data
+  const { tutor_name, tutor_email, tutor_phone, tutor_cedula, hasFamily, familyId, ...playerData } = data;
+  
+  // Update player data (non-tutor fields)
+  const playerUpdateData: any = { ...playerData };
+  // Only update tutor fields in player table if player doesn't have a family
+  if (!player.family_id && !hasFamily) {
+    if (tutor_name !== undefined) playerUpdateData.tutor_name = tutor_name;
+    if (tutor_email !== undefined) playerUpdateData.tutor_email = tutor_email;
+    if (tutor_phone !== undefined) playerUpdateData.tutor_phone = tutor_phone;
+    if (tutor_cedula !== undefined) playerUpdateData.tutor_cedula = tutor_cedula;
+  }
+  
+  const { error: updateError } = await supabase
+    .from('players')
+    .update(playerUpdateData)
     .eq('id', playerId);
   
-  if (error) {
-    console.error('Error updating player:', error);
-    return { error: `Error al actualizar jugador: ${error.message}` };
+  if (updateError) {
+    console.error('Error updating player:', updateError);
+    return { error: `Error al actualizar jugador: ${updateError.message}` };
+  }
+  
+  // If player has a family, update family tutor info
+  const actualFamilyId = familyId || player.family_id;
+  if (actualFamilyId && (tutor_name !== undefined || tutor_email !== undefined || tutor_phone !== undefined || tutor_cedula !== undefined)) {
+    const familyUpdateData: any = {};
+    if (tutor_name !== undefined) familyUpdateData.tutor_name = tutor_name;
+    if (tutor_email !== undefined) familyUpdateData.tutor_email = tutor_email;
+    if (tutor_phone !== undefined) familyUpdateData.tutor_phone = tutor_phone;
+    if (tutor_cedula !== undefined) familyUpdateData.tutor_cedula = tutor_cedula;
+    
+    const { error: familyError } = await supabase
+      .from('families')
+      .update(familyUpdateData)
+      .eq('id', actualFamilyId);
+    
+    if (familyError) {
+      console.error('Error updating family:', familyError);
+      // Don't fail the whole operation, just log the error
+      console.warn('Player updated but family update failed');
+    }
   }
   
   revalidatePath('/dashboard/players');
   revalidatePath(`/dashboard/players/${playerId}`);
+  if (actualFamilyId) {
+    revalidatePath(`/dashboard/families/${actualFamilyId}`);
+  }
   
   return { success: true };
 }

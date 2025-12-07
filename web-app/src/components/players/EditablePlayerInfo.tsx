@@ -19,6 +19,8 @@ interface EditablePlayerInfoProps {
     tutor_phone?: string;
     tutor_cedula?: string;
     notes?: string;
+    hasFamily?: boolean;
+    familyId?: string | null;
   };
 }
 
@@ -66,6 +68,8 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
           tutor_phone: formData.tutor_phone || undefined,
           tutor_cedula: formData.tutor_cedula || undefined,
           notes: formData.notes || undefined,
+          hasFamily: player.hasFamily,
+          familyId: player.familyId,
         });
 
         if (result.error) {

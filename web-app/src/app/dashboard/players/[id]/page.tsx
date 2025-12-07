@@ -57,6 +57,18 @@ export default async function PlayerProfilePage({
   // Get family ID for email history filtering
   const familyId = player.family_id || null;
 
+  // Normalize tutor information: use family data if available, otherwise use player's direct fields
+  const family = Array.isArray(player.families) ? player.families[0] : player.families;
+  const normalizedPlayer = {
+    ...player,
+    tutor_name: family?.tutor_name || player.tutor_name || '',
+    tutor_email: family?.tutor_email || player.tutor_email || '',
+    tutor_phone: family?.tutor_phone || player.tutor_phone || '',
+    tutor_cedula: family?.tutor_cedula || player.tutor_cedula || '',
+    hasFamily: !!family,
+    familyId: family?.id || null,
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <PagueloFacilSuccessHandler />
@@ -113,7 +125,7 @@ export default async function PlayerProfilePage({
       </div>
 
       {/* Editable Player Info */}
-      <EditablePlayerInfo player={player} />
+      <EditablePlayerInfo player={normalizedPlayer} />
 
       {/* Documents */}
       <div className="glass-card p-6">
