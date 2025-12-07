@@ -114,7 +114,7 @@ export function YappyPaymentButton({
       returnUrlWithParams.searchParams.set('amount', amount.toString());
       if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
       if (notes) returnUrlWithParams.searchParams.set('notes', notes);
-      
+
       // For enrollment, store enrollment data in sessionStorage before redirecting
       if (customParams?.type === 'enrollment' && typeof window !== 'undefined') {
         // The enrollment data should already be stored in sessionStorage by PaymentStep
