@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { enrollmentSchema } from '@/lib/validations/enrollment';
+import { getPlayerCategory } from '@/lib/utils/player-category';
 
 /**
  * Helper function to create enrollment from payment callback
@@ -84,9 +85,25 @@ export async function createEnrollmentFromPayment(
           normalizedPlayer.cedula = normalizedPlayer.cedula.trim();
         }
         
-        // Ensure category has a default value
-        if (!normalizedPlayer.category || normalizedPlayer.category.trim() === '') {
-          normalizedPlayer.category = 'Pendiente';
+        // Calculate category automatically if missing or "Pendiente"
+        if (!normalizedPlayer.category || normalizedPlayer.category.trim() === '' || normalizedPlayer.category === 'Pendiente') {
+          // Calculate automatically based on birth date and gender
+          if (normalizedPlayer.birthDate && normalizedPlayer.gender) {
+            const genderForCategory = normalizedPlayer.gender === 'Masculino' ? 'Masculino' : 'Femenino';
+            try {
+              normalizedPlayer.category = getPlayerCategory(normalizedPlayer.birthDate, genderForCategory);
+              console.log('[createEnrollmentFromPayment] 🔧 Calculated category automatically:', {
+                birthDate: normalizedPlayer.birthDate,
+                gender: normalizedPlayer.gender,
+                calculatedCategory: normalizedPlayer.category,
+              });
+            } catch (error) {
+              console.error('[createEnrollmentFromPayment] Error calculating category:', error);
+              normalizedPlayer.category = 'Pendiente';
+            }
+          } else {
+            normalizedPlayer.category = 'Pendiente';
+          }
         }
         
         return normalizedPlayer;
