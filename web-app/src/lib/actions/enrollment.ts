@@ -6,6 +6,12 @@ import { enrollmentSchema } from '@/lib/validations/enrollment';
 /**
  * Helper function to create enrollment from payment callback
  * This is called after payment is confirmed by PagueloFacil/Yappy
+ * 
+ * IMPORTANT: This function does NOT perform rollback because:
+ * - The payment has already been confirmed by the payment gateway
+ * - The money has already been processed
+ * - Players must remain in the database to appear in approvals
+ * - Even if there are errors, we keep what was created so it can be manually fixed
  */
 export async function createEnrollmentFromPayment(
   enrollmentData: any,
@@ -22,7 +28,7 @@ export async function createEnrollmentFromPayment(
     operationNumber,
   });
 
-  // Track created resources for rollback
+  // Track created resources for logging (NOT for rollback - payment already confirmed)
   const createdResources: {
     familyId?: string | null;
     familyWasNew?: boolean;
@@ -254,33 +260,29 @@ export async function createEnrollmentFromPayment(
       familyId,
     };
   } catch (error: any) {
-    console.error('[createEnrollmentFromPayment] Error:', error);
+    console.error('[createEnrollmentFromPayment] ❌ Error during enrollment creation:', error);
+    console.error('[createEnrollmentFromPayment] ⚠️ Payment was already confirmed by gateway, so NO rollback will be performed');
+    console.error('[createEnrollmentFromPayment] 📋 Resources created before error (these will be kept):', {
+      playerIds: createdResources.playerIds,
+      familyId: createdResources.familyId,
+      paymentId: createdResources.paymentId,
+    });
 
-    // Rollback: Delete created resources
-    if (createdResources.playerIds.length > 0) {
-      await supabase
-        .from('pending_players')
-        .delete()
-        .in('id', createdResources.playerIds);
-    }
-
-    if (createdResources.familyId && createdResources.familyWasNew) {
-      await supabase
-        .from('families')
-        .delete()
-        .eq('id', createdResources.familyId);
-    }
-
-    if (createdResources.paymentId) {
-      await supabase
-        .from('payments')
-        .delete()
-        .eq('id', createdResources.paymentId);
-    }
+    // IMPORTANT: NO ROLLBACK - The payment has already been confirmed by PagueloFacil/Yappy
+    // The money has already been processed, so we MUST keep the players and payment
+    // that were created, even if there was an error. They will appear in approvals
+    // and can be manually fixed if needed.
+    // 
+    // This is different from /api/enrollment which handles direct payments (ACH/Transferencia)
+    // that haven't been processed yet - those can still be rolled back.
 
     return {
       success: false,
       error: error.message || 'Error creating enrollment',
+      // Return created resources so callbacks can handle them
+      playerIds: createdResources.playerIds,
+      paymentId: createdResources.paymentId,
+      familyId: createdResources.familyId,
     };
   }
 }

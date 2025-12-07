@@ -612,8 +612,63 @@ export async function GET(request: NextRequest) {
                 operationNumber,
                 orderId,
               });
-              // Fallback: create payment only
-              await createFallbackPayment(supabase, paymentAmount, operationNumber);
+              
+              // IMPORTANT: Even if createEnrollmentFromPayment failed, it may have created players
+              // before the error. We MUST keep those players because the payment was already confirmed.
+              // If payment wasn't created, create it now and link it to any players that were created.
+              
+              if (result.playerIds && result.playerIds.length > 0) {
+                console.log('[PagueloFacil Callback] ⚠️ Players were created before error. Keeping them and creating payment...', {
+                  playerIds: result.playerIds,
+                });
+                
+                // Create payment if it wasn't created
+                if (!result.paymentId) {
+                  const playerIdsString = result.playerIds.join(', ');
+                  const operationInfo = operationNumber 
+                    ? `Paguelo Fácil Operación: ${operationNumber}` 
+                    : 'Paguelo Fácil';
+                  const paymentNotes = `Pago de matrícula procesado con Paguelo Fácil.\n${operationInfo}. Monto: $${paymentAmount}. Confirmado: ${new Date().toISOString()}\n\nMatrícula para ${result.playerIds.length} jugador(es). Tutor: ${enrollmentData.tutorName}. Pending Player IDs: ${playerIdsString}\n\nNota: Este pago se creó después de un error parcial en el enrollment, pero los jugadores fueron creados correctamente.`;
+                  
+                  const { data: newPayment, error: paymentError } = await supabase
+                    .from('payments')
+                    .insert({
+                      player_id: null,
+                      amount: paymentAmount,
+                      type: 'enrollment',
+                      method: 'paguelofacil',
+                      payment_date: new Date().toISOString().split('T')[0],
+                      status: 'Approved',
+                      notes: paymentNotes,
+                    })
+                    .select()
+                    .single();
+                  
+                  if (!paymentError && newPayment) {
+                    console.log('[PagueloFacil Callback] ✅ Payment created after partial enrollment error:', newPayment.id);
+                    
+                    // Try to send email
+                    try {
+                      await sendPaymentConfirmationEmail(newPayment.id);
+                    } catch (emailError) {
+                      console.error('[PagueloFacil Callback] Error sending payment confirmation email:', emailError);
+                    }
+                  } else {
+                    console.error('[PagueloFacil Callback] Error creating payment after partial enrollment error:', paymentError);
+                  }
+                } else {
+                  console.log('[PagueloFacil Callback] Payment was already created:', result.paymentId);
+                }
+              } else {
+                // No players were created, use normal fallback
+                console.log('[PagueloFacil Callback] No players were created. Using fallback payment...');
+                await createFallbackPayment(supabase, paymentAmount, operationNumber);
+              }
+              
+              // Revalidate paths even on error to show any players that were created
+              revalidatePath('/dashboard/finances');
+              revalidatePath('/dashboard/finances/transactions');
+              revalidatePath('/dashboard/approvals');
             }
           } else {
             console.log('[PagueloFacil Callback] No enrollment data found. Creating fallback payment...');

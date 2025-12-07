@@ -273,9 +273,71 @@ export async function POST(request: NextRequest) {
               revalidatePath('/dashboard/finances/transactions');
               revalidatePath('/dashboard/approvals');
             } else {
-              console.error('[Yappy Callback] Error creating enrollment:', result.error);
-              // Fallback: create payment only
-              await createFallbackYappyPayment(supabase, parseFloat(amount), callbackParams.orderId, callbackParams.transactionId);
+              console.error('[Yappy Callback] ❌ Error creating enrollment:', {
+                error: result.error,
+                enrollmentData: {
+                  tutorName: enrollmentData.tutorName,
+                  tutorEmail: enrollmentData.tutorEmail,
+                  playerCount: enrollmentData.players?.length || 0,
+                },
+                paymentAmount: parseFloat(amount),
+                orderId: callbackParams.orderId,
+                transactionId: callbackParams.transactionId,
+              });
+              
+              // IMPORTANT: Even if createEnrollmentFromPayment failed, it may have created players
+              // before the error. We MUST keep those players because the payment was already confirmed.
+              // If payment wasn't created, create it now and link it to any players that were created.
+              
+              if (result.playerIds && result.playerIds.length > 0) {
+                console.log('[Yappy Callback] ⚠️ Players were created before error. Keeping them and creating payment...', {
+                  playerIds: result.playerIds,
+                });
+                
+                // Create payment if it wasn't created
+                if (!result.paymentId) {
+                  const playerIdsString = result.playerIds.join(', ');
+                  const paymentNotes = `Pago de matrícula procesado con Yappy. Orden: ${callbackParams.orderId || 'N/A'}. Transacción: ${callbackParams.transactionId || 'N/A'}. Monto: $${parseFloat(amount)}. Confirmado: ${new Date().toISOString()}\n\nMatrícula para ${result.playerIds.length} jugador(es). Tutor: ${enrollmentData.tutorName}. Pending Player IDs: ${playerIdsString}\n\nNota: Este pago se creó después de un error parcial en el enrollment, pero los jugadores fueron creados correctamente.`;
+                  
+                  const { data: newPayment, error: paymentError } = await supabase
+                    .from('payments')
+                    .insert({
+                      player_id: null,
+                      amount: parseFloat(amount),
+                      type: 'enrollment',
+                      method: 'yappy',
+                      payment_date: new Date().toISOString().split('T')[0],
+                      status: 'Approved',
+                      notes: paymentNotes,
+                    })
+                    .select()
+                    .single();
+                  
+                  if (!paymentError && newPayment) {
+                    console.log('[Yappy Callback] ✅ Payment created after partial enrollment error:', newPayment.id);
+                    
+                    // Try to send email
+                    try {
+                      await sendPaymentConfirmationEmail(newPayment.id);
+                    } catch (emailError) {
+                      console.error('[Yappy Callback] Error sending payment confirmation email:', emailError);
+                    }
+                  } else {
+                    console.error('[Yappy Callback] Error creating payment after partial enrollment error:', paymentError);
+                  }
+                } else {
+                  console.log('[Yappy Callback] Payment was already created:', result.paymentId);
+                }
+              } else {
+                // No players were created, use normal fallback
+                console.log('[Yappy Callback] No players were created. Using fallback payment...');
+                await createFallbackYappyPayment(supabase, parseFloat(amount), callbackParams.orderId, callbackParams.transactionId);
+              }
+              
+              // Revalidate paths even on error to show any players that were created
+              revalidatePath('/dashboard/finances');
+              revalidatePath('/dashboard/finances/transactions');
+              revalidatePath('/dashboard/approvals');
             }
           } else {
             console.log('[Yappy Callback] No enrollment data found. Creating fallback payment...');
@@ -1000,9 +1062,71 @@ export async function GET(request: NextRequest) {
               revalidatePath('/dashboard/finances/transactions');
               revalidatePath('/dashboard/approvals');
             } else {
-              console.error('[Yappy Callback] Error creating enrollment (GET):', result.error);
-              // Fallback: create payment only
-              await createFallbackYappyPayment(supabase, parseFloat(finalAmount), orderId, confirmationNumber);
+              console.error('[Yappy Callback] ❌ Error creating enrollment (GET):', {
+                error: result.error,
+                enrollmentData: {
+                  tutorName: enrollmentData.tutorName,
+                  tutorEmail: enrollmentData.tutorEmail,
+                  playerCount: enrollmentData.players?.length || 0,
+                },
+                paymentAmount: parseFloat(finalAmount),
+                orderId,
+                confirmationNumber,
+              });
+              
+              // IMPORTANT: Even if createEnrollmentFromPayment failed, it may have created players
+              // before the error. We MUST keep those players because the payment was already confirmed.
+              // If payment wasn't created, create it now and link it to any players that were created.
+              
+              if (result.playerIds && result.playerIds.length > 0) {
+                console.log('[Yappy Callback] ⚠️ Players were created before error (GET). Keeping them and creating payment...', {
+                  playerIds: result.playerIds,
+                });
+                
+                // Create payment if it wasn't created
+                if (!result.paymentId) {
+                  const playerIdsString = result.playerIds.join(', ');
+                  const paymentNotes = `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Confirmación: ${confirmationNumber || 'N/A'}. Monto: $${parseFloat(finalAmount)}. Confirmado: ${new Date().toISOString()}\n\nMatrícula para ${result.playerIds.length} jugador(es). Tutor: ${enrollmentData.tutorName}. Pending Player IDs: ${playerIdsString}\n\nNota: Este pago se creó después de un error parcial en el enrollment, pero los jugadores fueron creados correctamente.`;
+                  
+                  const { data: newPayment, error: paymentError } = await supabase
+                    .from('payments')
+                    .insert({
+                      player_id: null,
+                      amount: parseFloat(finalAmount),
+                      type: 'enrollment',
+                      method: 'yappy',
+                      payment_date: new Date().toISOString().split('T')[0],
+                      status: 'Approved',
+                      notes: paymentNotes,
+                    })
+                    .select()
+                    .single();
+                  
+                  if (!paymentError && newPayment) {
+                    console.log('[Yappy Callback] ✅ Payment created after partial enrollment error (GET):', newPayment.id);
+                    
+                    // Try to send email
+                    try {
+                      await sendPaymentConfirmationEmail(newPayment.id);
+                    } catch (emailError) {
+                      console.error('[Yappy Callback] Error sending payment confirmation email (GET):', emailError);
+                    }
+                  } else {
+                    console.error('[Yappy Callback] Error creating payment after partial enrollment error (GET):', paymentError);
+                  }
+                } else {
+                  console.log('[Yappy Callback] Payment was already created (GET):', result.paymentId);
+                }
+              } else {
+                // No players were created, use normal fallback
+                console.log('[Yappy Callback] No players were created (GET). Using fallback payment...');
+                await createFallbackYappyPayment(supabase, parseFloat(finalAmount), orderId, confirmationNumber);
+              }
+              
+              // Revalidate paths even on error to show any players that were created
+              revalidatePath('/dashboard/finances');
+              revalidatePath('/dashboard/finances/transactions');
+              revalidatePath('/dashboard/approvals');
             }
           } else {
             console.log('[Yappy Callback] No enrollment data found (GET). Creating fallback payment...');
