@@ -33,33 +33,107 @@ export async function POST(request: NextRequest) {
 
     // Store enrollment data in database if provided (for enrollment payments)
     if (enrollmentData && orderId && customParams?.type === 'enrollment') {
+      console.log('[PagueloFacil Link] 📦 Storing enrollment data in database:', {
+        orderId,
+        orderIdLength: orderId.length,
+        orderIdType: typeof orderId,
+        hasEnrollmentData: !!enrollmentData,
+        enrollmentDataKeys: enrollmentData ? Object.keys(enrollmentData) : [],
+        tutorName: enrollmentData?.tutorName,
+        tutorEmail: enrollmentData?.tutorEmail,
+        playerCount: enrollmentData?.players?.length || 0,
+        amount,
+        type: customParams?.type,
+      });
+      
       try {
         const supabase = await createClient();
         // Store in a temporary table or use existing mechanism
         // For now, we'll store it in a JSON column in a temporary storage
         // Using the orderId as the key
-        const { error: storeError } = await supabase
+        const storeData = {
+          order_id: orderId,
+          enrollment_data: enrollmentData,
+          amount: amount,
+          type: 'enrollment',
+          created_at: new Date().toISOString(),
+        };
+        
+        console.log('[PagueloFacil Link] 📝 Storing data:', {
+          order_id: storeData.order_id,
+          order_idLength: storeData.order_id.length,
+          hasEnrollmentData: !!storeData.enrollment_data,
+          amount: storeData.amount,
+          type: storeData.type,
+        });
+        
+        const { data: storedData, error: storeError } = await supabase
           .from('paguelofacil_orders')
-          .upsert({
-            order_id: orderId,
-            enrollment_data: enrollmentData,
-            amount: amount,
-            type: 'enrollment',
-            created_at: new Date().toISOString(),
-          }, {
+          .upsert(storeData, {
             onConflict: 'order_id',
-          });
+          })
+          .select();
 
         if (storeError) {
-          console.error('[PagueloFacil Link] Error storing enrollment data:', storeError);
+          console.error('[PagueloFacil Link] ❌ Error storing enrollment data:', {
+            orderId,
+            error: {
+              code: storeError.code,
+              message: storeError.message,
+              details: storeError.details,
+              hint: storeError.hint,
+            },
+          });
           // Don't fail - we'll try to get it from URL params as fallback
         } else {
-          console.log('[PagueloFacil Link] ✅ Stored enrollment data for orderId:', orderId);
+          console.log('[PagueloFacil Link] ✅ Stored enrollment data successfully:', {
+            orderId,
+            storedOrderId: storedData?.[0]?.order_id,
+            match: storedData?.[0]?.order_id === orderId,
+            hasEnrollmentData: !!storedData?.[0]?.enrollment_data,
+            storedAt: storedData?.[0]?.created_at,
+          });
+          
+          // Verify the data was stored correctly by querying it back
+          const { data: verifyData, error: verifyError } = await supabase
+            .from('paguelofacil_orders')
+            .select('order_id, enrollment_data, amount, type')
+            .eq('order_id', orderId)
+            .single();
+          
+          if (!verifyError && verifyData) {
+            console.log('[PagueloFacil Link] ✅ Verified enrollment data storage:', {
+              orderId,
+              verifiedOrderId: verifyData.order_id,
+              match: verifyData.order_id === orderId,
+              hasEnrollmentData: !!verifyData.enrollment_data,
+              enrollmentDataTutorName: verifyData.enrollment_data?.tutorName,
+            });
+          } else {
+            console.warn('[PagueloFacil Link] ⚠️ Could not verify enrollment data storage:', {
+              orderId,
+              error: verifyError ? {
+                code: verifyError.code,
+                message: verifyError.message,
+              } : 'No error but no data',
+            });
+          }
         }
       } catch (storeErr: any) {
-        console.error('[PagueloFacil Link] Error storing enrollment data:', storeErr);
+        console.error('[PagueloFacil Link] ❌ Exception storing enrollment data:', {
+          orderId,
+          error: storeErr.message,
+          stack: storeErr.stack,
+        });
         // Don't fail - continue with payment link creation
       }
+    } else {
+      console.log('[PagueloFacil Link] ℹ️ Skipping enrollment data storage:', {
+        hasEnrollmentData: !!enrollmentData,
+        hasOrderId: !!orderId,
+        customParamsType: customParams?.type,
+        reason: !enrollmentData ? 'No enrollmentData' : !orderId ? 'No orderId' : customParams?.type !== 'enrollment' ? 'Not enrollment type' : 'Unknown',
+      });
     }
 
     console.log('[PagueloFacil Link] Creating payment link with:', {

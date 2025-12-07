@@ -40,7 +40,7 @@ export default async function ApprovalsPage({
     .from('payments')
     .select('*')
     .in('status', ['Pending Approval', 'Pending'])
-    .order('created_at', { ascending: false });
+    .order('payment_date', { ascending: false });
   const pendingPayments: PendingPayment[] = Array.isArray(pendingPaymentsData)
     ? (pendingPaymentsData as PendingPayment[])
     : [];

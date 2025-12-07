@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
             .eq('type', 'enrollment')
             .eq('method', 'yappy')
             .or(`notes.ilike.%${callbackParams.orderId}%,notes.ilike.%${callbackParams.orderId.toLowerCase()}%`)
-            .order('created_at', { ascending: false })
+            .order('payment_date', { ascending: false })
             .limit(1);
           
           if (paymentsByOrder && paymentsByOrder.length > 0) {
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
             .eq('type', 'enrollment')
             .eq('method', 'yappy')
             .or(`notes.ilike.%${callbackParams.transactionId}%,notes.ilike.%${callbackParams.transactionId.toLowerCase()}%`)
-            .order('created_at', { ascending: false })
+            .order('payment_date', { ascending: false })
             .limit(1);
           
           if (paymentsByTransaction && paymentsByTransaction.length > 0) {
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
             .eq('method', 'yappy')
             .eq('status', 'Pending')
             .eq('amount', parseFloat(amount))
-            .order('created_at', { ascending: false })
+            .order('payment_date', { ascending: false })
             .limit(5);
           
           if (recentPayments && recentPayments.length > 0) {
@@ -865,7 +865,7 @@ export async function GET(request: NextRequest) {
             .eq('type', 'enrollment')
             .eq('method', 'yappy')
             .or(`notes.ilike.%${orderId}%,notes.ilike.%${orderId.toLowerCase()}%`)
-            .order('created_at', { ascending: false })
+            .order('payment_date', { ascending: false })
             .limit(1);
           
           if (paymentsByOrder && paymentsByOrder.length > 0) {
@@ -882,7 +882,7 @@ export async function GET(request: NextRequest) {
             .eq('type', 'enrollment')
             .eq('method', 'yappy')
             .or(`notes.ilike.%${confirmationNumber}%,notes.ilike.%${confirmationNumber.toLowerCase()}%`)
-            .order('created_at', { ascending: false })
+            .order('payment_date', { ascending: false })
             .limit(1);
           
           if (paymentsByTransaction && paymentsByTransaction.length > 0) {
@@ -900,7 +900,7 @@ export async function GET(request: NextRequest) {
             .eq('method', 'yappy')
             .eq('status', 'Pending')
             .eq('amount', parseFloat(finalAmount))
-            .order('created_at', { ascending: false })
+            .order('payment_date', { ascending: false })
             .limit(5);
           
           if (recentPayments && recentPayments.length > 0) {

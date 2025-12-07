@@ -118,7 +118,6 @@ export async function getApprovedEnrollmentPayment(playerId: string) {
       .eq('type', 'enrollment')
       .eq('status', 'Approved')
       .order('payment_date', { ascending: false })
-      .order('created_at', { ascending: false })
       .limit(50); // Aumentar límite para asegurar que encontramos los pagos
     
     if (error) {

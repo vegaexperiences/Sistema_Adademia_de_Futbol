@@ -457,26 +457,85 @@ export async function GET(request: NextRequest) {
           let enrollmentData = null;
           
           if (orderId) {
+            console.log('[PagueloFacil Callback] 🔍 Searching for enrollmentData in database:', {
+              orderId,
+              orderIdLength: orderId.length,
+              orderIdType: typeof orderId,
+            });
+            
             try {
+              // First, check if table exists by trying to query it
               const { data: storedOrder, error: orderError } = await supabase
                 .from('paguelofacil_orders')
-                .select('enrollment_data')
+                .select('enrollment_data, amount, type, created_at')
                 .eq('order_id', orderId)
                 .single();
               
               if (!orderError && storedOrder?.enrollment_data) {
                 enrollmentData = storedOrder.enrollment_data;
                 console.log('[PagueloFacil Callback] ✅ Enrollment data retrieved from database:', {
+                  orderId,
                   tutorName: enrollmentData.tutorName,
                   tutorEmail: enrollmentData.tutorEmail,
                   playerCount: enrollmentData.players?.length || 0,
+                  storedAmount: storedOrder.amount,
+                  storedType: storedOrder.type,
+                  storedAt: storedOrder.created_at,
                 });
               } else {
-                console.log('[PagueloFacil Callback] No enrollment data found in database for orderId:', orderId);
+                console.warn('[PagueloFacil Callback] ⚠️ No enrollment data found in database:', {
+                  orderId,
+                  error: orderError ? {
+                    code: orderError.code,
+                    message: orderError.message,
+                    details: orderError.details,
+                    hint: orderError.hint,
+                  } : 'No error but no data',
+                  hasStoredOrder: !!storedOrder,
+                  hasEnrollmentData: !!storedOrder?.enrollment_data,
+                });
+                
+                // Try to find any recent orders to verify table exists
+                const { data: recentOrders, error: recentError } = await supabase
+                  .from('paguelofacil_orders')
+                  .select('order_id, type, created_at')
+                  .order('created_at', { ascending: false })
+                  .limit(5);
+                
+                if (!recentError && recentOrders) {
+                  console.log('[PagueloFacil Callback] 📋 Recent orders in database (for debugging):', {
+                    count: recentOrders.length,
+                    orders: recentOrders.map(o => ({
+                      orderId: o.order_id,
+                      type: o.type,
+                      created: o.created_at,
+                    })),
+                  });
+                } else if (recentError) {
+                  console.error('[PagueloFacil Callback] ❌ Error checking recent orders (table may not exist):', {
+                    code: recentError.code,
+                    message: recentError.message,
+                    hint: recentError.hint,
+                  });
+                }
               }
             } catch (dbError: any) {
-              console.error('[PagueloFacil Callback] Error retrieving enrollment data from database:', dbError);
+              console.error('[PagueloFacil Callback] ❌ Error retrieving enrollment data from database:', {
+                orderId,
+                error: dbError.message,
+                stack: dbError.stack,
+                code: dbError.code,
+                hint: dbError.hint,
+              });
             }
+          } else {
+            console.warn('[PagueloFacil Callback] ⚠️ No orderId available to search for enrollmentData:', {
+              parm1,
+              callbackParams: {
+                Oper: callbackParams.Oper,
+                PARM_1: callbackParams.PARM_1,
+              },
+            });
           }
           
           // Fallback: Try to extract from URL params if not found in database
@@ -542,7 +601,17 @@ export async function GET(request: NextRequest) {
               revalidatePath('/dashboard/finances/transactions');
               revalidatePath('/dashboard/approvals');
             } else {
-              console.error('[PagueloFacil Callback] Error creating enrollment:', result.error);
+              console.error('[PagueloFacil Callback] ❌ Error creating enrollment:', {
+                error: result.error,
+                enrollmentData: {
+                  tutorName: enrollmentData.tutorName,
+                  tutorEmail: enrollmentData.tutorEmail,
+                  playerCount: enrollmentData.players?.length || 0,
+                },
+                paymentAmount,
+                operationNumber,
+                orderId,
+              });
               // Fallback: create payment only
               await createFallbackPayment(supabase, paymentAmount, operationNumber);
             }
