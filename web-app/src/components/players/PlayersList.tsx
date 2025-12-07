@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, Search, Filter, User, Calendar, GraduationCap, CheckCircle, XCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Users, Search, Filter, User, Calendar, GraduationCap, CheckCircle, XCircle, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { retirePlayer } from '@/lib/actions/players';
@@ -17,7 +17,10 @@ interface Player {
   status: string;
   payment_status?: string | null;
   custom_monthly_fee?: number | null;
+  discount_percent?: number | null;
 }
+
+type SortOption = 'name' | 'scholarship' | 'payment' | 'discount' | 'none';
 
 interface PlayersListProps {
   players: Player[];
@@ -28,6 +31,7 @@ export default function PlayersList({ players, initialView = 'active' }: Players
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState<'active' | 'retired'>(initialView);
   const [retiringId, setRetiringId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('none');
   const router = useRouter();
   
   // Count players by status
@@ -36,35 +40,92 @@ export default function PlayersList({ players, initialView = 'active' }: Players
   const scholarshipCount = players?.filter(p => p.status === 'Scholarship').length || 0;
   const rejectedCount = players?.filter(p => p.status === 'Rejected').length || 0;
 
-  // Filter players based on view and search
-  // Note: players table contains Active, Scholarship, and Rejected players
-  const filteredPlayers = players?.filter(player => {
-    // Filter by view
-    if (view === 'active') {
-      // Show only Active and Scholarship
-      if (!['Active', 'Scholarship'].includes(player.status)) {
-        return false;
+  // Filter and sort players
+  const filteredAndSortedPlayers = useMemo(() => {
+    // First filter players based on view and search
+    let filtered = players?.filter(player => {
+      // Filter by view
+      if (view === 'active') {
+        // Show only Active and Scholarship
+        if (!['Active', 'Scholarship'].includes(player.status)) {
+          return false;
+        }
+      } else if (view === 'retired') {
+        // Show only Rejected/Retired
+        if (player.status !== 'Rejected') {
+          return false;
+        }
       }
-    } else if (view === 'retired') {
-      // Show only Rejected/Retired
-      if (player.status !== 'Rejected') {
-        return false;
+      
+      // Filter by search term
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        return (
+          player.first_name?.toLowerCase().includes(search) ||
+          player.last_name?.toLowerCase().includes(search) ||
+          player.cedula?.toLowerCase().includes(search) ||
+          `${player.first_name} ${player.last_name}`.toLowerCase().includes(search)
+        );
       }
+      
+      return true;
+    }) || [];
+
+    // Then sort based on selected option
+    if (sortBy !== 'none') {
+      filtered = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+          case 'name':
+            // Sort by full name (last name first, then first name)
+            const nameA = `${a.last_name || ''} ${a.first_name || ''}`.trim().toLowerCase();
+            const nameB = `${b.last_name || ''} ${b.first_name || ''}`.trim().toLowerCase();
+            return nameA.localeCompare(nameB);
+          
+          case 'scholarship':
+            // Sort: Scholarship first, then Active
+            if (a.status === 'Scholarship' && b.status !== 'Scholarship') return -1;
+            if (a.status !== 'Scholarship' && b.status === 'Scholarship') return 1;
+            // If both same status, sort by name
+            const nameA2 = `${a.last_name || ''} ${a.first_name || ''}`.trim().toLowerCase();
+            const nameB2 = `${b.last_name || ''} ${b.first_name || ''}`.trim().toLowerCase();
+            return nameA2.localeCompare(nameB2);
+          
+          case 'payment':
+            // Sort: overdue first, then pending, then current
+            const paymentOrder = { 'overdue': 0, 'pending': 1, 'current': 2 };
+            const aPayment = paymentOrder[a.payment_status as keyof typeof paymentOrder] ?? 3;
+            const bPayment = paymentOrder[b.payment_status as keyof typeof paymentOrder] ?? 3;
+            if (aPayment !== bPayment) return aPayment - bPayment;
+            // If same payment status, sort by name
+            const nameA3 = `${a.last_name || ''} ${a.first_name || ''}`.trim().toLowerCase();
+            const nameB3 = `${b.last_name || ''} ${b.first_name || ''}`.trim().toLowerCase();
+            return nameA3.localeCompare(nameB3);
+          
+          case 'discount':
+            // Sort: players with discount first (discount_percent > 0), then by discount amount descending
+            const aDiscount = a.discount_percent || 0;
+            const bDiscount = b.discount_percent || 0;
+            if (aDiscount > 0 && bDiscount === 0) return -1;
+            if (aDiscount === 0 && bDiscount > 0) return 1;
+            if (aDiscount > 0 && bDiscount > 0) {
+              // Both have discount, sort by amount descending
+              return bDiscount - aDiscount;
+            }
+            // Neither has discount, sort by name
+            const nameA4 = `${a.last_name || ''} ${a.first_name || ''}`.trim().toLowerCase();
+            const nameB4 = `${b.last_name || ''} ${b.first_name || ''}`.trim().toLowerCase();
+            return nameA4.localeCompare(nameB4);
+          
+          default:
+            return 0;
+        }
+      });
     }
-    
-    // Filter by search term
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      return (
-        player.first_name?.toLowerCase().includes(search) ||
-        player.last_name?.toLowerCase().includes(search) ||
-        player.cedula?.toLowerCase().includes(search) ||
-        `${player.first_name} ${player.last_name}`.toLowerCase().includes(search)
-      );
-    }
-    
-    return true;
-  }) || [];
+
+    return filtered;
+  }, [players, view, searchTerm, sortBy]);
+
+  const filteredPlayers = filteredAndSortedPlayers;
 
   const handleRetirePlayer = async (playerId: string, playerName: string) => {
     if (!confirm(`¿Estás seguro de que deseas retirar a ${playerName}? Esta acción cambiará su estado a "Retirado" pero no se borrará de la plataforma.`)) {
@@ -191,18 +252,45 @@ export default function PlayersList({ players, initialView = 'active' }: Players
               className="w-full pl-10 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base"
             />
           </div>
-          <button className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation" style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
-          }}>
-            <Filter size={18} />
-            Filtros
-          </button>
+          <div className="relative">
+            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none z-10" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="w-full sm:w-auto pl-10 pr-10 py-3.5 min-h-[48px] rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all touch-manipulation text-base font-semibold appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 1rem center',
+                paddingRight: '2.5rem'
+              }}
+            >
+              <option value="none">Ordenar por...</option>
+              <option value="name">📝 Nombre</option>
+              <option value="scholarship">🎓 Becado / No Becado</option>
+              <option value="payment">💰 Al Día / Moroso</option>
+              <option value="discount">🎁 Con Descuento</option>
+            </select>
+          </div>
         </div>
-        {searchTerm && (
-          <p className="mt-3 text-sm text-gray-600">
-            Mostrando {filteredPlayers.length} de {players.length} jugadores
-          </p>
+        {(searchTerm || sortBy !== 'none') && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {searchTerm && (
+              <p className="text-sm text-gray-600">
+                Mostrando {filteredPlayers.length} de {players.length} jugadores
+              </p>
+            )}
+            {sortBy !== 'none' && (
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                Ordenado por: {
+                  sortBy === 'name' ? 'Nombre' :
+                  sortBy === 'scholarship' ? 'Becado / No Becado' :
+                  sortBy === 'payment' ? 'Al Día / Moroso' :
+                  sortBy === 'discount' ? 'Con Descuento' : ''
+                }
+              </span>
+            )}
+          </div>
         )}
       </div>
 
