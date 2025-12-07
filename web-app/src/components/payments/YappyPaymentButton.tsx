@@ -22,7 +22,6 @@ interface YappyPaymentButtonProps {
   paymentType?: 'enrollment' | 'monthly' | 'custom';
   monthYear?: string;
   notes?: string;
-  beforeInitialize?: () => Promise<void> | void; // Callback to execute before initializing Yappy
 }
 
 /**
@@ -43,7 +42,6 @@ export function YappyPaymentButton({
   paymentType,
   monthYear,
   notes,
-  beforeInitialize,
 }: YappyPaymentButtonProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false); // Start as false - no loading until user clicks
@@ -69,21 +67,6 @@ export function YappyPaymentButton({
     setError(null);
 
     try {
-      // Execute beforeInitialize callback if provided (e.g., submit enrollment)
-      if (beforeInitialize) {
-        try {
-          await beforeInitialize();
-        } catch (err: any) {
-          // If beforeInitialize fails, don't proceed with Yappy initialization
-          const errorMsg = err.message || 'Error al procesar la solicitud antes del pago';
-          console.error('[Yappy] beforeInitialize failed:', err);
-          setError(errorMsg);
-          setIsLoading(false);
-          setIsInitializing(false);
-          onError?.(errorMsg);
-          return; // Don't proceed with Yappy initialization if enrollment failed
-        }
-      }
       // Step 1: Get config
       const configResponse = await fetch('/api/payments/yappy/config');
       const configData = await configResponse.json();
@@ -131,6 +114,13 @@ export function YappyPaymentButton({
       returnUrlWithParams.searchParams.set('amount', amount.toString());
       if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
       if (notes) returnUrlWithParams.searchParams.set('notes', notes);
+      
+      // For enrollment, store enrollment data in sessionStorage before redirecting
+      if (customParams?.type === 'enrollment' && typeof window !== 'undefined') {
+        // The enrollment data should already be stored in sessionStorage by PaymentStep
+        // but we ensure it's available here
+        console.log('[Yappy] Enrollment payment - data should be in sessionStorage');
+      }
 
       const orderResponse = await fetch('/api/payments/yappy/order', {
         method: 'POST',

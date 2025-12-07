@@ -4,6 +4,7 @@ import { createPayment } from '@/lib/actions/payments';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation';
+import { createEnrollmentFromPayment } from '@/lib/actions/enrollment';
 
 /**
  * POST /api/payments/yappy/callback
@@ -174,23 +175,93 @@ export async function POST(request: NextRequest) {
             revalidatePath('/dashboard/approvals');
           }
         } else {
-          console.warn('[Yappy Callback] ⚠️ Enrollment payment not found. Creating new payment record...');
-          // Create new payment if not found (fallback)
-          const paymentData = {
-            player_id: null,
-            amount: parseFloat(amount),
-            type: 'enrollment' as const,
-            method: 'yappy' as const,
-            payment_date: new Date().toISOString().split('T')[0],
-            status: 'Approved' as const,
-            notes: `Pago de matrícula procesado con Yappy. Orden: ${callbackParams.orderId || 'N/A'}. Transacción: ${callbackParams.transactionId || 'N/A'}. Número de Operación: ${callbackParams.transactionId || 'N/A'}`,
-          };
+          // Payment doesn't exist, create enrollment from payment callback
+          console.log('[Yappy Callback] Payment not found. Creating enrollment from payment callback...');
           
-          const { error: insertError } = await supabase
-            .from('payments')
-            .insert(paymentData);
+          // Extract enrollment data from returnUrl
+          const searchParams = new URL(request.url).searchParams;
+          const enrollmentDataParam = searchParams.get('enrollmentData');
+          let enrollmentData = null;
           
-          if (insertError) {
+          if (enrollmentDataParam) {
+            try {
+              const decodedData = Buffer.from(decodeURIComponent(enrollmentDataParam), 'base64').toString('utf-8');
+              enrollmentData = JSON.parse(decodedData);
+              console.log('[Yappy Callback] Enrollment data extracted from returnUrl');
+            } catch (parseError) {
+              console.error('[Yappy Callback] Error parsing enrollment data:', parseError);
+            }
+          }
+          
+          if (enrollmentData) {
+            // Create enrollment using helper function
+            console.log('[Yappy Callback] Creating enrollment with helper function...');
+            const result = await createEnrollmentFromPayment(
+              enrollmentData,
+              parseFloat(amount),
+              'yappy',
+              callbackParams.transactionId || callbackParams.orderId
+            );
+            
+            if (result.success) {
+              console.log('[Yappy Callback] ✅ Enrollment created successfully:', {
+                playerIds: result.playerIds,
+                paymentId: result.paymentId,
+                familyId: result.familyId,
+              });
+              
+              // Send payment confirmation email
+              if (result.paymentId) {
+                try {
+                  await sendPaymentConfirmationEmail(result.paymentId);
+                } catch (emailError) {
+                  console.error('[Yappy Callback] Error sending payment confirmation email:', emailError);
+                }
+              }
+              
+              // Revalidate paths
+              revalidatePath('/dashboard/finances');
+              revalidatePath('/dashboard/finances/transactions');
+              revalidatePath('/dashboard/approvals');
+            } else {
+              console.error('[Yappy Callback] Error creating enrollment:', result.error);
+              // Fallback: create payment only
+              await createFallbackYappyPayment(supabase, parseFloat(amount), callbackParams.orderId, callbackParams.transactionId);
+            }
+          } else {
+            console.log('[Yappy Callback] No enrollment data found. Creating fallback payment...');
+            // Fallback: create payment only
+            await createFallbackYappyPayment(supabase, parseFloat(amount), callbackParams.orderId, callbackParams.transactionId);
+          }
+        }
+      } catch (enrollmentError: any) {
+        console.error('[Yappy Callback] Error handling enrollment payment:', enrollmentError);
+        // Don't throw - continue with response
+      }
+    }
+
+    // Helper function to create fallback payment
+    async function createFallbackYappyPayment(
+      supabase: any,
+      paymentAmount: number,
+      orderId?: string,
+      transactionId?: string
+    ) {
+      const paymentData = {
+        player_id: null,
+        amount: paymentAmount,
+        type: 'enrollment' as const,
+        method: 'yappy' as const,
+        payment_date: new Date().toISOString().split('T')[0],
+        status: 'Approved' as const,
+        notes: `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${transactionId || 'N/A'}. Número de Operación: ${transactionId || 'N/A'}`,
+      };
+      
+      const { error: insertError } = await supabase
+        .from('payments')
+        .insert(paymentData);
+      
+      if (insertError) {
             console.error('[Yappy Callback] Error creating enrollment payment:', insertError);
           } else {
             console.log('[Yappy Callback] ✅ New enrollment payment created');
@@ -816,23 +887,93 @@ export async function GET(request: NextRequest) {
             revalidatePath('/dashboard/approvals');
           }
         } else {
-          console.warn('[Yappy Callback] ⚠️ Enrollment payment not found (GET). Creating new payment record...');
-          // Create new payment if not found (fallback)
-          const paymentData = {
-            player_id: null,
-            amount: parseFloat(finalAmount),
-            type: 'enrollment' as const,
-            method: 'yappy' as const,
-            payment_date: new Date().toISOString().split('T')[0],
-            status: 'Approved' as const,
-            notes: `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${confirmationNumber || 'N/A'}. Número de Operación: ${confirmationNumber || 'N/A'}`,
-          };
+          // Payment doesn't exist, create enrollment from payment callback
+          console.log('[Yappy Callback] Payment not found (GET). Creating enrollment from payment callback...');
           
-          const { error: insertError } = await supabase
-            .from('payments')
-            .insert(paymentData);
+          // Extract enrollment data from returnUrl
+          const searchParams = new URL(request.url).searchParams;
+          const enrollmentDataParam = searchParams.get('enrollmentData');
+          let enrollmentData = null;
           
-          if (insertError) {
+          if (enrollmentDataParam) {
+            try {
+              const decodedData = Buffer.from(decodeURIComponent(enrollmentDataParam), 'base64').toString('utf-8');
+              enrollmentData = JSON.parse(decodedData);
+              console.log('[Yappy Callback] Enrollment data extracted from returnUrl (GET)');
+            } catch (parseError) {
+              console.error('[Yappy Callback] Error parsing enrollment data (GET):', parseError);
+            }
+          }
+          
+          if (enrollmentData) {
+            // Create enrollment using helper function
+            console.log('[Yappy Callback] Creating enrollment with helper function (GET)...');
+            const result = await createEnrollmentFromPayment(
+              enrollmentData,
+              parseFloat(finalAmount),
+              'yappy',
+              confirmationNumber || orderId
+            );
+            
+            if (result.success) {
+              console.log('[Yappy Callback] ✅ Enrollment created successfully (GET):', {
+                playerIds: result.playerIds,
+                paymentId: result.paymentId,
+                familyId: result.familyId,
+              });
+              
+              // Send payment confirmation email
+              if (result.paymentId) {
+                try {
+                  await sendPaymentConfirmationEmail(result.paymentId);
+                } catch (emailError) {
+                  console.error('[Yappy Callback] Error sending payment confirmation email (GET):', emailError);
+                }
+              }
+              
+              // Revalidate paths
+              revalidatePath('/dashboard/finances');
+              revalidatePath('/dashboard/finances/transactions');
+              revalidatePath('/dashboard/approvals');
+            } else {
+              console.error('[Yappy Callback] Error creating enrollment (GET):', result.error);
+              // Fallback: create payment only
+              await createFallbackYappyPayment(supabase, parseFloat(finalAmount), orderId, confirmationNumber);
+            }
+          } else {
+            console.log('[Yappy Callback] No enrollment data found (GET). Creating fallback payment...');
+            // Fallback: create payment only
+            await createFallbackYappyPayment(supabase, parseFloat(finalAmount), orderId, confirmationNumber);
+          }
+        }
+      } catch (enrollmentError: any) {
+        console.error('[Yappy Callback] Error handling enrollment payment (GET):', enrollmentError);
+        // Don't throw - continue with response
+      }
+    }
+
+    // Helper function to create fallback payment
+    async function createFallbackYappyPayment(
+      supabase: any,
+      paymentAmount: number,
+      orderId?: string,
+      transactionId?: string
+    ) {
+      const paymentData = {
+        player_id: null,
+        amount: paymentAmount,
+        type: 'enrollment' as const,
+        method: 'yappy' as const,
+        payment_date: new Date().toISOString().split('T')[0],
+        status: 'Approved' as const,
+        notes: `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${transactionId || 'N/A'}. Número de Operación: ${transactionId || 'N/A'}`,
+      };
+      
+      const { error: insertError } = await supabase
+        .from('payments')
+        .insert(paymentData);
+      
+      if (insertError) {
             console.error('[Yappy Callback] Error creating enrollment payment (GET):', insertError);
           } else {
             console.log('[Yappy Callback] ✅ New enrollment payment created (GET)');

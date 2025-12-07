@@ -4,6 +4,7 @@ import { createPayment } from '@/lib/actions/payments';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation';
+import { createEnrollmentFromPayment } from '@/lib/actions/enrollment';
 
 /**
  * Helper function to link enrollment payment to pending players
@@ -480,6 +481,7 @@ export async function POST(request: NextRequest) {
             console.log('[PagueloFacil Webhook] ✅ New enrollment payment created:', newPayment.id);
             
             // Try to link payment to pending players
+            // Note: Webhook doesn't have enrollment data, so we can only try to link to existing pending players
             await linkEnrollmentPaymentToPendingPlayers(
               supabase,
               newPayment.id,
@@ -493,6 +495,10 @@ export async function POST(request: NextRequest) {
             revalidatePath('/dashboard/approvals');
           }
         }
+        
+        // Note: Webhook doesn't have access to enrollment data from returnUrl
+        // The enrollment should have been created by the callback
+        // If not, the payment will be created and linked to pending players if they exist
       } catch (enrollmentError: any) {
         console.error('[PagueloFacil Webhook] Error handling enrollment payment:', enrollmentError);
         // Don't throw - continue processing

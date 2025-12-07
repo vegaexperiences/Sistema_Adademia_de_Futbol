@@ -273,13 +273,25 @@ function PlayerApprovals({
 
                     <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border-l-4 border-amber-500 mb-4">
                       <p className="text-xs font-semibold text-gray-600 mb-2">👨‍👩‍👧‍👦 Información del Tutor</p>
-                      <p className="text-lg font-bold text-gray-900 mb-1">
-                        {player.families?.tutor_name || player.tutor_name || 'Sin información'}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                      🆔 {player.families?.tutor_cedula || 'Sin cédula'} • 📧 {player.families?.tutor_email || player.tutor_email || 'Sin email'} • 📱{' '}
-                      {player.families?.tutor_phone || player.tutor_phone || 'Sin teléfono'}
-                      </p>
+                      {(() => {
+                        // Normalize family data - families can be an array or null
+                        const family = Array.isArray(player.families) ? player.families[0] : player.families;
+                        const tutorName = family?.tutor_name || player.tutor_name || 'Sin información';
+                        const tutorCedula = family?.tutor_cedula || player.tutor_cedula || 'Sin cédula';
+                        const tutorEmail = family?.tutor_email || player.tutor_email || 'Sin email';
+                        const tutorPhone = family?.tutor_phone || player.tutor_phone || 'Sin teléfono';
+                        
+                        return (
+                          <>
+                            <p className="text-lg font-bold text-gray-900 mb-1">
+                              {tutorName}
+                            </p>
+                            <p className="text-sm text-gray-700">
+                              🆔 {tutorCedula} • 📧 {tutorEmail} • 📱 {tutorPhone}
+                            </p>
+                          </>
+                        );
+                      })()}
                     </div>
 
                     <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
@@ -289,7 +301,8 @@ function PlayerApprovals({
                           try {
                             const frontUrl = player.cedula_front_url || (player.notes ? JSON.parse(player.notes).doc_front : null);
                             const backUrl = player.cedula_back_url || (player.notes ? JSON.parse(player.notes).doc_back : null);
-                            const tutorUrl = player.families?.tutor_cedula_url || (player.notes ? JSON.parse(player.notes).tutor_doc : null);
+                            const family = Array.isArray(player.families) ? player.families[0] : player.families;
+                            const tutorUrl = family?.tutor_cedula_url || (player.notes ? JSON.parse(player.notes).tutor_doc : null);
 
                           // Find payments for this pending player
                           // Payments can be linked by player_id OR by name in notes (for pending players)

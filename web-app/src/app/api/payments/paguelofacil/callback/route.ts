@@ -5,6 +5,50 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation';
 import { getBaseUrlFromRequest } from '@/lib/utils/get-base-url';
+import { createEnrollmentFromPayment } from '@/lib/actions/enrollment';
+
+/**
+ * Helper function to create fallback payment when enrollment data is not available
+ */
+async function createFallbackPayment(
+  supabase: any,
+  paymentAmount: number,
+  operationNumber?: string
+) {
+  const operationInfo = operationNumber ? `Paguelo Fácil Operación: ${operationNumber}` : 'Paguelo Fácil';
+  const paymentNotes = `Pago de matrícula procesado con Paguelo Fácil.\n${operationInfo}. Monto: $${paymentAmount}. Confirmado: ${new Date().toISOString()}\n\nNota: Este pago se creó automáticamente desde el callback porque no se encontró un pago pendiente asociado.`;
+  
+  const { data: newPayment, error: createError } = await supabase
+    .from('payments')
+    .insert({
+      player_id: null,
+      amount: paymentAmount,
+      type: 'enrollment',
+      method: 'paguelofacil',
+      payment_date: new Date().toISOString().split('T')[0],
+      status: 'Approved',
+      notes: paymentNotes,
+    })
+    .select()
+    .single();
+  
+  if (createError) {
+    console.error('[PagueloFacil Callback] Error creating fallback payment:', createError);
+    return null;
+  }
+  
+  console.log('[PagueloFacil Callback] ✅ Fallback payment created:', newPayment.id);
+  
+  // Try to link payment to pending players
+  await linkEnrollmentPaymentToPendingPlayers(
+    supabase,
+    newPayment.id,
+    paymentAmount,
+    operationNumber
+  );
+  
+  return newPayment;
+}
 
 /**
  * Helper function to link enrollment payment to pending players
@@ -406,43 +450,62 @@ export async function GET(request: NextRequest) {
             revalidatePath('/dashboard/approvals');
           }
         } else {
-          // 5. If payment doesn't exist, create a new one
-          console.log('[PagueloFacil Callback] Payment not found. Creating new enrollment payment...');
+          // 5. If payment doesn't exist, create enrollment from payment callback
+          console.log('[PagueloFacil Callback] Payment not found. Creating enrollment from payment callback...');
           
-          const operationInfo = operationNumber ? `Paguelo Fácil Operación: ${operationNumber}` : 'Paguelo Fácil';
-          const paymentNotes = `Pago de matrícula procesado con Paguelo Fácil.\n${operationInfo}. Monto: $${paymentAmount}. Confirmado: ${new Date().toISOString()}\n\nNota: Este pago se creó automáticamente desde el callback porque no se encontró un pago pendiente asociado.`;
+          // Extract enrollment data from returnUrl
+          const enrollmentDataParam = searchParams.get('enrollmentData');
+          let enrollmentData = null;
           
-          const { data: newPayment, error: createError } = await supabase
-            .from('payments')
-            .insert({
-              player_id: null,
-              amount: paymentAmount,
-              type: 'enrollment',
-              method: 'paguelofacil',
-              payment_date: new Date().toISOString().split('T')[0],
-              status: 'Approved',
-              notes: paymentNotes,
-            })
-            .select()
-            .single();
+          if (enrollmentDataParam) {
+            try {
+              const decodedData = Buffer.from(decodeURIComponent(enrollmentDataParam), 'base64').toString('utf-8');
+              enrollmentData = JSON.parse(decodedData);
+              console.log('[PagueloFacil Callback] Enrollment data extracted from returnUrl');
+            } catch (parseError) {
+              console.error('[PagueloFacil Callback] Error parsing enrollment data:', parseError);
+            }
+          }
           
-          if (createError) {
-            console.error('[PagueloFacil Callback] Error creating enrollment payment:', createError);
-          } else {
-            console.log('[PagueloFacil Callback] ✅ New enrollment payment created:', newPayment.id);
-            
-            // Try to link payment to pending players
-            await linkEnrollmentPaymentToPendingPlayers(
-              supabase,
-              newPayment.id,
+          if (enrollmentData) {
+            // Create enrollment using helper function
+            console.log('[PagueloFacil Callback] Creating enrollment with helper function...');
+            const result = await createEnrollmentFromPayment(
+              enrollmentData,
               paymentAmount,
+              'paguelofacil',
               operationNumber
             );
             
-            // Revalidate paths
-            revalidatePath('/dashboard/finances');
-            revalidatePath('/dashboard/finances/transactions');
-            revalidatePath('/dashboard/approvals');
+            if (result.success) {
+              console.log('[PagueloFacil Callback] ✅ Enrollment created successfully:', {
+                playerIds: result.playerIds,
+                paymentId: result.paymentId,
+                familyId: result.familyId,
+              });
+              
+              // Send payment confirmation email
+              if (result.paymentId) {
+                try {
+                  await sendPaymentConfirmationEmail(result.paymentId);
+                } catch (emailError) {
+                  console.error('[PagueloFacil Callback] Error sending payment confirmation email:', emailError);
+                }
+              }
+              
+              // Revalidate paths
+              revalidatePath('/dashboard/finances');
+              revalidatePath('/dashboard/finances/transactions');
+              revalidatePath('/dashboard/approvals');
+            } else {
+              console.error('[PagueloFacil Callback] Error creating enrollment:', result.error);
+              // Fallback: create payment only
+              await createFallbackPayment(supabase, paymentAmount, operationNumber);
+            }
+          } else {
+            console.log('[PagueloFacil Callback] No enrollment data found. Creating fallback payment...');
+            // Fallback: create payment only and try to link to existing pending players
+            await createFallbackPayment(supabase, paymentAmount, operationNumber);
           }
         }
       } catch (enrollmentError: any) {

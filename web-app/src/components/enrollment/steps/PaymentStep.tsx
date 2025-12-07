@@ -20,15 +20,6 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [enrollmentToken, setEnrollmentToken] = useState<string | null>(null);
-  const [enrollmentSubmitted, setEnrollmentSubmitted] = useState(data.enrollmentSubmitted || false);
-  const [isSubmittingEnrollment, setIsSubmittingEnrollment] = useState(false);
-  
-  // Sync enrollmentSubmitted state with formData
-  useEffect(() => {
-    if (data.enrollmentSubmitted) {
-      setEnrollmentSubmitted(true);
-    }
-  }, [data.enrollmentSubmitted]);
 
   const handlePaymentSelection = (method: string) => {
     updateData({ paymentMethod: method });
@@ -175,7 +166,23 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               amount={totalAmount}
               description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
               orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
-              returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback?type=enrollment&amount=${totalAmount}`}
+              returnUrl={(() => {
+                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                // Encode enrollment data in returnUrl
+                const enrollmentData = {
+                  tutorName: data.tutorName,
+                  tutorCedula: data.tutorCedula,
+                  tutorEmail: data.tutorEmail,
+                  tutorPhone: data.tutorPhone,
+                  players: data.players,
+                  cedulaTutorFile: data.cedulaTutorFile,
+                  paymentMethod: data.paymentMethod,
+                };
+                const encodedData = typeof window !== 'undefined' 
+                  ? btoa(JSON.stringify(enrollmentData))
+                  : '';
+                return `${baseUrl}/api/payments/yappy/callback?type=enrollment&amount=${totalAmount}&enrollmentData=${encodeURIComponent(encodedData)}`;
+              })()}
               customParams={{
                 type: 'enrollment',
                 amount: totalAmount.toString(),
@@ -184,26 +191,11 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 tutorEmail: data.tutorEmail || '',
                 tutorPhone: data.tutorPhone || '',
               }}
-              beforeInitialize={async () => {
-                // Enviar enrollment automáticamente antes de inicializar Yappy
-                console.log('[PaymentStep] Enviando enrollment antes de inicializar Yappy...');
-                setIsSubmittingEnrollment(true);
-                try {
-                  await onSubmit();
-                  setEnrollmentSubmitted(true);
-                  console.log('[PaymentStep] Enrollment enviado exitosamente');
-                } catch (error) {
-                  console.error('[PaymentStep] Error submitting enrollment:', error);
-                  setIsSubmittingEnrollment(false);
-                  throw new Error('Error al enviar el formulario de matrícula. Por favor intenta nuevamente.');
-                }
-              }}
               onSuccess={async (transactionId: string) => {
-                // Payment confirmed - callback will update the payment
+                // Payment confirmed - callback will create enrollment
                 console.log('[PaymentStep] Yappy payment confirmed:', transactionId);
               }}
               onError={(errorMsg: string) => {
-                setIsSubmittingEnrollment(false);
                 alert('Error: ' + errorMsg);
               }}
             />
@@ -228,32 +220,30 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
               returnUrl={() => {
                 const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}`;
+                // Encode enrollment data in returnUrl
+                const enrollmentData = {
+                  tutorName: data.tutorName,
+                  tutorCedula: data.tutorCedula,
+                  tutorEmail: data.tutorEmail,
+                  tutorPhone: data.tutorPhone,
+                  players: data.players,
+                  cedulaTutorFile: data.cedulaTutorFile,
+                  paymentMethod: data.paymentMethod,
+                };
+                const encodedData = typeof window !== 'undefined' 
+                  ? btoa(JSON.stringify(enrollmentData))
+                  : '';
+                return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}&enrollmentData=${encodeURIComponent(encodedData)}`;
               }}
               customParams={{
                 type: 'enrollment',
                 amount: totalAmount.toString(),
               }}
-              beforeRedirect={async () => {
-                // Enviar enrollment automáticamente antes de redirigir
-                console.log('[PaymentStep] Enviando enrollment antes de redirigir a PagueloFacil...');
-                setIsSubmittingEnrollment(true);
-                try {
-                  await onSubmit();
-                  setEnrollmentSubmitted(true);
-                  console.log('[PaymentStep] Enrollment enviado exitosamente');
-                } catch (error) {
-                  console.error('[PaymentStep] Error submitting enrollment:', error);
-                  setIsSubmittingEnrollment(false);
-                  throw new Error('Error al enviar el formulario de matrícula. Por favor intenta nuevamente.');
-                }
-              }}
               onSuccess={async () => {
-                // Payment confirmed - callback will update the payment
+                // Payment confirmed - callback will create enrollment
                 console.log('[PaymentStep] PagueloFacil payment confirmed');
               }}
               onError={(errorMsg: string) => {
-                setIsSubmittingEnrollment(false);
                 alert('Error: ' + errorMsg);
               }}
             />
