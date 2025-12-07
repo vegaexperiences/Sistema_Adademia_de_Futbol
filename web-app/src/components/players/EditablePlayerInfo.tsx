@@ -32,10 +32,11 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
   const [success, setSuccess] = useState(false);
 
   // Use normalized tutor info from player prop (already normalized in page.tsx)
-  const tutorName = player.tutor_name || '';
-  const tutorEmail = player.tutor_email || '';
-  const tutorPhone = player.tutor_phone || '';
-  const tutorCedula = player.tutor_cedula || '';
+  // Handle both null, undefined, and empty string cases - ensure we always have a string
+  const tutorName = String(player.tutor_name || '').trim();
+  const tutorEmail = String(player.tutor_email || '').trim();
+  const tutorPhone = String(player.tutor_phone || '').trim();
+  const tutorCedula = String(player.tutor_cedula || '').trim();
 
   const [formData, setFormData] = useState({
     first_name: player.first_name || '',

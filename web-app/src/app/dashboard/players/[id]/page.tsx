@@ -59,12 +59,20 @@ export default async function PlayerProfilePage({
 
   // Normalize tutor information: use family data if available, otherwise use player's direct fields
   const family = Array.isArray(player.families) ? player.families[0] : player.families;
+  
+  // Get tutor info from family if exists, otherwise from player direct fields
+  // Always use strings (empty string if no data) to ensure values are passed correctly
+  const tutorName = family?.tutor_name || player.tutor_name || '';
+  const tutorEmail = family?.tutor_email || player.tutor_email || '';
+  const tutorPhone = family?.tutor_phone || player.tutor_phone || '';
+  const tutorCedula = family?.tutor_cedula || player.tutor_cedula || '';
+  
   const normalizedPlayer = {
     ...player,
-    tutor_name: family?.tutor_name || player.tutor_name || '',
-    tutor_email: family?.tutor_email || player.tutor_email || '',
-    tutor_phone: family?.tutor_phone || player.tutor_phone || '',
-    tutor_cedula: family?.tutor_cedula || player.tutor_cedula || '',
+    tutor_name: tutorName,
+    tutor_email: tutorEmail,
+    tutor_phone: tutorPhone,
+    tutor_cedula: tutorCedula,
     hasFamily: !!family,
     familyId: family?.id || null,
   };
