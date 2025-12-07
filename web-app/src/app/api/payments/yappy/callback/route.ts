@@ -76,17 +76,128 @@ export async function POST(request: NextRequest) {
       baseUrl = baseUrl.replace('http://', 'https://');
     }
 
-    // If transaction was approved and we have payment details, create payment record
-    console.log('[Yappy Callback] Checking conditions for payment creation:', {
+    // If transaction was approved and we have payment details, create or update payment record
+    console.log('[Yappy Callback] Checking conditions for payment creation/update:', {
       isApproved,
       type,
-      typeMatches: type === 'payment',
+      typeMatches: type === 'payment' || type === 'enrollment',
       playerId,
       hasPlayerId: !!playerId,
       amount,
       hasAmount: !!amount,
-      allConditionsMet: isApproved && type === 'payment' && playerId && amount,
+      orderId: callbackParams.orderId,
+      transactionId: callbackParams.transactionId,
+      allConditionsMet: isApproved && (type === 'payment' || type === 'enrollment') && amount,
     });
+
+    // Handle enrollment payments: search for existing payment and update it
+    if (isApproved && type === 'enrollment' && amount) {
+      try {
+        console.log('[Yappy Callback] Processing enrollment payment update...');
+        const supabase = await createClient();
+        
+        // Search for existing enrollment payment by orderId or transactionId
+        let existingPayment = null;
+        
+        if (callbackParams.orderId) {
+          // Try to find payment by orderId in notes
+          const { data: paymentsByOrder } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'yappy')
+            .or(`notes.ilike.%${callbackParams.orderId}%,notes.ilike.%${callbackParams.orderId.toLowerCase()}%`)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (paymentsByOrder && paymentsByOrder.length > 0) {
+            existingPayment = paymentsByOrder[0];
+            console.log('[Yappy Callback] Found enrollment payment by orderId:', existingPayment.id);
+          }
+        }
+        
+        // If not found by orderId, try transactionId
+        if (!existingPayment && callbackParams.transactionId) {
+          const { data: paymentsByTransaction } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'yappy')
+            .or(`notes.ilike.%${callbackParams.transactionId}%,notes.ilike.%${callbackParams.transactionId.toLowerCase()}%`)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (paymentsByTransaction && paymentsByTransaction.length > 0) {
+            existingPayment = paymentsByTransaction[0];
+            console.log('[Yappy Callback] Found enrollment payment by transactionId:', existingPayment.id);
+          }
+        }
+        
+        // If still not found, try to find recent pending enrollment payment with matching amount
+        if (!existingPayment) {
+          const { data: recentPayments } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'yappy')
+            .eq('status', 'Pending')
+            .eq('amount', parseFloat(amount))
+            .order('created_at', { ascending: false })
+            .limit(5);
+          
+          if (recentPayments && recentPayments.length > 0) {
+            // Find the most recent one that doesn't have a transaction ID yet
+            existingPayment = recentPayments.find(p => 
+              !p.notes?.includes('Transacción:') || p.notes?.includes('Transacción: N/A')
+            ) || recentPayments[0];
+            console.log('[Yappy Callback] Found recent enrollment payment by amount:', existingPayment.id);
+          }
+        }
+        
+        if (existingPayment) {
+          // Update existing payment with transaction details
+          const updatedNotes = `${existingPayment.notes || ''}\n\nPago confirmado con Yappy. Orden: ${callbackParams.orderId || 'N/A'}. Transacción: ${callbackParams.transactionId || 'N/A'}. Número de Operación: ${callbackParams.transactionId || 'N/A'}`;
+          
+          const { error: updateError } = await supabase
+            .from('payments')
+            .update({
+              status: 'Approved',
+              notes: updatedNotes,
+            })
+            .eq('id', existingPayment.id);
+          
+          if (updateError) {
+            console.error('[Yappy Callback] Error updating enrollment payment:', updateError);
+          } else {
+            console.log('[Yappy Callback] ✅ Enrollment payment updated successfully:', existingPayment.id);
+          }
+        } else {
+          console.warn('[Yappy Callback] ⚠️ Enrollment payment not found. Creating new payment record...');
+          // Create new payment if not found (fallback)
+          const paymentData = {
+            player_id: null,
+            amount: parseFloat(amount),
+            type: 'enrollment' as const,
+            method: 'yappy' as const,
+            payment_date: new Date().toISOString().split('T')[0],
+            status: 'Approved' as const,
+            notes: `Pago de matrícula procesado con Yappy. Orden: ${callbackParams.orderId || 'N/A'}. Transacción: ${callbackParams.transactionId || 'N/A'}. Número de Operación: ${callbackParams.transactionId || 'N/A'}`,
+          };
+          
+          const { error: insertError } = await supabase
+            .from('payments')
+            .insert(paymentData);
+          
+          if (insertError) {
+            console.error('[Yappy Callback] Error creating enrollment payment:', insertError);
+          } else {
+            console.log('[Yappy Callback] ✅ New enrollment payment created');
+          }
+        }
+      } catch (enrollmentError: any) {
+        console.error('[Yappy Callback] Error processing enrollment payment:', enrollmentError);
+      }
+    }
 
     if (isApproved && type === 'payment' && playerId && amount) {
       try {
@@ -613,7 +724,118 @@ export async function GET(request: NextRequest) {
       hasAmount: hasValidAmount,
       amount: finalAmount || amount || 'empty',
       shouldCreatePayment,
+      orderId,
+      confirmationNumber,
     });
+
+    // Handle enrollment payments: search for existing payment and update it
+    if (isApproved && type === 'enrollment' && hasValidAmount) {
+      try {
+        console.log('[Yappy Callback] Processing enrollment payment update (GET)...');
+        const supabase = await createClient();
+        
+        // Search for existing enrollment payment by orderId or transactionId
+        let existingPayment = null;
+        
+        if (orderId) {
+          // Try to find payment by orderId in notes
+          const { data: paymentsByOrder } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'yappy')
+            .or(`notes.ilike.%${orderId}%,notes.ilike.%${orderId.toLowerCase()}%`)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (paymentsByOrder && paymentsByOrder.length > 0) {
+            existingPayment = paymentsByOrder[0];
+            console.log('[Yappy Callback] Found enrollment payment by orderId (GET):', existingPayment.id);
+          }
+        }
+        
+        // If not found by orderId, try transactionId/confirmationNumber
+        if (!existingPayment && confirmationNumber) {
+          const { data: paymentsByTransaction } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'yappy')
+            .or(`notes.ilike.%${confirmationNumber}%,notes.ilike.%${confirmationNumber.toLowerCase()}%`)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (paymentsByTransaction && paymentsByTransaction.length > 0) {
+            existingPayment = paymentsByTransaction[0];
+            console.log('[Yappy Callback] Found enrollment payment by transactionId (GET):', existingPayment.id);
+          }
+        }
+        
+        // If still not found, try to find recent pending enrollment payment with matching amount
+        if (!existingPayment) {
+          const { data: recentPayments } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'yappy')
+            .eq('status', 'Pending')
+            .eq('amount', parseFloat(finalAmount))
+            .order('created_at', { ascending: false })
+            .limit(5);
+          
+          if (recentPayments && recentPayments.length > 0) {
+            // Find the most recent one that doesn't have a transaction ID yet
+            existingPayment = recentPayments.find(p => 
+              !p.notes?.includes('Transacción:') || p.notes?.includes('Transacción: N/A')
+            ) || recentPayments[0];
+            console.log('[Yappy Callback] Found recent enrollment payment by amount (GET):', existingPayment.id);
+          }
+        }
+        
+        if (existingPayment) {
+          // Update existing payment with transaction details
+          const updatedNotes = `${existingPayment.notes || ''}\n\nPago confirmado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${confirmationNumber || 'N/A'}. Número de Operación: ${confirmationNumber || 'N/A'}`;
+          
+          const { error: updateError } = await supabase
+            .from('payments')
+            .update({
+              status: 'Approved',
+              notes: updatedNotes,
+            })
+            .eq('id', existingPayment.id);
+          
+          if (updateError) {
+            console.error('[Yappy Callback] Error updating enrollment payment (GET):', updateError);
+          } else {
+            console.log('[Yappy Callback] ✅ Enrollment payment updated successfully (GET):', existingPayment.id);
+          }
+        } else {
+          console.warn('[Yappy Callback] ⚠️ Enrollment payment not found (GET). Creating new payment record...');
+          // Create new payment if not found (fallback)
+          const paymentData = {
+            player_id: null,
+            amount: parseFloat(finalAmount),
+            type: 'enrollment' as const,
+            method: 'yappy' as const,
+            payment_date: new Date().toISOString().split('T')[0],
+            status: 'Approved' as const,
+            notes: `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${confirmationNumber || 'N/A'}. Número de Operación: ${confirmationNumber || 'N/A'}`,
+          };
+          
+          const { error: insertError } = await supabase
+            .from('payments')
+            .insert(paymentData);
+          
+          if (insertError) {
+            console.error('[Yappy Callback] Error creating enrollment payment (GET):', insertError);
+          } else {
+            console.log('[Yappy Callback] ✅ New enrollment payment created (GET)');
+          }
+        }
+      } catch (enrollmentError: any) {
+        console.error('[Yappy Callback] Error processing enrollment payment (GET):', enrollmentError);
+      }
+    }
 
     if (shouldCreatePayment) {
       try {

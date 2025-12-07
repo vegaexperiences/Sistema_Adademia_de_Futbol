@@ -44,7 +44,7 @@ export function YappyPaymentButton({
   notes,
 }: YappyPaymentButtonProps) {
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start as true to show loading while script loads
+  const [isLoading, setIsLoading] = useState(false); // Start as false - no loading until user clicks
   const [isInitializing, setIsInitializing] = useState(false); // Track if we're initializing
   const [merchantId, setMerchantId] = useState<string>('');
   const [domainUrl, setDomainUrl] = useState<string>('');
@@ -53,77 +53,40 @@ export function YappyPaymentButton({
   const [documentName, setDocumentName] = useState<string>('');
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [orderCreated, setOrderCreated] = useState(false); // Track if order has been created
-  const [buttonReady, setButtonReady] = useState(false); // Track if button is ready to be clicked
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false); // Keep ref for checking if script element exists
   const buttonRenderedRef = useRef(false); // Track if button has been rendered to avoid re-renders
   const observerRef = useRef<MutationObserver | null>(null); // Store observer reference for cleanup
-  const clickInterceptorRef = useRef<((e: Event) => void) | null>(null); // Store click interceptor
 
-  // Load script and config immediately (without creating order)
-  useEffect(() => {
-    const loadScriptAndConfig = async () => {
-      try {
-        // Step 1: Get config
-        const configResponse = await fetch('/api/payments/yappy/config');
-        const configData = await configResponse.json();
-        
-        if (!configData.success || !configData.merchantId) {
-          throw new Error(configData.error || 'Error al obtener configuración de Yappy');
-        }
-
-        setMerchantId(configData.merchantId);
-        if (configData.domainUrl) {
-          setDomainUrl(configData.domainUrl);
-        }
-
-        // Step 2: Load Yappy script
-        if (document.querySelector('script[src*="btn-yappy"]')) {
-          scriptLoadedRef.current = true;
-          setScriptLoaded(true);
-          setIsLoading(false);
-          setButtonReady(true);
-          return;
-        }
-
-        const cdnUrl = configData.cdnUrl || 'https://bt-cdn.yappy.cloud/v1/cdn/web-component-btn-yappy.js';
-        const script = document.createElement('script');
-        script.src = cdnUrl;
-        script.type = 'module';
-        script.async = true;
-        script.onload = () => {
-          scriptLoadedRef.current = true;
-          setScriptLoaded(true);
-          setIsLoading(false);
-          setButtonReady(true);
-          console.log('[Yappy] Script loaded, button ready');
-        };
-        script.onerror = () => {
-          setError('Error al cargar el componente de Yappy');
-          setIsLoading(false);
-          onError?.('Error al cargar el componente de Yappy');
-        };
-        document.head.appendChild(script);
-      } catch (err: any) {
-        console.error('[Yappy] Error loading script/config:', err);
-        setError(err.message || 'Error al inicializar Yappy');
-        setIsLoading(false);
-        onError?.(err.message || 'Error al inicializar Yappy');
-      }
-    };
-
-    loadScriptAndConfig();
-  }, [onError]);
-
-  // Handle click to create order (called when user clicks the Yappy button)
-  const handleCreateOrder = async () => {
+  // Handle click to initialize Yappy and create order
+  const handleInitializeYappy = async () => {
     if (isInitializing || orderCreated) return; // Prevent multiple clicks
     
     setIsInitializing(true);
+    setIsLoading(true);
     setError(null);
 
     try {
-      // Step 1: Validate merchant to get token and epochTime
+      // Step 1: Get config
+      const configResponse = await fetch('/api/payments/yappy/config');
+      const configData = await configResponse.json();
+      console.log('[Yappy] Config response:', { 
+        success: configData.success, 
+        hasMerchantId: !!configData.merchantId, 
+        environment: configData.environment, 
+        domainUrl: configData.domainUrl 
+      });
+      
+      if (!configData.success || !configData.merchantId) {
+        throw new Error(configData.error || 'Error al obtener configuración de Yappy');
+      }
+
+      setMerchantId(configData.merchantId);
+      if (configData.domainUrl) {
+        setDomainUrl(configData.domainUrl);
+      }
+
+      // Step 2: Validate merchant to get token and epochTime
       console.log('[Yappy] Validating merchant...');
       const validateResponse = await fetch('/api/payments/yappy/validate', {
         method: 'POST',
@@ -134,9 +97,14 @@ export function YappyPaymentButton({
         throw new Error(validateData.error || 'Error al validar credenciales de Yappy');
       }
 
+      console.log('[Yappy] Merchant validated:', {
+        hasToken: !!validateData.token,
+        hasEpochTime: !!validateData.epochTime,
+      });
+
       setValidationToken(validateData.token);
 
-      // Step 2: Create order using token and epochTime
+      // Step 3: Create order using token and epochTime
       console.log('[Yappy] Creating order...');
       const baseReturnUrl = returnUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback`;
       const returnUrlWithParams = new URL(baseReturnUrl);
@@ -160,8 +128,8 @@ export function YappyPaymentButton({
           token: validateData.token,
           paymentDate: validateData.epochTime,
           metadata: customParams,
-          playerId: playerId || undefined,
-          tutorPhone: customParams?.tutorPhone || undefined,
+          playerId: playerId || undefined, // Pass playerId to get tutor phone
+          tutorPhone: customParams?.tutorPhone || undefined, // Pass tutorPhone directly for enrollment
         }),
       });
 
@@ -171,58 +139,142 @@ export function YappyPaymentButton({
         throw new Error(orderData.error || 'Error al crear orden de pago');
       }
 
+      console.log('[Yappy] Order created:', {
+        orderId: orderData.orderData.orderId,
+        transactionId: orderData.orderData.transactionId,
+        hasToken: !!orderData.orderData.token,
+        hasDocumentName: !!orderData.orderData.documentName,
+      });
+
       setOrderToken(orderData.orderData.token || '');
       setDocumentName(orderData.orderData.documentName || '');
       setOrderCreated(true);
       setIsInitializing(false);
-      
-      // Update button attributes with real order data
-      if (containerRef.current) {
-        const yappyButton = containerRef.current.querySelector('btn-yappy') as any;
-        if (yappyButton) {
-          yappyButton.setAttribute('token', orderData.orderData.token || '');
-          if (orderData.orderData.documentName) {
-            yappyButton.setAttribute('document-name', orderData.orderData.documentName);
-          }
-          console.log('[Yappy] Button updated with order data');
-          
-          // After updating, trigger click on the button to proceed with payment
-          // Wait a bit for the button to process the new attributes
-          setTimeout(() => {
-            try {
-              const clickEvent = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-              });
-              yappyButton.dispatchEvent(clickEvent);
-              console.log('[Yappy] Click event dispatched after order creation');
-            } catch (err) {
-              console.warn('[Yappy] Could not dispatch click event, user will need to click again:', err);
-            }
-          }, 300);
-        }
-      }
+      // Don't set isLoading to false here - let the script loading handle it
     } catch (err: any) {
-      console.error('[Yappy] Error creating order:', err);
-      setError(err.message || 'Error al crear orden de pago');
+      console.error('[Yappy] Error initializing:', err);
+      setError(err.message || 'Error al inicializar Yappy');
+      setIsLoading(false);
       setIsInitializing(false);
-      onError?.(err.message || 'Error al crear orden de pago');
+      onError?.(err.message || 'Error al inicializar Yappy');
     }
   };
 
-  // Render Yappy button when script is loaded (before order is created)
+  // Load Yappy web component script (only after validation and order creation)
   useEffect(() => {
-    if (!merchantId || !scriptLoaded || buttonRenderedRef.current) return;
+    if (!merchantId || !validationToken || !orderToken || scriptLoaded) return;
 
+    const loadScript = () => {
+      try {
+        // Check if script is already loaded
+        if (document.querySelector('script[src*="btn-yappy"]')) {
+          scriptLoadedRef.current = true;
+          setScriptLoaded(true);
+          // Don't set isLoading to false here - wait for button to render
+          return;
+        }
+
+        // Load the Yappy web component script as ES module
+        // Get CDN URL from config
+        fetch('/api/payments/yappy/config')
+          .then(res => res.json())
+          .then(configData => {
+            const cdnUrl = configData.cdnUrl || 'https://bt-cdn.yappy.cloud/v1/cdn/web-component-btn-yappy.js';
+            const script = document.createElement('script');
+            script.src = cdnUrl;
+            script.type = 'module';
+            script.async = true;
+            script.onload = () => {
+              scriptLoadedRef.current = true;
+              setScriptLoaded(true);
+              // Don't set isLoading to false here - wait for button to render
+              console.log('[Yappy] Script loaded, waiting for button render...');
+            };
+            script.onerror = () => {
+              setError('Error al cargar el componente de Yappy');
+              setIsLoading(false);
+              onError?.('Error al cargar el componente de Yappy');
+            };
+
+            document.head.appendChild(script);
+          })
+          .catch(err => {
+            console.error('[Yappy] Error getting CDN URL:', err);
+            // Fallback to default CDN
+            const script = document.createElement('script');
+            script.src = 'https://bt-cdn.yappy.cloud/v1/cdn/web-component-btn-yappy.js';
+            script.type = 'module';
+            script.async = true;
+            script.onload = () => {
+              scriptLoadedRef.current = true;
+              setScriptLoaded(true);
+              // Don't set isLoading to false here - wait for button to render
+              console.log('[Yappy] Script loaded (fallback), waiting for button render...');
+            };
+            script.onerror = () => {
+              setError('Error al cargar el componente de Yappy');
+              setIsLoading(false);
+              onError?.('Error al cargar el componente de Yappy');
+            };
+            document.head.appendChild(script);
+          });
+      } catch (err: any) {
+        console.error('[Yappy] Error loading script:', err);
+        setError(err.message || 'Error al inicializar Yappy');
+        setIsLoading(false);
+        onError?.(err.message || 'Error al inicializar Yappy');
+      }
+    };
+
+    loadScript();
+  }, [merchantId, validationToken, orderToken, scriptLoaded, onError]);
+
+  // Render the Yappy button component when script is loaded and order is created
+  useEffect(() => {
+    console.log('[Yappy] Render effect triggered:', {
+      hasMerchantId: !!merchantId,
+      hasValidationToken: !!validationToken,
+      hasOrderToken: !!orderToken,
+      hasContainer: !!containerRef.current,
+      scriptLoaded: scriptLoaded,
+      buttonAlreadyRendered: buttonRenderedRef.current,
+    });
+
+    // If button is already rendered, don't render again
+    if (buttonRenderedRef.current) {
+      console.log('[Yappy] Button already rendered, skipping re-render');
+      return;
+    }
+
+    if (!merchantId || !validationToken || !orderToken || !containerRef.current || !scriptLoaded) {
+      console.log('[Yappy] Render conditions not met, waiting...');
+      return;
+    }
+
+    // Wait a bit for the custom element to be defined
+    let retryCount = 0;
+    const maxRetries = 50; // 5 seconds max wait
+    
     const renderButton = () => {
       try {
         // Check if custom element is defined
         if (!customElements.get('btn-yappy')) {
+          retryCount++;
+          if (retryCount >= maxRetries) {
+            console.error('[Yappy] Custom element not defined after max retries');
+            setError('El componente de Yappy no se pudo cargar. Por favor, recarga la página o intenta más tarde.');
+            setIsLoading(false);
+            onError?.('El componente de Yappy no se pudo cargar');
+            return;
+          }
+          console.log(`[Yappy] Waiting for custom element to be defined... (${retryCount}/${maxRetries})`);
           setTimeout(renderButton, 100);
           return;
         }
 
+        console.log('[Yappy] Custom element found, proceeding to render button');
+
+        // Clear container first
         if (!containerRef.current) return;
         containerRef.current.innerHTML = '';
 
@@ -236,75 +288,71 @@ export function YappyPaymentButton({
         if (monthYear) returnUrlWithParams.searchParams.set('monthYear', monthYear);
         if (notes) returnUrlWithParams.searchParams.set('notes', notes);
 
-        // Create the btn-yappy element (without token/orderToken initially)
+        console.log('[Yappy] Current domain:', window.location.hostname);
+        console.log('[Yappy] Return URL:', returnUrlWithParams.toString());
+
+        // Create the btn-yappy element
         const yappyButton = document.createElement('btn-yappy');
         
-        // Set basic attributes (order will be created on click)
+        // Set attributes based on Yappy manual
+        // The web component needs the token and documentName from the order creation
         yappyButton.setAttribute('merchant-id', merchantId);
         yappyButton.setAttribute('amount', amount.toFixed(2));
-        yappyButton.setAttribute('description', description.substring(0, 200));
-        yappyButton.setAttribute('order-id', orderId.substring(0, 15));
+        yappyButton.setAttribute('description', description.substring(0, 200)); // Max 200 chars
+        yappyButton.setAttribute('order-id', orderId.substring(0, 15)); // Max 15 characters
         yappyButton.setAttribute('return-url', returnUrlWithParams.toString());
         
+        // Add token and documentName from order creation (required by Yappy manual)
+        if (orderToken) {
+          yappyButton.setAttribute('token', orderToken);
+        }
+        if (documentName) {
+          yappyButton.setAttribute('document-name', documentName);
+        }
+        
+        // Add domain-url if available (domain without https://)
         if (domainUrl) {
           yappyButton.setAttribute('domain-url', domainUrl);
         }
+        
+        console.log('[Yappy] Button attributes:', {
+          merchantId,
+          amount: amount.toFixed(2),
+          description: description.substring(0, 200),
+          orderId: orderId.substring(0, 15),
+          returnUrl: returnUrlWithParams.toString(),
+          domainUrl: domainUrl || 'not set',
+          hasToken: !!orderToken,
+          hasDocumentName: !!documentName,
+          currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+        });
 
-        // Intercept clicks on the button to create order first
-        const clickInterceptor = async (e: Event) => {
-          if (orderCreated) {
-            // Order already created, allow normal click
-            return;
-          }
-
-          if (isInitializing) {
-            // Already initializing, prevent click
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            return;
-          }
-
-          // Prevent the click from reaching Yappy
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-
-          // Create order first
-          await handleCreateOrder();
-          
-          // After order is created, trigger a new click event on the button
-          // This will allow Yappy to process the payment
-          setTimeout(() => {
-            if (orderCreated && containerRef.current) {
-              const updatedButton = containerRef.current.querySelector('btn-yappy') as any;
-              if (updatedButton) {
-                // Create a synthetic click event
-                const clickEvent = new MouseEvent('click', {
-                  bubbles: true,
-                  cancelable: true,
-                  view: window,
-                });
-                updatedButton.dispatchEvent(clickEvent);
-              }
+        // Listen to all possible events from Yappy component
+        const eventTypes = ['yappy-success', 'yappy-error', 'yappy-unavailable', 'yappy-loading', 'yappy-ready', 'error', 'unavailable', 'yappy-init', 'yappy-ready', 'yappy-failed'];
+        
+        eventTypes.forEach(eventType => {
+          yappyButton.addEventListener(eventType, (event: any) => {
+            console.log(`[Yappy] Event received: ${eventType}`, event.detail || event);
+            if (eventType === 'yappy-unavailable' || eventType === 'yappy-failed' || eventType === 'error') {
+              const errorDetail = event.detail || {};
+              console.error(`[Yappy] ${eventType} details:`, errorDetail);
             }
-          }, 100);
-        };
+          });
+        });
 
-        // Add click interceptor to button container and button itself
-        if (containerRef.current) {
-          containerRef.current.addEventListener('click', clickInterceptor, true);
-        }
-        yappyButton.addEventListener('click', clickInterceptor, true); // Use capture phase
-        clickInterceptorRef.current = clickInterceptor;
+        // Also listen for any custom events that might be emitted
+        yappyButton.addEventListener('*', (event: any) => {
+          console.log('[Yappy] Any event:', event.type, event);
+        });
 
-        // Listen for success/error events
+        // Handle success event
         yappyButton.addEventListener('yappy-success', (event: any) => {
           console.log('[Yappy] Payment success:', event.detail);
           const transactionId = event.detail?.transactionId || event.detail?.orderId || orderId;
           onSuccess?.(transactionId);
         });
 
+        // Handle error event
         yappyButton.addEventListener('yappy-error', (event: any) => {
           console.error('[Yappy] Payment error:', event.detail);
           const errorMsg = event.detail?.message || event.detail?.error || 'Error al procesar el pago con Yappy';
@@ -312,66 +360,223 @@ export function YappyPaymentButton({
           onError?.(errorMsg);
         });
 
+        // Listen for any messages from the Yappy component
+        yappyButton.addEventListener('yappy-unavailable', (event: any) => {
+          console.error('[Yappy] Service unavailable:', event.detail);
+          const errorMsg = event.detail?.message || 'Yappy no está disponible en este momento. Por favor, intenta más tarde o usa otro método de pago.';
+          setError(errorMsg);
+          onError?.(errorMsg);
+        });
+
+        // Monitor the button element for changes (in case Yappy shows error message in DOM)
+        // Use a flag to track if we've seen the initial "no disponible" message (which is normal during init)
+        let hasSeenInitialUnavailable = false;
+        let unavailableMessageTimeout: NodeJS.Timeout | null = null;
+        let buttonInitTime = Date.now(); // Track when button was initialized
+        const INITIALIZATION_GRACE_PERIOD = 5000; // 5 seconds grace period for initialization (increased)
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' || mutation.type === 'characterData') {
+              const buttonElement = yappyButton as any;
+              const textContent = buttonElement.textContent || buttonElement.innerText || '';
+              const timeSinceInit = Date.now() - buttonInitTime;
+              
+              // Check if Yappy is showing an error message in the DOM
+              const hasUnavailableMessage = textContent.includes('no está disponible') || 
+                  textContent.includes('no disponible') ||
+                  textContent.includes('intenta más tarde') ||
+                  textContent.includes('try again later') ||
+                  textContent.includes('not available');
+              
+              if (hasUnavailableMessage) {
+                // If we're still in the grace period, ignore the message
+                if (timeSinceInit < INITIALIZATION_GRACE_PERIOD) {
+                  console.log('[Yappy] "No disponible" message detected during initialization (normal), ignoring...', {
+                    timeSinceInit,
+                    gracePeriod: INITIALIZATION_GRACE_PERIOD,
+                  });
+                  return; // Don't process this message during initialization
+                }
+
+                // Clear any existing timeout
+                if (unavailableMessageTimeout) {
+                  clearTimeout(unavailableMessageTimeout);
+                }
+
+                // If this is the first time we see the message after grace period, mark it and wait
+                if (!hasSeenInitialUnavailable) {
+                  hasSeenInitialUnavailable = true;
+                  console.log('[Yappy] "No disponible" message detected after initialization, checking if persistent...');
+                  
+                  // Set a timeout to check if the message persists
+                  unavailableMessageTimeout = setTimeout(() => {
+                    const currentTextContent = buttonElement.textContent || buttonElement.innerText || '';
+                    const stillUnavailable = currentTextContent.includes('no está disponible') || 
+                        currentTextContent.includes('no disponible') ||
+                        currentTextContent.includes('intenta más tarde') ||
+                        currentTextContent.includes('try again later') ||
+                        currentTextContent.includes('not available');
+                    
+                    if (stillUnavailable && !error) {
+                      console.warn('[Yappy] Error message persisted after initialization:', currentTextContent);
+                      const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+                      const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
+                      setError(errorMsg);
+                      onError?.(errorMsg);
+                    } else {
+                      console.log('[Yappy] Button recovered from unavailable state');
+                    }
+                  }, 2000); // Wait 2 more seconds to confirm it's persistent
+                } else {
+                  // If we've already seen the initial message and it appears again after grace period, it's a real error
+                  if (timeSinceInit > INITIALIZATION_GRACE_PERIOD && !error) {
+                    console.warn('[Yappy] Error message detected in DOM after initialization:', textContent);
+                    const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+                    const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica la configuración del dominio en Yappy Comercial.`;
+                    setError(errorMsg);
+                    onError?.(errorMsg);
+                  }
+                }
+              } else {
+                // If the message is gone, clear the timeout and reset the flag
+                if (unavailableMessageTimeout) {
+                  clearTimeout(unavailableMessageTimeout);
+                  unavailableMessageTimeout = null;
+                }
+                if (hasSeenInitialUnavailable && error) {
+                  // Button recovered, clear error
+                  console.log('[Yappy] Button recovered, clearing error');
+                  setError(null);
+                }
+              }
+            }
+          });
+        });
+
+        // Store observer reference for cleanup
+        observerRef.current = observer;
+
+        // Start observing the button element
+        observer.observe(yappyButton, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+        });
+
         if (containerRef.current) {
           containerRef.current.appendChild(yappyButton);
+          
+          // Mark button as rendered to prevent re-renders
           buttonRenderedRef.current = true;
+          
+          // Track initialization time for error detection
+          const buttonInitTime = Date.now();
+          if (typeof window !== 'undefined') {
+            (window as any).__yappyInitTime = buttonInitTime;
+          }
+          
+          // Set loading to false only after button is rendered
           setIsLoading(false);
-          console.log('[Yappy] Button rendered (order will be created on click)');
+          console.log('[Yappy] Button element added to DOM');
+          
+          // Check after grace period if the button shows a persistent error
+          // Only show error if message persists after initialization grace period
+          setTimeout(() => {
+            const buttonElement = yappyButton as any;
+            const textContent = buttonElement.textContent || buttonElement.innerText || '';
+            const innerHTML = buttonElement.innerHTML || '';
+            const timeSinceInit = Date.now() - buttonInitTime;
+            
+            // Only check for errors if we're past the grace period
+            if (timeSinceInit < INITIALIZATION_GRACE_PERIOD) {
+              console.log('[Yappy] Skipping error check - still in initialization grace period', {
+                timeSinceInit,
+                gracePeriod: INITIALIZATION_GRACE_PERIOD,
+              });
+              return;
+            }
+            
+            // Check for unavailable label element
+            const unavailableLabel = buttonElement.querySelector?.('.unavailable-label');
+            const hasUnavailableClass = buttonElement.classList?.contains('unavailable') || 
+                                       innerHTML.includes('unavailable-label') ||
+                                       innerHTML.includes('unavailable');
+            
+            const hasUnavailableMessage = textContent.includes('no está disponible') || 
+                textContent.includes('no disponible') ||
+                innerHTML.includes('no está disponible') ||
+                textContent.includes('not available');
+            
+            console.log('[Yappy] Button content check (after grace period):', { 
+              textContent: textContent.substring(0, 100),
+              hasUnavailableMessage,
+              hasUnavailableLabel: !!unavailableLabel,
+              hasUnavailableClass,
+              timeSinceInit,
+            });
+            
+            // Only show error if message persists after grace period AND we haven't already set an error
+            if ((hasUnavailableMessage || unavailableLabel || hasUnavailableClass) && !error) {
+              console.warn('[Yappy] Persistent error detected in button content after grace period:', { 
+                textContent, 
+                hasUnavailableLabel: !!unavailableLabel,
+                hasUnavailableClass,
+                merchantId,
+                domainUrl,
+                currentDomain: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
+              });
+              const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+              const errorMsg = `Yappy no está disponible. El dominio "${currentDomain}" podría no estar autorizado en tu panel de Yappy. Verifica en Yappy Comercial que: 1) El dominio esté exactamente como "${currentDomain}" (sin https://), 2) El merchant ID "${merchantId.substring(0, 8)}..." esté activo, 3) La clave secreta esté generada y configurada.`;
+              setError(errorMsg);
+              onError?.(errorMsg);
+            } else if (!hasUnavailableMessage && !unavailableLabel && !hasUnavailableClass) {
+              console.log('[Yappy] Button appears to be ready and available');
+            }
+          }, INITIALIZATION_GRACE_PERIOD + 1000); // Check after grace period + 1 second buffer
         }
       } catch (err: any) {
         console.error('[Yappy] Error rendering button:', err);
         setError('Error al renderizar el botón de Yappy');
-        setIsLoading(false);
-        onError?.(err.message || 'Error al renderizar el botón de Yappy');
+        onError?.('Error al renderizar el botón de Yappy');
       }
     };
 
+    // Wait a bit for the module to fully load
     setTimeout(renderButton, 200);
-  }, [merchantId, scriptLoaded, amount, description, orderId, returnUrl, domainUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
 
-  // Update button with order data when order is created
-  useEffect(() => {
-    if (!orderCreated || !orderToken || !containerRef.current) return;
-
-    const yappyButton = containerRef.current.querySelector('btn-yappy') as any;
-    if (yappyButton) {
-      yappyButton.setAttribute('token', orderToken);
-      if (documentName) {
-        yappyButton.setAttribute('document-name', documentName);
-      }
-      
-      // Remove click interceptor and allow normal button behavior
-      if (clickInterceptorRef.current) {
-        yappyButton.removeEventListener('click', clickInterceptorRef.current, true);
-        if (containerRef.current) {
-          containerRef.current.removeEventListener('click', clickInterceptorRef.current, true);
-        }
-        clickInterceptorRef.current = null;
-      }
-      
-      console.log('[Yappy] Button updated with order data, ready for payment');
-    }
-  }, [orderCreated, orderToken, documentName]);
-
-  // Cleanup on unmount
-  useEffect(() => {
+    // Cleanup function to disconnect observer when component unmounts or dependencies change
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
       }
-      if (clickInterceptorRef.current && containerRef.current) {
-        const yappyButton = containerRef.current.querySelector('btn-yappy');
-        if (yappyButton) {
-          yappyButton.removeEventListener('click', clickInterceptorRef.current, true);
-        }
-      }
     };
-  }, []);
+  }, [merchantId, domainUrl, validationToken, orderToken, documentName, scriptLoaded, amount, description, orderId, returnUrl, customParams, playerId, paymentType, monthYear, notes, onSuccess, onError]);
 
   return (
     <div className={`space-y-2 ${className}`}>
-      {isLoading && (
+      {/* Show initial button if order hasn't been created yet */}
+      {!orderCreated && !isLoading && !error && (
+        <button
+          onClick={handleInitializeYappy}
+          disabled={isInitializing}
+          className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[48px] touch-manipulation"
+        >
+          {isInitializing ? (
+            <>
+              <Loader2 className="animate-spin" size={20} />
+              <span>Inicializando Yappy...</span>
+            </>
+          ) : (
+            <>
+              <span>💳 Pagar con Yappy</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {isLoading && orderCreated && (
         <div className="flex flex-col items-center justify-center py-6 sm:py-8">
           <Loader2 className="animate-spin text-blue-600 mb-2" size={24} />
           <p className="text-xs sm:text-sm text-gray-600">Cargando botón de pago Yappy...</p>
@@ -398,37 +603,27 @@ export function YappyPaymentButton({
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Container for Yappy web component - always show when script is loaded */}
-      {!isLoading && !error && (
-        <div className="relative min-h-[48px] touch-manipulation">
-          {!orderCreated && isInitializing && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
-              <Loader2 className="animate-spin text-blue-600" size={20} />
-              <span className="ml-2 text-sm text-gray-700">Creando orden...</span>
-            </div>
+          {!orderCreated && (
+            <button
+              onClick={handleInitializeYappy}
+              disabled={isInitializing}
+              className="mt-3 w-full px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Reintentar
+            </button>
           )}
-          <div 
-            ref={containerRef}
-            onClick={async (e) => {
-              // Only intercept if order not created and not initializing
-              if (!orderCreated && !isInitializing) {
-                const target = e.target as HTMLElement;
-                // Check if click is on the Yappy button or its children
-                if (target.closest('btn-yappy')) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  await handleCreateOrder();
-                }
-              }
-            }}
-          />
         </div>
       )}
 
-      {!isLoading && !error && buttonReady && (
+      {/* Container for Yappy web component - only show when order is created */}
+      {orderCreated && (
+        <div 
+          ref={containerRef}
+          className={isLoading ? 'hidden' : 'min-h-[48px] touch-manipulation'}
+        />
+      )}
+
+      {orderCreated && !isLoading && !error && (
         <p className="text-xs text-gray-500 text-center px-2">
           🔒 Pago seguro procesado por Yappy Comercial
         </p>
@@ -436,3 +631,4 @@ export function YappyPaymentButton({
     </div>
   );
 }
+

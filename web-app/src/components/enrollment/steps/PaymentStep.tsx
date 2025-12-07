@@ -159,8 +159,17 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 <strong>Total a pagar:</strong> ${totalAmount.toFixed(2)}
               </p>
               <p className="text-xs text-blue-700">
-                Completa el pago con Yappy Comercial. El pago se registrará automáticamente.
+                Primero envía el formulario de matrícula, luego completa el pago con Yappy Comercial.
               </p>
+            </div>
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={onSubmit}
+                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                Enviar Formulario de Matrícula
+              </button>
             </div>
             <YappyPaymentButton
               amount={totalAmount}
@@ -176,14 +185,8 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 tutorPhone: data.tutorPhone || '',
               }}
               onSuccess={async (transactionId: string) => {
-                // Mark payment as complete and submit enrollment
-                updateData({ 
-                  paymentProofFile: `yappy:${transactionId}` // Store transaction ID as proof
-                });
-                // Submit the enrollment form (only once)
-                if (onSubmit) {
-                  onSubmit();
-                }
+                // Payment confirmed - callback will update the payment
+                console.log('[PaymentStep] Yappy payment confirmed:', transactionId);
               }}
               onError={(errorMsg: string) => {
                 alert('Error en Yappy: ' + errorMsg);
