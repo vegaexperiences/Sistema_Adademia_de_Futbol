@@ -7,9 +7,10 @@ interface PlayerStepProps {
   removePlayer: (index: number) => void;
   onNext: () => void;
   onBack: () => void;
+  getFieldError?: (fieldPath: string) => string | undefined;
 }
 
-export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext, onBack }: PlayerStepProps) {
+export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext, onBack, getFieldError }: PlayerStepProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext();
@@ -63,11 +64,17 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="text"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
+                    data-error={getFieldError?.(`players.${index}.firstName`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                      getFieldError?.(`players.${index}.firstName`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.firstName || ''}
                     onChange={(e) => updatePlayer(index, { firstName: e.target.value })}
                     placeholder="Ej. Miguel"
                   />
+                  {getFieldError?.(`players.${index}.firstName`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.firstName`)}</p>
+                  )}
                 </div>
               </div>
 
@@ -82,11 +89,17 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="text"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
+                    data-error={getFieldError?.(`players.${index}.lastName`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                      getFieldError?.(`players.${index}.lastName`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.lastName || ''}
                     onChange={(e) => updatePlayer(index, { lastName: e.target.value })}
                     placeholder="Ej. González"
                   />
+                  {getFieldError?.(`players.${index}.lastName`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.lastName`)}</p>
+                  )}
                 </div>
               </div>
 
@@ -101,10 +114,16 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="date"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors relative z-20 touch-manipulation"
+                    data-error={getFieldError?.(`players.${index}.birthDate`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors relative z-20 touch-manipulation ${
+                      getFieldError?.(`players.${index}.birthDate`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.birthDate || ''}
                     onChange={(e) => updatePlayer(index, { birthDate: e.target.value })}
                   />
+                  {getFieldError?.(`players.${index}.birthDate`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.birthDate`)}</p>
+                  )}
                 </div>
               </div>
 
@@ -118,7 +137,10 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   </div>
                   <select
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 bg-gray-50 transition-colors appearance-none touch-manipulation"
+                    data-error={getFieldError?.(`players.${index}.gender`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 bg-gray-50 transition-colors appearance-none touch-manipulation ${
+                      getFieldError?.(`players.${index}.gender`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.gender || ''}
                     onChange={(e) => updatePlayer(index, { gender: e.target.value })}
                   >
@@ -126,6 +148,9 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                     <option value="Masculino">Masculino</option>
                     <option value="Femenino">Femenino</option>
                   </select>
+                  {getFieldError?.(`players.${index}.gender`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.gender`)}</p>
+                  )}
                 </div>
               </div>
 
@@ -139,11 +164,17 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   </div>
                   <input
                     type="text"
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
+                    data-error={getFieldError?.(`players.${index}.cedula`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                      getFieldError?.(`players.${index}.cedula`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.cedula || ''}
                     onChange={(e) => updatePlayer(index, { cedula: e.target.value })}
                     placeholder="Ej. 8-123-456"
                   />
+                  {getFieldError?.(`players.${index}.cedula`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.cedula`)}</p>
+                  )}
                 </div>
               </div>
             </div>

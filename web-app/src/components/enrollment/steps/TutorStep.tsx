@@ -4,9 +4,10 @@ interface TutorStepProps {
   data: any;
   updateData: (data: any) => void;
   onNext: () => void;
+  getFieldError?: (fieldPath: string) => string | undefined;
 }
 
-export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
+export function TutorStep({ data, updateData, onNext, getFieldError }: TutorStepProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext();
@@ -33,11 +34,17 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="text"
                 id="tutorName"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
+                data-error={getFieldError?.('tutorName') ? 'true' : 'false'}
+                className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                  getFieldError?.('tutorName') ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Juan Pérez"
                 value={data.tutorName || ''}
                 onChange={(e) => updateData({ tutorName: e.target.value })}
               />
+              {getFieldError?.('tutorName') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('tutorName')}</p>
+              )}
             </div>
           </div>
 
@@ -53,11 +60,17 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="text"
                 id="tutorCedula"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
+                data-error={getFieldError?.('tutorCedula') ? 'true' : 'false'}
+                className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                  getFieldError?.('tutorCedula') ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="8-888-8888"
                 value={data.tutorCedula || ''}
                 onChange={(e) => updateData({ tutorCedula: e.target.value })}
               />
+              {getFieldError?.('tutorCedula') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('tutorCedula')}</p>
+              )}
             </div>
           </div>
 
@@ -73,11 +86,17 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="email"
                 id="tutorEmail"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
+                data-error={getFieldError?.('tutorEmail') ? 'true' : 'false'}
+                className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                  getFieldError?.('tutorEmail') ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="juan@ejemplo.com"
                 value={data.tutorEmail || ''}
                 onChange={(e) => updateData({ tutorEmail: e.target.value })}
               />
+              {getFieldError?.('tutorEmail') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('tutorEmail')}</p>
+              )}
             </div>
           </div>
 
@@ -93,11 +112,17 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="tel"
                 id="tutorPhone"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation"
+                data-error={getFieldError?.('tutorPhone') ? 'true' : 'false'}
+                className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                  getFieldError?.('tutorPhone') ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="6000-0000"
                 value={data.tutorPhone || ''}
                 onChange={(e) => updateData({ tutorPhone: e.target.value })}
               />
+              {getFieldError?.('tutorPhone') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('tutorPhone')}</p>
+              )}
             </div>
           </div>
         </div>

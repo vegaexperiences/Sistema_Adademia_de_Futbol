@@ -7,6 +7,7 @@ import { DocumentsStep } from './steps/DocumentsStep';
 import { PaymentStep } from './steps/PaymentStep';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+import { useEnrollmentValidation } from './hooks/useEnrollmentValidation';
 
 const STEPS = [
   { id: 'tutor', title: 'Tutor' },
@@ -23,6 +24,7 @@ interface EnrollmentFormProps {
 
 export function EnrollmentForm({ config }: EnrollmentFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const { validateStep, validateFullForm, clearErrors, getFieldError } = useEnrollmentValidation();
   const [formData, setFormData] = useState({
     // Tutor
     tutorName: '',
@@ -89,8 +91,18 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
   };
 
   const nextStep = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep((prev) => prev + 1);
+    // Validate current step before advancing
+    if (validateStep(currentStep, formData)) {
+      if (currentStep < STEPS.length - 1) {
+        setCurrentStep((prev) => prev + 1);
+        clearErrors();
+      }
+    } else {
+      // Scroll to first error
+      const firstErrorElement = document.querySelector('[data-error="true"]');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   };
 
@@ -104,6 +116,17 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
     // Prevent double submission
     if (isSubmitting) {
       console.warn('[EnrollmentForm] Submission already in progress, ignoring duplicate call');
+      return;
+    }
+
+    // Validate full form before submitting
+    if (!validateFullForm(formData)) {
+      // Scroll to first error
+      const firstErrorElement = document.querySelector('[data-error="true"]');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      alert('Por favor, corrija los errores en el formulario antes de enviar.');
       return;
     }
 
@@ -231,7 +254,7 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
       {/* Step Content */}
       <div className="p-4 sm:p-6 md:p-10 flex-grow overflow-visible">
         {currentStep === 0 && (
-          <TutorStep data={formData} updateData={updateData} onNext={nextStep} />
+          <TutorStep data={formData} updateData={updateData} onNext={nextStep} getFieldError={getFieldError} />
         )}
         {currentStep === 1 && (
           <PlayerStep
@@ -241,6 +264,7 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
             removePlayer={removePlayer}
             onNext={nextStep}
             onBack={prevStep}
+            getFieldError={getFieldError}
           />
         )}
         {currentStep === 2 && (
