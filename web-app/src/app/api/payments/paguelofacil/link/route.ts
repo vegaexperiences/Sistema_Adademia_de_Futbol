@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PagueloFacilService } from '@/lib/payments/paguelofacil';
 import { getBaseUrlFromRequest } from '@/lib/utils/get-base-url';
 import { createClient } from '@/lib/supabase/server';
+import { enrollmentSchema } from '@/lib/validations/enrollment';
 
 /**
  * POST /api/payments/paguelofacil/link
@@ -41,19 +42,59 @@ export async function POST(request: NextRequest) {
         enrollmentDataKeys: enrollmentData ? Object.keys(enrollmentData) : [],
         tutorName: enrollmentData?.tutorName,
         tutorEmail: enrollmentData?.tutorEmail,
+        tutorCedula: enrollmentData?.tutorCedula,
+        tutorCedulaLength: enrollmentData?.tutorCedula?.length || 0,
         playerCount: enrollmentData?.players?.length || 0,
         amount,
         type: customParams?.type,
       });
       
+      // Normalize and validate enrollment data before storing
+      let normalizedEnrollmentData = { ...enrollmentData };
+      
+      // Normalize tutorCedula: pad with zeros if too short (minimum 7 chars)
+      if (normalizedEnrollmentData.tutorCedula && normalizedEnrollmentData.tutorCedula.length < 7) {
+        const originalCedula = normalizedEnrollmentData.tutorCedula;
+        normalizedEnrollmentData.tutorCedula = originalCedula.padStart(7, '0');
+        console.log('[PagueloFacil Link] 🔧 Normalized tutorCedula:', {
+          original: originalCedula,
+          normalized: normalizedEnrollmentData.tutorCedula,
+          originalLength: originalCedula.length,
+          normalizedLength: normalizedEnrollmentData.tutorCedula.length,
+        });
+      }
+      
+      // Validate normalized data
+      try {
+        const validationResult = enrollmentSchema.safeParse(normalizedEnrollmentData);
+        if (!validationResult.success) {
+          console.error('[PagueloFacil Link] ⚠️ Enrollment data validation failed:', {
+            orderId,
+            errors: validationResult.error.flatten().fieldErrors,
+            tutorCedula: normalizedEnrollmentData.tutorCedula,
+            tutorCedulaLength: normalizedEnrollmentData.tutorCedula?.length || 0,
+          });
+          // Continue with original data - validation will happen again in callback
+          // But log the issue for debugging
+        } else {
+          console.log('[PagueloFacil Link] ✅ Enrollment data validated successfully before storage');
+          // Use validated data (which may have been normalized)
+          normalizedEnrollmentData = validationResult.data as any;
+        }
+      } catch (validationError: any) {
+        console.error('[PagueloFacil Link] ⚠️ Error during validation:', {
+          orderId,
+          error: validationError.message,
+        });
+        // Continue with original data
+      }
+      
       try {
         const supabase = await createClient();
-        // Store in a temporary table or use existing mechanism
-        // For now, we'll store it in a JSON column in a temporary storage
-        // Using the orderId as the key
+        // Store normalized data
         const storeData = {
           order_id: orderId,
-          enrollment_data: enrollmentData,
+          enrollment_data: normalizedEnrollmentData,
           amount: amount,
           type: 'enrollment',
           created_at: new Date().toISOString(),

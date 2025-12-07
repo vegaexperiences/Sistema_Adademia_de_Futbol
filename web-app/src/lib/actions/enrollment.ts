@@ -33,9 +33,111 @@ export async function createEnrollmentFromPayment(
   };
 
   try {
-    // Validate enrollment data
-    const validatedData = enrollmentSchema.parse(enrollmentData);
-    console.log('[createEnrollmentFromPayment] Data validated successfully');
+    // Normalize enrollment data before validation
+    let normalizedData = { ...enrollmentData };
+    
+    // Normalize tutorCedula: pad with zeros if too short (minimum 7 chars)
+    if (normalizedData.tutorCedula && typeof normalizedData.tutorCedula === 'string') {
+      const originalCedula = normalizedData.tutorCedula.trim();
+      if (originalCedula.length > 0 && originalCedula.length < 7) {
+        normalizedData.tutorCedula = originalCedula.padStart(7, '0');
+        console.log('[createEnrollmentFromPayment] 🔧 Normalized tutorCedula:', {
+          original: originalCedula,
+          normalized: normalizedData.tutorCedula,
+          originalLength: originalCedula.length,
+          normalizedLength: normalizedData.tutorCedula.length,
+        });
+      } else {
+        normalizedData.tutorCedula = originalCedula;
+      }
+    }
+    
+    // Normalize tutorPhone: remove spaces and special characters, keep only digits
+    if (normalizedData.tutorPhone && typeof normalizedData.tutorPhone === 'string') {
+      const originalPhone = normalizedData.tutorPhone.trim();
+      // Remove common phone formatting characters but keep the digits
+      const cleanedPhone = originalPhone.replace(/[\s\-\(\)\.]/g, '');
+      if (cleanedPhone.length >= 7) {
+        normalizedData.tutorPhone = cleanedPhone;
+        if (cleanedPhone !== originalPhone) {
+          console.log('[createEnrollmentFromPayment] 🔧 Normalized tutorPhone:', {
+            original: originalPhone,
+            normalized: cleanedPhone,
+          });
+        }
+      }
+    }
+    
+    // Normalize player data
+    if (normalizedData.players && Array.isArray(normalizedData.players)) {
+      normalizedData.players = normalizedData.players.map((player: any) => {
+        const normalizedPlayer = { ...player };
+        
+        // Normalize player cedula if present
+        if (normalizedPlayer.cedula && typeof normalizedPlayer.cedula === 'string') {
+          normalizedPlayer.cedula = normalizedPlayer.cedula.trim();
+        }
+        
+        // Ensure category has a default value
+        if (!normalizedPlayer.category || normalizedPlayer.category.trim() === '') {
+          normalizedPlayer.category = 'Pendiente';
+        }
+        
+        return normalizedPlayer;
+      });
+    }
+    
+    console.log('[createEnrollmentFromPayment] 📋 Normalized enrollment data:', {
+      tutorName: normalizedData.tutorName,
+      tutorCedula: normalizedData.tutorCedula,
+      tutorCedulaLength: normalizedData.tutorCedula?.length || 0,
+      tutorEmail: normalizedData.tutorEmail,
+      tutorPhone: normalizedData.tutorPhone,
+      playerCount: normalizedData.players?.length || 0,
+    });
+    
+    // Validate normalized enrollment data
+    const validationResult = enrollmentSchema.safeParse(normalizedData);
+    
+    if (!validationResult.success) {
+      const errors = validationResult.error.flatten().fieldErrors;
+      console.error('[createEnrollmentFromPayment] ❌ Validation failed:', {
+        errors,
+        enrollmentData: {
+          tutorName: normalizedData.tutorName,
+          tutorCedula: normalizedData.tutorCedula,
+          tutorCedulaLength: normalizedData.tutorCedula?.length || 0,
+          tutorEmail: normalizedData.tutorEmail,
+          tutorPhone: normalizedData.tutorPhone,
+          tutorPhoneLength: normalizedData.tutorPhone?.length || 0,
+          playerCount: normalizedData.players?.length || 0,
+        },
+        originalEnrollmentData: {
+          tutorCedula: enrollmentData.tutorCedula,
+          tutorCedulaLength: enrollmentData.tutorCedula?.length || 0,
+        },
+      });
+      
+      // Try to provide helpful error message
+      const errorMessages: string[] = [];
+      if (errors.tutorCedula) {
+        errorMessages.push(`Cédula del tutor inválida: ${errors.tutorCedula.join(', ')}. Valor recibido: "${enrollmentData.tutorCedula}" (${enrollmentData.tutorCedula?.length || 0} caracteres)`);
+      }
+      if (errors.tutorPhone) {
+        errorMessages.push(`Teléfono del tutor inválido: ${errors.tutorPhone.join(', ')}`);
+      }
+      if (errors.tutorEmail) {
+        errorMessages.push(`Email del tutor inválido: ${errors.tutorEmail.join(', ')}`);
+      }
+      if (errors.players) {
+        errorMessages.push(`Datos de jugadores inválidos: ${errors.players.join(', ')}`);
+      }
+      
+      throw new Error(`Datos de enrollment inválidos: ${errorMessages.join('; ')}`);
+    }
+    
+    const validatedData = validationResult.data;
+    console.log('[createEnrollmentFromPayment] ✅ Data validated successfully');
 
     // 1. Handle Family Creation (only if 2+ players)
     let familyId: string | null = null;
