@@ -24,7 +24,7 @@ export async function createEnrollmentFromPayment(
 
   // Track created resources for rollback
   const createdResources: {
-    familyId?: string;
+    familyId?: string | null;
     familyWasNew?: boolean;
     playerIds: string[];
     paymentId?: string;

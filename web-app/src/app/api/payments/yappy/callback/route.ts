@@ -91,6 +91,36 @@ export async function POST(request: NextRequest) {
       allConditionsMet: isApproved && (type === 'payment' || type === 'enrollment') && amount,
     });
 
+    // Helper function to create fallback payment
+    const createFallbackYappyPayment = async (
+      supabase: any,
+      paymentAmount: number,
+      orderId?: string,
+      transactionId?: string
+    ) => {
+      const paymentData = {
+        player_id: null,
+        amount: paymentAmount,
+        type: 'enrollment' as const,
+        method: 'yappy' as const,
+        payment_date: new Date().toISOString().split('T')[0],
+        status: 'Approved' as const,
+        notes: `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${transactionId || 'N/A'}. Número de Operación: ${transactionId || 'N/A'}`,
+      };
+      
+      const { error: insertError } = await supabase
+        .from('payments')
+        .insert(paymentData);
+      
+      if (insertError) {
+        console.error('[Yappy Callback] Error creating enrollment payment:', insertError);
+      } else {
+        console.log('[Yappy Callback] ✅ New enrollment payment created');
+        // Revalidate approvals page to show new payment
+        revalidatePath('/dashboard/approvals');
+      }
+    };
+
     // Handle enrollment payments: search for existing payment and update it
     if (isApproved && type === 'enrollment' && amount) {
       try {
@@ -237,40 +267,6 @@ export async function POST(request: NextRequest) {
       } catch (enrollmentError: any) {
         console.error('[Yappy Callback] Error handling enrollment payment:', enrollmentError);
         // Don't throw - continue with response
-      }
-    }
-
-    // Helper function to create fallback payment
-    async function createFallbackYappyPayment(
-      supabase: any,
-      paymentAmount: number,
-      orderId?: string,
-      transactionId?: string
-    ) {
-      const paymentData = {
-        player_id: null,
-        amount: paymentAmount,
-        type: 'enrollment' as const,
-        method: 'yappy' as const,
-        payment_date: new Date().toISOString().split('T')[0],
-        status: 'Approved' as const,
-        notes: `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${transactionId || 'N/A'}. Número de Operación: ${transactionId || 'N/A'}`,
-      };
-      
-      const { error: insertError } = await supabase
-        .from('payments')
-        .insert(paymentData);
-      
-      if (insertError) {
-            console.error('[Yappy Callback] Error creating enrollment payment:', insertError);
-          } else {
-            console.log('[Yappy Callback] ✅ New enrollment payment created');
-            // Revalidate approvals page to show new payment
-            revalidatePath('/dashboard/approvals');
-          }
-        }
-      } catch (enrollmentError: any) {
-        console.error('[Yappy Callback] Error processing enrollment payment:', enrollmentError);
       }
     }
 
@@ -803,6 +799,36 @@ export async function GET(request: NextRequest) {
       confirmationNumber,
     });
 
+    // Helper function to create fallback payment
+    const createFallbackYappyPayment = async (
+      supabase: any,
+      paymentAmount: number,
+      orderId?: string,
+      transactionId?: string
+    ) => {
+      const paymentData = {
+        player_id: null,
+        amount: paymentAmount,
+        type: 'enrollment' as const,
+        method: 'yappy' as const,
+        payment_date: new Date().toISOString().split('T')[0],
+        status: 'Approved' as const,
+        notes: `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${transactionId || 'N/A'}. Número de Operación: ${transactionId || 'N/A'}`,
+      };
+      
+      const { error: insertError } = await supabase
+        .from('payments')
+        .insert(paymentData);
+      
+      if (insertError) {
+        console.error('[Yappy Callback] Error creating enrollment payment (GET):', insertError);
+      } else {
+        console.log('[Yappy Callback] ✅ New enrollment payment created (GET)');
+        // Revalidate approvals page to show new payment
+        revalidatePath('/dashboard/approvals');
+      }
+    };
+
     // Handle enrollment payments: search for existing payment and update it
     if (isApproved && type === 'enrollment' && hasValidAmount) {
       try {
@@ -949,40 +975,6 @@ export async function GET(request: NextRequest) {
       } catch (enrollmentError: any) {
         console.error('[Yappy Callback] Error handling enrollment payment (GET):', enrollmentError);
         // Don't throw - continue with response
-      }
-    }
-
-    // Helper function to create fallback payment
-    async function createFallbackYappyPayment(
-      supabase: any,
-      paymentAmount: number,
-      orderId?: string,
-      transactionId?: string
-    ) {
-      const paymentData = {
-        player_id: null,
-        amount: paymentAmount,
-        type: 'enrollment' as const,
-        method: 'yappy' as const,
-        payment_date: new Date().toISOString().split('T')[0],
-        status: 'Approved' as const,
-        notes: `Pago de matrícula procesado con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${transactionId || 'N/A'}. Número de Operación: ${transactionId || 'N/A'}`,
-      };
-      
-      const { error: insertError } = await supabase
-        .from('payments')
-        .insert(paymentData);
-      
-      if (insertError) {
-            console.error('[Yappy Callback] Error creating enrollment payment (GET):', insertError);
-          } else {
-            console.log('[Yappy Callback] ✅ New enrollment payment created (GET)');
-            // Revalidate approvals page to show new payment
-            revalidatePath('/dashboard/approvals');
-          }
-        }
-      } catch (enrollmentError: any) {
-        console.error('[Yappy Callback] Error processing enrollment payment (GET):', enrollmentError);
       }
     }
 
