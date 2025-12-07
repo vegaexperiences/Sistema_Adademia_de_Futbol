@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { Edit, Save, X, User, Calendar, Mail, Phone } from 'lucide-react';
 import { updatePlayer } from '@/lib/actions/players';
 import { useRouter } from 'next/navigation';
@@ -31,6 +31,12 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // Use normalized tutor info from player prop (already normalized in page.tsx)
+  const tutorName = player.tutor_name || '';
+  const tutorEmail = player.tutor_email || '';
+  const tutorPhone = player.tutor_phone || '';
+  const tutorCedula = player.tutor_cedula || '';
+
   const [formData, setFormData] = useState({
     first_name: player.first_name || '',
     last_name: player.last_name || '',
@@ -38,12 +44,31 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
     gender: player.gender || '',
     cedula: player.cedula || '',
     category: player.category || '',
-    tutor_name: player.tutor_name || '',
-    tutor_email: player.tutor_email || '',
-    tutor_phone: player.tutor_phone || '',
-    tutor_cedula: player.tutor_cedula || '',
+    tutor_name: tutorName,
+    tutor_email: tutorEmail,
+    tutor_phone: tutorPhone,
+    tutor_cedula: tutorCedula,
     notes: player.notes || '',
   });
+
+  // Update formData when player prop changes (e.g., after refresh)
+  useEffect(() => {
+    if (!isEditing) {
+      setFormData({
+        first_name: player.first_name || '',
+        last_name: player.last_name || '',
+        birth_date: player.birth_date ? player.birth_date.split('T')[0] : '',
+        gender: player.gender || '',
+        cedula: player.cedula || '',
+        category: player.category || '',
+        tutor_name: tutorName,
+        tutor_email: tutorEmail,
+        tutor_phone: tutorPhone,
+        tutor_cedula: tutorCedula,
+        notes: player.notes || '',
+      });
+    }
+  }, [player, tutorName, tutorEmail, tutorPhone, tutorCedula, isEditing]);
 
   const handleSave = async () => {
     setError(null);
@@ -96,10 +121,10 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
       gender: player.gender || '',
       cedula: player.cedula || '',
       category: player.category || '',
-      tutor_name: player.tutor_name || '',
-      tutor_email: player.tutor_email || '',
-      tutor_phone: player.tutor_phone || '',
-      tutor_cedula: player.tutor_cedula || '',
+      tutor_name: tutorName,
+      tutor_email: tutorEmail,
+      tutor_phone: tutorPhone,
+      tutor_cedula: tutorCedula,
       notes: player.notes || '',
     });
     setIsEditing(false);
@@ -234,7 +259,7 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
               />
             ) : (
               <p className="text-lg font-bold text-gray-900">
-                {player.tutor_name || 'Sin información'}
+                {tutorName || 'Sin información'}
               </p>
             )}
           </div>
@@ -253,7 +278,7 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
               />
             ) : (
               <p className="text-lg font-bold text-gray-900">
-                {player.tutor_email || 'Sin email'}
+                {tutorEmail || 'Sin email'}
               </p>
             )}
           </div>
@@ -278,7 +303,7 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
               </div>
             ) : (
               <p className="text-lg font-bold text-gray-900">
-                {player.tutor_phone || 'Sin teléfono'}
+                {tutorPhone || 'Sin teléfono'}
               </p>
             )}
           </div>
@@ -294,7 +319,7 @@ export function EditablePlayerInfo({ player }: EditablePlayerInfoProps) {
               />
             ) : (
               <p className="text-lg font-bold text-gray-900">
-                {player.tutor_cedula || 'Sin cédula'}
+                {tutorCedula || 'Sin cédula'}
               </p>
             )}
           </div>
