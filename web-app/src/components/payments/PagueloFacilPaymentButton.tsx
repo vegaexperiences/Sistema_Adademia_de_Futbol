@@ -42,7 +42,16 @@ export function PagueloFacilPaymentButton({
       try {
         // Execute beforeRedirect callback if provided (e.g., submit enrollment or store data)
         if (beforeRedirect) {
-          await beforeRedirect();
+          try {
+            await beforeRedirect();
+          } catch (err: any) {
+            // If beforeRedirect fails, don't proceed with payment
+            const errorMsg = err.message || 'Error al procesar la solicitud antes del pago';
+            console.error('[PagueloFacil] beforeRedirect failed:', err);
+            setError(errorMsg);
+            onError?.(errorMsg);
+            return; // Don't proceed with payment if enrollment failed
+          }
         }
 
         // Get returnUrl - if it's a function, call it now (after beforeRedirect)
@@ -102,12 +111,12 @@ export function PagueloFacilPaymentButton({
         {isPending ? (
           <>
             <Loader2 className="animate-spin" size={20} />
-            <span>Generando enlace de pago...</span>
+            <span>Procesando matrícula y generando enlace de pago...</span>
           </>
         ) : (
           <>
             <CreditCard size={20} />
-            <span>Pagar con Paguelo Fácil</span>
+            <span>Enviar Matrícula y Pagar con Paguelo Fácil</span>
           </>
         )}
       </button>

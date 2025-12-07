@@ -168,41 +168,10 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 <strong>Total a pagar:</strong> ${totalAmount.toFixed(2)}
               </p>
               <p className="text-xs text-blue-700">
-                Primero envía el formulario de matrícula, luego completa el pago con Yappy Comercial.
+                Al hacer clic en el botón, se enviará tu matrícula y podrás completar el pago con Yappy Comercial.
               </p>
             </div>
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={async () => {
-                  setIsSubmittingEnrollment(true);
-                  try {
-                    await onSubmit();
-                    setEnrollmentSubmitted(true);
-                  } catch (error) {
-                    console.error('Error submitting enrollment:', error);
-                    alert('Error al enviar el formulario. Por favor intenta nuevamente.');
-                  } finally {
-                    setIsSubmittingEnrollment(false);
-                  }
-                }}
-                disabled={isSubmittingEnrollment || enrollmentSubmitted}
-                className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  isSubmittingEnrollment || enrollmentSubmitted
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {isSubmittingEnrollment ? 'Enviando...' : enrollmentSubmitted ? '✅ Formulario Enviado' : 'Enviar Formulario de Matrícula'}
-              </button>
-              {enrollmentSubmitted && (
-                <p className="mt-2 text-sm text-green-700 text-center">
-                  ✅ Formulario enviado exitosamente. Ahora puedes completar el pago.
-                </p>
-              )}
-            </div>
-            <div className={enrollmentSubmitted ? '' : 'opacity-50 pointer-events-none'}>
-              <YappyPaymentButton
+            <YappyPaymentButton
               amount={totalAmount}
               description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
               orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
@@ -215,20 +184,29 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 tutorEmail: data.tutorEmail || '',
                 tutorPhone: data.tutorPhone || '',
               }}
+              beforeInitialize={async () => {
+                // Enviar enrollment automáticamente antes de inicializar Yappy
+                console.log('[PaymentStep] Enviando enrollment antes de inicializar Yappy...');
+                setIsSubmittingEnrollment(true);
+                try {
+                  await onSubmit();
+                  setEnrollmentSubmitted(true);
+                  console.log('[PaymentStep] Enrollment enviado exitosamente');
+                } catch (error) {
+                  console.error('[PaymentStep] Error submitting enrollment:', error);
+                  setIsSubmittingEnrollment(false);
+                  throw new Error('Error al enviar el formulario de matrícula. Por favor intenta nuevamente.');
+                }
+              }}
               onSuccess={async (transactionId: string) => {
                 // Payment confirmed - callback will update the payment
                 console.log('[PaymentStep] Yappy payment confirmed:', transactionId);
               }}
               onError={(errorMsg: string) => {
-                alert('Error en Yappy: ' + errorMsg);
+                setIsSubmittingEnrollment(false);
+                alert('Error: ' + errorMsg);
               }}
-              />
-              {!enrollmentSubmitted && (
-                <p className="mt-2 text-xs text-gray-500 text-center">
-                  ⚠️ Primero debes enviar el formulario de matrícula arriba
-                </p>
-              )}
-            </div>
+            />
           </div>
         )}
 
@@ -240,67 +218,45 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 <strong>Total a pagar:</strong> ${totalAmount.toFixed(2)}
               </p>
               <p className="text-xs text-cyan-700">
-                Primero envía el formulario de matrícula, luego completa el pago con Paguelo Fácil.
+                Al hacer clic en el botón, se enviará tu matrícula y serás redirigido a Paguelo Fácil para completar el pago.
               </p>
             </div>
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={async () => {
-                  setIsSubmittingEnrollment(true);
-                  try {
-                    await onSubmit();
-                    setEnrollmentSubmitted(true);
-                  } catch (error) {
-                    console.error('Error submitting enrollment:', error);
-                    alert('Error al enviar el formulario. Por favor intenta nuevamente.');
-                  } finally {
-                    setIsSubmittingEnrollment(false);
-                  }
-                }}
-                disabled={isSubmittingEnrollment || enrollmentSubmitted}
-                className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  isSubmittingEnrollment || enrollmentSubmitted
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {isSubmittingEnrollment ? 'Enviando...' : enrollmentSubmitted ? '✅ Formulario Enviado' : 'Enviar Formulario de Matrícula'}
-              </button>
-              {enrollmentSubmitted && (
-                <p className="mt-2 text-sm text-green-700 text-center">
-                  ✅ Formulario enviado exitosamente. Ahora puedes completar el pago.
-                </p>
-              )}
-            </div>
-            <div className={enrollmentSubmitted ? '' : 'opacity-50 pointer-events-none'}>
-              <PagueloFacilPaymentButton
-                amount={totalAmount}
-                description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
-                email={data.tutorEmail || ''}
-                orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
-                returnUrl={() => {
-                  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                  return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}`;
-                }}
-                customParams={{
-                  type: 'enrollment',
-                  amount: totalAmount.toString(),
-                }}
-                onSuccess={async () => {
-                  // Payment confirmed - callback will update the payment
-                  console.log('[PaymentStep] PagueloFacil payment confirmed');
-                }}
-                onError={(errorMsg: string) => {
-                  alert('Error en Paguelo Fácil: ' + errorMsg);
-                }}
-              />
-              {!enrollmentSubmitted && (
-                <p className="mt-2 text-xs text-gray-500 text-center">
-                  ⚠️ Primero debes enviar el formulario de matrícula arriba
-                </p>
-              )}
-            </div>
+            <PagueloFacilPaymentButton
+              amount={totalAmount}
+              description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
+              email={data.tutorEmail || ''}
+              orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
+              returnUrl={() => {
+                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}`;
+              }}
+              customParams={{
+                type: 'enrollment',
+                amount: totalAmount.toString(),
+              }}
+              beforeRedirect={async () => {
+                // Enviar enrollment automáticamente antes de redirigir
+                console.log('[PaymentStep] Enviando enrollment antes de redirigir a PagueloFacil...');
+                setIsSubmittingEnrollment(true);
+                try {
+                  await onSubmit();
+                  setEnrollmentSubmitted(true);
+                  console.log('[PaymentStep] Enrollment enviado exitosamente');
+                } catch (error) {
+                  console.error('[PaymentStep] Error submitting enrollment:', error);
+                  setIsSubmittingEnrollment(false);
+                  throw new Error('Error al enviar el formulario de matrícula. Por favor intenta nuevamente.');
+                }
+              }}
+              onSuccess={async () => {
+                // Payment confirmed - callback will update the payment
+                console.log('[PaymentStep] PagueloFacil payment confirmed');
+              }}
+              onError={(errorMsg: string) => {
+                setIsSubmittingEnrollment(false);
+                alert('Error: ' + errorMsg);
+              }}
+            />
           </div>
         )}
 
