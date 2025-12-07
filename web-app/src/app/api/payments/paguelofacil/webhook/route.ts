@@ -6,6 +6,190 @@ import { revalidatePath } from 'next/cache';
 import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation';
 
 /**
+ * Helper function to link enrollment payment to pending players
+ * Searches for recent pending players without payments and links them based on amount matching
+ */
+async function linkEnrollmentPaymentToPendingPlayers(
+  supabase: any,
+  paymentId: string,
+  paymentAmount: number,
+  operationNumber?: string
+): Promise<string[]> {
+  try {
+    console.log('[PagueloFacil] Linking payment to pending players...', {
+      paymentId,
+      paymentAmount,
+      operationNumber,
+    });
+
+    // Get enrollment price from settings
+    const { data: priceSetting } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'price_enrollment')
+      .single();
+
+    const enrollmentPrice = priceSetting ? Number(priceSetting.value) : 80;
+    console.log('[PagueloFacil] Enrollment price:', enrollmentPrice);
+
+    // Calculate expected number of players based on payment amount
+    const expectedPlayerCount = Math.round(paymentAmount / enrollmentPrice);
+    console.log('[PagueloFacil] Expected player count:', expectedPlayerCount);
+
+    // Search for recent pending players (last 2 hours) without payments
+    const cutoffDate = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const { data: recentPlayers, error: playersError } = await supabase
+      .from('pending_players')
+      .select('id, first_name, last_name, family_id, created_at')
+      .gte('created_at', cutoffDate)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (playersError) {
+      console.error('[PagueloFacil] Error fetching pending players:', playersError);
+      return [];
+    }
+
+    if (!recentPlayers || recentPlayers.length === 0) {
+      console.log('[PagueloFacil] No recent pending players found');
+      return [];
+    }
+
+    // Group players by family to calculate total enrollment amount per family
+    const playersByFamily = new Map<string, any[]>();
+    const individualPlayers: any[] = [];
+
+    for (const player of recentPlayers) {
+      if (player.family_id) {
+        if (!playersByFamily.has(player.family_id)) {
+          playersByFamily.set(player.family_id, []);
+        }
+        playersByFamily.get(player.family_id)!.push(player);
+      } else {
+        individualPlayers.push(player);
+      }
+    }
+
+    // Find best match: family or individual players that match the payment amount
+    let matchedPlayerIds: string[] = [];
+
+    // First, try to match by family (if payment amount matches family enrollment)
+    for (const [familyId, familyPlayers] of playersByFamily.entries()) {
+      const familyEnrollmentAmount = familyPlayers.length * enrollmentPrice;
+      const amountDifference = Math.abs(familyEnrollmentAmount - paymentAmount);
+
+      // Allow $1 tolerance for rounding
+      if (amountDifference <= 1) {
+        // Check if this family already has a payment
+        const { data: existingPayments } = await supabase
+          .from('payments')
+          .select('id, notes')
+          .eq('type', 'enrollment')
+          .or(`notes.ilike.%Pending Player IDs: ${familyPlayers[0].id}%,notes.ilike.%, ${familyPlayers[0].id}%`);
+
+        if (!existingPayments || existingPayments.length === 0) {
+          matchedPlayerIds = familyPlayers.map(p => p.id);
+          console.log('[PagueloFacil] Matched payment to family:', {
+            familyId,
+            playerCount: familyPlayers.length,
+            expectedAmount: familyEnrollmentAmount,
+            actualAmount: paymentAmount,
+          });
+          break;
+        }
+      }
+    }
+
+    // If no family match, try individual players
+    if (matchedPlayerIds.length === 0) {
+      // Try to match individual players
+      for (const player of individualPlayers) {
+        const individualEnrollmentAmount = enrollmentPrice;
+        const amountDifference = Math.abs(individualEnrollmentAmount - paymentAmount);
+
+        if (amountDifference <= 1) {
+          // Check if this player already has a payment
+          const { data: existingPayments } = await supabase
+            .from('payments')
+            .select('id, notes')
+            .eq('type', 'enrollment')
+            .or(`notes.ilike.%Pending Player IDs: ${player.id}%,notes.ilike.%, ${player.id}%`);
+
+          if (!existingPayments || existingPayments.length === 0) {
+            matchedPlayerIds = [player.id];
+            console.log('[PagueloFacil] Matched payment to individual player:', {
+              playerId: player.id,
+              playerName: `${player.first_name} ${player.last_name}`,
+              expectedAmount: individualEnrollmentAmount,
+              actualAmount: paymentAmount,
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    // If still no match, try to match by expected player count (most recent players without payments)
+    if (matchedPlayerIds.length === 0 && expectedPlayerCount > 0) {
+      const candidates: any[] = [];
+      
+      // Collect candidates without payments
+      for (const player of recentPlayers) {
+        const { data: existingPayments } = await supabase
+          .from('payments')
+          .select('id, notes')
+          .eq('type', 'enrollment')
+          .or(`notes.ilike.%Pending Player IDs: ${player.id}%,notes.ilike.%, ${player.id}%`);
+
+        if (!existingPayments || existingPayments.length === 0) {
+          candidates.push(player);
+        }
+      }
+
+      // Take the most recent players matching the expected count
+      if (candidates.length >= expectedPlayerCount) {
+        matchedPlayerIds = candidates.slice(0, expectedPlayerCount).map(p => p.id);
+        console.log('[PagueloFacil] Matched payment to most recent players by count:', {
+          playerCount: expectedPlayerCount,
+          matchedIds: matchedPlayerIds,
+        });
+      }
+    }
+
+    // Update payment notes with matched player IDs
+    if (matchedPlayerIds.length > 0) {
+      const { data: currentPayment } = await supabase
+        .from('payments')
+        .select('notes')
+        .eq('id', paymentId)
+        .single();
+
+      const currentNotes = currentPayment?.notes || '';
+      const playerIdsString = matchedPlayerIds.join(', ');
+      const updatedNotes = `${currentNotes}\n\nVinculado automáticamente a jugador(es) pendiente(s): ${playerIdsString}. Pending Player IDs: ${playerIdsString}`;
+
+      const { error: updateError } = await supabase
+        .from('payments')
+        .update({ notes: updatedNotes })
+        .eq('id', paymentId);
+
+      if (updateError) {
+        console.error('[PagueloFacil] Error updating payment notes:', updateError);
+      } else {
+        console.log('[PagueloFacil] ✅ Payment linked to pending players:', matchedPlayerIds);
+      }
+    } else {
+      console.log('[PagueloFacil] ⚠️ Could not find matching pending players for payment');
+    }
+
+    return matchedPlayerIds;
+  } catch (error: any) {
+    console.error('[PagueloFacil] Error in linkEnrollmentPaymentToPendingPlayers:', error);
+    return [];
+  }
+}
+
+/**
  * POST /api/payments/paguelofacil/webhook
  * Handles webhook notifications from Paguelo Fácil
  * Webhooks are more reliable than callbacks because PagueloFacil sends them directly
@@ -157,6 +341,163 @@ export async function POST(request: NextRequest) {
         PARM_6: parm6,
       },
     });
+
+    // Handle enrollment payment confirmation
+    if (isApproved && type === 'enrollment' && amount) {
+      try {
+        console.log('[PagueloFacil Webhook] Handling enrollment payment confirmation...');
+        const supabase = await createClient();
+        
+        const paymentAmount = parseFloat(amount);
+        const operationNumber = codOper || '';
+        const orderId = parm1 || '';
+        
+        let existingPayment = null;
+        
+        // 1. Search by operation number in notes
+        if (operationNumber) {
+          console.log('[PagueloFacil Webhook] Searching for payment by operation number:', operationNumber);
+          const { data: paymentsByOper } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'paguelofacil')
+            .or(`notes.ilike.%${operationNumber}%,notes.ilike.%${operationNumber.toLowerCase()}%`)
+            .order('payment_date', { ascending: false })
+            .limit(1);
+          
+          if (paymentsByOper && paymentsByOper.length > 0) {
+            existingPayment = paymentsByOper[0];
+            console.log('[PagueloFacil Webhook] Found payment by operation number:', existingPayment.id);
+          }
+        }
+        
+        // 2. Search by orderId if not found (orderId is usually in the enrollment form submission)
+        if (!existingPayment && orderId) {
+          console.log('[PagueloFacil Webhook] Searching for payment by orderId:', orderId);
+          // First try exact match in notes
+          const { data: paymentsByOrder } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'paguelofacil')
+            .or(`notes.ilike.%${orderId}%,notes.ilike.%${orderId.toLowerCase()}%`)
+            .order('payment_date', { ascending: false })
+            .limit(5);
+          
+          if (paymentsByOrder && paymentsByOrder.length > 0) {
+            // Prefer pending payments over approved ones
+            const pendingPayment = paymentsByOrder.find(p => p.status === 'Pending');
+            existingPayment = pendingPayment || paymentsByOrder[0];
+            console.log('[PagueloFacil Webhook] Found payment by orderId:', existingPayment.id);
+          }
+        }
+        
+        // 3. Search by amount (within $1 tolerance) in recent pending payments (last 2 hours)
+        if (!existingPayment) {
+          console.log('[PagueloFacil Webhook] Searching for payment by amount in recent pending payments:', paymentAmount);
+          const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString().split('T')[0];
+          const { data: enrollmentPayments } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('type', 'enrollment')
+            .eq('method', 'paguelofacil')
+            .eq('status', 'Pending')
+            .gte('payment_date', twoHoursAgo)
+            .order('payment_date', { ascending: false })
+            .limit(20);
+          
+          if (enrollmentPayments && enrollmentPayments.length > 0) {
+            const matchingPayment = enrollmentPayments.find(p => {
+              const paymentAmt = parseFloat(p.amount);
+              return Math.abs(paymentAmt - paymentAmount) <= 1;
+            });
+            
+            if (matchingPayment) {
+              existingPayment = matchingPayment;
+              console.log('[PagueloFacil Webhook] Found payment by amount in recent pending payments:', existingPayment.id);
+            }
+          }
+        }
+        
+        // 4. If payment exists, update it
+        if (existingPayment) {
+          console.log('[PagueloFacil Webhook] Updating existing enrollment payment:', existingPayment.id);
+          
+          // Update payment status to "Approved" and add operation details
+          const operationInfo = operationNumber ? `Paguelo Fácil Operación: ${operationNumber}` : 'Paguelo Fácil';
+          const updatedNotes = `${existingPayment.notes || ''}\n\n${operationInfo} (Webhook). Confirmado: ${new Date().toISOString()}`;
+          
+          const { error: updateError } = await supabase
+            .from('payments')
+            .update({
+              status: 'Approved',
+              notes: updatedNotes,
+            })
+            .eq('id', existingPayment.id);
+          
+          if (updateError) {
+            console.error('[PagueloFacil Webhook] Error updating enrollment payment:', updateError);
+          } else {
+            console.log('[PagueloFacil Webhook] ✅ Enrollment payment updated to Approved:', existingPayment.id);
+            
+            // Send payment confirmation email
+            try {
+              await sendPaymentConfirmationEmail(existingPayment.id);
+            } catch (emailError) {
+              console.error('[PagueloFacil Webhook] Error sending payment confirmation email:', emailError);
+            }
+            
+            // Revalidate paths
+            revalidatePath('/dashboard/finances');
+            revalidatePath('/dashboard/finances/transactions');
+            revalidatePath('/dashboard/approvals');
+          }
+        } else {
+          // 5. If payment doesn't exist, create a new one
+          console.log('[PagueloFacil Webhook] Payment not found. Creating new enrollment payment...');
+          
+          const operationInfo = operationNumber ? `Paguelo Fácil Operación: ${operationNumber}` : 'Paguelo Fácil';
+          const paymentNotes = `Pago de matrícula procesado con Paguelo Fácil (Webhook).\n${operationInfo}. Monto: $${paymentAmount}. Confirmado: ${new Date().toISOString()}\n\nNota: Este pago se creó automáticamente desde el webhook porque no se encontró un pago pendiente asociado.`;
+          
+          const { data: newPayment, error: createError } = await supabase
+            .from('payments')
+            .insert({
+              player_id: null,
+              amount: paymentAmount,
+              type: 'enrollment',
+              method: 'paguelofacil',
+              payment_date: date ? new Date(date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              status: 'Approved',
+              notes: paymentNotes,
+            })
+            .select()
+            .single();
+          
+          if (createError) {
+            console.error('[PagueloFacil Webhook] Error creating enrollment payment:', createError);
+          } else {
+            console.log('[PagueloFacil Webhook] ✅ New enrollment payment created:', newPayment.id);
+            
+            // Try to link payment to pending players
+            await linkEnrollmentPaymentToPendingPlayers(
+              supabase,
+              newPayment.id,
+              paymentAmount,
+              operationNumber
+            );
+            
+            // Revalidate paths
+            revalidatePath('/dashboard/finances');
+            revalidatePath('/dashboard/finances/transactions');
+            revalidatePath('/dashboard/approvals');
+          }
+        }
+      } catch (enrollmentError: any) {
+        console.error('[PagueloFacil Webhook] Error handling enrollment payment:', enrollmentError);
+        // Don't throw - continue processing
+      }
+    }
 
     // If transaction was approved and we have payment details, create payment record
     if (isApproved && type === 'payment' && playerId && amount) {

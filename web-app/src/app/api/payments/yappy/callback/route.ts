@@ -170,6 +170,8 @@ export async function POST(request: NextRequest) {
             console.error('[Yappy Callback] Error updating enrollment payment:', updateError);
           } else {
             console.log('[Yappy Callback] ✅ Enrollment payment updated successfully:', existingPayment.id);
+            // Revalidate approvals page to show updated payment
+            revalidatePath('/dashboard/approvals');
           }
         } else {
           console.warn('[Yappy Callback] ⚠️ Enrollment payment not found. Creating new payment record...');
@@ -192,6 +194,8 @@ export async function POST(request: NextRequest) {
             console.error('[Yappy Callback] Error creating enrollment payment:', insertError);
           } else {
             console.log('[Yappy Callback] ✅ New enrollment payment created');
+            // Revalidate approvals page to show new payment
+            revalidatePath('/dashboard/approvals');
           }
         }
       } catch (enrollmentError: any) {
@@ -808,6 +812,8 @@ export async function GET(request: NextRequest) {
             console.error('[Yappy Callback] Error updating enrollment payment (GET):', updateError);
           } else {
             console.log('[Yappy Callback] ✅ Enrollment payment updated successfully (GET):', existingPayment.id);
+            // Revalidate approvals page to show updated payment
+            revalidatePath('/dashboard/approvals');
           }
         } else {
           console.warn('[Yappy Callback] ⚠️ Enrollment payment not found (GET). Creating new payment record...');
@@ -830,6 +836,8 @@ export async function GET(request: NextRequest) {
             console.error('[Yappy Callback] Error creating enrollment payment (GET):', insertError);
           } else {
             console.log('[Yappy Callback] ✅ New enrollment payment created (GET)');
+            // Revalidate approvals page to show new payment
+            revalidatePath('/dashboard/approvals');
           }
         }
       } catch (enrollmentError: any) {

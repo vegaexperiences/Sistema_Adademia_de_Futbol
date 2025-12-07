@@ -146,12 +146,14 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
       }
 
       if (result.success) {
-        // If payment method is PagueloFacil, don't show success yet
+        // If payment method is PagueloFacil or Yappy, don't show success yet
         // The success will be shown after payment confirmation in the callback
-        if (formData.paymentMethod === 'PagueloFacil') {
+        if (formData.paymentMethod === 'PagueloFacil' || formData.paymentMethod === 'Yappy') {
           // Enrollment is created but payment is pending
           // Don't show success screen, let the payment button handle the redirect
-          console.log('[Enrollment] Enrollment created with pending PagueloFacil payment');
+          console.log(`[Enrollment] Enrollment created with pending ${formData.paymentMethod} payment`);
+          // Mark enrollment as submitted in formData so PaymentStep can detect it
+          updateData({ enrollmentSubmitted: true });
           setIsSubmitting(false);
           return; // Don't mark as completed, payment button will handle redirect
         }

@@ -2,7 +2,7 @@
 
 import { CheckCircle, Upload, FileText, X, Loader2 } from 'lucide-react';
 import { SystemConfig } from '@/lib/actions/config';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { uploadFile } from '@/lib/utils/file-upload';
 import { PagueloFacilPaymentButton } from '@/components/payments/PagueloFacilPaymentButton';
 import { YappyPaymentButton } from '@/components/payments/YappyPaymentButton';
@@ -20,6 +20,15 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [enrollmentToken, setEnrollmentToken] = useState<string | null>(null);
+  const [enrollmentSubmitted, setEnrollmentSubmitted] = useState(data.enrollmentSubmitted || false);
+  const [isSubmittingEnrollment, setIsSubmittingEnrollment] = useState(false);
+  
+  // Sync enrollmentSubmitted state with formData
+  useEffect(() => {
+    if (data.enrollmentSubmitted) {
+      setEnrollmentSubmitted(true);
+    }
+  }, [data.enrollmentSubmitted]);
 
   const handlePaymentSelection = (method: string) => {
     updateData({ paymentMethod: method });
@@ -165,13 +174,35 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
             <div className="mb-4">
               <button
                 type="button"
-                onClick={onSubmit}
-                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                onClick={async () => {
+                  setIsSubmittingEnrollment(true);
+                  try {
+                    await onSubmit();
+                    setEnrollmentSubmitted(true);
+                  } catch (error) {
+                    console.error('Error submitting enrollment:', error);
+                    alert('Error al enviar el formulario. Por favor intenta nuevamente.');
+                  } finally {
+                    setIsSubmittingEnrollment(false);
+                  }
+                }}
+                disabled={isSubmittingEnrollment || enrollmentSubmitted}
+                className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  isSubmittingEnrollment || enrollmentSubmitted
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
               >
-                Enviar Formulario de Matrícula
+                {isSubmittingEnrollment ? 'Enviando...' : enrollmentSubmitted ? '✅ Formulario Enviado' : 'Enviar Formulario de Matrícula'}
               </button>
+              {enrollmentSubmitted && (
+                <p className="mt-2 text-sm text-green-700 text-center">
+                  ✅ Formulario enviado exitosamente. Ahora puedes completar el pago.
+                </p>
+              )}
             </div>
-            <YappyPaymentButton
+            <div className={enrollmentSubmitted ? '' : 'opacity-50 pointer-events-none'}>
+              <YappyPaymentButton
               amount={totalAmount}
               description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
               orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
@@ -191,7 +222,13 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               onError={(errorMsg: string) => {
                 alert('Error en Yappy: ' + errorMsg);
               }}
-            />
+              />
+              {!enrollmentSubmitted && (
+                <p className="mt-2 text-xs text-gray-500 text-center">
+                  ⚠️ Primero debes enviar el formulario de matrícula arriba
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -203,66 +240,67 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                 <strong>Total a pagar:</strong> ${totalAmount.toFixed(2)}
               </p>
               <p className="text-xs text-cyan-700">
-                Serás redirigido a la página segura de Paguelo Fácil para completar el pago. Tu matrícula se procesará automáticamente después de confirmar el pago.
+                Primero envía el formulario de matrícula, luego completa el pago con Paguelo Fácil.
               </p>
             </div>
-            <PagueloFacilPaymentButton
-              amount={totalAmount}
-              description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
-              email={data.tutorEmail || ''}
-              orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
-              returnUrl={() => {
-                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                const token = enrollmentToken || (typeof window !== 'undefined' ? sessionStorage.getItem('enrollment_token') : null);
-                if (token) {
-                  return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}&enrollmentToken=${encodeURIComponent(token)}`;
-                }
-                return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}`;
-              }}
-              customParams={{
-                type: 'enrollment',
-                amount: totalAmount.toString(),
-              }}
-              beforeRedirect={async () => {
-                // Store enrollment data temporarily on server before redirecting
-                // The enrollment will be created AFTER payment confirmation in the callback
-                try {
-                  const enrollmentData = {
-                    ...data,
-                    totalAmount,
-                    timestamp: Date.now(),
-                  };
-                  
-                  const response = await fetch('/api/enrollment/temp', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(enrollmentData),
-                  });
-                  
-                  const result = await response.json();
-                  
-                  if (!response.ok || !result.success) {
-                    throw new Error(result.error || 'Error al preparar la matrícula');
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSubmittingEnrollment(true);
+                  try {
+                    await onSubmit();
+                    setEnrollmentSubmitted(true);
+                  } catch (error) {
+                    console.error('Error submitting enrollment:', error);
+                    alert('Error al enviar el formulario. Por favor intenta nuevamente.');
+                  } finally {
+                    setIsSubmittingEnrollment(false);
                   }
-                  
-                  // Store token to use in returnUrl
-                  if (typeof window !== 'undefined' && result.token) {
-                    setEnrollmentToken(result.token);
-                    sessionStorage.setItem('enrollment_token', result.token);
-                  }
-                  
-                  console.log('[Enrollment] Stored enrollment data temporarily with token:', result.token);
-                } catch (error: any) {
-                  console.error('[Enrollment] Error storing enrollment data:', error);
-                  throw new Error('Error al preparar la matrícula. Por favor intenta nuevamente.');
-                }
-              }}
-              onError={(errorMsg: string) => {
-                alert('Error en Paguelo Fácil: ' + errorMsg);
-              }}
-            />
+                }}
+                disabled={isSubmittingEnrollment || enrollmentSubmitted}
+                className={`w-full px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  isSubmittingEnrollment || enrollmentSubmitted
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {isSubmittingEnrollment ? 'Enviando...' : enrollmentSubmitted ? '✅ Formulario Enviado' : 'Enviar Formulario de Matrícula'}
+              </button>
+              {enrollmentSubmitted && (
+                <p className="mt-2 text-sm text-green-700 text-center">
+                  ✅ Formulario enviado exitosamente. Ahora puedes completar el pago.
+                </p>
+              )}
+            </div>
+            <div className={enrollmentSubmitted ? '' : 'opacity-50 pointer-events-none'}>
+              <PagueloFacilPaymentButton
+                amount={totalAmount}
+                description={`Matrícula para ${data.players.length} jugador(es) - ${data.tutorName}`}
+                email={data.tutorEmail || ''}
+                orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
+                returnUrl={() => {
+                  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                  return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}`;
+                }}
+                customParams={{
+                  type: 'enrollment',
+                  amount: totalAmount.toString(),
+                }}
+                onSuccess={async () => {
+                  // Payment confirmed - callback will update the payment
+                  console.log('[PaymentStep] PagueloFacil payment confirmed');
+                }}
+                onError={(errorMsg: string) => {
+                  alert('Error en Paguelo Fácil: ' + errorMsg);
+                }}
+              />
+              {!enrollmentSubmitted && (
+                <p className="mt-2 text-xs text-gray-500 text-center">
+                  ⚠️ Primero debes enviar el formulario de matrícula arriba
+                </p>
+              )}
+            </div>
           </div>
         )}
 
