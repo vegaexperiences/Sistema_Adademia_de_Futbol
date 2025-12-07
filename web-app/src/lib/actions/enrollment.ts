@@ -205,7 +205,7 @@ export async function createEnrollmentFromPayment(
           tutor_cedula: familyId ? null : validatedData.tutorCedula,
           tutor_email: familyId ? null : validatedData.tutorEmail,
           tutor_phone: familyId ? null : validatedData.tutorPhone,
-          tutor_cedula_url: familyId ? null : (validatedData.cedulaTutorFile || null),
+          // Note: tutor_cedula_url is stored in families table, not in pending_players
         })
         .select()
         .single();
