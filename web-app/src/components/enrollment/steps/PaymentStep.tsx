@@ -220,7 +220,7 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
               orderId={`enrollment-${Date.now()}-${data.tutorCedula || 'enrollment'}`}
               returnUrl={() => {
                 const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-                // Encode enrollment data in returnUrl
+                // Still include in URL as fallback, but also store in database
                 const enrollmentData = {
                   tutorName: data.tutorName,
                   tutorCedula: data.tutorCedula,
@@ -234,6 +234,15 @@ export function PaymentStep({ data, updateData, onBack, onSubmit, config }: Paym
                   ? btoa(JSON.stringify(enrollmentData))
                   : '';
                 return `${baseUrl}/api/payments/paguelofacil/callback?type=enrollment&amount=${totalAmount}&enrollmentData=${encodeURIComponent(encodedData)}`;
+              }}
+              enrollmentData={{
+                tutorName: data.tutorName,
+                tutorCedula: data.tutorCedula,
+                tutorEmail: data.tutorEmail,
+                tutorPhone: data.tutorPhone,
+                players: data.players,
+                cedulaTutorFile: data.cedulaTutorFile,
+                paymentMethod: data.paymentMethod,
               }}
               customParams={{
                 type: 'enrollment',

@@ -14,6 +14,7 @@ interface PagueloFacilPaymentButtonProps {
   returnUrl?: string | (() => string); // Can be a string or a function that returns the URL
   customParams?: Record<string, string>;
   beforeRedirect?: () => Promise<void> | void; // Callback to execute before redirecting
+  enrollmentData?: any; // Enrollment data to store for callback
 }
 
 /**
@@ -31,6 +32,7 @@ export function PagueloFacilPaymentButton({
   returnUrl,
   customParams,
   beforeRedirect,
+  enrollmentData,
 }: PagueloFacilPaymentButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +72,7 @@ export function PagueloFacilPaymentButton({
             orderId,
             returnUrl: finalReturnUrl,
             customParams,
+            enrollmentData, // Include enrollment data to store in database
           }),
         });
 

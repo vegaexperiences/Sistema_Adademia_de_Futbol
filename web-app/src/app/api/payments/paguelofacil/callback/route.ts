@@ -453,17 +453,61 @@ export async function GET(request: NextRequest) {
           // 5. If payment doesn't exist, create enrollment from payment callback
           console.log('[PagueloFacil Callback] Payment not found. Creating enrollment from payment callback...');
           
-          // Extract enrollment data from returnUrl
-          const enrollmentDataParam = searchParams.get('enrollmentData');
+          // Try to get enrollment data from database first (using orderId)
           let enrollmentData = null;
           
-          if (enrollmentDataParam) {
+          if (orderId) {
             try {
-              const decodedData = Buffer.from(decodeURIComponent(enrollmentDataParam), 'base64').toString('utf-8');
-              enrollmentData = JSON.parse(decodedData);
-              console.log('[PagueloFacil Callback] Enrollment data extracted from returnUrl');
-            } catch (parseError) {
-              console.error('[PagueloFacil Callback] Error parsing enrollment data:', parseError);
+              const { data: storedOrder, error: orderError } = await supabase
+                .from('paguelofacil_orders')
+                .select('enrollment_data')
+                .eq('order_id', orderId)
+                .single();
+              
+              if (!orderError && storedOrder?.enrollment_data) {
+                enrollmentData = storedOrder.enrollment_data;
+                console.log('[PagueloFacil Callback] ✅ Enrollment data retrieved from database:', {
+                  tutorName: enrollmentData.tutorName,
+                  tutorEmail: enrollmentData.tutorEmail,
+                  playerCount: enrollmentData.players?.length || 0,
+                });
+              } else {
+                console.log('[PagueloFacil Callback] No enrollment data found in database for orderId:', orderId);
+              }
+            } catch (dbError: any) {
+              console.error('[PagueloFacil Callback] Error retrieving enrollment data from database:', dbError);
+            }
+          }
+          
+          // Fallback: Try to extract from URL params if not found in database
+          if (!enrollmentData) {
+            const enrollmentDataParam = searchParams.get('enrollmentData');
+            console.log('[PagueloFacil Callback] Checking for enrollmentData in URL (fallback):', {
+              hasParam: !!enrollmentDataParam,
+              paramLength: enrollmentDataParam?.length || 0,
+              paramPreview: enrollmentDataParam?.substring(0, 100) || 'N/A',
+            });
+            
+            if (enrollmentDataParam) {
+              try {
+                // Decode: first decodeURIComponent, then base64
+                const decodedData = Buffer.from(decodeURIComponent(enrollmentDataParam), 'base64').toString('utf-8');
+                enrollmentData = JSON.parse(decodedData);
+                console.log('[PagueloFacil Callback] ✅ Enrollment data extracted from URL and parsed successfully:', {
+                  tutorName: enrollmentData.tutorName,
+                  tutorEmail: enrollmentData.tutorEmail,
+                  playerCount: enrollmentData.players?.length || 0,
+                });
+              } catch (parseError: any) {
+                console.error('[PagueloFacil Callback] ❌ Error parsing enrollment data from URL:', {
+                  error: parseError.message,
+                  stack: parseError.stack,
+                  paramLength: enrollmentDataParam.length,
+                  paramPreview: enrollmentDataParam.substring(0, 200),
+                });
+              }
+            } else {
+              console.warn('[PagueloFacil Callback] ⚠️ No enrollmentData found in database or URL');
             }
           }
           

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PagueloFacilService } from '@/lib/payments/paguelofacil';
 import { getBaseUrlFromRequest } from '@/lib/utils/get-base-url';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * POST /api/payments/paguelofacil/link
@@ -9,7 +10,7 @@ import { getBaseUrlFromRequest } from '@/lib/utils/get-base-url';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, description, returnUrl, email, orderId, customParams, expiresIn } = body;
+    const { amount, description, returnUrl, email, orderId, customParams, expiresIn, enrollmentData } = body;
 
     // Validate required fields
     if (!amount || amount < 1) {
@@ -30,6 +31,37 @@ export async function POST(request: NextRequest) {
     const baseUrl = getBaseUrlFromRequest(request);
     const finalReturnUrl = returnUrl || `${baseUrl}/api/payments/paguelofacil/callback`;
 
+    // Store enrollment data in database if provided (for enrollment payments)
+    if (enrollmentData && orderId && customParams?.type === 'enrollment') {
+      try {
+        const supabase = await createClient();
+        // Store in a temporary table or use existing mechanism
+        // For now, we'll store it in a JSON column in a temporary storage
+        // Using the orderId as the key
+        const { error: storeError } = await supabase
+          .from('paguelofacil_orders')
+          .upsert({
+            order_id: orderId,
+            enrollment_data: enrollmentData,
+            amount: amount,
+            type: 'enrollment',
+            created_at: new Date().toISOString(),
+          }, {
+            onConflict: 'order_id',
+          });
+
+        if (storeError) {
+          console.error('[PagueloFacil Link] Error storing enrollment data:', storeError);
+          // Don't fail - we'll try to get it from URL params as fallback
+        } else {
+          console.log('[PagueloFacil Link] ✅ Stored enrollment data for orderId:', orderId);
+        }
+      } catch (storeErr: any) {
+        console.error('[PagueloFacil Link] Error storing enrollment data:', storeErr);
+        // Don't fail - continue with payment link creation
+      }
+    }
+
     console.log('[PagueloFacil Link] Creating payment link with:', {
       amount,
       description,
@@ -38,6 +70,7 @@ export async function POST(request: NextRequest) {
       returnUrl: finalReturnUrl,
       customParams,
       baseUrl,
+      hasEnrollmentData: !!enrollmentData,
     });
 
     // Create payment link

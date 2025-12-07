@@ -211,16 +211,35 @@ export async function POST(request: NextRequest) {
           // Extract enrollment data from returnUrl
           const searchParams = new URL(request.url).searchParams;
           const enrollmentDataParam = searchParams.get('enrollmentData');
+          console.log('[Yappy Callback] Checking for enrollmentData in URL:', {
+            hasParam: !!enrollmentDataParam,
+            paramLength: enrollmentDataParam?.length || 0,
+            paramPreview: enrollmentDataParam?.substring(0, 100) || 'N/A',
+            allSearchParams: Object.fromEntries(searchParams.entries()),
+          });
+          
           let enrollmentData = null;
           
           if (enrollmentDataParam) {
             try {
+              // Decode: first decodeURIComponent, then base64
               const decodedData = Buffer.from(decodeURIComponent(enrollmentDataParam), 'base64').toString('utf-8');
               enrollmentData = JSON.parse(decodedData);
-              console.log('[Yappy Callback] Enrollment data extracted from returnUrl');
-            } catch (parseError) {
-              console.error('[Yappy Callback] Error parsing enrollment data:', parseError);
+              console.log('[Yappy Callback] ✅ Enrollment data extracted and parsed successfully:', {
+                tutorName: enrollmentData.tutorName,
+                tutorEmail: enrollmentData.tutorEmail,
+                playerCount: enrollmentData.players?.length || 0,
+              });
+            } catch (parseError: any) {
+              console.error('[Yappy Callback] ❌ Error parsing enrollment data:', {
+                error: parseError.message,
+                stack: parseError.stack,
+                paramLength: enrollmentDataParam.length,
+                paramPreview: enrollmentDataParam.substring(0, 200),
+              });
             }
+          } else {
+            console.warn('[Yappy Callback] ⚠️ No enrollmentData parameter found in callback URL');
           }
           
           if (enrollmentData) {
@@ -919,16 +938,35 @@ export async function GET(request: NextRequest) {
           // Extract enrollment data from returnUrl
           const searchParams = new URL(request.url).searchParams;
           const enrollmentDataParam = searchParams.get('enrollmentData');
+          console.log('[Yappy Callback] Checking for enrollmentData in URL (GET):', {
+            hasParam: !!enrollmentDataParam,
+            paramLength: enrollmentDataParam?.length || 0,
+            paramPreview: enrollmentDataParam?.substring(0, 100) || 'N/A',
+            allSearchParams: Object.fromEntries(searchParams.entries()),
+          });
+          
           let enrollmentData = null;
           
           if (enrollmentDataParam) {
             try {
+              // Decode: first decodeURIComponent, then base64
               const decodedData = Buffer.from(decodeURIComponent(enrollmentDataParam), 'base64').toString('utf-8');
               enrollmentData = JSON.parse(decodedData);
-              console.log('[Yappy Callback] Enrollment data extracted from returnUrl (GET)');
-            } catch (parseError) {
-              console.error('[Yappy Callback] Error parsing enrollment data (GET):', parseError);
+              console.log('[Yappy Callback] ✅ Enrollment data extracted and parsed successfully (GET):', {
+                tutorName: enrollmentData.tutorName,
+                tutorEmail: enrollmentData.tutorEmail,
+                playerCount: enrollmentData.players?.length || 0,
+              });
+            } catch (parseError: any) {
+              console.error('[Yappy Callback] ❌ Error parsing enrollment data (GET):', {
+                error: parseError.message,
+                stack: parseError.stack,
+                paramLength: enrollmentDataParam.length,
+                paramPreview: enrollmentDataParam.substring(0, 200),
+              });
             }
+          } else {
+            console.warn('[Yappy Callback] ⚠️ No enrollmentData parameter found in callback URL (GET)');
           }
           
           if (enrollmentData) {
