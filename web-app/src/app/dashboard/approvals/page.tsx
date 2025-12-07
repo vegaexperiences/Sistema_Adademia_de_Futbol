@@ -35,10 +35,11 @@ export default async function ApprovalsPage({
   const pendingPlayers = await getPendingPlayers();
   const pendingTournaments = await getPendingTournamentRegistrations();
   const supabase = await createClient();
+  // Get payments with status 'Pending Approval' or 'Pending' (for enrollment payments from import)
   const { data: pendingPaymentsData } = await supabase
     .from('payments')
     .select('*')
-    .eq('status', 'Pending Approval')
+    .in('status', ['Pending Approval', 'Pending'])
     .order('created_at', { ascending: false });
   const pendingPayments: PendingPayment[] = Array.isArray(pendingPaymentsData)
     ? (pendingPaymentsData as PendingPayment[])
@@ -290,8 +291,23 @@ function PlayerApprovals({
                             const backUrl = player.cedula_back_url || (player.notes ? JSON.parse(player.notes).doc_back : null);
                             const tutorUrl = player.families?.tutor_cedula_url || (player.notes ? JSON.parse(player.notes).tutor_doc : null);
 
+                          // Find payments for this pending player
+                          // Payments can be linked by player_id OR by name in notes (for pending players)
                           const playerPayments = (pendingPayments || []).filter(
-                            (payment) => payment.player_id === player.id
+                            (payment) => {
+                              // Direct link by player_id
+                              if (payment.player_id === player.id) return true;
+                              
+                              // Check if payment notes contain player name (for unlinked payments)
+                              const notes = payment.notes || '';
+                              const playerFullName = `${player.first_name} ${player.last_name}`.toLowerCase();
+                              if (notes.toLowerCase().includes(playerFullName)) return true;
+                              
+                              // Check if payment has pending player ID in notes
+                              if (notes.includes(`[PENDING_PLAYER_ID: ${player.id}]`)) return true;
+                              
+                              return false;
+                            }
                           );
 
                           const hasDocuments = frontUrl || backUrl || tutorUrl || playerPayments.length > 0;
@@ -359,17 +375,18 @@ function PlayerApprovals({
                                             </div>
                                           </div>
                                           
-                                          {/* Show proof URL for cash/transfer/ach */}
-                                          {(paymentMethod === 'cash' || paymentMethod === 'transfer' || paymentMethod === 'ach') && payment.proof_url && (
+                                          {/* Show proof URL if available (for any payment method) */}
+                                          {payment.proof_url && (
                                             <div className="mt-2">
+                                              <p className="text-xs font-semibold text-gray-700 mb-2">📄 Comprobante de Pago</p>
                                               <DocumentPreview
                                                 url={payment.proof_url}
-                                                title={`Comprobante - ${methodLabels[paymentMethod]}`}
+                                                title={`Comprobante - ${methodLabels[paymentMethod] || paymentMethod}`}
                                               />
                                             </div>
                                           )}
                                           
-                                          {/* Show transaction info for Yappy/Paguelo Fácil */}
+                                          {/* Show transaction info for Yappy/Paguelo Fácil (if no proof_url or additional info) */}
                                           {(paymentMethod === 'yappy' || paymentMethod === 'paguelofacil') && (
                                             <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
                                               <p className="text-xs font-semibold text-blue-700 mb-1">
@@ -379,15 +396,15 @@ function PlayerApprovals({
                                                 <p className="text-xs text-blue-600">
                                                   ID Transacción: <span className="font-mono font-bold">{transactionInfo}</span>
                                                 </p>
-                                              ) : notes ? (
+                                              ) : notes && !payment.proof_url ? (
                                                 <p className="text-xs text-blue-600 break-words">
                                                   {notes.substring(0, 100)}{notes.length > 100 ? '...' : ''}
                                                 </p>
-                                              ) : (
+                                              ) : !payment.proof_url ? (
                                                 <p className="text-xs text-gray-500">
                                                   Información de transacción no disponible
                                                 </p>
-                                              )}
+                                              ) : null}
                                             </div>
                                           )}
                                         </div>

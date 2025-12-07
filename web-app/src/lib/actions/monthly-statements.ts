@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { queueEmail } from './email-queue';
-import { calculateMonthlyFee } from './payments';
+import { calculateMonthlyFee, isSeasonActive } from './payments';
 
 export interface PlayerStatement {
   playerId: string;
@@ -40,12 +40,19 @@ export async function getPlayersDueForStatement(): Promise<PlayerStatement[]> {
     return [];
   }
   
+  // Check if season is active (if season dates are configured)
+  const seasonActive = await isSeasonActive(today);
+  if (!seasonActive) {
+    console.log(`[getPlayersDueForStatement] Season is not active today (${today.toISOString().split('T')[0]}). Skipping statement generation.`);
+    return [];
+  }
+  
   // Get current month/year
   const currentMonth = today.getMonth() + 1; // 1-12
   const currentYear = today.getFullYear();
   const monthYear = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
   
-  console.log(`[getPlayersDueForStatement] Processing statements for ${monthYear} (payment day: ${paymentDay})`);
+  console.log(`[getPlayersDueForStatement] Processing statements for ${monthYear} (payment day: ${paymentDay}, season active: ${seasonActive})`);
   
   // Get all active players with their families
   const { data: players, error: playersError } = await supabase

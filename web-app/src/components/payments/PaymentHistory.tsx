@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { DollarSign, Calendar, CreditCard, FileText } from 'lucide-react';
+import { DollarSign, Calendar, CreditCard, FileText, ExternalLink } from 'lucide-react';
+import { DocumentPreview } from '@/components/ui/DocumentPreview';
 
 interface Payment {
   id: string;
@@ -13,6 +14,7 @@ interface Payment {
   payment_date: string;
   month_year: string | null;
   notes: string | null;
+  proof_url?: string | null;
   players?: {
     first_name: string;
     last_name: string;
@@ -169,6 +171,33 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
                       <p className="text-xs text-gray-600 italic">
                         {payment.notes}
                       </p>
+                    </div>
+                  )}
+                  
+                  {/* Show proof URL if available */}
+                  {payment.proof_url && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-blue-600" />
+                        <span className="text-xs font-semibold text-gray-700">Comprobante de Pago</span>
+                      </div>
+                      <div className="space-y-2">
+                        <a
+                          href={payment.proof_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Abrir comprobante en nueva pestaña
+                        </a>
+                        <div>
+                          <DocumentPreview
+                            url={payment.proof_url}
+                            title="Comprobante de Pago"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

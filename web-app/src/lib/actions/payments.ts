@@ -12,6 +12,7 @@ export interface Payment {
   payment_date: string;
   month_year?: string;
   notes?: string;
+  proof_url?: string | null; // URL del comprobante de pago
   status?: 'Approved' | 'Pending' | 'Rejected' | 'Cancelled' | 'Paid' | 'Overdue';
   // Legacy fields for backward compatibility (will be mapped)
   payment_type?: 'enrollment' | 'monthly' | 'custom';
@@ -232,6 +233,52 @@ export async function updatePlayerStatus(playerId: string, status: 'Active' | 'S
   revalidatePath('/dashboard/tutors');
   
   return { success: true };
+}
+
+/**
+ * Check if the current date is within the active season
+ * Returns true if:
+ * - No season dates are configured (empty string = no restriction)
+ * - Current date is >= season_start_date (if configured)
+ * - Current date is <= season_end_date (if configured)
+ */
+export async function isSeasonActive(checkDate?: Date): Promise<boolean> {
+  const supabase = await createClient();
+  
+  // Get season date settings
+  const { data: settings } = await supabase
+    .from('settings')
+    .select('key, value')
+    .in('key', ['season_start_date', 'season_end_date']);
+  
+  const settingsMap = settings?.reduce((acc: any, s: any) => {
+    acc[s.key] = s.value;
+    return acc;
+  }, {}) || {};
+  
+  const seasonStartDate = settingsMap['season_start_date'];
+  const seasonEndDate = settingsMap['season_end_date'];
+  
+  // If no dates are configured (empty string or null), season is always active (no restriction)
+  if ((!seasonStartDate || seasonStartDate === '') && (!seasonEndDate || seasonEndDate === '')) {
+    return true;
+  }
+  
+  // Use provided date or current date
+  const checkDateObj = checkDate || new Date();
+  const checkDateStr = checkDateObj.toISOString().split('T')[0]; // YYYY-MM-DD format
+  
+  // Check if before start date
+  if (seasonStartDate && seasonStartDate !== '' && checkDateStr < seasonStartDate) {
+    return false;
+  }
+  
+  // Check if after end date
+  if (seasonEndDate && seasonEndDate !== '' && checkDateStr > seasonEndDate) {
+    return false;
+  }
+  
+  return true;
 }
 
 // Calculate monthly fee for a player

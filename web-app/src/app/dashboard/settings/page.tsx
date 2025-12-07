@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { Settings, DollarSign, Save, CreditCard } from 'lucide-react';
+import { Settings, DollarSign, Save, CreditCard, Calendar } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PaymentMethodsSettings } from '@/components/settings/PaymentMethodsSettings';
 import Link from 'next/link';
@@ -9,7 +9,13 @@ async function updateSetting(formData: FormData) {
   
   const supabase = await createClient();
   const key = formData.get('key') as string;
-  const value = formData.get('value') as string;
+  let value = formData.get('value') as string;
+  
+  // For date settings, empty string means no restriction (store as empty string, not NULL)
+  // The value column has NOT NULL constraint, so we use empty string instead
+  if (key === 'season_start_date' || key === 'season_end_date') {
+    value = value || ''; // Ensure empty string if no value provided
+  }
   
   await supabase
     .from('settings')
@@ -50,6 +56,12 @@ export default async function SettingsPage() {
             className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             💰 Precios
+          </a>
+          <a 
+            href="#season" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            📅 Temporada
           </a>
           <a 
             href="#payment-methods" 
@@ -198,6 +210,101 @@ export default async function SettingsPage() {
         <div className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
           <p className="text-sm text-gray-700">
             <span className="font-bold">💡 Nota:</span> Los cambios en los precios se aplicarán inmediatamente a todas las nuevas matrículas y pagos. Los pagos existentes no se verán afectados.
+          </p>
+        </div>
+      </div>
+
+      {/* Season Settings */}
+      <div id="season" className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg" style={{
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          }}>
+            <Calendar className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            📅 Configuración de Temporada
+          </h2>
+        </div>
+
+        <div className="grid gap-6">
+          {/* Season Start Date */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-l-4 border-green-500">
+            <form action={updateSetting} className="space-y-4">
+              <input type="hidden" name="key" value="season_start_date" />
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  🗓️ Fecha de Inicio de Temporada
+                </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  No se generarán mensualidades antes de esta fecha. Dejar vacío para sin restricción.
+                </p>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="date"
+                      name="value"
+                      defaultValue={settings?.find(s => s.key === 'season_start_date')?.value || ''}
+                      className="w-full pl-4 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-green-200 bg-white text-gray-900 font-bold text-base sm:text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all placeholder-gray-400 touch-manipulation"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto"
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+                    }}
+                  >
+                    <Save size={18} />
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Season End Date */}
+          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 p-6 rounded-xl border-l-4 border-teal-500">
+            <form action={updateSetting} className="space-y-4">
+              <input type="hidden" name="key" value="season_end_date" />
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  🗓️ Fecha de Fin de Temporada
+                </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  No se generarán mensualidades después de esta fecha. Dejar vacío para sin restricción.
+                </p>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="date"
+                      name="value"
+                      defaultValue={settings?.find(s => s.key === 'season_end_date')?.value || ''}
+                      className="w-full pl-4 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-teal-200 bg-white text-gray-900 font-bold text-base sm:text-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all placeholder-gray-400 touch-manipulation"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto"
+                    style={{
+                      background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                      boxShadow: '0 4px 15px rgba(20, 184, 166, 0.3)'
+                    }}
+                  >
+                    <Save size={18} />
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Info Card */}
+        <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
+          <p className="text-sm text-gray-700">
+            <span className="font-bold">💡 Nota:</span> Las fechas de temporada controlan cuándo se pueden generar mensualidades automáticamente. Si no se configuran fechas, el sistema generará mensualidades sin restricciones de fecha.
           </p>
         </div>
       </div>
