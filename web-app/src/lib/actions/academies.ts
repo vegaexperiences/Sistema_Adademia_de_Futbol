@@ -1,7 +1,7 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentAcademyId, isSuperAdmin } from '@/lib/utils/academy'
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server'
+import { isSuperAdmin } from '@/lib/utils/academy'
 import { revalidatePath } from 'next/cache'
 
 export interface Academy {
