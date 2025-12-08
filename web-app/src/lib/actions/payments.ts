@@ -335,6 +335,7 @@ export async function isSeasonActive(checkDate?: Date): Promise<boolean> {
 // Calculate monthly fee for a player
 export async function calculateMonthlyFee(playerId: string) {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   // Get player data
   let query = supabase
