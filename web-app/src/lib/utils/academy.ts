@@ -46,18 +46,17 @@ export async function getCurrentAcademy(): Promise<Academy | null> {
 
   const supabase = await createClient()
   
-  const query = supabase
+  let query = supabase
     .from('academies')
     .select('*')
-    .single()
   
   if (academyId) {
-    query.eq('id', academyId)
+    query = query.eq('id', academyId)
   } else if (academySlug) {
-    query.eq('slug', academySlug)
+    query = query.eq('slug', academySlug)
   }
   
-  const { data, error } = await query
+  const { data, error } = await query.single()
   
   if (error || !data) {
     console.error('Error fetching academy:', error)
