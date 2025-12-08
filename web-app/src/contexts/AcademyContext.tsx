@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { getAcademyIdFromCookies, getAcademySlugFromCookies } from '@/lib/utils/academy'
+import { getAcademyIdFromCookies, getAcademySlugFromCookies } from '@/lib/utils/academy-client'
 
 interface Academy {
   id: string

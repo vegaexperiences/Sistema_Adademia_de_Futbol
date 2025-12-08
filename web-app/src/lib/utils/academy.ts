@@ -1,8 +1,9 @@
 /**
- * Academy utility functions
+ * Academy utility functions (server-side only)
+ * For client-side functions, see academy-client.ts
  */
 
-import { cookies, headers } from 'next/headers'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 
 export interface Academy {
@@ -75,33 +76,6 @@ export async function getCurrentAcademy(): Promise<Academy | null> {
   }
 }
 
-/**
- * Get current academy ID from cookies (client-side)
- */
-export function getAcademyIdFromCookies(): string | null {
-  if (typeof window === 'undefined') return null
-  
-  const cookies = document.cookie.split('; ')
-  const academyCookie = cookies.find(c => c.startsWith('academy-id='))
-  
-  if (!academyCookie) return null
-  
-  return academyCookie.split('=')[1]
-}
-
-/**
- * Get current academy slug from cookies (client-side)
- */
-export function getAcademySlugFromCookies(): string | null {
-  if (typeof window === 'undefined') return null
-  
-  const cookies = document.cookie.split('; ')
-  const academyCookie = cookies.find(c => c.startsWith('academy-slug='))
-  
-  if (!academyCookie) return null
-  
-  return academyCookie.split('=')[1]
-}
 
 /**
  * Check if user is super admin
