@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ConditionalNavbar } from "@/components/layout/ConditionalNavbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
+import { AcademyProvider } from "@/contexts/AcademyContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,11 +31,13 @@ export default function RootLayout({
       <body
         className={`${inter.className} antialiased`}
       >
-        <ConditionalNavbar />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <ConditionalFooter />
+        <AcademyProvider>
+          <ConditionalNavbar />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <ConditionalFooter />
+        </AcademyProvider>
       </body>
     </html>
   );

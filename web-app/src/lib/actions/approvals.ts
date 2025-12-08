@@ -1,15 +1,22 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendEmailImmediately } from '@/lib/actions/email-queue';
 
 export async function getPendingPlayersCount() {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
-  const { count, error } = await supabase
+  let query = supabase
     .from('pending_players')
     .select('*', { count: 'exact', head: true });
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { count, error } = await query;
   
   if (error) {
     console.error('[getPendingPlayersCount] Error:', error);
@@ -21,12 +28,19 @@ export async function getPendingPlayersCount() {
 
 export async function getPendingPlayers() {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   // Query from pending_players table instead of players with status filter
-  const { data: playersData, error: playersError } = await supabase
+  let query = supabase
     .from('pending_players')
     .select('*')
     .order('created_at', { ascending: false });
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data: playersData, error: playersError } = await query;
 
   if (playersError) {
     console.error('Error fetching pending players:', playersError);
@@ -41,10 +55,16 @@ export async function getPendingPlayers() {
   const playerIds = [...new Set(playersData.map((p: any) => p.id))];
   
   // Fetch family data separately for each player
-  const { data: familiesData, error: familiesError } = await supabase
+  let familyQuery = supabase
     .from('families')
     .select('id, name, tutor_name, tutor_email, tutor_phone, tutor_cedula, tutor_cedula_url')
     .in('id', playersData.map((p: any) => p.family_id).filter(Boolean));
+  
+  if (academyId) {
+    familyQuery = familyQuery.eq('academy_id', academyId);
+  }
+  
+  const { data: familiesData, error: familiesError } = await familyQuery;
 
   if (familiesError) {
     console.error('Error fetching families:', familiesError);
@@ -195,13 +215,19 @@ export async function approvePlayer(
 ) {
   try {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
 
     // Get player data from pending_players table
-    const { data: pendingPlayer, error: playerError } = await supabase
+    let pendingQuery = supabase
       .from('pending_players')
       .select('*')
-      .eq('id', playerId)
-      .single();
+      .eq('id', playerId);
+    
+    if (academyId) {
+      pendingQuery = pendingQuery.eq('academy_id', academyId);
+    }
+    
+    const { data: pendingPlayer, error: playerError } = await pendingQuery.single();
 
     if (playerError || !pendingPlayer) {
       console.error('Error fetching pending player:', playerError);
@@ -220,11 +246,16 @@ export async function approvePlayer(
     // Get family info if player has family_id
     let familyData = null;
     if (pendingPlayer.family_id) {
-      const { data: family, error: familyError } = await supabase
+      let familyQuery = supabase
         .from('families')
         .select('id, tutor_name, tutor_email, tutor_cedula, tutor_phone')
-        .eq('id', pendingPlayer.family_id)
-        .single();
+        .eq('id', pendingPlayer.family_id);
+      
+      if (academyId) {
+        familyQuery = familyQuery.eq('academy_id', academyId);
+      }
+      
+      const { data: family, error: familyError } = await familyQuery.single();
       
       if (familyError) {
         console.error('[approvePlayer] Error fetching family:', familyError);
@@ -296,6 +327,7 @@ export async function approvePlayer(
       cedula_back_url: pendingPlayer.cedula_back_url,
       monthly_statement_sent_at: pendingPlayer.monthly_statement_sent_at,
       status: type === 'Scholarship' ? 'Scholarship' : 'Active',
+      academy_id: academyId || pendingPlayer.academy_id,
     };
 
     // Insert player into players table

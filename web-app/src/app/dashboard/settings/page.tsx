@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
-import { Settings, DollarSign, Save, CreditCard, Calendar } from 'lucide-react';
+import { Settings, DollarSign, Save, CreditCard, Calendar, Shield } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PaymentMethodsSettings } from '@/components/settings/PaymentMethodsSettings';
+import { SuperAdminSettings } from '@/components/settings/SuperAdminSettings';
+import { getSuperAdmins } from '@/lib/actions/super-admin';
 import Link from 'next/link';
 
 async function updateSetting(formData: FormData) {
@@ -35,6 +37,14 @@ export default async function SettingsPage() {
     .order('key');
 
   const priceSettings = settings?.filter(s => s.key.startsWith('price_')) || [];
+  
+  // Get current user email
+  const { data: { user } } = await supabase.auth.getUser();
+  const currentUserEmail = user?.email || null;
+  
+  // Get super admins
+  const superAdminsResult = await getSuperAdmins();
+  const superAdmins = superAdminsResult.data || [];
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -75,6 +85,12 @@ export default async function SettingsPage() {
           >
             📧 Correos
           </Link>
+          <a 
+            href="#super-admin" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            🛡️ Super Admin
+          </a>
         </div>
       </div>
 
@@ -355,6 +371,34 @@ export default async function SettingsPage() {
               </div>
             </div>
           </form>
+        </div>
+      </div>
+
+      {/* Super Admin Settings */}
+      <div id="super-admin" className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg" style={{
+            background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+          }}>
+            <Shield className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            🛡️ Gestión de Super Admins
+          </h2>
+        </div>
+
+        <div className="bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-xl border-l-4 border-red-500">
+          <SuperAdminSettings 
+            initialAdmins={superAdmins} 
+            currentUserEmail={currentUserEmail}
+          />
+        </div>
+
+        {/* Info Card */}
+        <div className="mt-6 bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-xl border-l-4 border-yellow-500">
+          <p className="text-sm text-gray-700">
+            <span className="font-bold">🔐 Seguridad:</span> La clave de super admin se almacena de forma segura (hasheada) en la base de datos. Solo los usuarios con esta clave pueden gestionar super admins. Si es la primera vez, la clave que ingreses será establecida como la clave principal.
+          </p>
         </div>
       </div>
     </div>

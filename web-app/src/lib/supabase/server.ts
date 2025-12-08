@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
+import { getAcademyIdFromHeaders } from '@/lib/utils/academy'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -26,4 +27,46 @@ export async function createClient() {
       },
     }
   )
+}
+
+/**
+ * Get current academy ID from request context
+ * This is set by middleware based on the domain/subdomain
+ */
+export async function getCurrentAcademyId(): Promise<string | null> {
+  return await getAcademyIdFromHeaders()
+}
+
+/**
+ * Helper to add academy filter to a query
+ * This ensures all queries are filtered by the current academy
+ */
+export async function withAcademyFilter<T extends { eq: (column: string, value: any) => any }>(
+  query: T
+): Promise<T> {
+  const academyId = await getCurrentAcademyId()
+  
+  if (academyId) {
+    return query.eq('academy_id', academyId) as T
+  }
+  
+  // If no academy context, return query as-is
+  // This allows super admin queries to work
+  return query
+}
+
+/**
+ * Helper to ensure academy_id is set when inserting records
+ */
+export async function withAcademyInsert<T extends { insert: (data: any) => any }>(
+  query: T,
+  data: any
+): Promise<any> {
+  const academyId = await getCurrentAcademyId()
+  
+  if (academyId && !data.academy_id) {
+    data.academy_id = academyId
+  }
+  
+  return query.insert(data)
 }
