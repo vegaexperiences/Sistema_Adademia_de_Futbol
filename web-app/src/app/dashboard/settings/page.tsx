@@ -53,21 +53,16 @@ export default async function SettingsPage() {
     superAdmins = [];
   }
 
+  // Force render test
+  const testContent = (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, backgroundColor: 'red', color: 'white', padding: '1rem' }}>
+      <h1>TEST: Super Admins = {superAdmins.length}, Email = {currentUserEmail || 'null'}</h1>
+    </div>
+  );
+
   return (
     <>
-    {/* TEST: Super Admin Settings - BEFORE main container */}
-    <div id="super-admin" style={{ border: '10px solid red', backgroundColor: '#fff', padding: '2rem', margin: '2rem 0' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'red' }}>🛡️ TEST SUPER ADMIN - DEBE SER VISIBLE</h1>
-      <p>superAdmins: {superAdmins.length}</p>
-      <p>email: {currentUserEmail || 'null'}</p>
-    </div>
-
-    {/* TEST: User Management - BEFORE main container */}
-    <div id="user-management" style={{ border: '10px solid purple', backgroundColor: '#fff', padding: '2rem', margin: '2rem 0' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'purple' }}>👥 TEST USER MANAGEMENT - DEBE SER VISIBLE</h1>
-      <p>email: {currentUserEmail || 'null'}</p>
-    </div>
-
+    {testContent}
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header with Glass Effect */}
       <div className="glass-card p-4 sm:p-6">
