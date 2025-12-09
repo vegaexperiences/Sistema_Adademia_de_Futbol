@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
-import { Settings, DollarSign, Save, CreditCard, Calendar, Shield } from 'lucide-react';
+import { Settings, DollarSign, Save, CreditCard, Calendar, Shield, Users } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PaymentMethodsSettings } from '@/components/settings/PaymentMethodsSettings';
 import { SuperAdminSettings } from '@/components/settings/SuperAdminSettings';
+import { UserManagement } from '@/components/settings/UserManagement';
 import { getSuperAdmins } from '@/lib/actions/super-admin';
 import Link from 'next/link';
 
@@ -90,6 +91,12 @@ export default async function SettingsPage() {
             className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             🛡️ Super Admin
+          </a>
+          <a 
+            href="#user-management" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            👥 Usuarios
           </a>
         </div>
       </div>
@@ -398,6 +405,31 @@ export default async function SettingsPage() {
         <div className="mt-6 bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-xl border-l-4 border-yellow-500">
           <p className="text-sm text-gray-700">
             <span className="font-bold">🔐 Seguridad:</span> La clave de super admin se almacena de forma segura (hasheada) en la base de datos. Solo los usuarios con esta clave pueden gestionar super admins. Si es la primera vez, la clave que ingreses será establecida como la clave principal.
+          </p>
+        </div>
+      </div>
+
+      {/* User Management Section */}
+      <div id="user-management" className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg" style={{
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          }}>
+            <Users className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            👥 Gestión de Usuarios y Permisos
+          </h2>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-l-4 border-purple-500">
+          <UserManagement currentUserEmail={currentUserEmail} />
+        </div>
+
+        {/* Info Card */}
+        <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
+          <p className="text-sm text-gray-700">
+            <span className="font-bold">💡 Nota:</span> Los roles se asignan por academia. Un usuario puede tener diferentes roles en diferentes academias. Los super admins tienen acceso total automáticamente. Este sistema está preparado para futuras expansiones de roles y permisos personalizados.
           </p>
         </div>
       </div>
