@@ -396,7 +396,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Super Admin Settings - Always show this section */}
-      <div id="super-admin" className="glass-card p-6">
+      <div id="super-admin" className="glass-card p-6" style={{ minHeight: '200px' }}>
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg" style={{
             background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
@@ -409,24 +409,10 @@ export default async function SettingsPage() {
         </div>
 
         <div className="bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-xl border-l-4 border-red-500">
-          {(() => {
-            try {
-              return (
-                <SuperAdminSettings 
-                  initialAdmins={superAdmins || []} 
-                  currentUserEmail={currentUserEmail}
-                />
-              );
-            } catch (error: any) {
-              console.error('[SettingsPage] Error rendering SuperAdminSettings:', error);
-              return (
-                <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
-                  <p className="text-red-800 font-medium">Error al cargar Super Admin Settings</p>
-                  <p className="text-red-600 text-sm mt-2">{error?.message || 'Error desconocido'}</p>
-                </div>
-              );
-            }
-          })()}
+          <SuperAdminSettings 
+            initialAdmins={superAdmins || []} 
+            currentUserEmail={currentUserEmail}
+          />
         </div>
 
         {/* Info Card */}
@@ -438,7 +424,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* User Management Section */}
-      <div id="user-management" className="glass-card p-6">
+      <div id="user-management" className="glass-card p-6" style={{ minHeight: '200px' }}>
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg" style={{
             background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
@@ -451,21 +437,7 @@ export default async function SettingsPage() {
         </div>
 
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-l-4 border-purple-500">
-          {(() => {
-            try {
-              return (
-                <UserManagement currentUserEmail={currentUserEmail} />
-              );
-            } catch (error: any) {
-              console.error('[SettingsPage] Error rendering UserManagement:', error);
-              return (
-                <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
-                  <p className="text-red-800 font-medium">Error al cargar User Management</p>
-                  <p className="text-red-600 text-sm mt-2">{error?.message || 'Error desconocido'}</p>
-                </div>
-              );
-            }
-          })()}
+          <UserManagement currentUserEmail={currentUserEmail} />
         </div>
 
         {/* Info Card */}
