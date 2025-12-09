@@ -43,22 +43,14 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   const currentUserEmail = user?.email || null;
   
-  // Get super admins
+  // Get super admins - simplified to avoid blocking render
   let superAdmins: any[] = [];
   try {
-    console.log('[SettingsPage] Fetching super admins...');
     const superAdminsResult = await getSuperAdmins();
-    console.log('[SettingsPage] Super admins result:', superAdminsResult);
-    if (superAdminsResult.data) {
-      superAdmins = superAdminsResult.data;
-      console.log('[SettingsPage] Loaded', superAdmins.length, 'super admins');
-    } else if (superAdminsResult.error) {
-      console.error('[SettingsPage] Error fetching super admins:', superAdminsResult.error);
-      // Continue anyway - the component will handle empty array
-    }
+    superAdmins = superAdminsResult.data || [];
   } catch (error) {
-    console.error('[SettingsPage] Exception in getSuperAdmins:', error);
-    // Continue anyway - the component will handle empty array
+    // Silently fail - component will handle empty array
+    superAdmins = [];
   }
 
   return (
