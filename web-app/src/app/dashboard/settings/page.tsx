@@ -396,7 +396,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Super Admin Settings - Always show this section */}
-      <div id="super-admin" className="glass-card p-6" style={{ minHeight: '200px' }}>
+      <div id="super-admin" className="glass-card p-6" style={{ minHeight: '200px', border: '2px solid red' }}>
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg" style={{
             background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
@@ -407,7 +407,7 @@ export default async function SettingsPage() {
             🛡️ Gestión de Super Admins
           </h2>
         </div>
-
+        <p className="text-sm text-gray-600 mb-4">Debug: superAdmins count = {superAdmins.length}, currentUserEmail = {currentUserEmail || 'null'}</p>
         <div className="bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-xl border-l-4 border-red-500">
           <SuperAdminSettings 
             initialAdmins={superAdmins || []} 
@@ -424,7 +424,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* User Management Section */}
-      <div id="user-management" className="glass-card p-6" style={{ minHeight: '200px' }}>
+      <div id="user-management" className="glass-card p-6" style={{ minHeight: '200px', border: '2px solid purple' }}>
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg" style={{
             background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
@@ -435,7 +435,7 @@ export default async function SettingsPage() {
             👥 Gestión de Usuarios y Permisos
           </h2>
         </div>
-
+        <p className="text-sm text-gray-600 mb-4">Debug: currentUserEmail = {currentUserEmail || 'null'}</p>
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-l-4 border-purple-500">
           <UserManagement currentUserEmail={currentUserEmail} />
         </div>
