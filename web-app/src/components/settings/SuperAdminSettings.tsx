@@ -30,6 +30,13 @@ export function SuperAdminSettings({ initialAdmins, currentUserEmail }: SuperAdm
   const [addSuccess, setAddSuccess] = useState('')
   const [showKey, setShowKey] = useState(false)
 
+  // Debug logging
+  console.log('[SuperAdminSettings] Component rendered with:', {
+    initialAdminsCount: initialAdmins.length,
+    currentUserEmail,
+    adminsCount: admins.length
+  })
+
   const handleVerifyKey = async () => {
     if (!key.trim()) {
       setKeyError('Por favor ingresa la clave')
