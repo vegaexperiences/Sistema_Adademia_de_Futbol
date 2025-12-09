@@ -392,7 +392,7 @@ export default async function SettingsPage() {
         </div>
       </div>
 
-      {/* Super Admin Settings */}
+      {/* Super Admin Settings - Always show this section */}
       <div id="super-admin" className="glass-card p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-lg" style={{
