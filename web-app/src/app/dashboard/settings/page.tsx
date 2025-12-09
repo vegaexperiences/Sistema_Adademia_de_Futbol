@@ -53,16 +53,7 @@ export default async function SettingsPage() {
     superAdmins = [];
   }
 
-  // Force render test
-  const testContent = (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, backgroundColor: 'red', color: 'white', padding: '1rem' }}>
-      <h1>TEST: Super Admins = {superAdmins.length}, Email = {currentUserEmail || 'null'}</h1>
-    </div>
-  );
-
   return (
-    <>
-    {testContent}
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header with Glass Effect */}
       <div className="glass-card p-4 sm:p-6">
