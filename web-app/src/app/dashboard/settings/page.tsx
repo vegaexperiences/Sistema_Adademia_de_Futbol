@@ -387,56 +387,30 @@ export default async function SettingsPage() {
         </div>
       </div>
 
-      {/* Super Admin Settings - Always show this section */}
-      <div id="super-admin" className="glass-card p-6" style={{ minHeight: '200px', border: '2px solid red' }}>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg" style={{
-            background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-          }}>
-            <Shield className="h-6 w-6 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            🛡️ Gestión de Super Admins
-          </h2>
-        </div>
-        <p className="text-sm text-gray-600 mb-4">Debug: superAdmins count = {superAdmins.length}, currentUserEmail = {currentUserEmail || 'null'}</p>
-        <div className="bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-xl border-l-4 border-red-500">
-          <SuperAdminSettings 
-            initialAdmins={superAdmins || []} 
-            currentUserEmail={currentUserEmail}
-          />
-        </div>
-
-        {/* Info Card */}
-        <div className="mt-6 bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-xl border-l-4 border-yellow-500">
-          <p className="text-sm text-gray-700">
-            <span className="font-bold">🔐 Seguridad:</span> La clave de super admin se almacena de forma segura (hasheada) en la base de datos. Solo los usuarios con esta clave pueden gestionar super admins. Si es la primera vez, la clave que ingreses será establecida como la clave principal.
-          </p>
+      {/* Super Admin Settings - TEST: Simple version first */}
+      <div id="super-admin" className="glass-card p-6" style={{ border: '3px solid red', backgroundColor: '#fff', marginTop: '2rem' }}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          🛡️ Gestión de Super Admins (TEST)
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Debug: superAdmins = {superAdmins.length}, email = {currentUserEmail || 'null'}
+        </p>
+        <div className="bg-red-50 p-4 rounded">
+          <p className="text-sm">Si ves esto, el HTML se está renderizando.</p>
+          <p className="text-sm">Super Admins: {JSON.stringify(superAdmins)}</p>
         </div>
       </div>
 
-      {/* User Management Section */}
-      <div id="user-management" className="glass-card p-6" style={{ minHeight: '200px', border: '2px solid purple' }}>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg" style={{
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-          }}>
-            <Users className="h-6 w-6 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            👥 Gestión de Usuarios y Permisos
-          </h2>
-        </div>
-        <p className="text-sm text-gray-600 mb-4">Debug: currentUserEmail = {currentUserEmail || 'null'}</p>
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-l-4 border-purple-500">
-          <UserManagement currentUserEmail={currentUserEmail} />
-        </div>
-
-        {/* Info Card */}
-        <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
-          <p className="text-sm text-gray-700">
-            <span className="font-bold">💡 Nota:</span> Los roles se asignan por academia. Un usuario puede tener diferentes roles en diferentes academias. Los super admins tienen acceso total automáticamente. Este sistema está preparado para futuras expansiones de roles y permisos personalizados.
-          </p>
+      {/* User Management Section - TEST: Simple version first */}
+      <div id="user-management" className="glass-card p-6" style={{ border: '3px solid purple', backgroundColor: '#fff', marginTop: '2rem' }}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          👥 Gestión de Usuarios y Permisos (TEST)
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Debug: email = {currentUserEmail || 'null'}
+        </p>
+        <div className="bg-purple-50 p-4 rounded">
+          <p className="text-sm">Si ves esto, el HTML se está renderizando.</p>
         </div>
       </div>
     </div>
