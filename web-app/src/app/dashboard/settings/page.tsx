@@ -55,6 +55,32 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* TEST: Super Admin Settings - Moved to top */}
+      <div id="super-admin" className="glass-card p-6" style={{ border: '5px solid red', backgroundColor: '#fff' }}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          🛡️ TEST: Gestión de Super Admins
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Debug: superAdmins = {superAdmins.length}, email = {currentUserEmail || 'null'}
+        </p>
+        <div className="bg-red-50 p-4 rounded">
+          <p className="text-sm font-bold">SI VES ESTO, EL RENDERIZADO FUNCIONA</p>
+        </div>
+      </div>
+
+      {/* TEST: User Management - Moved to top */}
+      <div id="user-management" className="glass-card p-6" style={{ border: '5px solid purple', backgroundColor: '#fff' }}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          👥 TEST: Gestión de Usuarios
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Debug: email = {currentUserEmail || 'null'}
+        </p>
+        <div className="bg-purple-50 p-4 rounded">
+          <p className="text-sm font-bold">SI VES ESTO, EL RENDERIZADO FUNCIONA</p>
+        </div>
+      </div>
+
       {/* Header with Glass Effect */}
       <div className="glass-card p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
