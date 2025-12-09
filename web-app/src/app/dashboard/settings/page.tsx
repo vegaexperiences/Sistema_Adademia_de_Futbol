@@ -409,10 +409,24 @@ export default async function SettingsPage() {
         </div>
 
         <div className="bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-xl border-l-4 border-red-500">
-          <SuperAdminSettings 
-            initialAdmins={superAdmins} 
-            currentUserEmail={currentUserEmail}
-          />
+          {(() => {
+            try {
+              return (
+                <SuperAdminSettings 
+                  initialAdmins={superAdmins || []} 
+                  currentUserEmail={currentUserEmail}
+                />
+              );
+            } catch (error: any) {
+              console.error('[SettingsPage] Error rendering SuperAdminSettings:', error);
+              return (
+                <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
+                  <p className="text-red-800 font-medium">Error al cargar Super Admin Settings</p>
+                  <p className="text-red-600 text-sm mt-2">{error?.message || 'Error desconocido'}</p>
+                </div>
+              );
+            }
+          })()}
         </div>
 
         {/* Info Card */}
@@ -437,7 +451,21 @@ export default async function SettingsPage() {
         </div>
 
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-l-4 border-purple-500">
-          <UserManagement currentUserEmail={currentUserEmail} />
+          {(() => {
+            try {
+              return (
+                <UserManagement currentUserEmail={currentUserEmail} />
+              );
+            } catch (error: any) {
+              console.error('[SettingsPage] Error rendering UserManagement:', error);
+              return (
+                <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
+                  <p className="text-red-800 font-medium">Error al cargar User Management</p>
+                  <p className="text-red-600 text-sm mt-2">{error?.message || 'Error desconocido'}</p>
+                </div>
+              );
+            }
+          })()}
         </div>
 
         {/* Info Card */}
