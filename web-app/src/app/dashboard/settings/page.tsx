@@ -44,8 +44,19 @@ export default async function SettingsPage() {
   const currentUserEmail = user?.email || null;
   
   // Get super admins
-  const superAdminsResult = await getSuperAdmins();
-  const superAdmins = superAdminsResult.data || [];
+  let superAdmins: any[] = [];
+  try {
+    const superAdminsResult = await getSuperAdmins();
+    if (superAdminsResult.data) {
+      superAdmins = superAdminsResult.data;
+    } else if (superAdminsResult.error) {
+      console.error('Error fetching super admins:', superAdminsResult.error);
+      // Continue anyway - the component will handle empty array
+    }
+  } catch (error) {
+    console.error('Error in getSuperAdmins:', error);
+    // Continue anyway - the component will handle empty array
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">

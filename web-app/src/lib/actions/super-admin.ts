@@ -84,17 +84,28 @@ export async function getSuperAdminsAction(): Promise<{ data: any[] | null; erro
 export async function getSuperAdmins(): Promise<{ data: any[] | null; error: string | null }> {
   const supabase = await createClient()
   
-  const { data, error } = await supabase
-    .from('super_admins')
-    .select('*')
-    .order('created_at', { ascending: false })
-  
-  if (error) {
-    console.error('Error fetching super admins:', error)
-    return { data: null, error: error.message }
+  try {
+    const { data, error } = await supabase
+      .from('super_admins')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) {
+      // If table doesn't exist, return empty array instead of error
+      if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+        console.warn('super_admins table does not exist yet. Run migrations first.')
+        return { data: [], error: null }
+      }
+      console.error('Error fetching super admins:', error)
+      return { data: null, error: error.message }
+    }
+    
+    return { data: data || [], error: null }
+  } catch (error: any) {
+    console.error('Exception in getSuperAdmins:', error)
+    // Return empty array on exception so UI can still render
+    return { data: [], error: error.message || 'Unknown error' }
   }
-  
-  return { data, error: null }
 }
 
 /**
