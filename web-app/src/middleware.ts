@@ -9,7 +9,8 @@ export async function middleware(request: NextRequest) {
   const isSuperAdminRoute = pathname.startsWith('/super-admin') || 
                            pathname.startsWith('/superadmin')
   const isDebugRoute = pathname.startsWith('/debug-test') || 
-                      pathname.startsWith('/test-simple')
+                      pathname.startsWith('/test-simple') ||
+                      pathname.startsWith('/test-working')
   const isExcludedRoute = isSuperAdminRoute || isDebugRoute
   
   // Log for debugging
