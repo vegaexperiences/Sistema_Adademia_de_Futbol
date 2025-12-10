@@ -100,11 +100,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // If no academy found and accessing root domain, redirect to suarez
+  // BUT: Don't redirect if this is a route that doesn't need academy context
+  // (This check happens after early return, so excluded routes won't reach here)
   if (!academyId) {
     // Check if accessing root without academy context
     const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
     
-    if (isRootDomain || !academySlug) {
+    // Double-check we're not redirecting excluded routes (safety check)
+    if (!isExcludedRoute && (isRootDomain || !academySlug)) {
       console.log('[Middleware] No academy found, redirecting to suarez. Path:', pathname, 'IsRootDomain:', isRootDomain)
       // Redirect to suarez academy (default)
       const suarezUrl = new URL(request.url)
