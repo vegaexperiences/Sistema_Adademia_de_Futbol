@@ -23,7 +23,9 @@ export default async function SuperAdminDebugPage() {
   let isSuperAdminResult = false;
   let isSuperAdminError: any = null;
   try {
-    isSuperAdminResult = await isSuperAdmin();
+    if (user?.id) {
+      isSuperAdminResult = await isSuperAdmin(user.id);
+    }
   } catch (error) {
     isSuperAdminError = error;
   }
