@@ -2,6 +2,20 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // STEP 1: Check for routes that don't need academy context FIRST
+  // This prevents any database queries or processing for these routes
+  const isSuperAdminRoute = request.nextUrl.pathname.startsWith('/super-admin') || 
+                           request.nextUrl.pathname.startsWith('/superadmin')
+  
+  // Early return for superadmin routes - no academy context needed
+  if (isSuperAdminRoute) {
+    return NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    })
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -44,33 +58,36 @@ export async function middleware(request: NextRequest) {
   // Format: suarez.com, otra.com, or suarez.vercel.app, etc.
   const domainParts = domain.split('.')
   
-  // If domain has 2 parts (suarez.com), the first part is the slug
-  // If domain has 3+ parts (suarez.vercel.app), the first part is the slug
-  if (domainParts.length >= 2) {
-    const potentialSlug = domainParts[0]
-    
-    // Skip common subdomains like 'www', 'app', 'admin'
-    if (!['www', 'app', 'admin', 'api'].includes(potentialSlug.toLowerCase())) {
-      // Try to find academy by domain or slug
-      const { data: academy } = await supabase
-        .from('academies')
-        .select('id, slug')
-        .or(`domain.eq.${domain},slug.eq.${potentialSlug}`)
-        .single()
+  // STEP 2: Wrap academy detection in try-catch to prevent failures from blocking routes
+  try {
+    // If domain has 2 parts (suarez.com), the first part is the slug
+    // If domain has 3+ parts (suarez.vercel.app), the first part is the slug
+    if (domainParts.length >= 2) {
+      const potentialSlug = domainParts[0]
       
-      if (academy) {
-        academySlug = academy.slug
-        academyId = academy.id
+      // Skip common subdomains like 'www', 'app', 'admin'
+      if (!['www', 'app', 'admin', 'api'].includes(potentialSlug.toLowerCase())) {
+        // Try to find academy by domain or slug
+        const { data: academy, error: academyError } = await supabase
+          .from('academies')
+          .select('id, slug')
+          .or(`domain.eq.${domain},slug.eq.${potentialSlug}`)
+          .single()
+        
+        if (academy && !academyError) {
+          academySlug = academy.slug
+          academyId = academy.id
+        }
       }
     }
+  } catch (error) {
+    // If academy detection fails, log but don't block the request
+    console.error('[Middleware] Error detecting academy:', error)
+    // Continue without academy context - let the route handle it
   }
 
   // If no academy found and accessing root domain, redirect to suarez
-  // Allow super-admin and superadmin routes without academy context
-  const isSuperAdminRoute = request.nextUrl.pathname.startsWith('/super-admin') || 
-                           request.nextUrl.pathname.startsWith('/superadmin')
-  
-  if (!academyId && !isSuperAdminRoute) {
+  if (!academyId) {
     // Check if accessing root without academy context
     const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
     
