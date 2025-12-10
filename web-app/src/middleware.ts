@@ -148,8 +148,10 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - superadmin routes (excluded from middleware processing)
+     * - debug-test route (excluded from middleware processing)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|superadmin|debug-test|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
 
