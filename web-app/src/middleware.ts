@@ -151,12 +151,14 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - superadmin routes (completely excluded to ensure Next.js recognizes them)
+     * - debug-test route
+     * - test-simple route
      * 
-     * Note: We're NOT excluding superadmin/debug-test from matcher
-     * because the early return in middleware handles them.
-     * Excluding from matcher may prevent Next.js from recognizing the routes.
+     * IMPORTANT: Excluding these routes from the matcher ensures
+     * Next.js can process them without middleware interference.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|superadmin|debug-test|test-simple|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
 
