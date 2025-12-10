@@ -1,24 +1,25 @@
+// Absolute minimum test route - no dependencies, no imports beyond Next.js
 export default function DebugTestPage() {
+  console.log('[DebugTestPage] Component rendering')
   return (
-    <div style={{ padding: '20px', fontFamily: 'monospace', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#000' }}>
-        ✅ Debug Test Route
-      </h1>
-      
-      <div style={{ backgroundColor: '#fff', padding: '20px', border: '2px solid green' }}>
-        <p style={{ fontSize: '16px', color: '#000' }}>
-          If you can see this page, the middleware is not blocking routes.
-        </p>
-        <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
-          This is a simple test route to verify that the middleware allows routes through correctly.
-        </p>
-        <div style={{ marginTop: '20px' }}>
-          <a href="/superadmin" style={{ color: 'blue', textDecoration: 'underline' }}>
-            → Try /superadmin
-          </a>
+    <html>
+      <body style={{ margin: 0, padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f0f0f0' }}>
+        <div style={{ backgroundColor: '#fff', padding: '40px', border: '4px solid #00ff00', maxWidth: '600px', margin: '0 auto' }}>
+          <h1 style={{ color: '#000', margin: '0 0 20px 0' }}>✅ DEBUG TEST ROUTE WORKS</h1>
+          <p style={{ color: '#333', fontSize: '18px', margin: '10px 0' }}>
+            If you see this, the route is accessible.
+          </p>
+          <p style={{ color: '#666', fontSize: '14px', margin: '10px 0' }}>
+            Timestamp: {new Date().toISOString()}
+          </p>
+          <div style={{ marginTop: '30px', padding: '10px', backgroundColor: '#f9f9f9', border: '1px solid #ddd' }}>
+            <a href="/superadmin" style={{ color: '#0066cc', textDecoration: 'underline', fontSize: '16px' }}>
+              → Test /superadmin
+            </a>
+          </div>
         </div>
-      </div>
-    </div>
+      </body>
+    </html>
   );
 }
 

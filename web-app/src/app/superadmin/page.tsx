@@ -4,10 +4,12 @@ import { getCurrentAcademy, isSuperAdmin } from '@/lib/utils/academy';
 import { getAllUsers } from '@/lib/actions/users';
 
 export default async function SuperAdminDebugPage() {
+  console.log('[SuperAdminDebugPage] Component rendering started')
   const supabase = await createClient();
   
   // Get current user
   const { data: { user }, error: userError } = await supabase.auth.getUser();
+  console.log('[SuperAdminDebugPage] User fetched:', user?.email || 'null', 'Error:', userError?.message || 'none')
   
   // Get super admins
   let superAdmins: any[] = [];

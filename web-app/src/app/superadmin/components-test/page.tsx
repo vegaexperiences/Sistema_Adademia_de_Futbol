@@ -3,10 +3,12 @@ import { getSuperAdmins } from '@/lib/actions/super-admin';
 import { TestComponents } from '../test-components';
 
 export default async function ComponentsTestPage() {
+  console.log('[ComponentsTestPage] Component rendering started')
   const supabase = await createClient();
   
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
+  console.log('[ComponentsTestPage] User fetched:', user?.email || 'null')
   const currentUserEmail = user?.email || null;
   
   // Get super admins

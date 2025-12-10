@@ -2,13 +2,22 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  
   // STEP 1: Check for routes that don't need academy context FIRST
   // This prevents any database queries or processing for these routes
-  const isSuperAdminRoute = request.nextUrl.pathname.startsWith('/super-admin') || 
-                           request.nextUrl.pathname.startsWith('/superadmin')
+  const isSuperAdminRoute = pathname.startsWith('/super-admin') || 
+                           pathname.startsWith('/superadmin')
+  const isDebugRoute = pathname.startsWith('/debug-test')
+  const isExcludedRoute = isSuperAdminRoute || isDebugRoute
   
-  // Early return for superadmin routes - no academy context needed
-  if (isSuperAdminRoute) {
+  // Log for debugging
+  if (isExcludedRoute) {
+    console.log('[Middleware] Early return for excluded route:', pathname)
+  }
+  
+  // Early return for routes that don't need academy context
+  if (isExcludedRoute) {
     return NextResponse.next({
       request: {
         headers: request.headers,
@@ -59,6 +68,7 @@ export async function middleware(request: NextRequest) {
   const domainParts = domain.split('.')
   
   // STEP 2: Wrap academy detection in try-catch to prevent failures from blocking routes
+  console.log('[Middleware] Processing route:', pathname, 'Domain:', domain)
   try {
     // If domain has 2 parts (suarez.com), the first part is the slug
     // If domain has 3+ parts (suarez.vercel.app), the first part is the slug
@@ -77,6 +87,9 @@ export async function middleware(request: NextRequest) {
         if (academy && !academyError) {
           academySlug = academy.slug
           academyId = academy.id
+          console.log('[Middleware] Found academy:', academySlug, academyId)
+        } else {
+          console.log('[Middleware] No academy found for domain:', domain, 'Error:', academyError)
         }
       }
     }
@@ -92,12 +105,15 @@ export async function middleware(request: NextRequest) {
     const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
     
     if (isRootDomain || !academySlug) {
+      console.log('[Middleware] No academy found, redirecting to suarez. Path:', pathname, 'IsRootDomain:', isRootDomain)
       // Redirect to suarez academy (default)
       const suarezUrl = new URL(request.url)
       suarezUrl.hostname = `suarez.${domainParts.slice(-2).join('.')}`
       return NextResponse.redirect(suarezUrl)
     }
   }
+  
+  console.log('[Middleware] Allowing request through. Path:', pathname, 'AcademyId:', academyId)
 
   // Store academy context in headers for server components
   if (academyId) {
