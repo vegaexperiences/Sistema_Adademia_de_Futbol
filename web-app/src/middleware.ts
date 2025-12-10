@@ -150,6 +150,8 @@ export const config = {
      * - public folder
      * - superadmin routes (excluded from middleware processing)
      * - debug-test route (excluded from middleware processing)
+     * 
+     * Note: Using negative lookahead to exclude specific paths
      */
     '/((?!_next/static|_next/image|favicon.ico|superadmin|debug-test|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
