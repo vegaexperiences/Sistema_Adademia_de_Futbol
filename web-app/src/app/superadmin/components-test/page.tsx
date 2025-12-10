@@ -2,6 +2,10 @@ import { createClient } from '@/lib/supabase/server';
 import { getSuperAdmins } from '@/lib/actions/super-admin';
 import { TestComponents } from '../test-components';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function ComponentsTestPage() {
   console.log('[ComponentsTestPage] Component rendering started')
   const supabase = await createClient();

@@ -6,6 +6,7 @@ export async function middleware(request: NextRequest) {
   
   // STEP 1: Check for routes that don't need academy context FIRST
   // This prevents any database queries or processing for these routes
+  // CRITICAL: This check must happen before ANY other processing
   const isSuperAdminRoute = pathname.startsWith('/super-admin') || 
                            pathname.startsWith('/superadmin')
   const isDebugRoute = pathname.startsWith('/debug-test') || 
@@ -13,18 +14,10 @@ export async function middleware(request: NextRequest) {
                       pathname.startsWith('/test-working')
   const isExcludedRoute = isSuperAdminRoute || isDebugRoute
   
-  // Log for debugging
+  // IMMEDIATE return for excluded routes - no processing, no logging, nothing
+  // This ensures Next.js can process these routes without any interference
   if (isExcludedRoute) {
-    console.log('[Middleware] Early return for excluded route:', pathname)
-  }
-  
-  // Early return for routes that don't need academy context
-  if (isExcludedRoute) {
-    return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    })
+    return NextResponse.next()
   }
 
   let response = NextResponse.next({

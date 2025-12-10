@@ -1,4 +1,8 @@
 // Test route that mimics a working route structure
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function TestWorkingPage() {
   return (
     <div style={{ padding: '40px', textAlign: 'center' }}>
