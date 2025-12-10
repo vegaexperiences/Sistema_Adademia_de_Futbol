@@ -66,7 +66,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // If no academy found and accessing root domain, redirect to suarez
-  if (!academyId && !request.nextUrl.pathname.startsWith('/super-admin')) {
+  // Allow super-admin and superadmin routes without academy context
+  const isSuperAdminRoute = request.nextUrl.pathname.startsWith('/super-admin') || 
+                           request.nextUrl.pathname.startsWith('/superadmin')
+  
+  if (!academyId && !isSuperAdminRoute) {
     // Check if accessing root without academy context
     const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
     
