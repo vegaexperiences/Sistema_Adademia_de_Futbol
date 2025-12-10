@@ -8,7 +8,8 @@ export async function middleware(request: NextRequest) {
   // This prevents any database queries or processing for these routes
   const isSuperAdminRoute = pathname.startsWith('/super-admin') || 
                            pathname.startsWith('/superadmin')
-  const isDebugRoute = pathname.startsWith('/debug-test')
+  const isDebugRoute = pathname.startsWith('/debug-test') || 
+                      pathname.startsWith('/test-simple')
   const isExcludedRoute = isSuperAdminRoute || isDebugRoute
   
   // Log for debugging
