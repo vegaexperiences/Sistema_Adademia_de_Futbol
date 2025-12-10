@@ -14,5 +14,27 @@
       "path": "/api/cron/process-emails",
       "schedule": "0 9 * * *"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/superadmin",
+      "destination": "/superadmin"
+    },
+    {
+      "source": "/superadmin/:path*",
+      "destination": "/superadmin/:path*"
+    },
+    {
+      "source": "/debug-test",
+      "destination": "/debug-test"
+    },
+    {
+      "source": "/test-simple",
+      "destination": "/test-simple"
+    },
+    {
+      "source": "/test-working",
+      "destination": "/test-working"
+    }
   ]
 }
