@@ -101,18 +101,26 @@ export async function middleware(request: NextRequest) {
 
   // If no academy found and accessing root domain, redirect to suarez
   // BUT: Don't redirect if this is a route that doesn't need academy context
-  // (This check happens after early return, so excluded routes won't reach here)
+  // IMPORTANT: Only redirect if we're on a custom domain, not on Vercel preview domains
   if (!academyId) {
     // Check if accessing root without academy context
     const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
+    const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
     
-    // Double-check we're not redirecting excluded routes (safety check)
-    if (!isExcludedRoute && (isRootDomain || !academySlug)) {
-      console.log('[Middleware] No academy found, redirecting to suarez. Path:', pathname, 'IsRootDomain:', isRootDomain)
+    // Only redirect if:
+    // 1. Not an excluded route
+    // 2. Is a root domain (not a subdomain)
+    // 3. NOT a Vercel domain (to avoid breaking preview deployments)
+    // 4. No academy slug found
+    if (!isExcludedRoute && isRootDomain && !isVercelDomain && !academySlug) {
+      console.log('[Middleware] No academy found, redirecting to suarez. Path:', pathname, 'Domain:', domain)
       // Redirect to suarez academy (default)
       const suarezUrl = new URL(request.url)
       suarezUrl.hostname = `suarez.${domainParts.slice(-2).join('.')}`
       return NextResponse.redirect(suarezUrl)
+    } else {
+      // On Vercel domains or when academy not found, just continue without redirect
+      console.log('[Middleware] No academy found but allowing request. Path:', pathname, 'Domain:', domain, 'IsVercel:', isVercelDomain)
     }
   }
   
@@ -151,14 +159,11 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * - superadmin routes (completely excluded to ensure Next.js recognizes them)
-     * - debug-test route
-     * - test-simple route
      * 
-     * IMPORTANT: Excluding these routes from the matcher ensures
-     * Next.js can process them without middleware interference.
+     * Note: We're including all routes in the matcher now.
+     * The middleware will handle them appropriately with early returns.
      */
-    '/((?!_next/static|_next/image|favicon.ico|superadmin|debug-test|test-simple|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
 
