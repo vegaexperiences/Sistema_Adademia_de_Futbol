@@ -4,11 +4,9 @@ import { CheckCircle2 } from 'lucide-react';
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ passwordReset?: string }> | { passwordReset?: string };
+  searchParams?: Promise<{ passwordReset?: string }>;
 }) {
-  const resolvedSearchParams = searchParams && typeof (searchParams as Promise<any>).then === 'function'
-    ? await searchParams
-    : (searchParams as { passwordReset?: string } | undefined);
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const showSuccess = resolvedSearchParams?.passwordReset === 'success';
 
   return (
