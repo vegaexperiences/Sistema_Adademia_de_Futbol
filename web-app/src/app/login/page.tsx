@@ -1,12 +1,15 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 import { CheckCircle2 } from 'lucide-react';
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: { passwordReset?: string };
+  searchParams?: Promise<{ passwordReset?: string }> | { passwordReset?: string };
 }) {
-  const showSuccess = searchParams?.passwordReset === 'success';
+  const resolvedSearchParams = searchParams && typeof (searchParams as Promise<any>).then === 'function'
+    ? await searchParams
+    : (searchParams as { passwordReset?: string } | undefined);
+  const showSuccess = resolvedSearchParams?.passwordReset === 'success';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
