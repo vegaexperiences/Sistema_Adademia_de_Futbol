@@ -154,11 +154,13 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - superadmin routes (excluded from middleware processing)
+     * - debug/test routes (excluded from middleware processing)
      * 
-     * Note: We're including all routes in the matcher now.
-     * The middleware will handle them appropriately with early returns.
+     * CRITICAL: Excluding these routes from the matcher ensures
+     * the middleware never runs for them, preventing any interference.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|superadmin|super-admin|debug-test|test-simple|test-working|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
 
