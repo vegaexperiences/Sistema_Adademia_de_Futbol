@@ -20,7 +20,7 @@ export default async function SuperAdminDebugPage() {
   
   // STEP 1: Test with only createClient (like other working pages)
   let user = null;
-  let userError = null;
+  let userError: { message: string } | null = null;
   try {
     const supabase = await createClient();
     // #region agent log
@@ -33,7 +33,7 @@ export default async function SuperAdminDebugPage() {
     
     const { data: { user: fetchedUser }, error: fetchedError } = await supabase.auth.getUser();
     user = fetchedUser;
-    userError = fetchedError;
+    userError = fetchedError ? { message: fetchedError.message } : null;
     // #region agent log
     const logData4 = {location:'superadmin/page.tsx:28',message:'User fetched',data:{hasUser:!!user,hasError:!!userError},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'};
     console.log('[DEBUG]', JSON.stringify(logData4));
@@ -42,7 +42,7 @@ export default async function SuperAdminDebugPage() {
     }
     // #endregion
   } catch (error) {
-    userError = error;
+    userError = { message: error instanceof Error ? error.message : String(error) };
     console.error('[SuperAdminDebugPage] Error creating supabase client:', error);
   }
   
@@ -56,7 +56,7 @@ export default async function SuperAdminDebugPage() {
         <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>1. Current User</h2>
         {userError && (
           <div style={{ color: 'red', marginBottom: '10px' }}>
-            Error: {JSON.stringify(userError, null, 2)}
+            Error: {userError.message}
           </div>
         )}
         <pre style={{ backgroundColor: '#f0f0f0', padding: '10px', overflow: 'auto' }}>
