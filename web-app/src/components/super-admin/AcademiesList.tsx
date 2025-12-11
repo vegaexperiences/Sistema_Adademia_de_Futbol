@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { createAcademy, updateAcademy, deleteAcademy, type Academy } from '@/lib/actions/academies'
-import { Plus, Edit, Trash2, Building2 } from 'lucide-react'
+import { Plus, Edit, Trash2, Building2, Settings, AlertCircle, CheckCircle, ExternalLink, Copy, Check } from 'lucide-react'
+import { AcademySettingsForm } from './AcademySettingsForm'
+import { AcademyCreationWizard } from './AcademyCreationWizard'
+import { DomainConfigurationGuide } from './DomainConfigurationGuide'
 
 interface AcademiesListProps {
   academies: Academy[]
@@ -10,8 +13,12 @@ interface AcademiesListProps {
 
 export default function AcademiesList({ academies: initialAcademies }: AcademiesListProps) {
   const [academies, setAcademies] = useState(initialAcademies)
+  const [showWizard, setShowWizard] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [settingsAcademyId, setSettingsAcademyId] = useState<string | null>(null)
+  const [domainGuideAcademyId, setDomainGuideAcademyId] = useState<string | null>(null)
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -107,13 +114,22 @@ export default function AcademiesList({ academies: initialAcademies }: Academies
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Academias</h2>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={20} />
-          Nueva Academia
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowWizard(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+          >
+            <Plus size={20} />
+            Crear Academia (Wizard)
+          </button>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <Plus size={20} />
+            Crear Simple
+          </button>
+        </div>
       </div>
 
       {/* Create/Edit Form */}
@@ -245,6 +261,13 @@ export default function AcademiesList({ academies: initialAcademies }: Academies
               </div>
               <div className="flex gap-2">
                 <button
+                  onClick={() => setSettingsAcademyId(academy.id)}
+                  className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                  title="Configuración"
+                >
+                  <Settings size={18} />
+                </button>
+                <button
                   onClick={() => startEdit(academy)}
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                   title="Editar"
@@ -264,9 +287,62 @@ export default function AcademiesList({ academies: initialAcademies }: Academies
             </div>
             <div className="space-y-2 text-sm">
               {academy.domain && (
-                <p className="text-gray-600">
-                  <span className="font-semibold">Dominio:</span> {academy.domain}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-700">Dominio:</span>
+                  <span className="text-gray-600">{academy.domain}</span>
+                  {academy.domain_status === 'pending' && (
+                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs font-medium flex items-center gap-1">
+                      <AlertCircle size={12} />
+                      Pendiente
+                    </span>
+                  )}
+                  {academy.domain_status === 'active' && (
+                    <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-medium flex items-center gap-1">
+                      <CheckCircle size={12} />
+                      Activo
+                    </span>
+                  )}
+                </div>
+              )}
+              {academy.domain && academy.domain_status === 'pending' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mt-2">
+                  <p className="text-xs font-semibold text-blue-900 mb-1">Acceso Temporal:</p>
+                  {(() => {
+                    const baseVercelDomain = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
+                      ? window.location.hostname.split('.').slice(-3).join('.')
+                      : 'sistema-adademia-de-futbol-tura.vercel.app'
+                    const tempUrl = `https://${academy.slug}.${baseVercelDomain}`
+                    return (
+                      <div className="flex items-center gap-1">
+                        <code className="flex-1 text-xs font-mono text-blue-900 truncate">{tempUrl}</code>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(tempUrl)
+                            setCopiedUrl(academy.id)
+                            setTimeout(() => setCopiedUrl(null), 2000)
+                          }}
+                          className="p-1 hover:bg-blue-100 rounded transition-colors"
+                          title="Copiar URL"
+                        >
+                          {copiedUrl === academy.id ? (
+                            <Check className="h-3 w-3 text-green-600" />
+                          ) : (
+                            <Copy className="h-3 w-3 text-blue-600" />
+                          )}
+                        </button>
+                        <a
+                          href={tempUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 hover:bg-blue-100 rounded transition-colors"
+                          title="Abrir"
+                        >
+                          <ExternalLink className="h-3 w-3 text-blue-600" />
+                        </a>
+                      </div>
+                    )
+                  })()}
+                </div>
               )}
               <p className="text-gray-600">
                 <span className="font-semibold">Creada:</span>{' '}
@@ -276,6 +352,14 @@ export default function AcademiesList({ academies: initialAcademies }: Academies
                 <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">
                   Academia por Defecto
                 </span>
+              )}
+              {academy.domain && academy.domain_status === 'pending' && (
+                <button
+                  onClick={() => setDomainGuideAcademyId(academy.id)}
+                  className="w-full mt-2 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                >
+                  Ver Instrucciones de Configuración
+                </button>
               )}
             </div>
           </div>
@@ -287,6 +371,37 @@ export default function AcademiesList({ academies: initialAcademies }: Academies
           <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <p className="text-gray-600">No hay academias registradas</p>
         </div>
+      )}
+
+      {/* Academy Creation Wizard */}
+      {showWizard && (
+        <AcademyCreationWizard
+          onClose={() => setShowWizard(false)}
+          onSuccess={(academyId) => {
+            // Reload academies to show new academy
+            window.location.reload()
+          }}
+        />
+      )}
+
+      {/* Academy Settings Form Modal */}
+      {settingsAcademyId && (
+        <AcademySettingsForm
+          academy={academies.find(a => a.id === settingsAcademyId)!}
+          onClose={() => setSettingsAcademyId(null)}
+          onSuccess={() => {
+            // Reload academies to get updated settings
+            window.location.reload()
+          }}
+        />
+      )}
+
+      {/* Domain Configuration Guide */}
+      {domainGuideAcademyId && (
+        <DomainConfigurationGuide
+          academy={academies.find(a => a.id === domainGuideAcademyId)!}
+          onClose={() => setDomainGuideAcademyId(null)}
+        />
       )}
     </div>
   )

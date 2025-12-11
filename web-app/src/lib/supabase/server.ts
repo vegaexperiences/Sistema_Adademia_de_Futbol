@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
-import { getAcademyIdFromHeaders } from '@/lib/utils/academy'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -34,7 +33,8 @@ export async function createClient() {
  * This is set by middleware based on the domain/subdomain
  */
 export async function getCurrentAcademyId(): Promise<string | null> {
-  return await getAcademyIdFromHeaders()
+  const headersList = await headers()
+  return headersList.get('x-academy-id')
 }
 
 /**

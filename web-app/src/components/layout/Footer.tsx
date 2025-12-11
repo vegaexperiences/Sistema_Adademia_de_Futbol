@@ -1,7 +1,15 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAcademy } from '@/contexts/AcademyContext';
 
 export function Footer() {
+  const { academy } = useAcademy();
+  
+  // Get logo URL from academy context, fallback to default
+  const logoUrl = academy?.logo_medium_url || academy?.logo_url || academy?.logo_small_url || '/logo.png';
+  
   return (
     <footer className="bg-white/80 backdrop-blur-md border-t border-gray-200/50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -10,8 +18,8 @@ export function Footer() {
             <div className="flex items-center gap-2 mb-2">
               <div className="relative w-8 h-8 bg-transparent">
                 <Image 
-                  src="/logo.png" 
-                  alt="Suarez Academy Logo" 
+                  src={logoUrl} 
+                  alt="Academy Logo" 
                   fill
                   className="object-contain"
                   style={{ objectFit: 'contain' }}
@@ -19,7 +27,6 @@ export function Footer() {
                   unoptimized
                 />
               </div>
-              <span className="text-gray-900 font-bold text-lg">SUAREZ ACADEMY</span>
             </div>
             <p className="text-gray-500 text-sm">
               Formando campeones dentro y fuera de la cancha.

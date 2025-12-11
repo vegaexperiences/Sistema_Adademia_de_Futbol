@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PagueloFacilService } from '@/lib/payments/paguelofacil';
+import { getCurrentAcademyId } from '@/lib/supabase/server';
 
 /**
  * GET /api/payments/paguelofacil
@@ -7,7 +8,8 @@ import { PagueloFacilService } from '@/lib/payments/paguelofacil';
  */
 export async function GET() {
   try {
-    const config = PagueloFacilService.getSDKConfig();
+    const academyId = await getCurrentAcademyId();
+    const config = await PagueloFacilService.getSDKConfig(academyId);
     return NextResponse.json({
       success: true,
       config: {
@@ -41,13 +43,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const academyId = await getCurrentAcademyId();
     const transaction = await PagueloFacilService.createTransaction({
       amount: parseFloat(amount),
       description,
       email,
       orderId,
       metadata
-    });
+    }, academyId);
 
     if (!transaction.success) {
       return NextResponse.json(
@@ -56,10 +59,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const config = await PagueloFacilService.getSDKConfig(academyId);
+
     return NextResponse.json({
       success: true,
       transactionId: transaction.transactionId,
-      config: PagueloFacilService.getSDKConfig()
+      config
     });
   } catch (error: any) {
     console.error('Error creating PagueloFacil transaction:', error);

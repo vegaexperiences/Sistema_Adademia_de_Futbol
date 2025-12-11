@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PagueloFacilTokenizationService } from '@/lib/payments/paguelofacil-tokenization';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -36,6 +36,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get academy ID for payment config
+    const academyId = await getCurrentAcademyId();
+
     // Process the payment
     const result = await PagueloFacilTokenizationService.processPayment({
       amount: parseFloat(amount),
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
       cardToken,
       cardData,
       metadata,
-    });
+    }, academyId);
 
     if (!result.success) {
       return NextResponse.json(

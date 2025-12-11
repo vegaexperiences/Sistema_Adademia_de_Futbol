@@ -19,20 +19,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.text();
     const signature = request.headers.get('x-brevo-signature');
-    const webhookSecret = process.env.BREVO_WEBHOOK_SECRET;
-
-    // Validate webhook signature for security
-    if (webhookSecret && signature) {
-      const expectedSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(body)
-        .digest('hex');
-      
-      if (signature !== expectedSignature) {
-        console.error('Invalid webhook signature');
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-      }
-    }
 
     let data;
     try {
@@ -44,9 +30,7 @@ export async function POST(request: Request) {
     
     console.log('📧 Brevo webhook received:', JSON.stringify(data, null, 2));
     console.log('📧 Webhook signature:', signature ? 'present' : 'missing');
-    console.log('📧 Webhook secret configured:', webhookSecret ? 'yes' : 'no');
     console.log('📧 Webhook URL:', request.url);
-    console.log('📧 Webhook headers:', Object.fromEntries(request.headers.entries()));
     
     // Brevo webhook format can vary - handle both formats
     // Format 1: { event: 'delivered', 'message-id': 'xxx', ... }
@@ -73,6 +57,58 @@ export async function POST(request: Request) {
       
       // Clean messageId - remove angle brackets if present
       messageId = messageId.replace(/^<|>$/g, '').trim();
+      
+      // Find email in email_queue to get academy_id
+      const { data: emailRecord } = await supabase
+        .from('email_queue')
+        .select('id, academy_id, brevo_email_id')
+        .or(`brevo_email_id.eq.${messageId},brevo_email_id.ilike.%${messageId}%`)
+        .limit(1)
+        .maybeSingle()
+      
+      let academyId: string | null = null
+      let academyWebhookSecret: string | null = null
+      
+      // If email found, get academy and validate webhook secret
+      if (emailRecord?.academy_id) {
+        academyId = emailRecord.academy_id
+        const { data: academy } = await supabase
+          .from('academies')
+          .select('settings')
+          .eq('id', academyId)
+          .single()
+        
+        if (academy?.settings?.email?.brevo_webhook_secret) {
+          academyWebhookSecret = academy.settings.email.brevo_webhook_secret
+        }
+      }
+      
+      // Validate webhook signature
+      // Priority: 1) Academy-specific secret, 2) Global secret, 3) Skip validation if neither set
+      const webhookSecret = academyWebhookSecret || process.env.BREVO_WEBHOOK_SECRET
+      
+      if (webhookSecret && signature) {
+        const expectedSignature = crypto
+          .createHmac('sha256', webhookSecret)
+          .update(body)
+          .digest('hex');
+        
+        if (signature !== expectedSignature) {
+          console.error('Invalid webhook signature', {
+            academyId,
+            hasAcademySecret: !!academyWebhookSecret,
+            hasGlobalSecret: !!process.env.BREVO_WEBHOOK_SECRET,
+          });
+          return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        }
+      }
+      
+      console.log('📧 Webhook validated:', {
+        academyId,
+        messageId,
+        event,
+        hasAcademySecret: !!academyWebhookSecret,
+      });
       
       processed++;
 

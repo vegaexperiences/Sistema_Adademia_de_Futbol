@@ -7,6 +7,8 @@ import { logout } from '@/app/auth/actions';
 import { MobileHeader } from '@/components/layout/MobileHeader';
 import { SidebarNav } from '@/components/layout/SidebarNav';
 import { getPendingPlayersCount } from '@/lib/actions/approvals';
+import { getAcademyLogo } from '@/lib/utils/academy-logos';
+import { getCurrentAcademy } from '@/lib/utils/academy';
 
 export default async function DashboardLayout({
   children,
@@ -16,11 +18,16 @@ export default async function DashboardLayout({
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error || !user) {
+  // Explicit check for all error cases and null user
+  if (error || !user || user === null) {
     redirect('/login');
   }
 
   const pendingCount = await getPendingPlayersCount();
+  const logoUrl = await getAcademyLogo('medium');
+  const academy = await getCurrentAcademy();
+  const { getAcademyDisplayName } = await import('@/lib/utils/academy-branding');
+  const academyName = await getAcademyDisplayName();
 
   return (
     <div className="min-h-screen flex">
@@ -34,8 +41,8 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-3 mb-4">
             <div className="relative w-12 h-12 bg-transparent">
               <Image 
-                src="/logo.png" 
-                alt="Suarez Academy Logo" 
+                src={logoUrl} 
+                alt={`${academyName} Logo`}
                 fill
                 className="object-contain"
                 style={{ objectFit: 'contain' }}
@@ -43,7 +50,7 @@ export default async function DashboardLayout({
                 unoptimized
               />
             </div>
-            <span className="text-gray-900 font-bold text-xl">SUAREZ ACADEMY</span>
+            <span className="text-gray-900 font-bold text-xl">{academyName}</span>
           </div>
         </div>
         

@@ -83,8 +83,39 @@ export interface YappyCallbackParams {
 
 export class YappyService {
   private static config: YappyConfig | null = null;
+  private static configCache: Map<string, YappyConfig> = new Map();
 
-  static getConfig(): YappyConfig {
+  /**
+   * Get Yappy configuration, optionally for a specific academy
+   * If academyId is provided, loads from academy settings
+   * Otherwise uses environment variables (backward compatibility)
+   */
+  static async getConfig(academyId?: string | null): Promise<YappyConfig> {
+    // If academy ID provided, use academy-specific config
+    if (academyId) {
+      // Check cache first
+      if (this.configCache.has(academyId)) {
+        return this.configCache.get(academyId)!;
+      }
+
+      // Load from academy settings
+      const { getYappyConfig } = await import('@/lib/utils/academy-payments');
+      const academyConfig = await getYappyConfig(academyId);
+
+      if (academyConfig) {
+        const config: YappyConfig = {
+          merchantId: academyConfig.merchant_id,
+          secretKey: academyConfig.secret_key,
+          domainUrl: academyConfig.domain_url,
+          environment: academyConfig.environment,
+        };
+        this.configCache.set(academyId, config);
+        return config;
+      }
+      // If academy config not found, fall through to env vars
+    }
+
+    // Fallback to environment variables (backward compatibility)
     if (!this.config) {
       // Clean merchantId and secretKey - remove whitespace, newlines, and special characters
       const rawMerchantId = process.env.YAPPY_MERCHANT_ID || '';
@@ -99,7 +130,7 @@ export class YappyService {
       domainUrl = domainUrl.replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
       const environment = (process.env.YAPPY_ENVIRONMENT || 'production') as 'production' | 'testing';
 
-      console.log('[Yappy] Configuration loaded:', {
+      console.log('[Yappy] Configuration loaded from environment:', {
         environment,
         hasMerchantId: !!merchantId,
         hasSecretKey: !!secretKey,
@@ -134,8 +165,8 @@ export class YappyService {
   /**
    * Get API base URL based on environment
    */
-  static getApiBaseUrl(): string {
-    const config = this.getConfig();
+  static async getApiBaseUrl(academyId?: string | null): Promise<string> {
+    const config = await this.getConfig(academyId);
     return config.environment === 'testing'
       ? 'https://api-comecom-uat.yappycloud.com'
       : 'https://apipagosbg.bgeneral.cloud';
@@ -144,8 +175,8 @@ export class YappyService {
   /**
    * Get CDN URL for web component
    */
-  static getCdnUrl(): string {
-    const config = this.getConfig();
+  static async getCdnUrl(academyId?: string | null): Promise<string> {
+    const config = await this.getConfig(academyId);
     return config.environment === 'testing'
       ? 'https://bt-cdn-uat.yappycloud.com/v1/cdn/web-component-btn-yappy.js'
       : 'https://bt-cdn.yappy.cloud/v1/cdn/web-component-btn-yappy.js';
@@ -156,20 +187,18 @@ export class YappyService {
    * According to Yappy manual: /payments/validate/merchant (POST)
    * Returns: token and epochTime in body.epochTime
    */
-  static async validateMerchant(): Promise<YappyValidateResponse> {
+  static async validateMerchant(academyId?: string | null): Promise<YappyValidateResponse> {
     try {
-      const config = this.getConfig();
-      const baseUrl = this.getApiBaseUrl();
+      const config = await this.getConfig(academyId);
+      const baseUrl = await this.getApiBaseUrl(academyId);
 
       // According to Yappy manual, the endpoint is /payments/validate/merchant
       // It requires: merchantId and urlDomain (NOT domainUrl)
       // Note: Testing environment might require https:// in urlDomain
       // Try with https:// first, if it fails we can try without
-      const baseDomainUrl = process.env.YAPPY_DOMAIN_URL || process.env.NEXT_PUBLIC_APP_URL || '';
-      let urlDomain = baseDomainUrl.replace(/\/$/, '').trim(); // Remove trailing slash but keep https://
-      
-      // If domain doesn't start with http:// or https://, add https://
-      if (!urlDomain.match(/^https?:\/\//)) {
+      // Use domainUrl from config (which may come from academy settings)
+      let urlDomain = config.domainUrl;
+      if (!urlDomain.startsWith('http://') && !urlDomain.startsWith('https://')) {
         urlDomain = `https://${urlDomain}`;
       }
       
@@ -262,10 +291,10 @@ export class YappyService {
    * According to Yappy manual: /payments/payment-wc (POST)
    * Requires: token from validation in Authorization header, and paymentDate (epochTime)
    */
-  static async createOrder(request: YappyOrderRequest): Promise<YappyOrderResponse> {
+  static async createOrder(request: YappyOrderRequest, academyId?: string | null): Promise<YappyOrderResponse> {
     try {
-      const config = this.getConfig();
-      const baseUrl = this.getApiBaseUrl();
+      const config = await this.getConfig(academyId);
+      const baseUrl = await this.getApiBaseUrl(academyId);
 
       // Validate required fields
       if (!request.token) {
@@ -533,10 +562,10 @@ export class YappyService {
    * Verify payment status
    * This can be used to check payment status after callback
    */
-  static async verifyPayment(orderId: string): Promise<{ status: string; verified: boolean }> {
+  static async verifyPayment(orderId: string, academyId?: string | null): Promise<{ status: string; verified: boolean }> {
     try {
-      const config = this.getConfig();
-      const baseUrl = this.getApiBaseUrl();
+      const config = await this.getConfig(academyId);
+      const baseUrl = await this.getApiBaseUrl(academyId);
 
       const response = await fetch(`${baseUrl}/payments/verify/${orderId}`, {
         method: 'GET',
@@ -622,9 +651,9 @@ export class YappyService {
    * The hash is calculated using the secret key and callback parameters
    * Note: The exact hash algorithm may need to be verified with Yappy documentation
    */
-  static validateCallbackHash(params: YappyCallbackParams, receivedHash: string): boolean {
+  static async validateCallbackHash(params: YappyCallbackParams, receivedHash: string, academyId?: string | null): Promise<boolean> {
     try {
-      const config = this.getConfig();
+      const config = await this.getConfig(academyId);
       
       // According to Yappy manual, hash validation uses:
       // hash = HMAC-SHA256(secretKey, orderId + status + domain + confirmationNumber)

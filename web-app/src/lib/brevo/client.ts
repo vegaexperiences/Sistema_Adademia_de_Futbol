@@ -15,3 +15,25 @@ export const isBrevoConfigured = Boolean(apiKey);
 export { apiInstance as brevo, accountApiInstance as brevoAccount };
 export type SendSmtpEmail = brevo.SendSmtpEmail;
 
+/**
+ * Factory function to create Brevo clients with a specific API key
+ * Used for academy-specific Brevo accounts
+ */
+export function createBrevoClient(apiKey: string): {
+  transactional: brevo.TransactionalEmailsApi;
+  account: brevo.AccountApi;
+} {
+  const transactionalApi = new brevo.TransactionalEmailsApi();
+  const accountApi = new brevo.AccountApi();
+
+  if (apiKey) {
+    transactionalApi.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, apiKey);
+    accountApi.setApiKey(brevo.AccountApiApiKeys.apiKey, apiKey);
+  }
+
+  return {
+    transactional: transactionalApi,
+    account: accountApi,
+  };
+}
+

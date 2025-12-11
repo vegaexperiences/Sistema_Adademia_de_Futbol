@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PagueloFacilService } from '@/lib/payments/paguelofacil';
 import { getBaseUrlFromRequest } from '@/lib/utils/get-base-url';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { enrollmentSchema } from '@/lib/validations/enrollment';
 
 /**
@@ -188,6 +188,9 @@ export async function POST(request: NextRequest) {
       hasEnrollmentData: !!enrollmentData,
     });
 
+    // Get academy ID for payment config
+    const academyId = await getCurrentAcademyId();
+
     // Create payment link
     const result = await PagueloFacilService.createPaymentLink({
       amount: parseFloat(amount),
@@ -197,7 +200,7 @@ export async function POST(request: NextRequest) {
       orderId,
       customParams,
       expiresIn: expiresIn ? parseInt(expiresIn) : 3600,
-    });
+    }, academyId);
 
     if (!result.success) {
       return NextResponse.json(

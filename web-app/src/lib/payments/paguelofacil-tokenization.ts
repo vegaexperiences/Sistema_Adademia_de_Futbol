@@ -50,8 +50,8 @@ export class PagueloFacilTokenizationService {
   /**
    * Get API base URL for tokenization and direct payments
    */
-  static getApiBaseUrl(): string {
-    const config = PagueloFacilService.getConfig();
+  static async getApiBaseUrl(academyId?: string | null): Promise<string> {
+    const config = await PagueloFacilService.getConfig(academyId);
     return config.sandbox
       ? 'https://api-sand.pfserver.net'
       : 'https://api.pfserver.net';
@@ -65,10 +65,10 @@ export class PagueloFacilTokenizationService {
    * This is a placeholder structure based on common payment gateway patterns.
    * You may need to adjust the endpoint path, request/response format based on their actual API.
    */
-  static async tokenizeCard(request: TokenizationRequest): Promise<TokenizationResponse> {
+  static async tokenizeCard(request: TokenizationRequest, academyId?: string | null): Promise<TokenizationResponse> {
     try {
-      const config = PagueloFacilService.getConfig();
-      const baseUrl = this.getApiBaseUrl();
+      const config = await PagueloFacilService.getConfig(academyId);
+      const baseUrl = await this.getApiBaseUrl(academyId);
       
       // Clean card number (remove spaces)
       const cardNumber = request.cardData.cardNumber.replace(/\s/g, '');
@@ -155,10 +155,10 @@ export class PagueloFacilTokenizationService {
    * This is a placeholder structure based on common payment gateway patterns.
    * You may need to adjust the endpoint path, request/response format based on their actual API.
    */
-  static async processPayment(request: ProcessPaymentRequest): Promise<ProcessPaymentResponse> {
+  static async processPayment(request: ProcessPaymentRequest, academyId?: string | null): Promise<ProcessPaymentResponse> {
     try {
-      const config = PagueloFacilService.getConfig();
-      const baseUrl = this.getApiBaseUrl();
+      const config = await PagueloFacilService.getConfig(academyId);
+      const baseUrl = await this.getApiBaseUrl(academyId);
 
       // Prepare payment request
       const paymentPayload: any = {

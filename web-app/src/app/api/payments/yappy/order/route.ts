@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YappyService } from '@/lib/payments/yappy';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 
 /**
  * POST /api/payments/yappy/order
@@ -138,6 +138,9 @@ export async function POST(request: NextRequest) {
       truncatedLength: truncatedOrderId.length,
     });
 
+    // Get academy ID for payment config
+    const academyId = await getCurrentAcademyId();
+
     // Create order using the new flow
     const result = await YappyService.createOrder({
       amount: parseFloat(amount),
@@ -149,7 +152,7 @@ export async function POST(request: NextRequest) {
       paymentDate, // epochTime from validation
       ipnUrl: finalIpnUrl, // IPN URL for callback
       aliasYappy: finalTutorPhone || undefined, // Tutor phone number (will be formatted to 8 digits)
-    });
+    }, academyId);
 
     if (!result.success) {
       // Use appropriate status code based on error type
@@ -236,11 +239,14 @@ export async function POST(request: NextRequest) {
       // Don't fail the order creation if storage fails
     }
 
+    const config = await YappyService.getConfig(academyId);
+    const cdnUrl = await YappyService.getCdnUrl(academyId);
+
     return NextResponse.json({
       success: true,
       orderData: result.orderData,
-      cdnUrl: YappyService.getCdnUrl(),
-      merchantId: YappyService.getConfig().merchantId,
+      cdnUrl,
+      merchantId: config.merchantId,
     });
   } catch (error: any) {
     console.error('[Yappy Order] Error:', error);

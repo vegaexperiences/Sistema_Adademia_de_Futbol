@@ -3,15 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
-  const host = request.headers.get('host') || ''
-  
-  // #region agent log
-  const logData = {location:'middleware.ts:4',message:'Middleware entry',data:{pathname,host,url:request.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
-  console.log('[DEBUG]', JSON.stringify(logData));
-  if (typeof fetch !== 'undefined') {
-    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
-  }
-  // #endregion
   
   // STEP 1: Check for routes that don't need academy context FIRST
   // This prevents any database queries or processing for these routes
@@ -29,25 +20,41 @@ export async function middleware(request: NextRequest) {
                      pathname.startsWith('/enrollment')
   const isExcludedRoute = isSuperAdminRoute || isDebugRoute || isAuthRoute
   
-  // #region agent log
-  const logData2 = {location:'middleware.ts:15',message:'Route exclusion check',data:{pathname,isSuperAdminRoute,isDebugRoute,isExcludedRoute},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
-  console.log('[DEBUG]', JSON.stringify(logData2));
-  if (typeof fetch !== 'undefined') {
-    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData2)}).catch(()=>{});
-  }
-  // #endregion
-  
   // IMMEDIATE return for excluded routes - no processing, no logging, nothing
   // This ensures Next.js can process these routes without any interference
   if (isExcludedRoute) {
-    // #region agent log
-    const logData3 = {location:'middleware.ts:20',message:'Returning NextResponse.next for excluded route',data:{pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
-    console.log('[DEBUG]', JSON.stringify(logData3));
-    if (typeof fetch !== 'undefined') {
-      fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData3)}).catch(()=>{});
-    }
-    // #endregion
     return NextResponse.next()
+  }
+
+  // STEP 2: Protect dashboard routes - require authentication
+  // This must happen BEFORE any Supabase client creation for academy detection
+  if (pathname.startsWith('/dashboard')) {
+    // Create minimal Supabase client just for auth check
+    const authSupabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            // For auth check, we don't need to set cookies
+            cookiesToSet.forEach(({ name, value }) => {
+              request.cookies.set(name, value)
+            })
+          },
+        },
+      }
+    )
+    
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser()
+    
+    // If no user or auth error, redirect to login
+    if (authError || !user) {
+      const loginUrl = new URL('/login', request.url)
+      return NextResponse.redirect(loginUrl)
+    }
   }
 
   let response = NextResponse.next({
@@ -56,7 +63,7 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Create Supabase client for middleware
+  // Create Supabase client for middleware (for academy detection)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -75,7 +82,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired
+  // Refresh session if expired (for academy detection context)
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -91,30 +98,46 @@ export async function middleware(request: NextRequest) {
   // Check if it's a custom domain or subdomain
   // Format: suarez.com, otra.com, or suarez.vercel.app, etc.
   const domainParts = domain.split('.')
+  const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
   
   // STEP 2: Wrap academy detection in try-catch to prevent failures from blocking routes
   console.log('[Middleware] Processing route:', pathname, 'Domain:', domain)
   try {
-    // If domain has 2 parts (suarez.com), the first part is the slug
-    // If domain has 3+ parts (suarez.vercel.app), the first part is the slug
+    // First, try to find academy by exact domain match (for custom domains)
     if (domainParts.length >= 2) {
-      const potentialSlug = domainParts[0]
+      const { data: academyByDomain, error: domainError } = await supabase
+        .from('academies')
+        .select('id, slug, domain_status')
+        .eq('domain', domain)
+        .maybeSingle()
       
-      // Skip common subdomains like 'www', 'app', 'admin'
-      if (!['www', 'app', 'admin', 'api'].includes(potentialSlug.toLowerCase())) {
-        // Try to find academy by domain or slug
-        const { data: academy, error: academyError } = await supabase
-          .from('academies')
-          .select('id, slug')
-          .or(`domain.eq.${domain},slug.eq.${potentialSlug}`)
-          .single()
+      if (academyByDomain && !domainError) {
+        // Found by exact domain match
+        academySlug = academyByDomain.slug
+        academyId = academyByDomain.id
+        console.log('[Middleware] Found academy by domain:', academySlug, academyId, 'Status:', academyByDomain.domain_status)
+      } else {
+        // If not found by domain, try by slug (for subdomain access)
+        // This allows access via {slug}.vercel.app even if custom domain is pending
+        const potentialSlug = domainParts[0]
         
-        if (academy && !academyError) {
-          academySlug = academy.slug
-          academyId = academy.id
-          console.log('[Middleware] Found academy:', academySlug, academyId)
-        } else {
-          console.log('[Middleware] No academy found for domain:', domain, 'Error:', academyError)
+        // Skip common subdomains like 'www', 'app', 'admin'
+        if (!['www', 'app', 'admin', 'api'].includes(potentialSlug.toLowerCase())) {
+          // Try to find academy by slug
+          const { data: academyBySlug, error: slugError } = await supabase
+            .from('academies')
+            .select('id, slug, domain_status')
+            .eq('slug', potentialSlug)
+            .maybeSingle()
+          
+          if (academyBySlug && !slugError) {
+            // Found by slug - this works for Vercel subdomains and allows temporary access
+            academySlug = academyBySlug.slug
+            academyId = academyBySlug.id
+            console.log('[Middleware] Found academy by slug:', academySlug, academyId, 'Domain status:', academyBySlug.domain_status)
+          } else {
+            console.log('[Middleware] No academy found for domain:', domain, 'Slug:', potentialSlug, 'Error:', slugError)
+          }
         }
       }
     }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YappyService } from '@/lib/payments/yappy';
+import { getCurrentAcademyId } from '@/lib/supabase/server';
 
 /**
  * GET /api/payments/yappy/config
@@ -7,12 +8,14 @@ import { YappyService } from '@/lib/payments/yappy';
  */
 export async function GET(request: NextRequest) {
   try {
-    const config = YappyService.getConfig();
+    const academyId = await getCurrentAcademyId();
+    const config = await YappyService.getConfig(academyId);
+    const cdnUrl = await YappyService.getCdnUrl(academyId);
     
     return NextResponse.json({
       success: true,
       merchantId: config.merchantId,
-      cdnUrl: YappyService.getCdnUrl(),
+      cdnUrl,
       environment: config.environment,
       domainUrl: config.domainUrl,
     });

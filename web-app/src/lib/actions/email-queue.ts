@@ -1,8 +1,9 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { brevo, SendSmtpEmail } from '@/lib/brevo/client';
+import { getBrevoClientForAcademy } from '@/lib/brevo/academy-client';
 
 export interface QueuedEmail {
   id: string;
@@ -15,6 +16,7 @@ export interface QueuedEmail {
   sent_at: string | null;
   error_message: string | null;
   metadata: any;
+  academy_id: string | null;
   created_at: string;
 }
 
@@ -82,14 +84,19 @@ export async function sendEmailImmediately(
     };
   }
   
-  // Use production URL for logo
-  const defaultLogoUrl =
-    process.env.NEXT_PUBLIC_LOGO_URL ||
-    'https://sistema-adademia-de-futbol-tura.vercel.app/logo.png';
-
-  const logoUrl = defaultLogoUrl.startsWith('http')
-    ? defaultLogoUrl
-    : `https://${defaultLogoUrl.replace(/^\/+/, '')}`;
+  // Get academy logo URL
+  const { getAcademyLogo } = await import('@/lib/utils/academy-logos')
+  let logoUrl = await getAcademyLogo('large')
+  
+  // If logo is a relative path, convert to absolute URL
+  if (logoUrl && !logoUrl.startsWith('http')) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                   process.env.NEXT_PUBLIC_SITE_URL ||
+                   'https://sistema-adademia-de-futbol-tura.vercel.app'
+    logoUrl = logoUrl.startsWith('/') 
+      ? `${baseUrl}${logoUrl}`
+      : `${baseUrl}/${logoUrl}`
+  }
 
   const mergedVariables = {
     logoUrl: logoUrl,
@@ -132,11 +139,15 @@ export async function sendEmailImmediately(
   }
 
   try {
-    // Send email immediately via Brevo
-    const senderEmail = process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com';
+    // Get academy context for Brevo client
+    const academyId = await getCurrentAcademyId()
+    const brevoClient = await getBrevoClientForAcademy(academyId)
     
+    // Send email immediately via Brevo
     console.log(`[sendEmailImmediately] Sending email via Brevo:`, {
-      from: senderEmail,
+      academyId,
+      from: brevoClient.fromEmail,
+      fromName: brevoClient.fromName,
       to: recipientEmail,
       subject: subject.substring(0, 100), // Log first 100 chars of subject
       htmlContentLength: htmlContent?.length || 0,
@@ -145,15 +156,15 @@ export async function sendEmailImmediately(
     
     const sendSmtpEmail: SendSmtpEmail = {
       sender: { 
-        name: 'Suarez Academy', 
-        email: senderEmail
+        name: brevoClient.fromName, 
+        email: brevoClient.fromEmail
       },
       to: [{ email: recipientEmail }],
       subject: subject,
       htmlContent: htmlContent,
     };
 
-    const result = await brevo.sendTransacEmail(sendSmtpEmail);
+    const result = await brevoClient.transactional.sendTransacEmail(sendSmtpEmail);
     
     // Get messageId from Brevo response
     let messageId = result.body?.messageId || (result as any).messageId;
@@ -195,6 +206,7 @@ export async function sendEmailImmediately(
         sent_at: sentAt,
         scheduled_for: new Date().toISOString().split('T')[0],
         brevo_email_id: messageId || null,
+        academy_id: academyId || null, // Store academy_id for webhook matching
         metadata: emailMetadata,
       })
       .select()
@@ -333,16 +345,19 @@ export async function queueEmail(
     templateName: template.name,
   });
   
-  // Use production URL for logo - must be publicly accessible
-  // Ensure it's a full HTTPS URL for email clients
-  const defaultLogoUrl =
-    process.env.NEXT_PUBLIC_LOGO_URL ||
-    'https://sistema-adademia-de-futbol-tura.vercel.app/logo.png';
-
-  // Ensure logoUrl is always a full HTTPS URL
-  const logoUrl = defaultLogoUrl.startsWith('http')
-    ? defaultLogoUrl
-    : `https://${defaultLogoUrl.replace(/^\/+/, '')}`;
+  // Get academy logo URL
+  const { getAcademyLogo } = await import('@/lib/utils/academy-logos')
+  let logoUrl = await getAcademyLogo('large')
+  
+  // If logo is a relative path, convert to absolute URL for email clients
+  if (logoUrl && !logoUrl.startsWith('http')) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                   process.env.NEXT_PUBLIC_SITE_URL ||
+                   'https://sistema-adademia-de-futbol-tura.vercel.app'
+    logoUrl = logoUrl.startsWith('/') 
+      ? `${baseUrl}${logoUrl}`
+      : `${baseUrl}/${logoUrl}`
+  }
 
   const mergedVariables = {
     logoUrl: logoUrl,
@@ -433,6 +448,9 @@ export async function queueEmail(
     ? scheduledDate.toISOString().split('T')[0]
     : scheduledDate;
   
+  // Get academy context
+  const academyId = await getCurrentAcademyId()
+  
   // Prepare metadata with player_id and family_id if provided
   const emailMetadata = {
     ...metadata,
@@ -448,6 +466,7 @@ export async function queueEmail(
       subject,
       html_content: htmlContent,
       scheduled_for: scheduledDateOnly,
+      academy_id: academyId || null, // Store academy_id for Brevo client selection
       metadata: emailMetadata
     });
   
@@ -626,14 +645,21 @@ export async function processEmailQueue() {
         .eq('id', email.id)
         .eq('status', 'pending'); // Only update if still pending
       
+      // Get academy-specific Brevo client
+      const academyId = email.academy_id || await getCurrentAcademyId()
+      const brevoClient = await getBrevoClientForAcademy(academyId)
+      
       const sendSmtpEmail: SendSmtpEmail = {
-        sender: { name: 'Suarez Academy', email: process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com' },
+        sender: { 
+          name: brevoClient.fromName, 
+          email: brevoClient.fromEmail 
+        },
         to: [{ email: email.to_email }],
         subject: email.subject,
         htmlContent: email.html_content,
       };
 
-      const result = await brevo.sendTransacEmail(sendSmtpEmail);
+      const result = await brevoClient.transactional.sendTransacEmail(sendSmtpEmail);
       
       // Brevo returns { response, body } where body contains the messageId
       // The messageId format from Brevo API is usually just the ID, but webhooks send it with angle brackets

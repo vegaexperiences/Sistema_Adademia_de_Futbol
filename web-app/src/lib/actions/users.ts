@@ -285,6 +285,72 @@ export async function removeRoleFromUser(
 /**
  * Get effective permissions for a user in a specific academy
  */
+/**
+ * Create a new user (super admin only)
+ */
+export async function createUser(
+  email: string,
+  password: string,
+  name?: string
+): Promise<{ data: User | null; error: string | null }> {
+  const supabase = await createClient()
+  
+  // Get current user
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (!currentUser) {
+    return { data: null, error: 'Not authenticated' }
+  }
+  
+  // Check if super admin
+  const isAdmin = await isSuperAdmin(currentUser.id)
+  if (!isAdmin) {
+    return { data: null, error: 'Unauthorized: Super admin access required' }
+  }
+
+  // Validate input
+  if (!email || !email.includes('@')) {
+    return { data: null, error: 'Email inválido' }
+  }
+
+  if (!password || password.length < 6) {
+    return { data: null, error: 'La contraseña debe tener al menos 6 caracteres' }
+  }
+
+  try {
+    // Create user using Supabase Admin API
+    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true, // Auto-confirm email
+      user_metadata: {
+        name: name || email,
+      },
+    })
+
+    if (createError) {
+      console.error('Error creating user:', createError)
+      return { data: null, error: createError.message || 'Error al crear usuario' }
+    }
+
+    if (!newUser.user) {
+      return { data: null, error: 'Error al crear usuario: usuario no retornado' }
+    }
+
+    const formattedUser: User = {
+      id: newUser.user.id,
+      email: newUser.user.email!,
+      name: newUser.user.user_metadata?.name || newUser.user.email!,
+      created_at: newUser.user.created_at,
+      last_sign_in_at: newUser.user.last_sign_in_at,
+    }
+
+    return { data: formattedUser, error: null }
+  } catch (error: any) {
+    console.error('Error creating user:', error)
+    return { data: null, error: error.message || 'Error al crear usuario' }
+  }
+}
+
 export async function getUserPermissions(
   userId: string,
   academyId?: string

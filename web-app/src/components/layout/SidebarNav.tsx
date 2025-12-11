@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Users, 
@@ -13,6 +14,7 @@ import {
   TrendingUp,
   Mail
 } from 'lucide-react';
+import { useAcademy } from '@/contexts/AcademyContext';
 
 interface SidebarNavProps {
   pendingCount: number;
@@ -20,18 +22,48 @@ interface SidebarNavProps {
 
 export function SidebarNav({ pendingCount }: SidebarNavProps) {
   const pathname = usePathname();
+  const { academy } = useAcademy();
+  const [navLabels, setNavLabels] = useState({
+    dashboard: 'Dashboard',
+    approvals: 'Aprobaciones',
+    players: 'Jugadores',
+    finances: 'Finanzas',
+    tournaments: 'Torneos',
+    tutors: 'Tutores',
+    families: 'Familias',
+    reports: 'Reportes',
+    emails: 'Correos',
+    settings: 'Configuración',
+  });
+
+  useEffect(() => {
+    if (academy?.settings?.navigation) {
+      setNavLabels({
+        dashboard: academy.settings.navigation.dashboard || 'Dashboard',
+        approvals: academy.settings.navigation.approvals || 'Aprobaciones',
+        players: academy.settings.navigation.players || 'Jugadores',
+        finances: academy.settings.navigation.finances || 'Finanzas',
+        tournaments: academy.settings.navigation.tournaments || 'Torneos',
+        tutors: academy.settings.navigation.tutors || 'Tutores',
+        families: academy.settings.navigation.families || 'Familias',
+        reports: academy.settings.navigation.reports || 'Reportes',
+        emails: academy.settings.navigation.emails || 'Correos',
+        settings: academy.settings.navigation.settings || 'Configuración',
+      });
+    }
+  }, [academy]);
 
   const navLinks = [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
-    { href: '/dashboard/approvals', icon: CheckCircle, label: 'Aprobaciones', badge: pendingCount },
-    { href: '/dashboard/players', icon: Users, label: 'Jugadores' },
-    { href: '/dashboard/finances', icon: TrendingUp, label: 'Finanzas' },
-    { href: '/dashboard/tournaments', icon: Trophy, label: 'Torneos' },
-    { href: '/dashboard/tutors', icon: User, label: 'Tutores' },
-    { href: '/dashboard/families', icon: Users, label: 'Familias' },
-    { href: '/dashboard/reports', icon: FileText, label: 'Reportes' },
-    { href: '/dashboard/emails', icon: Mail, label: 'Correos' },
-    { href: '/dashboard/settings', icon: Settings, label: 'Configuración' },
+    { href: '/dashboard', icon: LayoutDashboard, label: navLabels.dashboard, exact: true },
+    { href: '/dashboard/approvals', icon: CheckCircle, label: navLabels.approvals, badge: pendingCount },
+    { href: '/dashboard/players', icon: Users, label: navLabels.players },
+    { href: '/dashboard/finances', icon: TrendingUp, label: navLabels.finances },
+    { href: '/dashboard/tournaments', icon: Trophy, label: navLabels.tournaments },
+    { href: '/dashboard/tutors', icon: User, label: navLabels.tutors },
+    { href: '/dashboard/families', icon: Users, label: navLabels.families },
+    { href: '/dashboard/reports', icon: FileText, label: navLabels.reports },
+    { href: '/dashboard/emails', icon: Mail, label: navLabels.emails },
+    { href: '/dashboard/settings', icon: Settings, label: navLabels.settings },
   ];
 
   return (

@@ -19,6 +19,7 @@ import {
   Mail
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
+import { useAcademy } from '@/contexts/AcademyContext';
 
 interface MobileHeaderProps {
   userEmail: string;
@@ -28,6 +29,41 @@ interface MobileHeaderProps {
 export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const pathname = usePathname();
+  const { academy } = useAcademy();
+  const [displayName, setDisplayName] = useState(academy?.display_name || academy?.name || 'SUAREZ ACADEMY');
+  const [navLabels, setNavLabels] = useState({
+    dashboard: 'Dashboard',
+    approvals: 'Aprobaciones',
+    players: 'Jugadores',
+    finances: 'Finanzas',
+    tournaments: 'Torneos',
+    tutors: 'Tutores',
+    families: 'Familias',
+    reports: 'Reportes',
+    emails: 'Correos',
+    settings: 'Configuración',
+  });
+  
+  // Get logo URL from academy context, fallback to default
+  const logoUrl = academy?.logo_url || academy?.logo_medium_url || academy?.logo_small_url || '/logo.png';
+
+  useEffect(() => {
+    if (academy) {
+      setDisplayName(academy.display_name || academy.name || 'SUAREZ ACADEMY');
+      setNavLabels({
+        dashboard: academy.settings?.navigation?.dashboard || 'Dashboard',
+        approvals: academy.settings?.navigation?.approvals || 'Aprobaciones',
+        players: academy.settings?.navigation?.players || 'Jugadores',
+        finances: academy.settings?.navigation?.finances || 'Finanzas',
+        tournaments: academy.settings?.navigation?.tournaments || 'Torneos',
+        tutors: academy.settings?.navigation?.tutors || 'Tutores',
+        families: academy.settings?.navigation?.families || 'Familias',
+        reports: academy.settings?.navigation?.reports || 'Reportes',
+        emails: academy.settings?.navigation?.emails || 'Correos',
+        settings: academy.settings?.navigation?.settings || 'Configuración',
+      });
+    }
+  }, [academy]);
 
   // Close menu on route change
   useEffect(() => {
@@ -47,16 +83,16 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
   }, [isNavOpen]);
 
   const navLinks = [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/dashboard/approvals', icon: CheckCircle, label: 'Aprobaciones' },
-    { href: '/dashboard/players', icon: Users, label: 'Jugadores' },
-    { href: '/dashboard/finances', icon: TrendingUp, label: 'Finanzas' },
-    { href: '/dashboard/tournaments', icon: Trophy, label: 'Torneos' },
-    { href: '/dashboard/tutors', icon: User, label: 'Tutores' },
-    { href: '/dashboard/families', icon: Users, label: 'Familias' },
-    { href: '/dashboard/reports', icon: FileText, label: 'Reportes' },
-    { href: '/dashboard/emails', icon: Mail, label: 'Correos' },
-    { href: '/dashboard/settings', icon: Settings, label: 'Configuración' },
+    { href: '/dashboard', icon: LayoutDashboard, label: navLabels.dashboard },
+    { href: '/dashboard/approvals', icon: CheckCircle, label: navLabels.approvals },
+    { href: '/dashboard/players', icon: Users, label: navLabels.players },
+    { href: '/dashboard/finances', icon: TrendingUp, label: navLabels.finances },
+    { href: '/dashboard/tournaments', icon: Trophy, label: navLabels.tournaments },
+    { href: '/dashboard/tutors', icon: User, label: navLabels.tutors },
+    { href: '/dashboard/families', icon: Users, label: navLabels.families },
+    { href: '/dashboard/reports', icon: FileText, label: navLabels.reports },
+    { href: '/dashboard/emails', icon: Mail, label: navLabels.emails },
+    { href: '/dashboard/settings', icon: Settings, label: navLabels.settings },
   ];
 
   return (
@@ -76,8 +112,8 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="relative w-8 h-8 flex-shrink-0 bg-transparent">
                 <Image 
-                  src="/logo.png" 
-                  alt="Suarez Academy Logo" 
+                  src={logoUrl} 
+                  alt={`${displayName} Logo`}
                   fill
                   className="object-contain"
                   sizes="32px"
@@ -86,7 +122,7 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
                   unoptimized
                 />
               </div>
-              <span className="text-gray-900 font-bold text-sm sm:text-base truncate">SUAREZ ACADEMY</span>
+              <span className="text-gray-900 font-bold text-sm sm:text-base truncate">{displayName}</span>
             </div>
           </div>
 
@@ -118,8 +154,8 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 bg-transparent">
                 <Image 
-                  src="/logo.png" 
-                  alt="Suarez Academy Logo" 
+                  src={logoUrl} 
+                  alt={`${displayName} Logo`}
                   fill
                   className="object-contain"
                   style={{ objectFit: 'contain' }}
@@ -127,7 +163,7 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
                   unoptimized
                 />
               </div>
-              <span className="text-gray-900 font-bold text-lg">SUAREZ ACADEMY</span>
+              <span className="text-gray-900 font-bold text-lg">{displayName}</span>
             </div>
             <button
               onClick={() => setIsNavOpen(false)}

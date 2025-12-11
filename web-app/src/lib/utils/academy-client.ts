@@ -3,16 +3,10 @@
  * These functions don't use server-only imports
  */
 
-export interface Academy {
-  id: string
-  name: string
-  slug: string
-  domain: string | null
-  logo_url: string | null
-  primary_color: string | null
-  secondary_color: string | null
-  settings: Record<string, any>
-}
+import type { Academy } from './academy-types'
+
+// Re-export Academy type for backward compatibility
+export type { Academy }
 
 /**
  * Get current academy ID from cookies (client-side)

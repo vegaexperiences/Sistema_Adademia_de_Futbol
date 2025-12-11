@@ -54,12 +54,42 @@ export interface PagueloFacilTransaction {
 
 export class PagueloFacilService {
   private static config: PagueloFacilConfig | null = null;
+  private static configCache: Map<string, PagueloFacilConfig> = new Map();
 
   static initialize(config: PagueloFacilConfig) {
     this.config = config;
   }
 
-  static getConfig(): PagueloFacilConfig {
+  /**
+   * Get PagueloFacil configuration, optionally for a specific academy
+   * If academyId is provided, loads from academy settings
+   * Otherwise uses environment variables (backward compatibility)
+   */
+  static async getConfig(academyId?: string | null): Promise<PagueloFacilConfig> {
+    // If academy ID provided, use academy-specific config
+    if (academyId) {
+      // Check cache first
+      if (this.configCache.has(academyId)) {
+        return this.configCache.get(academyId)!;
+      }
+
+      // Load from academy settings
+      const { getPagueloFacilConfig } = await import('@/lib/utils/academy-payments');
+      const academyConfig = await getPagueloFacilConfig(academyId);
+
+      if (academyConfig) {
+        const config: PagueloFacilConfig = {
+          apiKey: academyConfig.api_key,
+          cclw: academyConfig.merchant_id, // merchant_id in academy config is actually CCLW
+          sandbox: academyConfig.environment === 'testing',
+        };
+        this.configCache.set(academyId, config);
+        return config;
+      }
+      // If academy config not found, fall through to env vars
+    }
+
+    // Fallback to environment variables (backward compatibility)
     if (!this.config) {
       // Get tokens and clean them (remove any non-ASCII characters that might have been copied incorrectly)
       const rawApiKey = process.env.PAGUELOFACIL_ACCESS_TOKEN || '';
@@ -147,8 +177,8 @@ export class PagueloFacilService {
     return this.config;
   }
 
-  static getBaseUrl(): string {
-    const config = this.getConfig();
+  static async getBaseUrl(academyId?: string | null): Promise<string> {
+    const config = await this.getConfig(academyId);
     return config.sandbox
       ? 'https://api-sand.pfserver.net'
       : 'https://api.pfserver.net';
@@ -158,8 +188,8 @@ export class PagueloFacilService {
    * Create a payment transaction using Paguelo Fácil SDK
    * This will return the configuration needed to initialize the SDK on the client
    */
-  static getSDKConfig(): { apiKey: string; cclw: string; sandbox: boolean } {
-    const config = this.getConfig();
+  static async getSDKConfig(academyId?: string | null): Promise<{ apiKey: string; cclw: string; sandbox: boolean }> {
+    const config = await this.getConfig(academyId);
     return {
       apiKey: config.apiKey,
       cclw: config.cclw,
@@ -170,15 +200,15 @@ export class PagueloFacilService {
   /**
    * Create a transaction - returns configuration for client-side SDK
    */
-  static async createTransaction(transaction: PagueloFacilTransaction): Promise<PagueloFacilResponse> {
+  static async createTransaction(transaction: PagueloFacilTransaction, academyId?: string | null): Promise<PagueloFacilResponse> {
     try {
-      const config = this.getConfig();
+      const config = await this.getConfig(academyId);
       
       // For now, return the SDK config that will be used on client-side
       // The actual payment processing happens via the SDK
       return {
         success: true,
-        paymentUrl: this.getBaseUrl(),
+        paymentUrl: await this.getBaseUrl(academyId),
         transactionId: `pf_${Date.now()}_${Math.random().toString(36).substring(7)}`
       };
     } catch (error: any) {
@@ -193,10 +223,10 @@ export class PagueloFacilService {
   /**
    * Verify payment status (for webhook or polling)
    */
-  static async verifyPayment(transactionId: string): Promise<{ status: string; verified: boolean }> {
+  static async verifyPayment(transactionId: string, academyId?: string | null): Promise<{ status: string; verified: boolean }> {
     try {
-      const config = this.getConfig();
-      const baseUrl = this.getBaseUrl();
+      const config = await this.getConfig(academyId);
+      const baseUrl = await this.getBaseUrl(academyId);
 
       // This would call the actual API endpoint to verify payment
       // For now, return a placeholder
@@ -216,8 +246,8 @@ export class PagueloFacilService {
   /**
    * Get the base URL for LinkDeamon endpoint
    */
-  static getLinkDeamonUrl(): string {
-    const config = this.getConfig();
+  static async getLinkDeamonUrl(academyId?: string | null): Promise<string> {
+    const config = await this.getConfig(academyId);
     const url = config.sandbox
       ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
       : 'https://secure.paguelofacil.com/LinkDeamon.cfm';
@@ -243,10 +273,10 @@ export class PagueloFacilService {
   /**
    * Create a payment link using LinkDeamon
    */
-  static async createPaymentLink(transaction: PagueloFacilTransaction): Promise<PagueloFacilLinkResponse> {
+  static async createPaymentLink(transaction: PagueloFacilTransaction, academyId?: string | null): Promise<PagueloFacilLinkResponse> {
     try {
-      const config = this.getConfig();
-      const url = this.getLinkDeamonUrl();
+      const config = await this.getConfig(academyId);
+      const url = await this.getLinkDeamonUrl(academyId);
       
       // Validate sandbox configuration
       if (config.sandbox) {

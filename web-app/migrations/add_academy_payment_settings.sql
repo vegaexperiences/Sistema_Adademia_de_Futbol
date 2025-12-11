@@ -1,0 +1,56 @@
+-- ============================================
+-- Add Academy Payment Settings Structure
+-- ============================================
+-- This migration adds support for academy-specific payment provider configurations
+-- Each academy can now have its own Yappy and PagueloFacil settings
+-- Settings are stored in the academies.settings JSONB field
+
+-- The structure will be:
+-- {
+--   "payments": {
+--     "yappy": {
+--       "enabled": true,
+--       "merchant_id": "",
+--       "secret_key": "",
+--       "domain_url": "",
+--       "environment": "production"
+--     },
+--     "paguelofacil": {
+--       "enabled": true,
+--       "merchant_id": "",
+--       "api_key": "",
+--       "environment": "production"
+--     }
+--   },
+--   "email": {
+--     "brevo_api_key": "",
+--     "brevo_from_email": "",
+--     "brevo_from_name": "",
+--     "brevo_webhook_secret": "",
+--     "smtp_host": "",
+--     "smtp_port": 587,
+--     "smtp_user": "",
+--     "smtp_password": "",
+--     "from_email": "",
+--     "from_name": ""
+--   }
+-- }
+--
+-- Brevo Configuration:
+-- - brevo_api_key: API key from Brevo account (one per academy for multi-tenant support)
+-- - brevo_from_email: Verified sender email in Brevo account
+-- - brevo_from_name: Display name for email sender
+-- - brevo_webhook_secret: Optional secret for validating webhooks from Brevo
+--
+-- SMTP Configuration (Alternative/Fallback):
+-- - Used if Brevo is not configured or as a fallback option
+-- - smtp_host, smtp_port, smtp_user, smtp_password: SMTP server credentials
+-- - from_email, from_name: SMTP sender information
+
+-- No schema changes needed - we're using the existing settings JSONB field
+-- This migration is informational/documentation only
+-- The actual structure will be enforced by application code
+
+-- Add comment to academies table documenting the settings structure
+COMMENT ON COLUMN academies.settings IS 'JSONB field storing academy-specific configurations. Structure: { "payments": { "yappy": {...}, "paguelofacil": {...} }, "email": {...} }';
+

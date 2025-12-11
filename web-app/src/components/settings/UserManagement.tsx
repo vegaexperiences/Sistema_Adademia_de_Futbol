@@ -9,6 +9,7 @@ import {
   assignRoleToUser, 
   removeRoleFromUser,
   getUserPermissions,
+  createUser,
   type User,
   type Role,
   type UserRole,
@@ -28,6 +29,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [selectedAcademy, setSelectedAcademy] = useState<string | null>(null)
   const [showAssignForm, setShowAssignForm] = useState(false)
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -132,6 +134,26 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
     setShowPermissions({ ...showPermissions, [userId]: !currentShow })
   }
 
+  const handleCreateUser = async (email: string, password: string, name?: string) => {
+    setError(null)
+    setSuccess(null)
+
+    const result = await createUser(email, password, name)
+
+    if (result.error) {
+      setError(result.error)
+    } else {
+      setSuccess('Usuario creado exitosamente')
+      setShowCreateUserForm(false)
+      await loadData() // Reload data to show new user
+      // Automatically show role assignment form for the new user
+      if (result.data) {
+        setSelectedUser(result.data.id)
+        setShowAssignForm(true)
+      }
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -180,16 +202,29 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
             <Users className="h-5 w-5" />
             Usuarios ({users.length})
           </h3>
-          <button
-            onClick={() => {
-              setShowAssignForm(true)
-              setSelectedUser(null)
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
-          >
-            <Plus size={18} />
-            Asignar Rol
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setShowCreateUserForm(true)
+                setShowAssignForm(false)
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
+            >
+              <Plus size={18} />
+              Crear Usuario
+            </button>
+            <button
+              onClick={() => {
+                setShowAssignForm(true)
+                setSelectedUser(null)
+                setShowCreateUserForm(false)
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+            >
+              <Plus size={18} />
+              Asignar Rol
+            </button>
+          </div>
         </div>
 
         {users.length === 0 ? (
@@ -282,6 +317,16 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
         )}
       </div>
 
+      {/* Create User Form */}
+      {showCreateUserForm && (
+        <CreateUserForm
+          onCreate={handleCreateUser}
+          onCancel={() => {
+            setShowCreateUserForm(false)
+          }}
+        />
+      )}
+
       {/* Assign Role Form */}
       {showAssignForm && (
         <AssignRoleForm
@@ -295,6 +340,143 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
           }}
         />
       )}
+    </div>
+  )
+}
+
+function CreateUserForm({
+  onCreate,
+  onCancel,
+}: {
+  onCreate: (email: string, password: string, name?: string) => Promise<void>
+  onCancel: () => void
+}) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [name, setName] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!email || !email.includes('@')) {
+      setError('Email inválido')
+      return
+    }
+
+    if (!password || password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden')
+      return
+    }
+
+    setIsSubmitting(true)
+    await onCreate(email, password, name || undefined)
+    setIsSubmitting(false)
+
+    // Reset form on success
+    if (!error) {
+      setEmail('')
+      setPassword('')
+      setConfirmPassword('')
+      setName('')
+    }
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-l-4 border-green-500">
+      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <Plus className="h-5 w-5" />
+        Crear Nuevo Usuario
+      </h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-red-800 text-sm font-medium">{error}</p>
+          </div>
+        )}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Email *
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border-2 border-green-200 bg-white text-gray-900 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+            required
+            placeholder="usuario@ejemplo.com"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Nombre (opcional)
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border-2 border-green-200 bg-white text-gray-900 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+            placeholder="Nombre completo"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Contraseña *
+          </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border-2 border-green-200 bg-white text-gray-900 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+            required
+            minLength={6}
+            placeholder="Mínimo 6 caracteres"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Confirmar Contraseña *
+          </label>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border-2 border-green-200 bg-white text-gray-900 font-medium focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+            required
+            minLength={6}
+            placeholder="Repite la contraseña"
+          />
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={isSubmitting || !email || !password || password !== confirmPassword}
+            className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+            }}
+          >
+            <CheckCircle size={18} />
+            {isSubmitting ? 'Creando...' : 'Crear Usuario'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-6 py-3 rounded-xl font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
     </div>
   )
 }

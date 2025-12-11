@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YappyService, YappyCallbackParams } from '@/lib/payments/yappy';
 import { createPayment } from '@/lib/actions/payments';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation';
 import { createEnrollmentFromPayment } from '@/lib/actions/enrollment';
@@ -607,9 +607,12 @@ export async function GET(request: NextRequest) {
       transactionId: confirmationNumber,
     };
 
+    // Get academy ID for payment config
+    const academyId = await getCurrentAcademyId();
+
     // Validate hash if provided
     if (hash) {
-      const isValidHash = YappyService.validateCallbackHash(callbackParams, hash);
+      const isValidHash = await YappyService.validateCallbackHash(callbackParams, hash, academyId);
       if (!isValidHash) {
         console.warn('[Yappy Callback] Hash validation failed');
         // Note: We'll still process the callback but log the warning

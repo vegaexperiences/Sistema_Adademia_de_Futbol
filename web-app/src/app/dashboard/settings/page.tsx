@@ -1,10 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
-import { Settings, DollarSign, Save, CreditCard, Calendar, Shield, Users } from 'lucide-react';
+import { Settings, DollarSign, Save, CreditCard, Calendar, Shield, Users, Building2 } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PaymentMethodsSettings } from '@/components/settings/PaymentMethodsSettings';
 import { SuperAdminSettings } from '@/components/settings/SuperAdminSettings';
 import { UserManagement } from '@/components/settings/UserManagement';
+import { AcademySettingsSelector } from '@/components/settings/AcademySettingsSelector';
+import { BrandingConfig } from '@/components/super-admin/BrandingConfig';
+import { LogoUploader } from '@/components/super-admin/LogoUploader';
 import { getSuperAdmins } from '@/lib/actions/super-admin';
+import { checkIsSuperAdmin, getAcademyById } from '@/lib/actions/academies';
+import { getCurrentAcademyId } from '@/lib/supabase/server';
+import { getCurrentAcademy } from '@/lib/utils/academy';
 import Link from 'next/link';
 
 async function updateSetting(formData: FormData) {
@@ -53,8 +59,52 @@ export default async function SettingsPage() {
     superAdmins = [];
   }
 
+  // Check if user is super admin
+  let isSuperAdminUser = false;
+  try {
+    isSuperAdminUser = await checkIsSuperAdmin();
+  } catch (error) {
+    // Silently fail
+  }
+
+  // Get current academy for branding/logo management (super admin only)
+  let currentAcademy: any = null;
+  if (isSuperAdminUser) {
+    try {
+      let academy = await getCurrentAcademy();
+      
+      // If no academy detected but user is super admin, try to get first academy
+      if (!academy) {
+        const { getAllAcademies } = await import('@/lib/actions/academies');
+        const academiesResult = await getAllAcademies();
+        if (academiesResult.data && academiesResult.data.length > 0) {
+          // Use first academy as fallback
+          academy = academiesResult.data[0];
+        }
+      }
+      
+      if (academy) {
+        // Convert to the Academy type expected by BrandingConfig and LogoUploader
+        currentAcademy = {
+          ...academy,
+          domain_status: null,
+          domain_configured_at: null,
+          created_at: '',
+          updated_at: '',
+        };
+      }
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Academy Selector (Super Admin only) */}
+      {isSuperAdminUser && (
+        <AcademySettingsSelector />
+      )}
+
       {/* Header with Glass Effect */}
       <div className="glass-card p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -104,6 +154,22 @@ export default async function SettingsPage() {
           >
             👥 Usuarios
           </a>
+          {isSuperAdminUser && (
+            <>
+              <a 
+                href="#branding" 
+                className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+              >
+                🎨 Branding
+              </a>
+              <a 
+                href="#logos" 
+                className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+              >
+                🖼️ Logos
+              </a>
+            </>
+          )}
         </div>
       </div>
 
@@ -389,15 +455,24 @@ export default async function SettingsPage() {
 
       {/* Super Admin Settings */}
       <div id="super-admin" className="glass-card p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg" style={{
-            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          }}>
-            <Shield className="h-6 w-6 text-white" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            }}>
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              🛡️ Gestión de Super Admins
+            </h2>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            🛡️ Gestión de Super Admins
-          </h2>
+          <Link
+            href="/super-admin/academies"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl font-medium"
+          >
+            <Building2 size={18} />
+            Gestionar Academias
+          </Link>
         </div>
         <SuperAdminSettings initialAdmins={superAdmins} currentUserEmail={currentUserEmail} />
       </div>
@@ -416,6 +491,70 @@ export default async function SettingsPage() {
         </div>
         <UserManagement currentUserEmail={currentUserEmail} />
       </div>
+
+      {/* Branding Configuration (Super Admin only) */}
+      {isSuperAdminUser && (
+        <div id="branding" className="glass-card p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-lg" style={{
+              background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+            }}>
+              <Settings className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              🎨 Configuración de Branding
+            </h2>
+          </div>
+          {currentAcademy ? (
+            <div className="bg-gradient-to-br from-pink-50 to-rose-50 p-6 rounded-xl border-l-4 border-pink-500">
+              <p className="text-sm text-gray-700 mb-4">
+                <span className="font-bold">💡 Nota:</span> Personaliza el nombre de visualización y las etiquetas de navegación para la academia actual.
+              </p>
+            <BrandingConfig 
+              academy={currentAcademy}
+            />
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-pink-50 to-rose-50 p-6 rounded-xl border-l-4 border-pink-500">
+              <p className="text-sm text-gray-700">
+                <span className="font-bold">⚠️ Nota:</span> No hay una academia actual seleccionada. Por favor, selecciona una academia desde el selector de academias arriba para gestionar su branding.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Logo Management (Super Admin only) */}
+      {isSuperAdminUser && (
+        <div id="logos" className="glass-card p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-lg" style={{
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+            }}>
+              <Settings className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              🖼️ Gestión de Logos y Favicons
+            </h2>
+          </div>
+          {currentAcademy ? (
+            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-xl border-l-4 border-cyan-500">
+              <p className="text-sm text-gray-700 mb-4">
+                <span className="font-bold">💡 Nota:</span> Sube o configura las URLs de los logos y favicons para la academia actual. Se mostrarán en toda la aplicación.
+              </p>
+              <LogoUploader 
+                academy={currentAcademy}
+              />
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-xl border-l-4 border-cyan-500">
+              <p className="text-sm text-gray-700">
+                <span className="font-bold">⚠️ Nota:</span> No hay una academia actual seleccionada. Por favor, selecciona una academia desde el selector de academias arriba para gestionar sus logos.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

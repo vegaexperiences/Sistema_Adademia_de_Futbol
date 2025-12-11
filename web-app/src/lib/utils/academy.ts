@@ -5,17 +5,10 @@
 
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import type { Academy as AcademyBase } from './academy-types'
 
-export interface Academy {
-  id: string
-  name: string
-  slug: string
-  domain: string | null
-  logo_url: string | null
-  primary_color: string | null
-  secondary_color: string | null
-  settings: Record<string, any>
-}
+// Re-export Academy type for backward compatibility
+export type Academy = AcademyBase
 
 /**
  * Get current academy ID from headers (server-side)
@@ -66,9 +59,16 @@ export async function getCurrentAcademy(): Promise<Academy | null> {
   return {
     id: data.id,
     name: data.name,
+    display_name: data.display_name,
     slug: data.slug,
     domain: data.domain,
     logo_url: data.logo_url,
+    logo_small_url: data.logo_small_url,
+    logo_medium_url: data.logo_medium_url,
+    logo_large_url: data.logo_large_url,
+    favicon_16_url: data.favicon_16_url,
+    favicon_32_url: data.favicon_32_url,
+    apple_touch_icon_url: data.apple_touch_icon_url,
     primary_color: data.primary_color,
     secondary_color: data.secondary_color,
     settings: data.settings || {},
