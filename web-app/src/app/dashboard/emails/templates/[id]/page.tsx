@@ -33,15 +33,15 @@ export default async function EditTemplatePage({ params }: { params: Promise<{ i
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard/emails?tab=plantillas"
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <ArrowLeft size={24} className="text-gray-600 dark:text-gray-400" />
+            <ArrowLeft size={24} className="text-gray-600" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white capitalize">
+            <h1 className="text-3xl font-bold text-gray-900 capitalize">
               Editar: {template.name.replace(/_/g, ' ')}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600">
               Personaliza el contenido del correo
             </p>
           </div>
@@ -51,9 +51,9 @@ export default async function EditTemplatePage({ params }: { params: Promise<{ i
       <TemplateEditor template={template} onSave={saveTemplate} />
 
       {/* Info Card */}
-      <div className="glass-card p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-        <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2">💡 Tip</h3>
-        <p className="text-sm text-blue-800 dark:text-blue-200">
+      <div className="glass-card p-6 bg-blue-50 border border-blue-200">
+        <h3 className="font-bold text-blue-900 mb-2">💡 Tip</h3>
+        <p className="text-sm text-blue-800">
           Los cambios se aplicarán automáticamente a todos los correos futuros que usen esta plantilla.
           La vista previa muestra cómo se verá el correo con datos de ejemplo.
         </p>

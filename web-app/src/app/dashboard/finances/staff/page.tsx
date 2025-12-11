@@ -15,10 +15,10 @@ export default async function StaffPage() {
             <Link href="/dashboard/finances" className="text-blue-600 hover:underline text-sm mb-2 block">
               ← Volver a Finanzas
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
               👥 Gestión de Personal
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600">
               Administra empleados, entrenadores y nómina
             </p>
           </div>
@@ -36,12 +36,12 @@ export default async function StaffPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <div className="p-3 bg-blue-100 rounded-lg">
               <Users className="text-blue-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Personal Activo</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm text-gray-500">Personal Activo</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {staff.filter(s => s.is_active).length}
               </p>
             </div>
@@ -50,12 +50,12 @@ export default async function StaffPage() {
 
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+            <div className="p-3 bg-green-100 rounded-lg">
               <DollarSign className="text-green-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Nómina Mensual</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm text-gray-500">Nómina Mensual</p>
+              <p className="text-2xl font-bold text-gray-900">
                 ${staff
                   .filter(s => s.is_active && s.payment_frequency === 'monthly')
                   .reduce((sum, s) => sum + parseFloat(s.salary.toString()), 0)
@@ -67,12 +67,12 @@ export default async function StaffPage() {
 
         <div className="glass-card p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+            <div className="p-3 bg-purple-100 rounded-lg">
               <Users className="text-purple-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Personal</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-sm text-gray-500">Total Personal</p>
+              <p className="text-2xl font-bold text-gray-900">
                 {staff.length}
               </p>
             </div>

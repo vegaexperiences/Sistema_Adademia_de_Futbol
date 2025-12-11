@@ -44,7 +44,7 @@ export function PaymentSection({ players, payments, familyName, tutorEmail, play
   return (
     <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <CreditCard className="h-6 w-6" />
           Gestión de Pagos
         </h2>
@@ -54,11 +54,11 @@ export function PaymentSection({ players, payments, familyName, tutorEmail, play
       </div>
       
       {playerCount > 1 && (
-        <div className="mb-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border-l-4 border-amber-500">
-          <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+        <div className="mb-6 bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border-l-4 border-amber-500">
+          <p className="text-sm font-bold text-gray-700 mb-2">
             💡 Descuento Familiar Aplicable
           </p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-gray-600">
             Esta familia califica para el descuento familiar en la mensualidad del {playerCount > 2 ? 'tercer jugador en adelante' : 'segundo jugador en adelante'}.
           </p>
         </div>

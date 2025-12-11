@@ -21,11 +21,11 @@ export default function RecurringExpensesList({ expenses, categories }: Recurrin
   if (expenses.length === 0) {
     return (
       <div className="glass-card p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Repeat size={24} />
           Gastos Recurrentes
         </h2>
-        <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+        <p className="text-center text-gray-500 py-8">
           No hay gastos recurrentes configurados
         </p>
       </div>
@@ -34,7 +34,7 @@ export default function RecurringExpensesList({ expenses, categories }: Recurrin
 
   return (
     <div className="glass-card p-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <Repeat size={24} />
         Gastos Recurrentes
       </h2>
@@ -43,7 +43,7 @@ export default function RecurringExpensesList({ expenses, categories }: Recurrin
         {expenses.map((expense) => (
           <div
             key={expense.id}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800"
+            className="border border-gray-200 rounded-lg p-4 bg-white"
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
@@ -51,15 +51,15 @@ export default function RecurringExpensesList({ expenses, categories }: Recurrin
                   {expense.expense_categories && (
                     <span className="text-xl">{expense.expense_categories.icon}</span>
                   )}
-                  <h3 className="font-bold text-gray-900 dark:text-white">
+                  <h3 className="font-bold text-gray-900">
                     {expense.description}
                   </h3>
-                  <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs rounded-full font-medium">
+                  <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
                     {getFrequencyLabel(expense.frequency)}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-600">
                   <div>
                     <span className="font-medium">Monto:</span> ${parseFloat(expense.amount).toFixed(2)}
                   </div>
@@ -81,8 +81,8 @@ export default function RecurringExpensesList({ expenses, categories }: Recurrin
 
               <span className={`px-2 py-1 text-xs rounded-full ${
                 expense.is_active
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-600'
               }`}>
                 {expense.is_active ? 'Activo' : 'Inactivo'}
               </span>

@@ -28,12 +28,13 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
   const endDate = `${year}-12-31`;
   
   // Get all payments and expenses for the year in parallel
-  // Note: If status column doesn't exist yet, this will return all payments
-  // After migration, it will filter by status = 'Approved'
+  // Only approved payments - rejections are not real payments
   const [paymentsResult, expensesResult, staffResult] = await Promise.all([
     supabase
       .from('payments')
       .select('amount, payment_date, status')
+      .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
+      .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
       .gte('payment_date', startDate)
       .lte('payment_date', endDate),
     supabase
@@ -135,11 +136,12 @@ export async function getExpensesByCategory(startDate: string, endDate: string):
 export async function getCashFlow(startDate: string, endDate: string) {
   const supabase = await createClient();
   
-  // Get all income
-  // Select status field to filter in JavaScript (for backward compatibility)
+  // Get all income - only approved payments, rejections are not real payments
   const { data: payments } = await supabase
     .from('payments')
     .select('amount, payment_date, status')
+    .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
+    .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
     .gte('payment_date', startDate)
     .lte('payment_date', endDate)
     .order('payment_date');
@@ -183,11 +185,13 @@ export async function getFinancialSummary() {
   
   const supabase = await createClient();
   
-  // Execute all queries in parallel
+  // Execute all queries in parallel - only approved payments
   const [paymentsResult, expensesResult, staffPaymentsResult] = await Promise.all([
     supabase
       .from('payments')
       .select('amount, status')
+      .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
+      .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
       .gte('payment_date', startOfMonth)
       .lte('payment_date', endOfMonth),
     supabase

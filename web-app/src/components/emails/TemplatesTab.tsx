@@ -9,14 +9,14 @@ export async function TemplatesTab() {
       {/* Header */}
       <div className="glass-card p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <span className="text-purple-600 dark:text-purple-400 text-2xl">📧</span>
+          <div className="p-2 bg-purple-100 rounded-lg">
+            <span className="text-purple-600 text-2xl">📧</span>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-2xl font-bold text-gray-900">
               Plantillas de Correo
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600">
               Gestiona las plantillas de correo electrónico
             </p>
           </div>
@@ -27,21 +27,21 @@ export async function TemplatesTab() {
       <div className="glass-card p-6">
         <div className="grid gap-4">
           {templates.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-8 text-gray-500">
               No hay plantillas configuradas
             </div>
           ) : (
             templates.map((template) => (
               <div
                 key={template.id}
-                className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-all bg-white dark:bg-gray-800"
+                className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all bg-white"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="font-bold text-lg text-gray-900 dark:text-white capitalize">
+                    <h3 className="font-bold text-lg text-gray-900 capitalize">
                       {template.name.replace(/_/g, ' ')}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 mt-1">
                       {template.subject}
                     </p>
                     <div className="flex gap-2 mt-2">

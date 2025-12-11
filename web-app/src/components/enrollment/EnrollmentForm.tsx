@@ -7,6 +7,7 @@ import { DocumentsStep } from './steps/DocumentsStep';
 import { PaymentStep } from './steps/PaymentStep';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+import { useEnrollmentValidation } from './hooks/useEnrollmentValidation';
 
 const STEPS = [
   { id: 'tutor', title: 'Tutor' },
@@ -23,6 +24,7 @@ interface EnrollmentFormProps {
 
 export function EnrollmentForm({ config }: EnrollmentFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const { validateStep, validateFullForm, clearErrors, getFieldError } = useEnrollmentValidation();
   const [formData, setFormData] = useState({
     // Tutor
     tutorName: '',
@@ -47,6 +49,7 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
     paymentProofFile: ''
   });
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateData = (newData: any) => {
     setFormData(prev => ({ ...prev, ...newData }));
@@ -88,8 +91,18 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
   };
 
   const nextStep = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep((prev) => prev + 1);
+    // Validate current step before advancing
+    if (validateStep(currentStep, formData)) {
+      if (currentStep < STEPS.length - 1) {
+        setCurrentStep((prev) => prev + 1);
+        clearErrors();
+      }
+    } else {
+      // Scroll to first error
+      const firstErrorElement = document.querySelector('[data-error="true"]');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   };
 
@@ -100,7 +113,25 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
   };
 
   const handleSubmit = async () => {
+    // Prevent double submission
+    if (isSubmitting) {
+      console.warn('[EnrollmentForm] Submission already in progress, ignoring duplicate call');
+      return;
+    }
+
+    // Validate full form before submitting
+    if (!validateFullForm(formData)) {
+      // Scroll to first error
+      const firstErrorElement = document.querySelector('[data-error="true"]');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      alert('Por favor, corrija los errores en el formulario antes de enviar.');
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       console.log('Submitting form data:', formData);
       
       const response = await fetch('/api/enrollment', {
@@ -112,18 +143,59 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
       });
 
       const result = await response.json();
+      console.log('[EnrollmentForm] Response status:', response.status);
+      console.log('[EnrollmentForm] Response data:', result);
+
+      if (!response.ok) {
+        // Handle error responses
+        const errorMessage = result.error || 'Error al procesar la matrícula';
+        const errorDetails = result.details || result.issues || result.fullError || '';
+        console.error('[EnrollmentForm] Error response:', {
+          status: response.status,
+          error: errorMessage,
+          details: errorDetails,
+          fullResult: result,
+        });
+        
+        // Show detailed error in development, simplified in production
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        const detailsText = errorDetails 
+          ? (typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails, null, 2))
+          : '';
+        
+        alert(`${errorMessage}${detailsText ? '\n\nDetalles: ' + detailsText : ''}`);
+        setIsSubmitting(false); // Allow retry on error
+        return;
+      }
 
       if (result.success) {
-        // In a real app, we would redirect to result.paymentUrl
-        // For this demo, we just show the success screen and log the URL
-        console.log('Redirecting to payment:', result.paymentUrl);
+        // If payment method is PagueloFacil or Yappy, don't show success yet
+        // The success will be shown after payment confirmation in the callback
+        if (formData.paymentMethod === 'PagueloFacil' || formData.paymentMethod === 'Yappy') {
+          // Enrollment is created but payment is pending
+          // Don't show success screen, let the payment button handle the redirect
+          console.log(`[Enrollment] Enrollment created with pending ${formData.paymentMethod} payment`);
+          // Mark enrollment as submitted in formData so PaymentStep can detect it
+          updateData({ enrollmentSubmitted: true });
+          setIsSubmitting(false);
+          return; // Don't mark as completed, payment button will handle redirect
+        }
+        
+        // For other payment methods, show success screen
+        // If it's a duplicate, show a message but still mark as completed
+        if (result.duplicate) {
+          alert(result.message || 'Esta solicitud ya fue registrada anteriormente.');
+        }
+        
         setIsCompleted(true);
       } else {
         alert('Error al procesar la matrícula. Por favor intente nuevamente.');
+        setIsSubmitting(false); // Allow retry on error
       }
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('Ocurrió un error inesperado.');
+      setIsSubmitting(false); // Allow retry on error
     }
   };
 
@@ -151,26 +223,26 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
     <div className="flex flex-col h-full">
       {/* Progress Bar */}
       {/* Progress Bar */}
-      <div className="bg-gray-100 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-gray-100 px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
         <div className="flex items-center justify-between max-w-2xl mx-auto relative">
           {/* Progress Line Background - Positioned absolutely to be behind circles */}
-          <div className="absolute top-4 left-0 w-full h-0.5 bg-gray-200 dark:bg-gray-700 -z-0 hidden sm:block" />
+          <div className="absolute top-4 left-0 w-full h-0.5 bg-gray-200 -z-0 hidden sm:block" />
           
           {STEPS.map((step, index) => (
-            <div key={step.id} className="flex flex-col items-center relative z-10">
+            <div key={step.id} className="flex flex-col items-center relative z-10 flex-1">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300 touch-manipulation ${
                   index <= currentStep
-                    ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-lg scale-110'
-                    : 'bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200'
+                    ? 'bg-blue-600 text-white shadow-lg scale-110'
+                    : 'bg-gray-300 text-gray-700'
                 }`}
               >
                 {index + 1}
               </div>
-              <span className={`text-xs mt-2 font-medium transition-colors duration-300 ${
+              <span className={`text-[10px] sm:text-xs mt-1 sm:mt-2 font-medium transition-colors duration-300 text-center ${
                 index <= currentStep 
-                  ? 'text-blue-700 dark:text-blue-400 font-bold' 
-                  : 'text-gray-600 dark:text-gray-400'
+                  ? 'text-blue-700 font-bold' 
+                  : 'text-gray-600'
               }`}>
                 {step.title}
               </span>
@@ -180,9 +252,9 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
       </div>
 
       {/* Step Content */}
-      <div className="p-6 sm:p-10 flex-grow overflow-visible">
+      <div className="p-4 sm:p-6 md:p-10 flex-grow overflow-visible">
         {currentStep === 0 && (
-          <TutorStep data={formData} updateData={updateData} onNext={nextStep} />
+          <TutorStep data={formData} updateData={updateData} onNext={nextStep} getFieldError={getFieldError} />
         )}
         {currentStep === 1 && (
           <PlayerStep
@@ -192,6 +264,7 @@ export function EnrollmentForm({ config }: EnrollmentFormProps) {
             removePlayer={removePlayer}
             onNext={nextStep}
             onBack={prevStep}
+            getFieldError={getFieldError}
           />
         )}
         {currentStep === 2 && (

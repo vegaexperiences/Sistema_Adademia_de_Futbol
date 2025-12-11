@@ -1,16 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { DollarSign, Calendar, CreditCard, FileText } from 'lucide-react';
+import { DollarSign, Calendar, CreditCard, FileText, ExternalLink } from 'lucide-react';
+import { DocumentPreview } from '@/components/ui/DocumentPreview';
 
 interface Payment {
   id: string;
   amount: number;
-  payment_type: string;
-  payment_method: string | null;
+  type?: string; // Use 'type' to match database schema
+  method?: string | null; // Use 'method' to match database schema
+  payment_type?: string; // Legacy field for backward compatibility
+  payment_method?: string | null; // Legacy field for backward compatibility
   payment_date: string;
   month_year: string | null;
   notes: string | null;
+  proof_url?: string | null;
   players?: {
     first_name: string;
     last_name: string;
@@ -27,7 +31,8 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
   
   const filteredPayments = payments.filter(p => {
     if (filter === 'all') return true;
-    return p.payment_type === filter;
+    const paymentType = p.type || p.payment_type; // Support both field names
+    return paymentType === filter;
   });
   
   const total = filteredPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
@@ -59,10 +64,10 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
       {/* Header with filters */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h3 className="text-xl font-bold text-gray-900">
             Historial de Pagos
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             {filteredPayments.length} {filteredPayments.length === 1 ? 'pago' : 'pagos'}
           </p>
         </div>
@@ -73,7 +78,7 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
             className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all border ${
               filter === 'all'
                 ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-md'
-                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#6b7280] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : 'bg-white border-gray-200 text-[#6b7280] hover:bg-gray-50'
             }`}
           >
             Todos
@@ -83,7 +88,7 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
             className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all border ${
               filter === 'monthly'
                 ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-md'
-                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#6b7280] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : 'bg-white border-gray-200 text-[#6b7280] hover:bg-gray-50'
             }`}
           >
             Mensualidades
@@ -93,7 +98,7 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
             className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all border ${
               filter === 'enrollment'
                 ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-md'
-                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#6b7280] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : 'bg-white border-gray-200 text-[#6b7280] hover:bg-gray-50'
             }`}
           >
             Matrículas
@@ -102,13 +107,13 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
       </div>
 
       {/* Total */}
-      <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Total Pagado</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">${total.toFixed(2)}</p>
+            <p className="text-sm font-semibold text-gray-600">Total Pagado</p>
+            <p className="text-3xl font-bold text-gray-900">${total.toFixed(2)}</p>
           </div>
-          <DollarSign className="h-10 w-10 text-green-600 dark:text-green-400" />
+          <DollarSign className="h-10 w-10 text-green-600" />
         </div>
       </div>
 
@@ -118,61 +123,87 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
           filteredPayments.map((payment) => (
             <div
               key={payment.id}
-              className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border-l-4 border-blue-500 hover:shadow-lg transition-all"
+              className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500 hover:shadow-lg transition-all"
             >
               <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-1 rounded-full text-xs font-bold" style={{
-                      background: payment.payment_type === 'enrollment' 
-                        ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
-                        : payment.payment_type === 'monthly'
-                        ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
-                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white'
-                    }}>
-                      {getPaymentTypeLabel(payment.payment_type)}
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold text-white ${
+                      (payment.type || payment.payment_type) === 'enrollment' 
+                        ? 'gradient-orange'
+                        : (payment.type || payment.payment_type) === 'monthly'
+                        ? 'gradient-blue'
+                        : 'gradient-purple'
+                    }`}>
+                      {getPaymentTypeLabel(payment.type || payment.payment_type || 'custom')}
                     </span>
                     {payment.month_year && (
-                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                      <span className="text-xs font-semibold text-gray-600">
                         📅 {payment.month_year}
                       </span>
                     )}
                   </div>
                   
                   {showPlayerName && payment.players && (
-                    <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">
+                    <p className="text-sm font-bold text-gray-900 mb-1">
                       {payment.players.first_name} {payment.players.last_name}
                     </p>
                   )}
                   
                   <div className="flex flex-wrap gap-3 text-sm">
                     <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                      <span className="text-gray-700 dark:text-gray-300">
+                      <Calendar className="h-4 w-4 text-gray-600" />
+                      <span className="text-gray-700">
                         {new Date(payment.payment_date).toLocaleDateString('es-ES')}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <CreditCard className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                      <span className="text-gray-700 dark:text-gray-300">
-                        {getPaymentMethodLabel(payment.payment_method)}
+                      <CreditCard className="h-4 w-4 text-gray-600" />
+                      <span className="text-gray-700">
+                        {getPaymentMethodLabel(payment.method || payment.payment_method || null)}
                       </span>
                     </div>
                   </div>
                   
                   {payment.notes && (
                     <div className="mt-2 flex items-start gap-1">
-                      <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400 mt-0.5" />
-                      <p className="text-xs text-gray-600 dark:text-gray-400 italic">
+                      <FileText className="h-4 w-4 text-gray-600 mt-0.5" />
+                      <p className="text-xs text-gray-600 italic">
                         {payment.notes}
                       </p>
+                    </div>
+                  )}
+                  
+                  {/* Show proof URL if available */}
+                  {payment.proof_url && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-blue-600" />
+                        <span className="text-xs font-semibold text-gray-700">Comprobante de Pago</span>
+                      </div>
+                      <div className="space-y-2">
+                        <a
+                          href={payment.proof_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Abrir comprobante en nueva pestaña
+                        </a>
+                        <div>
+                          <DocumentPreview
+                            url={payment.proof_url}
+                            title="Comprobante de Pago"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
                 
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-2xl font-bold text-gray-900">
                     ${parseFloat(payment.amount.toString()).toFixed(2)}
                   </p>
                 </div>
@@ -182,7 +213,7 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
         ) : (
           <div className="text-center py-12">
             <DollarSign className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600">
               No hay pagos registrados
             </p>
           </div>

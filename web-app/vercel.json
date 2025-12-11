@@ -3,9 +3,12 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "outputDirectory": ".next",
   "regions": ["iad1"],
   "crons": [
+    {
+      "path": "/api/cron/send-monthly-statements",
+      "schedule": "0 8 * * *"
+    },
     {
       "path": "/api/cron/process-emails",
       "schedule": "0 9 * * *"

@@ -79,8 +79,8 @@ export function ProcessQueueButton({ pending, remainingToday }: ProcessQueueButt
       {status !== 'idle' && (
         <div className={`p-4 rounded-lg text-sm font-medium ${
           status === 'success' 
-            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' 
-            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+            ? 'bg-green-50 text-green-700 border border-green-200' 
+            : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           <div className="flex items-center gap-2">
             {status === 'success' ? (
@@ -96,7 +96,7 @@ export function ProcessQueueButton({ pending, remainingToday }: ProcessQueueButt
       <button
         onClick={handleProcess}
         disabled={isPending}
-        className="w-full glass-card p-4 hover:shadow-xl transition-all flex items-center justify-center gap-3 text-lg font-bold text-blue-600 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full glass-card p-4 hover:shadow-xl transition-all flex items-center justify-center gap-3 text-lg font-bold text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isPending ? (
           <>

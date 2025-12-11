@@ -56,6 +56,7 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
 
     try {
       const player = data.players[index];
+      // Sanitize player name for path (already handled in uploadFile, but keep simple here)
       const playerId = `${player.firstName}-${player.lastName}`.toLowerCase().replace(/\s+/g, '-') || `player-${index}`;
       const path = `players/${playerId}/${field}`;
       
@@ -90,46 +91,46 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Documentación</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-xl font-semibold text-gray-900">Documentación</h2>
+        <p className="text-sm text-gray-500">
           Por favor adjunte los documentos requeridos. Los archivos se subirán automáticamente.
         </p>
 
         <div className="space-y-8">
           {/* Tutor Documents */}
-          <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Documentos del Tutor</h3>
+          <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 transition-colors">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Documentos del Tutor</h3>
             {data.cedulaTutorFile ? (
-              <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium text-gray-700">
                     Documento subido correctamente
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => removeFile('cedulaTutorFile')}
-                  className="p-1 hover:bg-green-100 dark:hover:bg-green-800 rounded-full text-gray-500 hover:text-red-500 transition-colors"
+                  className="p-1 hover:bg-green-100 rounded-full text-gray-500 hover:text-red-500 transition-colors"
                 >
                   <X size={16} />
                 </button>
               </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 flex flex-col items-center justify-center hover:border-primary dark:hover:border-blue-400 transition-colors bg-white dark:bg-gray-800">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center hover:border-primary transition-colors bg-white">
                 {uploading['cedulaTutorFile'] ? (
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Subiendo archivo...</span>
+                    <span className="text-sm text-gray-600">Subiendo archivo...</span>
                   </div>
                 ) : (
                   <>
                     <Upload className="h-10 w-10 text-gray-400 mb-2" />
               <label htmlFor="cedulaTutor" className="cursor-pointer w-full text-center">
-                      <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">
+                      <span className="mt-2 block text-sm font-medium text-gray-900">
                   Cédula del Tutor (Frente)
                 </span>
-                <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                <span className="mt-1 block text-xs text-gray-500">
                         Click para subir o arrastrar archivo
                 </span>
                 <input
@@ -157,41 +158,41 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
 
           {/* Players Documents */}
           {data.players.map((player: any, index: number) => (
-            <div key={index} className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 transition-colors">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Documentos de {player.firstName || `Jugador ${index + 1}`}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Front Side */}
                 <div>
                   {player.cedulaFrontFile ? (
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        <span className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-xs font-medium text-gray-700 truncate">
                           Subido
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => removePlayerFile(index, 'cedulaFrontFile')}
-                        className="p-1 hover:bg-green-100 dark:hover:bg-green-800 rounded text-gray-500 hover:text-red-500"
+                        className="p-1 hover:bg-green-100 rounded text-gray-500 hover:text-red-500"
                       >
                         <X size={14} />
                       </button>
                     </div>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 flex flex-col items-center justify-center hover:border-primary dark:hover:border-blue-400 transition-colors bg-white dark:bg-gray-800">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center hover:border-primary transition-colors bg-white">
                       {uploading[`player-${index}-cedulaFrontFile`] ? (
                         <div className="flex flex-col items-center gap-2">
                           <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                          <span className="text-xs text-gray-600 dark:text-gray-400">Subiendo...</span>
+                          <span className="text-xs text-gray-600">Subiendo...</span>
                         </div>
                       ) : (
                         <>
                           <Upload className="h-8 w-8 text-gray-400 mb-2" />
                   <label htmlFor={`cedulaJugadorFront_${index}`} className="cursor-pointer w-full text-center">
-                            <span className="text-xs font-medium text-gray-900 dark:text-white">
+                            <span className="text-xs font-medium text-gray-900">
                               Cédula (Frente)
                     </span>
                     <input
@@ -220,33 +221,33 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
                 {/* Back Side */}
                 <div>
                   {player.cedulaBackFile ? (
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        <span className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-xs font-medium text-gray-700 truncate">
                           Subido
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => removePlayerFile(index, 'cedulaBackFile')}
-                        className="p-1 hover:bg-green-100 dark:hover:bg-green-800 rounded text-gray-500 hover:text-red-500"
+                        className="p-1 hover:bg-green-100 rounded text-gray-500 hover:text-red-500"
                       >
                         <X size={14} />
                       </button>
                     </div>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 flex flex-col items-center justify-center hover:border-primary dark:hover:border-blue-400 transition-colors bg-white dark:bg-gray-800">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center hover:border-primary transition-colors bg-white">
                       {uploading[`player-${index}-cedulaBackFile`] ? (
                         <div className="flex flex-col items-center gap-2">
                           <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                          <span className="text-xs text-gray-600 dark:text-gray-400">Subiendo...</span>
+                          <span className="text-xs text-gray-600">Subiendo...</span>
                         </div>
                       ) : (
                         <>
                           <Upload className="h-8 w-8 text-gray-400 mb-2" />
                   <label htmlFor={`cedulaJugadorBack_${index}`} className="cursor-pointer w-full text-center">
-                            <span className="text-xs font-medium text-gray-900 dark:text-white">
+                            <span className="text-xs font-medium text-gray-900">
                               Cédula (Dorso)
                     </span>
                     <input
@@ -281,13 +282,13 @@ export function DocumentsStep({ data, updateData, updatePlayerFile, onNext, onBa
         <button
           type="button"
           onClick={onBack}
-          className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-6 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+          className="bg-white text-gray-700 border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium"
         >
           Atrás
         </button>
         <button
           type="submit"
-          className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-primary/90 hover:shadow-lg hover:scale-105 transition-all duration-300"
+          className="bg-blue-600 text-white px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg font-bold text-base hover:bg-blue-700 hover:shadow-lg active:scale-95 hover:scale-105 transition-all duration-300 touch-manipulation w-full sm:w-auto"
         >
           Siguiente
         </button>

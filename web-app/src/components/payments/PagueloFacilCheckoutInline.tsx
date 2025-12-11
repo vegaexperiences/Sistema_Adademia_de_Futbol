@@ -160,28 +160,28 @@ export function PagueloFacilCheckoutInline({
   return (
     <div className="space-y-4">
       {/* Header with back button */}
-      <div className="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
         <button
           onClick={onBack}
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
+          <ArrowLeft size={20} className="text-gray-600" />
         </button>
         <div className="flex items-center gap-2">
           <CreditCard className="h-5 w-5 text-cyan-600" />
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h3 className="text-lg font-bold text-gray-900">
             Pagar con Paguelo Fácil
           </h3>
         </div>
       </div>
 
       {/* Amount Display */}
-      <div className="p-4 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-xl border border-cyan-200 dark:border-cyan-800">
+      <div className="p-4 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border border-cyan-200">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Monto a pagar:</span>
-          <span className="font-bold text-2xl text-gray-900 dark:text-white">${amount.toFixed(2)}</span>
+          <span className="text-sm font-semibold text-gray-700">Monto a pagar:</span>
+          <span className="font-bold text-2xl text-gray-900">${amount.toFixed(2)}</span>
         </div>
-        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
+        <p className="text-xs text-gray-600 mt-2 text-center">
           🔒 Pago seguro procesado por Paguelo Fácil
         </p>
       </div>
@@ -190,14 +190,14 @@ export function PagueloFacilCheckoutInline({
       {loading && (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="h-12 w-12 text-cyan-600 animate-spin mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Cargando formulario de pago...</p>
+          <p className="text-gray-600">Cargando formulario de pago...</p>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
 

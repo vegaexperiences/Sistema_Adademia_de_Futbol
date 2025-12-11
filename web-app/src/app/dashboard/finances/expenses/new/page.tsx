@@ -53,10 +53,10 @@ export default async function NewExpensePage() {
             <ArrowLeft size={16} />
             Volver a Gastos
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             Agregar Gasto
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 mt-2">
             Registra un nuevo gasto operativo
           </p>
         </div>
@@ -64,25 +64,25 @@ export default async function NewExpensePage() {
         {/* Form */}
         <form action={handleSubmit} className="glass-card p-6 space-y-6">
           {/* Recurring toggle */}
-          <div className="flex items-center gap-2 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+          <div className="flex items-center gap-2 p-4 bg-purple-50 border border-purple-200 rounded-lg">
             <input
               type="checkbox"
               id="is_recurring"
               name="is_recurring"
               className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
             />
-            <label htmlFor="is_recurring" className="text-sm font-medium text-purple-900 dark:text-purple-100 cursor-pointer">
+            <label htmlFor="is_recurring" className="text-sm font-medium text-purple-900 cursor-pointer">
               🔄 Gasto Recurrente (se repetirá automáticamente)
             </label>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Categoría
             </label>
             <select
               name="category_id"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Sin categoría</option>
               {categories.map((cat) => (
@@ -94,21 +94,21 @@ export default async function NewExpensePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Descripción *
             </label>
             <input
               type="text"
               name="description"
               required
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               placeholder="Ej: Pago de alquiler mensual"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Monto *
               </label>
               <input
@@ -116,19 +116,19 @@ export default async function NewExpensePage() {
                 name="amount"
                 step="0.01"
                 required
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="0.00"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Proveedor
               </label>
               <input
                 type="text"
                 name="vendor"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="Nombre del proveedor"
               />
             </div>
@@ -136,25 +136,25 @@ export default async function NewExpensePage() {
 
           {/* Conditional fields based on recurring */}
           <div id="one-time-fields">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Fecha *
             </label>
             <input
               type="date"
               name="date"
               defaultValue={new Date().toISOString().split('T')[0]}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div id="recurring-fields" className="hidden space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Frecuencia *
               </label>
               <select
                 name="frequency"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="weekly">Semanal</option>
                 <option value="monthly">Mensual</option>
@@ -164,24 +164,24 @@ export default async function NewExpensePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Fecha Inicio *
                 </label>
                 <input
                   type="date"
                   name="start_date"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Fecha Fin (opcional)
                 </label>
                 <input
                   type="date"
                   name="end_date"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -204,7 +204,7 @@ export default async function NewExpensePage() {
           <div className="flex justify-end gap-4 pt-4">
             <Link
               href="/dashboard/finances/expenses"
-              className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Cancelar
             </Link>

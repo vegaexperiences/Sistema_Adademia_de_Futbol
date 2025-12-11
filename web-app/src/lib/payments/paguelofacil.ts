@@ -48,6 +48,8 @@ export interface PagueloFacilTransaction {
   expiresIn?: number;
   customParams?: Record<string, string>;
   metadata?: Record<string, any>;
+  cardType?: string; // CARD_TYPE parameter: NEQUI,CASH,CLAVE,CARD,CRYPTO
+  pfCf?: string; // PF_CF parameter: JSON encoded in hexadecimal
 }
 
 export class PagueloFacilService {
@@ -68,18 +70,70 @@ export class PagueloFacilService {
       const cclw = rawCclw.replace(/[^\x20-\x7E]/g, '').trim();
       const sandbox = process.env.PAGUELOFACIL_SANDBOX === 'true';
 
+      // Validate sandbox configuration
+      if (sandbox) {
+        // Verify that URLs match sandbox environment
+        const linkDeamonUrl = sandbox
+          ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
+          : 'https://secure.paguelofacil.com/LinkDeamon.cfm';
+        
+        console.log('[PagueloFacil] Sandbox mode enabled:', {
+          sandbox,
+          linkDeamonUrl,
+          note: 'Using sandbox credentials and endpoints',
+        });
+      } else {
+        console.log('[PagueloFacil] Production mode enabled');
+      }
+
       // Log sandbox status for debugging
+      const cclwPreview = cclw.length > 20 
+        ? `${cclw.substring(0, 10)}...${cclw.substring(cclw.length - 10)}`
+        : cclw;
+      
+      console.log('[PagueloFacil] ========== CONFIGURATION LOADED ==========');
       console.log('[PagueloFacil] Configuration loaded:', {
         sandbox,
         sandboxEnv: process.env.PAGUELOFACIL_SANDBOX,
+        sandboxEnvRaw: process.env.PAGUELOFACIL_SANDBOX,
         hasApiKey: !!apiKey,
         hasCclw: !!cclw,
         apiKeyLength: apiKey.length,
+        apiKeyPreview: apiKey.length > 20 ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 10)}` : apiKey,
         cclwLength: cclw.length,
+        cclwPreview,
+        linkDeamonUrl: sandbox
+          ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
+          : 'https://secure.paguelofacil.com/LinkDeamon.cfm',
       });
+      
+      // Validate sandbox configuration
+      if (sandbox && process.env.PAGUELOFACIL_SANDBOX !== 'true') {
+        console.warn('[PagueloFacil] ⚠️ WARNING: Sandbox mode detected but PAGUELOFACIL_SANDBOX is not exactly "true"');
+      }
+      
+      if (!sandbox && process.env.PAGUELOFACIL_SANDBOX === 'true') {
+        console.warn('[PagueloFacil] ⚠️ WARNING: PAGUELOFACIL_SANDBOX is "true" but sandbox mode is false - check environment variable');
+      }
 
       if (!apiKey || !cclw) {
+        console.error('[PagueloFacil] ❌ CRITICAL: Missing credentials:', {
+          hasApiKey: !!apiKey,
+          hasCclw: !!cclw,
+          apiKeyEnv: process.env.PAGUELOFACIL_ACCESS_TOKEN ? 'Set' : 'Not set',
+          cclwEnv: process.env.PAGUELOFACIL_CCLW ? 'Set' : 'Not set',
+        });
         throw new Error('PagueloFacil credentials not configured. Please set PAGUELOFACIL_ACCESS_TOKEN and PAGUELOFACIL_CCLW environment variables.');
+      }
+      
+      // Validate CCLW format (should be hexadecimal, typically 128+ characters)
+      if (cclw.length < 64) {
+        console.warn('[PagueloFacil] ⚠️ WARNING: CCLW seems too short. Expected length: 128+ characters, got:', cclw.length);
+      }
+      
+      // Validate that CCLW is hexadecimal
+      if (!/^[0-9A-Fa-f]+$/.test(cclw)) {
+        console.warn('[PagueloFacil] ⚠️ WARNING: CCLW contains non-hexadecimal characters. This may indicate a copy/paste issue.');
       }
 
       // Log warning if tokens were cleaned (indicates potential copy/paste issue)
@@ -164,9 +218,19 @@ export class PagueloFacilService {
    */
   static getLinkDeamonUrl(): string {
     const config = this.getConfig();
-    return config.sandbox
+    const url = config.sandbox
       ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
       : 'https://secure.paguelofacil.com/LinkDeamon.cfm';
+    
+    // Validate that sandbox configuration is consistent
+    if (config.sandbox && !url.includes('sandbox')) {
+      console.error('[PagueloFacil] ⚠️ WARNING: Sandbox mode enabled but URL does not contain "sandbox"');
+    }
+    if (!config.sandbox && url.includes('sandbox')) {
+      console.error('[PagueloFacil] ⚠️ WARNING: Production mode but URL contains "sandbox"');
+    }
+    
+    return url;
   }
 
   /**
@@ -183,6 +247,20 @@ export class PagueloFacilService {
     try {
       const config = this.getConfig();
       const url = this.getLinkDeamonUrl();
+      
+      // Validate sandbox configuration
+      if (config.sandbox) {
+        console.log('[PagueloFacil] Creating payment link in SANDBOX mode:', {
+          url,
+          cclwLength: config.cclw.length,
+          note: 'Using sandbox credentials and endpoints',
+        });
+      } else {
+        console.log('[PagueloFacil] Creating payment link in PRODUCTION mode:', {
+          url,
+          cclwLength: config.cclw.length,
+        });
+      }
 
       // Validate amount (minimum is $1.00)
       if (transaction.amount < 1.0) {
@@ -234,16 +312,53 @@ export class PagueloFacilService {
         });
       }
 
+      // Add CARD_TYPE parameter if specified (to filter payment methods)
+      // Values: NEQUI,CASH,CLAVE,CARD,CRYPTO
+      if (transaction.cardType) {
+        postData.CARD_TYPE = transaction.cardType;
+        console.log('[PagueloFacil] CARD_TYPE specified:', transaction.cardType);
+      }
+
+      // Add PF_CF (custom fields) if specified (JSON encoded in hexadecimal)
+      if (transaction.pfCf) {
+        postData.PF_CF = transaction.pfCf;
+        console.log('[PagueloFacil] PF_CF specified (custom fields)');
+      }
+
       // Build query string for POST
       const postBody = Object.entries(postData)
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join('&');
 
+      // Log detailed request information (without exposing full CCLW for security)
+      const cclwPreview = config.cclw.length > 20 
+        ? `${config.cclw.substring(0, 10)}...${config.cclw.substring(config.cclw.length - 10)}`
+        : config.cclw;
+      
+      console.log('[PagueloFacil] ========== LINKDEAMON REQUEST ==========');
       console.log('[PagueloFacil] Sending to LinkDeamon:', {
         url,
+        sandbox: config.sandbox,
+        cclwPreview,
+        cclwLength: config.cclw.length,
         postDataKeys: Object.keys(postData),
-        hasReturnUrl: !!postData.RETURN_URL,
-        returnUrlLength: postData.RETURN_URL?.length || 0,
+        parameters: {
+          CCLW: `[${cclwPreview}] (${config.cclw.length} chars)`,
+          CMTN: postData.CMTN,
+          CDSC: postData.CDSC?.substring(0, 50) + (postData.CDSC?.length > 50 ? '...' : ''),
+          RETURN_URL: postData.RETURN_URL ? `[Encoded, ${postData.RETURN_URL.length} chars]` : 'Not provided',
+          EMAIL: postData.EMAIL || 'Not provided',
+          EXPIRES_IN: postData.EXPIRES_IN,
+          CARD_TYPE: postData.CARD_TYPE || 'Not specified',
+          PF_CF: postData.PF_CF ? 'Provided' : 'Not provided',
+          PARM_1: postData.PARM_1 || 'Not provided',
+          PARM_2: postData.PARM_2 || 'Not provided',
+          PARM_3: postData.PARM_3 || 'Not provided',
+          PARM_4: postData.PARM_4 || 'Not provided',
+          PARM_5: postData.PARM_5 || 'Not provided',
+          PARM_6: postData.PARM_6 || 'Not provided',
+        },
+        postBodyLength: postBody.length,
       });
 
       // Make POST request to LinkDeamon
@@ -257,8 +372,14 @@ export class PagueloFacilService {
       });
 
       const responseText = await response.text();
+      console.log('[PagueloFacil] ========== LINKDEAMON RESPONSE ==========');
       console.log('[PagueloFacil] LinkDeamon response status:', response.status);
-      console.log('[PagueloFacil] LinkDeamon response text (first 500 chars):', responseText.substring(0, 500));
+      console.log('[PagueloFacil] LinkDeamon response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('[PagueloFacil] LinkDeamon response text length:', responseText.length);
+      console.log('[PagueloFacil] LinkDeamon response text (first 1000 chars):', responseText.substring(0, 1000));
+      if (responseText.length > 1000) {
+        console.log('[PagueloFacil] LinkDeamon response text (last 500 chars):', responseText.substring(responseText.length - 500));
+      }
 
       // Try to parse as JSON
       let result;
@@ -326,6 +447,82 @@ export class PagueloFacilService {
    * Verify if a callback indicates an approved transaction
    */
   static isTransactionApproved(params: PagueloFacilCallbackParams): boolean {
-    return params.Estado === 'Aprobada' && parseFloat(params.TotalPagado) > 0;
+    const estado = (params.Estado || '').trim().toLowerCase();
+    const totalPagado = parseFloat(params.TotalPagado || '0');
+    const razon = params.Razon || '';
+    
+    // Log para diagnóstico - CRITICAL para debugging
+    console.log('[PagueloFacil] ========== VERIFICANDO ESTADO DE TRANSACCIÓN ==========');
+    console.log('[PagueloFacil] Verificando estado de transacción:', {
+      Estado: params.Estado,
+      EstadoRaw: params.Estado,
+      EstadoNormalizado: estado,
+      TotalPagado: params.TotalPagado,
+      TotalPagadoRaw: params.TotalPagado,
+      TotalPagadoParsed: totalPagado,
+      Razon: razon,
+      Oper: params.Oper,
+      Fecha: params.Fecha,
+      Hora: params.Hora,
+      Tipo: params.Tipo,
+      Usuario: params.Usuario,
+      Email: params.Email,
+      timestamp: new Date().toISOString(),
+    });
+    
+    // Check for 3DS authentication errors
+    const is3DSError = razon.toLowerCase().includes('authentication') || 
+                       razon.toLowerCase().includes('3ds') ||
+                       razon.toLowerCase().includes('issuer is rejecting');
+    
+    if (is3DSError) {
+      console.warn('[PagueloFacil] ⚠️ 3DS Authentication Error detected:', {
+        razon,
+        note: 'This may indicate a problem with 3D Secure authentication. Check if you are using the correct test cards for sandbox environment.',
+        suggestion: 'Verify that you are using sandbox test cards and that 3DS is properly configured in your PagueloFacil merchant account.',
+      });
+    }
+    
+    // Según documentación: TotalPagado > 0 indica transacción aprobada
+    // También verificamos que Estado no sea "Denegado" o "Denegada"
+    const isDenied = estado === 'denegado' || estado === 'denegada' || estado === 'rechazado' || estado === 'rechazada';
+    const isApproved = estado === 'aprobada' || estado === 'approved';
+    
+    // Si TotalPagado > 0, la transacción fue aprobada (según documentación)
+    // Si Estado es explícitamente "Denegado/Denegada", rechazamos
+    if (isDenied) {
+      console.log('[PagueloFacil] Transaction denied:', {
+        estado,
+        totalPagado,
+        razon,
+        is3DSError,
+      });
+      return false;
+    }
+    
+    // Si TotalPagado > 0, consideramos aprobada (independientemente del texto de Estado)
+    if (totalPagado > 0) {
+      console.log('[PagueloFacil] Transaction approved (TotalPagado > 0):', {
+        totalPagado,
+        estado,
+      });
+      return true;
+    }
+    
+    // Si Estado es explícitamente "Aprobada", consideramos aprobada
+    if (isApproved) {
+      console.log('[PagueloFacil] Transaction approved (Estado = Aprobada):', {
+        estado,
+        totalPagado,
+      });
+      return true;
+    }
+    
+    console.log('[PagueloFacil] Transaction status unclear:', {
+      estado,
+      totalPagado,
+      razon,
+    });
+    return false;
   }
 }

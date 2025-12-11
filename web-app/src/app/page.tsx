@@ -35,39 +35,39 @@ export default function Home() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">¿Por qué elegirnos?</h2>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">¿Por qué elegirnos?</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
               Ofrecemos una formación integral que va más allá del campo de juego.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="glass-card p-8 hover:shadow-lg transition-all hover:scale-105">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-primary mb-6">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-primary mb-6">
                 <Users size={24} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Entrenadores Expertos</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Entrenadores Expertos</h3>
+              <p className="text-gray-600">
                 Nuestro cuerpo técnico cuenta con amplia experiencia en formación de jugadores jóvenes.
               </p>
             </div>
 
             <div className="glass-card p-8 hover:shadow-lg transition-all hover:scale-105">
-              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400 mb-6">
+              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 mb-6">
                 <Trophy size={24} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Torneos Competitivos</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Torneos Competitivos</h3>
+              <p className="text-gray-600">
                 Participamos en las mejores ligas y torneos para poner a prueba lo aprendido.
               </p>
             </div>
 
             <div className="glass-card p-8 hover:shadow-lg transition-all hover:scale-105">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400 mb-6">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mb-6">
                 <Calendar size={24} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Horarios Flexibles</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Horarios Flexibles</h3>
+              <p className="text-gray-600">
                 Entrenamientos diseñados para no interferir con las actividades escolares.
               </p>
             </div>

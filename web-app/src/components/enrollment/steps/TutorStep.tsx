@@ -4,9 +4,10 @@ interface TutorStepProps {
   data: any;
   updateData: (data: any) => void;
   onNext: () => void;
+  getFieldError?: (fieldPath: string) => string | undefined;
 }
 
-export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
+export function TutorStep({ data, updateData, onNext, getFieldError }: TutorStepProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext();
@@ -15,14 +16,14 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Información del Tutor</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-xl font-semibold text-gray-900">Información del Tutor</h2>
+        <p className="text-sm text-gray-500">
           Datos del padre, madre o acudiente responsable.
         </p>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <label htmlFor="tutorName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tutorName" className="block text-sm font-medium text-gray-700">
               Nombre Completo
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -33,16 +34,22 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="text"
                 id="tutorName"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                data-error={getFieldError?.('tutorName') ? 'true' : 'false'}
+                className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                  getFieldError?.('tutorName') ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="Juan Pérez"
                 value={data.tutorName || ''}
                 onChange={(e) => updateData({ tutorName: e.target.value })}
               />
+              {getFieldError?.('tutorName') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('tutorName')}</p>
+              )}
             </div>
           </div>
 
           <div>
-            <label htmlFor="tutorCedula" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tutorCedula" className="block text-sm font-medium text-gray-700">
               Cédula / Pasaporte
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -53,16 +60,22 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="text"
                 id="tutorCedula"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                data-error={getFieldError?.('tutorCedula') ? 'true' : 'false'}
+                className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                  getFieldError?.('tutorCedula') ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="8-888-8888"
                 value={data.tutorCedula || ''}
                 onChange={(e) => updateData({ tutorCedula: e.target.value })}
               />
+              {getFieldError?.('tutorCedula') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('tutorCedula')}</p>
+              )}
             </div>
           </div>
 
           <div>
-            <label htmlFor="tutorEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tutorEmail" className="block text-sm font-medium text-gray-700">
               Correo Electrónico
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -73,16 +86,22 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="email"
                 id="tutorEmail"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                data-error={getFieldError?.('tutorEmail') ? 'true' : 'false'}
+                className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                  getFieldError?.('tutorEmail') ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="juan@ejemplo.com"
                 value={data.tutorEmail || ''}
                 onChange={(e) => updateData({ tutorEmail: e.target.value })}
               />
+              {getFieldError?.('tutorEmail') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('tutorEmail')}</p>
+              )}
             </div>
           </div>
 
           <div>
-            <label htmlFor="tutorPhone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="tutorPhone" className="block text-sm font-medium text-gray-700">
               Teléfono / WhatsApp
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
@@ -93,11 +112,17 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
                 type="tel"
                 id="tutorPhone"
                 required
-                className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                data-error={getFieldError?.('tutorPhone') ? 'true' : 'false'}
+                className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                  getFieldError?.('tutorPhone') ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="6000-0000"
                 value={data.tutorPhone || ''}
                 onChange={(e) => updateData({ tutorPhone: e.target.value })}
               />
+              {getFieldError?.('tutorPhone') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('tutorPhone')}</p>
+              )}
             </div>
           </div>
         </div>
@@ -106,7 +131,7 @@ export function TutorStep({ data, updateData, onNext }: TutorStepProps) {
       <div className="flex justify-end">
         <button
           type="submit"
-          className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-primary/90 hover:shadow-lg hover:scale-105 transition-all duration-300"
+          className="bg-blue-600 text-white px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg font-bold text-base hover:bg-blue-700 hover:shadow-lg active:scale-95 hover:scale-105 transition-all duration-300 touch-manipulation w-full sm:w-auto"
         >
           Siguiente
         </button>

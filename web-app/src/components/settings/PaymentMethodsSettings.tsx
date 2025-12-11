@@ -14,7 +14,18 @@ interface PaymentMethodsSettingsProps {
 }
 
 export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSettingsProps) {
-  const [methods, setMethods] = useState<PaymentMethods>(initialMethods);
+  // Ensure paguelofacil is included in initial methods, defaulting to true if not present
+  const defaultMethods: PaymentMethods = {
+    yappy: true,
+    transfer: true,
+    proof: false,
+    paguelofacil: true,
+  };
+  
+  const [methods, setMethods] = useState<PaymentMethods>({
+    ...defaultMethods,
+    ...initialMethods,
+  });
 
   const handleToggle = (key: keyof PaymentMethods) => {
     setMethods(prev => ({ ...prev, [key]: !prev[key] }));
@@ -26,10 +37,10 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
       <input type="hidden" name="value" value={JSON.stringify(methods)} />
       
       {/* Yappy Toggle */}
-      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600">Y</div>
-          <span className="font-medium text-gray-900 dark:text-white">Yappy</span>
+          <div className="p-2 bg-blue-100 rounded-lg text-blue-600">Y</div>
+          <span className="font-medium text-gray-900">Yappy</span>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input 
@@ -38,15 +49,15 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
             onChange={() => handleToggle('yappy')}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
       </div>
 
       {/* Transfer Toggle */}
-      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg text-green-600">T</div>
-          <span className="font-medium text-gray-900 dark:text-white">Transferencia Bancaria</span>
+          <div className="p-2 bg-green-100 rounded-lg text-green-600">T</div>
+          <span className="font-medium text-gray-900">Transferencia Bancaria</span>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input 
@@ -55,15 +66,15 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
             onChange={() => handleToggle('transfer')}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
       </div>
 
       {/* Proof Upload Toggle */}
-      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600">C</div>
-          <span className="font-medium text-gray-900 dark:text-white">Subir Comprobante</span>
+          <div className="p-2 bg-purple-100 rounded-lg text-purple-600">C</div>
+          <span className="font-medium text-gray-900">Subir Comprobante</span>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input 
@@ -72,15 +83,15 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
             onChange={() => handleToggle('proof')}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
       </div>
 
       {/* PagueloFacil Toggle */}
-      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+      <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg text-cyan-600">PF</div>
-          <span className="font-medium text-gray-900 dark:text-white">Paguelo Fácil</span>
+          <div className="p-2 bg-cyan-100 rounded-lg text-cyan-600">PF</div>
+          <span className="font-medium text-gray-900">Paguelo Fácil</span>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input 
@@ -89,7 +100,7 @@ export function PaymentMethodsSettings({ initialMethods }: PaymentMethodsSetting
             onChange={() => handleToggle('paguelofacil')}
             className="sr-only peer"
           />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
       </div>
     </div>

@@ -10,6 +10,40 @@ export interface UploadResult {
 }
 
 /**
+ * Sanitize a string to be safe for use in file paths
+ * Removes special characters, normalizes accents, and ensures valid characters only
+ */
+function sanitizePathSegment(segment: string): string {
+  return segment
+    .toLowerCase()
+    .trim()
+    // Replace Spanish characters with ASCII equivalents
+    .replace(/ñ/g, 'n')
+    .replace(/[áàäâ]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    // Normalize to NFD and remove remaining diacritics
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    // Replace any non-alphanumeric (except hyphen) with hyphen
+    .replace(/[^a-z0-9-]/g, '-')
+    // Replace multiple hyphens with a single hyphen
+    .replace(/-+/g, '-')
+    // Remove leading/trailing hyphens
+    .replace(/^-|-$/g, '');
+}
+
+/**
+ * Sanitize a full file path for Supabase Storage
+ */
+function sanitizeFilePath(path: string): string {
+  const segments = path.split('/').filter(Boolean); // Remove empty segments
+  return segments.map(sanitizePathSegment).join('/');
+}
+
+/**
  * Upload a file to Supabase Storage
  * @param file - The file to upload
  * @param path - The path where to store the file (e.g., 'cedulas/player-123-front.jpg')
@@ -19,10 +53,25 @@ export async function uploadFile(file: File, path: string): Promise<UploadResult
   try {
     const supabase = createClient();
 
+    // Sanitize the input path
+    const sanitizedPath = sanitizeFilePath(path);
+    console.log('[uploadFile] Original path:', path);
+    console.log('[uploadFile] Sanitized path:', sanitizedPath);
+    
     // Upload the file directly - if bucket doesn't exist, we'll get an error
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${path}-${Date.now()}.${fileExt}`;
-    const filePath = `${path}/${fileName}`;
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'bin';
+    const timestamp = Date.now();
+    
+    // Get the last part of the path (e.g., 'cedulafrontfile' from 'players/olga-tanon/cedulafrontfile')
+    const pathSegments = sanitizedPath.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    
+    // Create filename with timestamp - sanitize the segment name too
+    const fileName = `${lastSegment}-${timestamp}.${fileExt}`;
+    
+    // Full path: sanitized path + filename
+    const filePath = `${sanitizedPath}/${fileName}`;
+    console.log('[uploadFile] Final file path:', filePath);
 
     const { data, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)

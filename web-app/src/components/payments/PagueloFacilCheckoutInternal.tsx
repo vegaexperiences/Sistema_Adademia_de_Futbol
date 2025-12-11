@@ -141,13 +141,13 @@ export function PagueloFacilCheckoutInternal({
   if (processingStep === 'success') {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
-          <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+          <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
           ¡Pago Procesado Exitosamente!
         </h3>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600">
           Tu pago ha sido procesado correctamente.
         </p>
       </div>
@@ -157,12 +157,12 @@ export function PagueloFacilCheckoutInternal({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Payment Summary */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Monto a Pagar</span>
-          <span className="text-2xl font-bold text-gray-900 dark:text-white">${amount.toFixed(2)}</span>
+          <span className="text-sm font-semibold text-gray-700">Monto a Pagar</span>
+          <span className="text-2xl font-bold text-gray-900">${amount.toFixed(2)}</span>
         </div>
-        <p className="text-xs text-gray-600 dark:text-gray-400">{description}</p>
+        <p className="text-xs text-gray-600">{description}</p>
       </div>
 
       {/* Card Payment Form */}
@@ -176,12 +176,12 @@ export function PagueloFacilCheckoutInternal({
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-red-800 dark:text-red-200">Error en el Pago</p>
-              <p className="text-sm text-red-700 dark:text-red-300 mt-1">{error}</p>
+              <p className="text-sm font-semibold text-red-800">Error en el Pago</p>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
             </div>
           </div>
         </div>
@@ -189,15 +189,15 @@ export function PagueloFacilCheckoutInternal({
 
       {/* Processing Status */}
       {isPending && (
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-3">
-            <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+            <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
             <div>
-              <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+              <p className="text-sm font-semibold text-blue-800">
                 {processingStep === 'tokenizing' && 'Tokenizando tarjeta...'}
                 {processingStep === 'processing' && 'Procesando pago...'}
               </p>
-              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+              <p className="text-xs text-blue-700 mt-1">
                 Por favor espera, no cierres esta ventana
               </p>
             </div>
@@ -212,7 +212,7 @@ export function PagueloFacilCheckoutInternal({
             type="button"
             onClick={onCancel}
             disabled={isPending}
-            className="flex-1 px-6 py-3 rounded-xl font-semibold border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="flex-1 px-6 py-3 rounded-xl font-semibold border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>

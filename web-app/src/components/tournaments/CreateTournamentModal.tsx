@@ -62,21 +62,21 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900/50 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="glass-card dark:bg-gray-900 dark:border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in">
+    <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg">
                 <Trophy className="h-6 w-6 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-2xl font-bold text-gray-900">
                 Crear Nuevo Torneo
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500"
             >
               <X size={24} />
             </button>
@@ -85,7 +85,7 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Nombre del Torneo
               </label>
               <input
@@ -94,13 +94,13 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ej: Copa Verano 2025"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Descripción
               </label>
               <textarea
@@ -108,14 +108,14 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
                 placeholder="Detalles del torneo..."
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
               />
             </div>
 
             {/* Dates */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Fecha de Inicio
                 </label>
                 <div className="relative">
@@ -125,12 +125,12 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
                     required
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Fecha de Fin
                 </label>
                 <div className="relative">
@@ -140,7 +140,7 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
                     required
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
               </div>
@@ -148,7 +148,7 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
 
             {/* Location */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Ubicación
               </label>
               <div className="relative">
@@ -159,14 +159,14 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="Ej: Canchas del Parque Omar"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               </div>
             </div>
 
             {/* Categories */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Categorías
               </label>
               <div className="flex gap-2 mb-3">
@@ -176,12 +176,12 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
                   onChange={(e) => setCategoryInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCategory())}
                   placeholder="Ej: U-10 Masculino"
-                  className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
                 <button
                   type="button"
                   onClick={addCategory}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
                 >
                   Agregar
                 </button>
@@ -190,13 +190,13 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
                 {formData.categories.map((cat, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-semibold flex items-center gap-2"
+                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold flex items-center gap-2"
                   >
                     {cat}
                     <button
                       type="button"
                       onClick={() => removeCategory(index)}
-                      className="hover:text-blue-900 dark:hover:text-blue-100"
+                      className="hover:text-blue-900"
                     >
                       <X size={14} />
                     </button>
@@ -210,7 +210,7 @@ export default function CreateTournamentModal({ isOpen, onClose }: CreateTournam
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-all"
               >
                 Cancelar
               </button>

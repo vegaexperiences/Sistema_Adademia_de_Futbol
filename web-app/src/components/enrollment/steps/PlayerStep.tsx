@@ -7,9 +7,10 @@ interface PlayerStepProps {
   removePlayer: (index: number) => void;
   onNext: () => void;
   onBack: () => void;
+  getFieldError?: (fieldPath: string) => string | undefined;
 }
 
-export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext, onBack }: PlayerStepProps) {
+export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext, onBack, getFieldError }: PlayerStepProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext();
@@ -20,15 +21,15 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Información del Jugador</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <h2 className="text-xl font-semibold text-gray-900">Información del Jugador</h2>
+            <p className="text-sm text-gray-500">
               Ingrese los datos de los jugadores a matricular.
             </p>
           </div>
           <button
             type="button"
             onClick={addPlayer}
-            className="flex items-center gap-2 text-sm font-medium text-primary dark:text-blue-400 hover:text-primary/80 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 bg-blue-50 px-3 py-2 rounded-lg transition-colors"
           >
             <Plus size={16} />
             Agregar Otro Jugador
@@ -36,14 +37,14 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
         </div>
 
         {data.players.map((player: any, index: number) => (
-          <div key={index} className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700 relative transition-colors">
+          <div key={index} className="bg-gray-50 p-6 rounded-xl border border-gray-200 relative transition-colors">
             {data.players.length > 1 && (
               <div className="absolute top-4 right-4 flex items-center gap-2">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Jugador {index + 1}</span>
                 <button
                   type="button"
                   onClick={() => removePlayer(index)}
-                  className="text-red-400 hover:text-red-600 dark:hover:text-red-300 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="text-red-400 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors"
                   title="Eliminar jugador"
                 >
                   <Trash2 size={16} />
@@ -53,7 +54,7 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
             
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 mt-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre
                 </label>
                 <div className="relative">
@@ -63,16 +64,22 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="text"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                    data-error={getFieldError?.(`players.${index}.firstName`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                      getFieldError?.(`players.${index}.firstName`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.firstName || ''}
                     onChange={(e) => updatePlayer(index, { firstName: e.target.value })}
                     placeholder="Ej. Miguel"
                   />
+                  {getFieldError?.(`players.${index}.firstName`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.firstName`)}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Apellidos
                 </label>
                 <div className="relative">
@@ -82,16 +89,22 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="text"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                    data-error={getFieldError?.(`players.${index}.lastName`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                      getFieldError?.(`players.${index}.lastName`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.lastName || ''}
                     onChange={(e) => updatePlayer(index, { lastName: e.target.value })}
                     placeholder="Ej. González"
                   />
+                  {getFieldError?.(`players.${index}.lastName`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.lastName`)}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Fecha de Nacimiento
                 </label>
                 <div className="relative">
@@ -101,15 +114,21 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   <input
                     type="date"
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors relative z-20"
+                    data-error={getFieldError?.(`players.${index}.birthDate`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors relative z-20 touch-manipulation ${
+                      getFieldError?.(`players.${index}.birthDate`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.birthDate || ''}
                     onChange={(e) => updatePlayer(index, { birthDate: e.target.value })}
                   />
+                  {getFieldError?.(`players.${index}.birthDate`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.birthDate`)}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Género
                 </label>
                 <div className="relative">
@@ -118,19 +137,25 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   </div>
                   <select
                     required
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 transition-colors appearance-none"
+                    data-error={getFieldError?.(`players.${index}.gender`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 bg-gray-50 transition-colors appearance-none touch-manipulation ${
+                      getFieldError?.(`players.${index}.gender`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.gender || ''}
                     onChange={(e) => updatePlayer(index, { gender: e.target.value })}
                   >
                     <option value="">Seleccionar...</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
                   </select>
+                  {getFieldError?.(`players.${index}.gender`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.gender`)}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Cédula
                 </label>
                 <div className="relative">
@@ -139,11 +164,17 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
                   </div>
                   <input
                     type="text"
-                    className="focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3 border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-gray-800 transition-colors"
+                    data-error={getFieldError?.(`players.${index}.cedula`) ? 'true' : 'false'}
+                    className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
+                      getFieldError?.(`players.${index}.cedula`) ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     value={player.cedula || ''}
                     onChange={(e) => updatePlayer(index, { cedula: e.target.value })}
                     placeholder="Ej. 8-123-456"
                   />
+                  {getFieldError?.(`players.${index}.cedula`) && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError(`players.${index}.cedula`)}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -151,17 +182,17 @@ export function PlayerStep({ data, updatePlayer, addPlayer, removePlayer, onNext
         ))}
       </div>
 
-      <div className="flex justify-between pt-4">
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
         <button
           type="button"
           onClick={onBack}
-          className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-6 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+          className="bg-white text-gray-700 border border-gray-300 px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-base touch-manipulation w-full sm:w-auto"
         >
           Atrás
         </button>
         <button
           type="submit"
-          className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-primary/90 hover:shadow-lg hover:scale-105 transition-all duration-300"
+          className="bg-blue-600 text-white px-6 py-3 sm:py-3.5 min-h-[48px] rounded-lg font-bold text-base hover:bg-blue-700 hover:shadow-lg active:scale-95 hover:scale-105 transition-all duration-300 touch-manipulation w-full sm:w-auto"
         >
           Siguiente
         </button>

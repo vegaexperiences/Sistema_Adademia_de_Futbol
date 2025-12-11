@@ -1,7 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
-import { Settings, DollarSign, Save, CreditCard } from 'lucide-react';
+import { Settings, DollarSign, Save, CreditCard, Calendar, Shield, Users } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PaymentMethodsSettings } from '@/components/settings/PaymentMethodsSettings';
+import { SuperAdminSettings } from '@/components/settings/SuperAdminSettings';
+import { UserManagement } from '@/components/settings/UserManagement';
+import { getSuperAdmins } from '@/lib/actions/super-admin';
 import Link from 'next/link';
 
 async function updateSetting(formData: FormData) {
@@ -9,7 +12,13 @@ async function updateSetting(formData: FormData) {
   
   const supabase = await createClient();
   const key = formData.get('key') as string;
-  const value = formData.get('value') as string;
+  let value = formData.get('value') as string;
+  
+  // For date settings, empty string means no restriction (store as empty string, not NULL)
+  // The value column has NOT NULL constraint, so we use empty string instead
+  if (key === 'season_start_date' || key === 'season_end_date') {
+    value = value || ''; // Ensure empty string if no value provided
+  }
   
   await supabase
     .from('settings')
@@ -29,52 +38,82 @@ export default async function SettingsPage() {
     .order('key');
 
   const priceSettings = settings?.filter(s => s.key.startsWith('price_')) || [];
+  
+  // Get current user email
+  const { data: { user } } = await supabase.auth.getUser();
+  const currentUserEmail = user?.email || null;
+  
+  // Get super admins - simplified to avoid blocking render
+  let superAdmins: any[] = [];
+  try {
+    const superAdminsResult = await getSuperAdmins();
+    superAdmins = superAdminsResult.data || [];
+  } catch (error) {
+    // Silently fail - component will handle empty array
+    superAdmins = [];
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header with Glass Effect */}
-      <div className="glass-card p-6">
-        <div className="flex justify-between items-center">
+      <div className="glass-card p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               ⚙️ Configuración
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">Administra los parámetros del sistema</p>
+            <p className="text-sm sm:text-base text-gray-600">Administra los parámetros del sistema</p>
           </div>
-          <Settings size={40} className="text-blue-600" />
+          <Settings size={32} className="text-blue-600 sm:w-10 sm:h-10" />
         </div>
         
-        <div className="mt-6 flex gap-3">
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
           <a 
             href="#pricing" 
-            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             💰 Precios
           </a>
           <a 
+            href="#season" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            📅 Temporada
+          </a>
+          <a 
             href="#payment-methods" 
-            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             💳 Métodos de Pago
           </a>
           <Link
             href="/dashboard/emails"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+            className="px-4 py-2.5 min-h-[44px] bg-blue-600 text-white rounded-lg active:bg-blue-800 hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 text-sm sm:text-base touch-manipulation"
           >
             📧 Correos
           </Link>
+          <a 
+            href="#super-admin" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            🛡️ Super Admin
+          </a>
+          <a 
+            href="#user-management" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            👥 Usuarios
+          </a>
         </div>
       </div>
 
       {/* Pricing Settings */}
       <div id="pricing" className="glass-card p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg" style={{
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          }}>
+          <div className="p-2 rounded-lg icon-bg-green">
             <DollarSign className="h-6 w-6 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900">
             💰 Configuración de Precios
           </h2>
         </div>
@@ -82,14 +121,14 @@ export default async function SettingsPage() {
         <div className="grid gap-6">
           {/* Enrollment Price */}
           {priceSettings.find(s => s.key === 'price_enrollment') && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border-l-4 border-blue-500">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border-l-4 border-blue-500">
               <form action={updateSetting} className="space-y-4">
                 <input type="hidden" name="key" value="price_enrollment" />
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
                     📝 Precio de Matrícula
                   </label>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <p className="text-xs text-gray-600 mb-3">
                     Costo único de inscripción por jugador
                   </p>
                   <div className="flex gap-3">
@@ -100,17 +139,13 @@ export default async function SettingsPage() {
                         name="value"
                         step="0.01"
                         defaultValue={priceSettings.find(s => s.key === 'price_enrollment')?.value}
-                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder-gray-400"
+                        className="w-full pl-8 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-blue-200 bg-white text-gray-900 font-bold text-base sm:text-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder-gray-400 touch-manipulation"
                         required
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2"
-                      style={{
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
-                      }}
+                      className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto btn-primary shadow-lg shadow-blue-500/30"
                     >
                       <Save size={18} />
                       Guardar
@@ -123,14 +158,14 @@ export default async function SettingsPage() {
 
           {/* Monthly Price */}
           {priceSettings.find(s => s.key === 'price_monthly') && (
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border-l-4 border-purple-500">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-l-4 border-purple-500">
               <form action={updateSetting} className="space-y-4">
                 <input type="hidden" name="key" value="price_monthly" />
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
                     📅 Precio de Mensualidad Regular
                   </label>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <p className="text-xs text-gray-600 mb-3">
                     Costo mensual por jugador
                   </p>
                   <div className="flex gap-3">
@@ -141,17 +176,13 @@ export default async function SettingsPage() {
                         name="value"
                         step="0.01"
                         defaultValue={priceSettings.find(s => s.key === 'price_monthly')?.value}
-                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder-gray-400"
+                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 font-bold text-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder-gray-400"
                         required
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2"
-                      style={{
-                        background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-                        boxShadow: '0 4px 15px rgba(168, 85, 247, 0.3)'
-                      }}
+                      className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2 gradient-purple shadow-lg shadow-purple-500/30"
                     >
                       <Save size={18} />
                       Guardar
@@ -164,14 +195,14 @@ export default async function SettingsPage() {
 
           {/* Family Monthly Price */}
           {priceSettings.find(s => s.key === 'price_monthly_family') && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-6 rounded-xl border-l-4 border-amber-500">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-xl border-l-4 border-amber-500">
               <form action={updateSetting} className="space-y-4">
                 <input type="hidden" name="key" value="price_monthly_family" />
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
                     👨‍👩‍👧‍👦 Precio de Mensualidad Familiar
                   </label>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <p className="text-xs text-gray-600 mb-3">
                     Costo mensual después del segundo jugador de la misma familia
                   </p>
                   <div className="flex gap-3">
@@ -182,7 +213,7 @@ export default async function SettingsPage() {
                         name="value"
                         step="0.01"
                         defaultValue={priceSettings.find(s => s.key === 'price_monthly_family')?.value}
-                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder-gray-400"
+                        className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-amber-200 bg-white text-gray-900 font-bold text-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all placeholder-gray-400"
                         required
                       />
                     </div>
@@ -205,9 +236,104 @@ export default async function SettingsPage() {
         </div>
 
         {/* Info Card */}
-        <div className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border-l-4 border-green-500">
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+        <div className="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
+          <p className="text-sm text-gray-700">
             <span className="font-bold">💡 Nota:</span> Los cambios en los precios se aplicarán inmediatamente a todas las nuevas matrículas y pagos. Los pagos existentes no se verán afectados.
+          </p>
+        </div>
+      </div>
+
+      {/* Season Settings */}
+      <div id="season" className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg" style={{
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          }}>
+            <Calendar className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            📅 Configuración de Temporada
+          </h2>
+        </div>
+
+        <div className="grid gap-6">
+          {/* Season Start Date */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-l-4 border-green-500">
+            <form action={updateSetting} className="space-y-4">
+              <input type="hidden" name="key" value="season_start_date" />
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  🗓️ Fecha de Inicio de Temporada
+                </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  No se generarán mensualidades antes de esta fecha. Dejar vacío para sin restricción.
+                </p>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="date"
+                      name="value"
+                      defaultValue={settings?.find(s => s.key === 'season_start_date')?.value || ''}
+                      className="w-full pl-4 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-green-200 bg-white text-gray-900 font-bold text-base sm:text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all placeholder-gray-400 touch-manipulation"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto"
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+                    }}
+                  >
+                    <Save size={18} />
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Season End Date */}
+          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 p-6 rounded-xl border-l-4 border-teal-500">
+            <form action={updateSetting} className="space-y-4">
+              <input type="hidden" name="key" value="season_end_date" />
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  🗓️ Fecha de Fin de Temporada
+                </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  No se generarán mensualidades después de esta fecha. Dejar vacío para sin restricción.
+                </p>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="date"
+                      name="value"
+                      defaultValue={settings?.find(s => s.key === 'season_end_date')?.value || ''}
+                      className="w-full pl-4 pr-4 py-3.5 min-h-[48px] rounded-xl border-2 border-teal-200 bg-white text-gray-900 font-bold text-base sm:text-lg focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all placeholder-gray-400 touch-manipulation"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-4 sm:px-6 py-3 sm:py-3.5 min-h-[48px] rounded-xl font-bold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 touch-manipulation w-full sm:w-auto"
+                    style={{
+                      background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                      boxShadow: '0 4px 15px rgba(20, 184, 166, 0.3)'
+                    }}
+                  >
+                    <Save size={18} />
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Info Card */}
+        <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
+          <p className="text-sm text-gray-700">
+            <span className="font-bold">💡 Nota:</span> Las fechas de temporada controlan cuándo se pueden generar mensualidades automáticamente. Si no se configuran fechas, el sistema generará mensualidades sin restricciones de fecha.
           </p>
         </div>
       </div>
@@ -220,16 +346,16 @@ export default async function SettingsPage() {
           }}>
             <CreditCard className="h-6 w-6 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900">
             💳 Métodos de Pago
           </h2>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 p-6 rounded-xl border-l-4 border-orange-500">
+        <div className="bg-gradient-to-br from-orange-50 to-red-50 p-6 rounded-xl border-l-4 border-orange-500">
           <form action={updateSetting} className="space-y-4">
             <input type="hidden" name="key" value="payment_methods" />
             <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">
+              <label className="block text-sm font-bold text-gray-700 mb-4">
                 Activar/Desactivar Métodos
               </label>
               
@@ -238,7 +364,7 @@ export default async function SettingsPage() {
                   ? (typeof settings.find(s => s.key === 'payment_methods')?.value === 'string' 
                       ? JSON.parse(settings.find(s => s.key === 'payment_methods')?.value) 
                       : settings.find(s => s.key === 'payment_methods')?.value)
-                  : { yappy: true, transfer: true, proof: false };
+                  : { yappy: true, transfer: true, proof: false, paguelofacil: true };
 
                 return <PaymentMethodsSettings initialMethods={methods} />;
               })()}
@@ -258,6 +384,34 @@ export default async function SettingsPage() {
               </div>
             </div>
           </form>
+        </div>
+      </div>
+
+      {/* Super Admin Settings - Simple HTML first to test */}
+      <div id="super-admin" className="glass-card p-6" style={{ backgroundColor: '#fff', border: '2px solid red' }}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          🛡️ Gestión de Super Admins
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Super Admins: {superAdmins.length}, Email: {currentUserEmail || 'null'}
+        </p>
+        <div className="bg-red-50 p-4 rounded">
+          <p className="text-sm font-bold text-red-800">Si ves este texto, el HTML se está renderizando correctamente.</p>
+          <p className="text-sm text-gray-700 mt-2">Los componentes se cargarán después de verificar que el HTML funciona.</p>
+        </div>
+      </div>
+
+      {/* User Management Section - Simple HTML first to test */}
+      <div id="user-management" className="glass-card p-6" style={{ backgroundColor: '#fff', border: '2px solid purple' }}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          👥 Gestión de Usuarios y Permisos
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Email: {currentUserEmail || 'null'}
+        </p>
+        <div className="bg-purple-50 p-4 rounded">
+          <p className="text-sm font-bold text-purple-800">Si ves este texto, el HTML se está renderizando correctamente.</p>
+          <p className="text-sm text-gray-700 mt-2">Los componentes se cargarán después de verificar que el HTML funciona.</p>
         </div>
       </div>
     </div>

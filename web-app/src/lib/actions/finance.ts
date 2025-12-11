@@ -5,9 +5,11 @@ import { revalidatePath } from 'next/cache';
 
 export async function getPayments() {
   const supabase = await createClient();
+  // Only get approved/successful payments - rejections are not real payments
   const { data, error } = await supabase
     .from('payments')
     .select('*, players(first_name, last_name)')
+    .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
     .order('payment_date', { ascending: false });
 
   if (error) {

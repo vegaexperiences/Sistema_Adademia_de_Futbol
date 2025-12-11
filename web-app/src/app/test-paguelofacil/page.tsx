@@ -39,25 +39,25 @@ export default function TestPagueloFacilPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="glass-card p-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             🧪 Prueba de Integración Paguelo Fácil
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600">
             Página de prueba para verificar la integración con Paguelo Fácil
           </p>
         </div>
 
         {/* Formulario de Prueba */}
         <div className="glass-card p-6 space-y-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
             Datos de Prueba
           </h2>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Monto (USD)
             </label>
             <input
@@ -66,31 +66,31 @@ export default function TestPagueloFacilPage() {
               min="1"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Descripción
             </label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900"
             />
           </div>
 
@@ -110,7 +110,7 @@ export default function TestPagueloFacilPage() {
             <h3 className="text-lg font-bold mb-4">
               {testResult.success ? '✅ Éxito' : '❌ Error'}
             </h3>
-            <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-auto text-xs">
+            <pre className="bg-gray-100 p-4 rounded-lg overflow-auto text-xs">
               {JSON.stringify(testResult, null, 2)}
             </pre>
             {testResult.success && testResult.data?.paymentUrl && (
@@ -130,7 +130,7 @@ export default function TestPagueloFacilPage() {
 
         {/* Botón de Pago Completo */}
         <div className="glass-card p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
             Prueba Completa (Botón de Pago)
           </h2>
           <PagueloFacilPaymentButton
@@ -149,11 +149,11 @@ export default function TestPagueloFacilPage() {
         </div>
 
         {/* Información */}
-        <div className="glass-card p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-          <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-2">
+        <div className="glass-card p-6 bg-blue-50 border border-blue-200">
+          <h3 className="font-bold text-blue-900 mb-2">
             ℹ️ Información de Prueba
           </h3>
-          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+          <ul className="text-sm text-blue-800 space-y-1">
             <li>• Ambiente: <strong>{process.env.NEXT_PUBLIC_APP_URL?.includes('localhost') ? 'Desarrollo Local' : 'Producción'}</strong></li>
             <li>• El enlace generado es de un solo uso</li>
             <li>• Después del pago, serás redirigido al callback</li>

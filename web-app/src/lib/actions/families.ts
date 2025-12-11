@@ -1,14 +1,22 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function getFamilies() {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const academyId = await getCurrentAcademyId();
+  
+  let query = supabase
     .from('families')
     .select('*, players(id, status)')
     .order('created_at', { ascending: false });
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching families:', error);
@@ -26,6 +34,11 @@ export async function getFamilies() {
 
 export async function createFamily(formData: FormData) {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+  
+  if (!academyId) {
+    return { error: 'No academy context available' };
+  }
   
   const family = {
     name: formData.get('name'),
@@ -33,6 +46,7 @@ export async function createFamily(formData: FormData) {
     tutor_cedula: formData.get('tutorCedula'),
     tutor_email: formData.get('tutorEmail'),
     tutor_phone: formData.get('tutorPhone'),
+    academy_id: academyId,
   };
 
   const { error } = await supabase.from('families').insert(family);
@@ -42,5 +56,39 @@ export async function createFamily(formData: FormData) {
   }
 
   revalidatePath('/dashboard/families');
+  return { success: true };
+}
+
+// Update family data (all fields)
+export async function updateFamily(familyId: string, data: {
+  tutor_name?: string;
+  tutor_email?: string;
+  tutor_phone?: string;
+  tutor_cedula?: string;
+  tutor_cedula_url?: string;
+  secondary_email?: string | null;
+}) {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+  
+  let query = supabase
+    .from('families')
+    .update(data)
+    .eq('id', familyId);
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { error } = await query;
+  
+  if (error) {
+    console.error('Error updating family:', error);
+    return { error: `Error al actualizar familia: ${error.message}` };
+  }
+  
+  revalidatePath('/dashboard/families');
+  revalidatePath(`/dashboard/families/${familyId}`);
+  
   return { success: true };
 }
