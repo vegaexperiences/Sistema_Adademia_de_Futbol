@@ -13,14 +13,22 @@ export function LoginForm() {
     setLoading(true);
     setError(null);
     
-    const formData = new FormData(e.currentTarget);
-    const result = await login(formData);
-    
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await login(formData);
+      
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+      } else {
+        // If success, redirect happens in action
+        // Don't set loading to false here as redirect will happen
+      }
+    } catch (error) {
+      console.error('[LoginForm] Error:', error);
+      setError('Error al iniciar sesión. Por favor intenta de nuevo.');
       setLoading(false);
     }
-    // If success, redirect happens in action
   };
 
   return (

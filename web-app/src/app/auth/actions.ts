@@ -5,22 +5,32 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
 export async function login(formData: FormData) {
-  const supabase = await createClient();
-  
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  try {
+    const supabase = await createClient();
+    
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+    if (!email || !password) {
+      return { error: 'Email y contraseña son requeridos' };
+    }
 
-  if (error) {
-    return { error: 'Credenciales inválidas' };
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('[Login] Error:', error);
+      return { error: 'Credenciales inválidas' };
+    }
+
+    revalidatePath('/', 'layout');
+    redirect('/dashboard');
+  } catch (error) {
+    console.error('[Login] Unexpected error:', error);
+    return { error: 'Error al iniciar sesión. Por favor intenta de nuevo.' };
   }
-
-  revalidatePath('/', 'layout');
-  redirect('/dashboard');
 }
 
 export async function logout() {
