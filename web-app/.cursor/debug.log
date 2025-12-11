@@ -260,3 +260,44 @@
 {"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765422654560,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
 {"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765422654562,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
 {"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765422654563,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162958,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162982,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162987,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162990,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162991,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162994,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162995,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162963,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162988,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162993,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423162999,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163003,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163013,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"debug-test/page.tsx:6","message":"DebugTestPage component entry","data":{},"timestamp":1765423163014,"sessionId":"debug-session","runId":"run1","hypothesisId":"D"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163000,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163043,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163051,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163053,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163057,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163058,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163063,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163066,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"superadmin/page.tsx:10","message":"Page component entry","data":{},"timestamp":1765423163066,"sessionId":"debug-session","runId":"run1","hypothesisId":"D"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163069,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163053,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"test-simple/page.tsx:5","message":"TestSimplePage component entry","data":{},"timestamp":1765423163057,"sessionId":"debug-session","runId":"run1","hypothesisId":"D"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163056,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163059,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163062,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163066,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"test-working/page.tsx:6","message":"TestWorkingPage component entry","data":{},"timestamp":1765423163066,"sessionId":"debug-session","runId":"run1","hypothesisId":"D"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163069,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"test-no-dynamic/page.tsx:3","message":"TestNoDynamicPage component entry","data":{},"timestamp":1765423163069,"sessionId":"debug-session","runId":"run2","hypothesisId":"G"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163071,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163095,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163096,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163098,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163099,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163103,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163105,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"layout.tsx:24","message":"RootLayout rendering","data":{},"timestamp":1765423163106,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
