@@ -244,8 +244,19 @@ export function LogoUploader({ academy }: LogoUploaderProps) {
         setError(result.error)
       } else {
         setSuccess('Logos actualizados exitosamente')
+        console.log('[LogoUploader] ✅ Logos updated successfully')
+        
+        // Dispatch custom event to notify AcademyContext
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('academy-updated'))
+          // Also set storage event for cross-tab updates
+          localStorage.setItem('academy-updated', Date.now().toString())
+        }
+        
         setTimeout(() => {
           router.refresh()
+          // Also reload the page to ensure AcademyContext updates
+          window.location.reload()
         }, 1500)
       }
     } catch (err: any) {

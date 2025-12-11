@@ -25,12 +25,7 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const hasFetchedRef = useRef(false)
 
-  useEffect(() => {
-    // Prevent multiple simultaneous fetches
-    if (hasFetchedRef.current) {
-      return
-    }
-
+  const fetchAcademy = () => {
     // Get academy info from cookies (set by middleware)
     const id = getAcademyIdFromCookies()
     const slug = getAcademySlugFromCookies()
@@ -39,19 +34,18 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
     setAcademySlug(slug)
     
     // Fetch full academy data if we have ID or slug
-    // Skip fetch on login/auth/dashboard pages to avoid unnecessary requests
     if (id || slug) {
       // Use typeof window check to prevent SSR issues
       if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname
         const isAuthPage = currentPath.startsWith('/login') || 
                           currentPath.startsWith('/auth') ||
-                          currentPath.startsWith('/enrollment') ||
-                          currentPath.startsWith('/dashboard')
+                          currentPath.startsWith('/enrollment')
         
+        // Always fetch on dashboard pages to get latest data
         if (!isAuthPage) {
-          hasFetchedRef.current = true
-          fetch(`/api/academy/current`)
+          // Add cache busting to ensure fresh data
+          fetch(`/api/academy/current?t=${Date.now()}`)
             .then(res => {
               if (!res.ok) {
                 // Don't throw error, just log it and continue
@@ -65,6 +59,7 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
             })
             .then(data => {
               if (data && data.academy) {
+                console.log('[AcademyProvider] ✅ Academy data updated:', data.academy.display_name || data.academy.name)
                 setAcademy(data.academy)
               }
               setIsLoading(false)
@@ -82,6 +77,36 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
       }
     } else {
       setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    // Initial fetch
+    fetchAcademy()
+    
+    // Listen for storage events (when academy changes in another tab/window)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'academy-updated') {
+        console.log('[AcademyProvider] Academy updated in another tab, refreshing...')
+        hasFetchedRef.current = false
+        fetchAcademy()
+      }
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Also listen for custom events (when academy changes in same tab)
+    const handleAcademyUpdate = () => {
+      console.log('[AcademyProvider] Academy update event received, refreshing...')
+      hasFetchedRef.current = false
+      fetchAcademy()
+    }
+    
+    window.addEventListener('academy-updated', handleAcademyUpdate)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('academy-updated', handleAcademyUpdate)
     }
   }, [])
 

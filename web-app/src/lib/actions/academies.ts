@@ -288,8 +288,17 @@ export async function updateAcademy(
     return { error: error.message }
   }
   
+  // Revalidate all paths that might display academy data
   revalidatePath('/super-admin/academies')
   revalidatePath(`/super-admin/academies/${id}`)
+  revalidatePath('/dashboard/settings')
+  revalidatePath('/dashboard')
+  revalidatePath('/')
+  
+  // Also revalidate the API route that provides academy data
+  revalidatePath('/api/academy/current', 'layout')
+  
+  console.log('[updateAcademy] ✅ Academy updated successfully:', id, 'Display name:', data.display_name)
   
   return { data: academy, error: null }
 }
@@ -399,8 +408,17 @@ export async function updateAcademySettings(
     return { success: false, error: updateError.message }
   }
   
+  // Revalidate all paths that might display academy data
   revalidatePath('/super-admin/academies')
   revalidatePath(`/super-admin/academies/${academyId}`)
+  revalidatePath('/dashboard/settings')
+  revalidatePath('/dashboard')
+  revalidatePath('/')
+  
+  // Also revalidate the API route that provides academy data
+  revalidatePath('/api/academy/current', 'layout')
+  
+  console.log('[updateAcademySettings] ✅ Academy settings updated successfully:', academyId)
   
   return { success: true }
 }

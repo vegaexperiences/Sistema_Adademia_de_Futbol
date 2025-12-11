@@ -3,6 +3,9 @@ import { getCurrentAcademy } from '@/lib/utils/academy'
 import { getCurrentAcademyId } from '@/lib/supabase/server'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET() {
   try {
     const academyId = await getCurrentAcademyId()
