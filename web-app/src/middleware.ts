@@ -61,8 +61,6 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
 
   // Create Supabase client for middleware (for academy detection)
-  // We'll create a temporary response for cookie handling
-  let tempResponse = NextResponse.next()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -74,7 +72,6 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
-            tempResponse.cookies.set(name, value, options)
           })
         },
       },
@@ -220,11 +217,6 @@ export async function middleware(request: NextRequest) {
     request: {
       headers: requestHeaders,
     },
-  })
-
-  // Copy cookies from temp response
-  tempResponse.cookies.getAll().forEach(({ name, value, options }) => {
-    response.cookies.set(name, value, options)
   })
 
   // Store in cookies for client-side access
