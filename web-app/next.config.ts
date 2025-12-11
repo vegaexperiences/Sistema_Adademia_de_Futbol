@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   experimental: {
     // Ensure routes are properly generated
   },
+  // Try output: 'standalone' to see if it helps with Vercel deployment
+  // output: 'standalone',
+  // Ensure proper route generation for Vercel
+  // This might help with route recognition
 };
 
 export default nextConfig;
