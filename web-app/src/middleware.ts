@@ -179,19 +179,13 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * - superadmin routes (excluded from middleware processing)
-     * - debug/test routes (excluded from middleware processing)
+     * - image files
      * 
-     * CRITICAL: Excluding these routes from the matcher ensures
-     * the middleware never runs for them, preventing any interference.
-     * 
-     * Using negative lookahead to exclude specific route patterns:
-     * - /superadmin and /super-admin (with optional trailing paths)
-     * - /debug-test, /test-simple, /test-working (with optional trailing paths)
+     * CRITICAL: We now include ALL routes in the matcher, including debug routes.
+     * The middleware will handle them with early returns, which allows Vercel
+     * to recognize them as valid routes while still skipping processing.
      */
-    '/((?!_next/static|_next/image|favicon.ico|superadmin|super-admin|debug-test|test-simple|test-working|test-no-dynamic|test-api-route|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-  // Ensure middleware doesn't run for excluded routes
-  // This is a fallback in case the matcher doesn't work as expected
 }
 
