@@ -32,6 +32,18 @@ export async function middleware(request: NextRequest) {
   }
   // #endregion
   
+  // Extract domain from request EARLY to check if it's Vercel
+  const hostname = request.headers.get('host') || ''
+  const domain = hostname.split(':')[0] // Remove port if present
+  const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
+  
+  // CRITICAL: On Vercel domains, return immediately without any processing
+  // This prevents any Supabase calls or other processing that could fail and block routes
+  if (isVercelDomain) {
+    console.log('[Middleware] Vercel domain detected, skipping all processing. Path:', pathname, 'Domain:', domain)
+    return NextResponse.next()
+  }
+
   // IMMEDIATE return for excluded routes - no processing, no logging, nothing
   // This ensures Next.js can process these routes without any interference
   if (isExcludedRoute) {
@@ -75,10 +87,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Extract domain from request
-  const hostname = request.headers.get('host') || ''
-  const domain = hostname.split(':')[0] // Remove port if present
-  
   // Determine academy from domain
   let academySlug: string | null = null
   let academyId: string | null = null
@@ -86,14 +94,12 @@ export async function middleware(request: NextRequest) {
   // Check if it's a custom domain or subdomain
   // Format: suarez.com, otra.com, or suarez.vercel.app, etc.
   const domainParts = domain.split('.')
-  
+
   // STEP 2: Wrap academy detection in try-catch to prevent failures from blocking routes
-  // CRITICAL: On Vercel preview/production domains, skip academy detection to avoid blocking routes
-  const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
-  
-  console.log('[Middleware] Processing route:', pathname, 'Domain:', domain, 'IsVercel:', isVercelDomain)
+  console.log('[Middleware] Processing route:', pathname, 'Domain:', domain)
   
   // Only try to detect academy if NOT on Vercel domain (to avoid blocking preview deployments)
+  // Note: We already returned early for Vercel domains above, but keeping this check for safety
   if (!isVercelDomain) {
     try {
       // If domain has 2 parts (suarez.com), the first part is the slug
@@ -124,14 +130,12 @@ export async function middleware(request: NextRequest) {
       console.error('[Middleware] Error detecting academy:', error)
       // Continue without academy context - let the route handle it
     }
-  } else {
-    // On Vercel domains, skip academy detection entirely
-    console.log('[Middleware] Skipping academy detection for Vercel domain')
   }
 
   // If no academy found and accessing root domain, redirect to suarez
   // BUT: Don't redirect if this is a route that doesn't need academy context
   // IMPORTANT: Only redirect if we're on a custom domain, not on Vercel preview domains
+  // Note: We already returned early for Vercel domains above, but keeping this check for safety
   if (!academyId && !isVercelDomain) {
     // Check if accessing root without academy context
     const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
@@ -151,9 +155,6 @@ export async function middleware(request: NextRequest) {
       // When academy not found, just continue without redirect
       console.log('[Middleware] No academy found but allowing request. Path:', pathname, 'Domain:', domain)
     }
-  } else if (isVercelDomain) {
-    // On Vercel domains, always allow requests through without redirect
-    console.log('[Middleware] Allowing request on Vercel domain. Path:', pathname, 'Domain:', domain)
   }
   
   console.log('[Middleware] Allowing request through. Path:', pathname, 'AcademyId:', academyId)
