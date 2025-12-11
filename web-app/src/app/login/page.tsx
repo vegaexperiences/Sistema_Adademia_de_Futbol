@@ -10,25 +10,30 @@ export default async function LoginPage({
   const showSuccess = resolvedSearchParams?.passwordReset === 'success';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        {/* Logo/Header Section */}
+        <div className="text-center">
+          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+            <span className="text-3xl font-bold text-white">SA</span>
+          </div>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
             Iniciar Sesión
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="text-sm text-gray-600 font-medium">
             Acceso administrativo a Suarez Academy
           </p>
         </div>
-        
+
+        {/* Success Message */}
         {showSuccess && (
-          <div className="rounded-md bg-green-50 p-4 border border-green-200">
-            <div className="flex">
+          <div className="rounded-xl bg-green-50 p-4 border-2 border-green-200 shadow-sm">
+            <div className="flex items-start">
               <div className="flex-shrink-0">
-                <CheckCircle2 className="h-5 w-5 text-green-400" />
+                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
+                <p className="text-sm font-semibold text-green-800">
                   Contraseña restablecida exitosamente. Ahora puedes iniciar sesión.
                 </p>
               </div>
@@ -36,7 +41,10 @@ export default async function LoginPage({
           </div>
         )}
 
-        <LoginForm />
+        {/* Login Form Card */}
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8">
+          <LoginForm />
+        </div>
       </div>
     </div>
   );

@@ -23,9 +23,9 @@ export function LoginForm() {
 
   return (
     <form action={handleSubmit} className="mt-8 space-y-6">
-      <div className="rounded-md shadow-sm -space-y-px">
+      <div className="space-y-4">
         <div>
-          <label htmlFor="email-address" className="sr-only">
+          <label htmlFor="email-address" className="block text-sm font-semibold text-gray-700 mb-2">
             Correo Electrónico
           </label>
           <input
@@ -34,12 +34,12 @@ export function LoginForm() {
             type="email"
             autoComplete="email"
             required
-            className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-            placeholder="Correo Electrónico"
+            className="appearance-none relative block w-full px-4 py-3.5 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-base font-medium"
+            placeholder="tu@email.com"
           />
         </div>
         <div>
-          <label htmlFor="password" className="sr-only">
+          <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
             Contraseña
           </label>
           <input
@@ -48,15 +48,15 @@ export function LoginForm() {
             type="password"
             autoComplete="current-password"
             required
-            className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-            placeholder="Contraseña"
+            className="appearance-none relative block w-full px-4 py-3.5 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-base font-medium"
+            placeholder="••••••••"
           />
         </div>
       </div>
 
       {error && (
-        <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
-          {error}
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+          <p className="text-red-800 text-sm font-semibold text-center">{error}</p>
         </div>
       )}
 
@@ -64,7 +64,7 @@ export function LoginForm() {
         <div className="text-sm">
           <a
             href="/auth/forgot-password"
-            className="font-medium text-primary hover:text-primary/80"
+            className="font-semibold text-blue-600 hover:text-blue-800 transition-colors"
           >
             ¿Olvidaste tu contraseña?
           </a>
@@ -75,12 +75,24 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70"
+          className="group relative w-full flex justify-center py-3.5 px-6 border border-transparent text-base font-bold rounded-xl text-white transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-blue-500/50"
+          style={{
+            background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+            boxShadow: '0 4px 15px rgba(37, 99, 235, 0.4)',
+          }}
         >
           {loading ? (
-            <Loader2 className="animate-spin h-5 w-5" />
+            <div className="flex items-center gap-2">
+              <Loader2 className="animate-spin h-5 w-5" />
+              <span>Ingresando...</span>
+            </div>
           ) : (
-            'Ingresar'
+            <span className="flex items-center gap-2">
+              <span>Ingresar</span>
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </span>
           )}
         </button>
       </div>
