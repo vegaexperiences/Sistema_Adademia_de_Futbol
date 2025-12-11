@@ -5,7 +5,11 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware.ts:4',message:'Middleware entry',data:{pathname,host:request.headers.get('host')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  const logData = {location:'middleware.ts:4',message:'Middleware entry',data:{pathname,host:request.headers.get('host')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
+  console.log('[DEBUG]', JSON.stringify(logData));
+  if (typeof fetch !== 'undefined') {
+    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
+  }
   // #endregion
   
   // STEP 1: Check for routes that don't need academy context FIRST
@@ -19,14 +23,22 @@ export async function middleware(request: NextRequest) {
   const isExcludedRoute = isSuperAdminRoute || isDebugRoute
   
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware.ts:15',message:'Route exclusion check',data:{pathname,isSuperAdminRoute,isDebugRoute,isExcludedRoute},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  const logData2 = {location:'middleware.ts:15',message:'Route exclusion check',data:{pathname,isSuperAdminRoute,isDebugRoute,isExcludedRoute},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
+  console.log('[DEBUG]', JSON.stringify(logData2));
+  if (typeof fetch !== 'undefined') {
+    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData2)}).catch(()=>{});
+  }
   // #endregion
   
   // IMMEDIATE return for excluded routes - no processing, no logging, nothing
   // This ensures Next.js can process these routes without any interference
   if (isExcludedRoute) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware.ts:20',message:'Returning NextResponse.next for excluded route',data:{pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    const logData3 = {location:'middleware.ts:20',message:'Returning NextResponse.next for excluded route',data:{pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
+    console.log('[DEBUG]', JSON.stringify(logData3));
+    if (typeof fetch !== 'undefined') {
+      fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData3)}).catch(()=>{});
+    }
     // #endregion
     return NextResponse.next()
   }

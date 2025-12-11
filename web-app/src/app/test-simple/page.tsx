@@ -4,8 +4,10 @@ export const revalidate = 0;
 
 export default function TestSimplePage() {
   // #region agent log
+  const logData = {location:'test-simple/page.tsx:5',message:'TestSimplePage component entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'};
+  console.log('[DEBUG]', JSON.stringify(logData));
   if (typeof fetch !== 'undefined') {
-    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'test-simple/page.tsx:5',message:'TestSimplePage component entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
   }
   // #endregion
   return (

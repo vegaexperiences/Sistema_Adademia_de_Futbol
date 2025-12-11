@@ -27,8 +27,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // #region agent log
+  const logData = {location:'layout.tsx:24',message:'RootLayout rendering',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'};
+  console.log('[DEBUG]', JSON.stringify(logData));
   if (typeof fetch !== 'undefined') {
-    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'layout.tsx:24',message:'RootLayout rendering',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
   }
   // #endregion
   return (
