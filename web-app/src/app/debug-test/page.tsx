@@ -1,7 +1,7 @@
 // Absolute minimum test route - no dependencies
-// Force dynamic rendering for this route
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// REMOVED: export const dynamic = 'force-dynamic' to test if that's causing the issue
+// export const dynamic = 'force-dynamic';
+// export const revalidate = 0;
 
 export default function DebugTestPage() {
   // #region agent log

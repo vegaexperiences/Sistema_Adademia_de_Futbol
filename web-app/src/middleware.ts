@@ -187,7 +187,7 @@ export const config = {
      * - /superadmin and /super-admin (with optional trailing paths)
      * - /debug-test, /test-simple, /test-working (with optional trailing paths)
      */
-    '/((?!_next/static|_next/image|favicon.ico|superadmin|super-admin|debug-test|test-simple|test-working|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|superadmin|super-admin|debug-test|test-simple|test-working|test-no-dynamic|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
   // Ensure middleware doesn't run for excluded routes
   // This is a fallback in case the matcher doesn't work as expected

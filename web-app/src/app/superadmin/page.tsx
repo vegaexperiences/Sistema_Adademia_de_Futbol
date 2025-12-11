@@ -3,9 +3,9 @@ import { getSuperAdmins } from '@/lib/actions/super-admin';
 import { getCurrentAcademy, isSuperAdmin } from '@/lib/utils/academy';
 import { getAllUsers } from '@/lib/actions/users';
 
-// Force dynamic rendering for this route
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// REMOVED: export const dynamic = 'force-dynamic' to test if that's causing the issue
+// export const dynamic = 'force-dynamic';
+// export const revalidate = 0;
 
 export default async function SuperAdminDebugPage() {
   // #region agent log
