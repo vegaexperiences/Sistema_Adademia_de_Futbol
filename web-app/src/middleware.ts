@@ -19,7 +19,9 @@ export async function middleware(request: NextRequest) {
                            pathname.startsWith('/superadmin')
   const isDebugRoute = pathname.startsWith('/debug-test') || 
                       pathname.startsWith('/test-simple') ||
-                      pathname.startsWith('/test-working')
+                      pathname.startsWith('/test-working') ||
+                      pathname.startsWith('/test-no-dynamic') ||
+                      pathname.startsWith('/test-api-route')
   const isExcludedRoute = isSuperAdminRoute || isDebugRoute
   
   // #region agent log
@@ -187,7 +189,7 @@ export const config = {
      * - /superadmin and /super-admin (with optional trailing paths)
      * - /debug-test, /test-simple, /test-working (with optional trailing paths)
      */
-    '/((?!_next/static|_next/image|favicon.ico|superadmin|super-admin|debug-test|test-simple|test-working|test-no-dynamic|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|superadmin|super-admin|debug-test|test-simple|test-working|test-no-dynamic|test-api-route|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
   // Ensure middleware doesn't run for excluded routes
   // This is a fallback in case the matcher doesn't work as expected
