@@ -5,35 +5,56 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
 export async function login(formData: FormData) {
-  const supabase = await createClient();
-  
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-
-  if (!email || !password) {
-    return { error: 'Email y contraseña son requeridos' };
-  }
-
   try {
-    const { error } = await supabase.auth.signInWithPassword({
+    // Validate environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('[Login] Missing Supabase environment variables');
+      return { error: 'Error de configuración del servidor. Contacta al administrador.' };
+    }
+
+    const supabase = await createClient();
+    
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    if (!email || !password) {
+      return { error: 'Email y contraseña son requeridos' };
+    }
+
+    console.log('[Login] Attempting login for:', email);
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      console.error('[Login] Error:', error);
+      console.error('[Login] Supabase auth error:', error.message, error.status);
       return { error: 'Credenciales inválidas' };
     }
 
+    if (!data?.user) {
+      console.error('[Login] No user returned from signInWithPassword');
+      return { error: 'Error al iniciar sesión. Por favor intenta de nuevo.' };
+    }
+
+    console.log('[Login] Success, redirecting to dashboard');
+    
     // Success - redirect (this throws a special error in Next.js that we should not catch)
     revalidatePath('/', 'layout');
     redirect('/dashboard');
   } catch (error: any) {
     // Check if this is a redirect error (NEXT_REDIRECT) - if so, re-throw it
-    if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+    if (error?.digest?.startsWith('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
       throw error;
     }
     console.error('[Login] Unexpected error:', error);
+    console.error('[Login] Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      digest: error?.digest,
+    });
     return { error: 'Error al iniciar sesión. Por favor intenta de nuevo.' };
   }
 }
