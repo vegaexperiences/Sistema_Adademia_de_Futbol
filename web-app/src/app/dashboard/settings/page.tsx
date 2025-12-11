@@ -387,32 +387,34 @@ export default async function SettingsPage() {
         </div>
       </div>
 
-      {/* Super Admin Settings - Simple HTML first to test */}
-      <div id="super-admin" className="glass-card p-6" style={{ backgroundColor: '#fff', border: '2px solid red' }}>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          🛡️ Gestión de Super Admins
-        </h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Super Admins: {superAdmins.length}, Email: {currentUserEmail || 'null'}
-        </p>
-        <div className="bg-red-50 p-4 rounded">
-          <p className="text-sm font-bold text-red-800">Si ves este texto, el HTML se está renderizando correctamente.</p>
-          <p className="text-sm text-gray-700 mt-2">Los componentes se cargarán después de verificar que el HTML funciona.</p>
+      {/* Super Admin Settings */}
+      <div id="super-admin" className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg" style={{
+            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          }}>
+            <Shield className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            🛡️ Gestión de Super Admins
+          </h2>
         </div>
+        <SuperAdminSettings initialAdmins={superAdmins} currentUserEmail={currentUserEmail} />
       </div>
 
-      {/* User Management Section - Simple HTML first to test */}
-      <div id="user-management" className="glass-card p-6" style={{ backgroundColor: '#fff', border: '2px solid purple' }}>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          👥 Gestión de Usuarios y Permisos
-        </h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Email: {currentUserEmail || 'null'}
-        </p>
-        <div className="bg-purple-50 p-4 rounded">
-          <p className="text-sm font-bold text-purple-800">Si ves este texto, el HTML se está renderizando correctamente.</p>
-          <p className="text-sm text-gray-700 mt-2">Los componentes se cargarán después de verificar que el HTML funciona.</p>
+      {/* User Management Section */}
+      <div id="user-management" className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg" style={{
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          }}>
+            <Users className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            👥 Gestión de Usuarios y Permisos
+          </h2>
         </div>
+        <UserManagement currentUserEmail={currentUserEmail} />
       </div>
     </div>
   );
