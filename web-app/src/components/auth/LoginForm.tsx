@@ -8,10 +8,12 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
     
+    const formData = new FormData(e.currentTarget);
     const result = await login(formData);
     
     if (result?.error) {
@@ -22,7 +24,7 @@ export function LoginForm() {
   };
 
   return (
-    <form action={handleSubmit} className="mt-8 space-y-6">
+    <form onSubmit={handleSubmit} className="mt-8 space-y-6">
       <div className="space-y-4">
         <div>
           <label htmlFor="email-address" className="block text-sm font-semibold text-gray-700 mb-2">
