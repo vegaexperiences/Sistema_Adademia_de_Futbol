@@ -3,6 +3,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default function TestSimplePage() {
+  // #region agent log
+  if (typeof fetch !== 'undefined') {
+    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'test-simple/page.tsx:5',message:'TestSimplePage component entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+  }
+  // #endregion
   return (
     <div style={{ padding: '40px', textAlign: 'center' }}>
       <h1 style={{ fontSize: '32px', color: '#000' }}>✅ SIMPLE TEST PAGE</h1>

@@ -4,6 +4,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default function DebugTestPage() {
+  // #region agent log
+  if (typeof fetch !== 'undefined') {
+    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'debug-test/page.tsx:6',message:'DebugTestPage component entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+  }
+  // #endregion
   console.log('[DebugTestPage] Component rendering')
   return (
     <div style={{ margin: 0, padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f0f0f0', minHeight: '100vh' }}>
