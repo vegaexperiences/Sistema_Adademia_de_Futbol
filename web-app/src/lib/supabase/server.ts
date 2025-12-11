@@ -3,8 +3,9 @@ import { cookies, headers } from 'next/headers'
 
 export async function createClient() {
   const cookieStore = await cookies()
+  const academyId = await getCurrentAcademyId()
 
-  return createServerClient(
+  const client = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -26,15 +27,62 @@ export async function createClient() {
       },
     }
   )
+
+  // Set the academy_id session variable for RLS policies
+  // This allows the RLS policies to work correctly
+  if (academyId) {
+    try {
+      // Use rpc to set the session variable
+      const { error: rpcError } = await client.rpc('set_academy_context', { 
+        academy_id: academyId 
+      })
+      
+      if (rpcError) {
+        console.warn('[createClient] Could not set academy context via RPC:', rpcError.message)
+        // RLS will still work with explicit filters in queries
+      } else {
+        console.log('[createClient] ✅ Academy context set for RLS:', academyId)
+      }
+    } catch (error: any) {
+      // Silently fail - RLS will still work with explicit filters
+      console.warn('[createClient] Could not set academy context:', error?.message || error)
+    }
+  }
+
+  return client
 }
 
 /**
  * Get current academy ID from request context
  * This is set by middleware based on the domain/subdomain
+ * Falls back to cookies if headers are not available
  */
 export async function getCurrentAcademyId(): Promise<string | null> {
-  const headersList = await headers()
-  return headersList.get('x-academy-id')
+  try {
+    // First, try to get from headers (set by middleware)
+    const headersList = await headers()
+    const academyIdFromHeaders = headersList.get('x-academy-id')
+    
+    if (academyIdFromHeaders) {
+      console.log('[getCurrentAcademyId] Found in headers:', academyIdFromHeaders)
+      return academyIdFromHeaders
+    }
+    
+    // Fallback to cookies (also set by middleware)
+    const cookieStore = await cookies()
+    const academyIdFromCookies = cookieStore.get('academy-id')?.value
+    
+    if (academyIdFromCookies) {
+      console.log('[getCurrentAcademyId] Found in cookies:', academyIdFromCookies)
+      return academyIdFromCookies
+    }
+    
+    console.warn('[getCurrentAcademyId] ⚠️ No academy ID found in headers or cookies')
+    return null
+  } catch (error) {
+    console.error('[getCurrentAcademyId] Error getting academy ID:', error)
+    return null
+  }
 }
 
 /**

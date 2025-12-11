@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { User, Mail, Phone, Users, DollarSign, CreditCard, ArrowLeft, FileText, Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -15,11 +15,12 @@ export default async function TutorProfilePage({
 }) {
   const { email: identifier } = await params;
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   const decodedIdentifier = decodeURIComponent(identifier);
   
   // Try to find tutor by cedula first, then by email, then by name
   // Get all players and their families
-  const { data: players } = await supabase
+  let query = supabase
     .from('players')
     .select(`
       *,
@@ -33,6 +34,12 @@ export default async function TutorProfilePage({
         secondary_email
       )
     `);
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data: players } = await query;
   
   if (!players || players.length === 0) {
     notFound();

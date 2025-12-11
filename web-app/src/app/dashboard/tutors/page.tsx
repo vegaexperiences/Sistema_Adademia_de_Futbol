@@ -1,11 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import TutorsList from '@/components/tutors/TutorsList';
 
 export default async function TutorsPage() {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   // Get all players with tutor info (both from families and individual)
-  const { data: players, error: playersError } = await supabase
+  let playersQuery = supabase
     .from('players')
     .select(`
       id,
@@ -25,13 +26,19 @@ export default async function TutorsPage() {
         secondary_email
       )
     `);
+  
+  if (academyId) {
+    playersQuery = playersQuery.eq('academy_id', academyId);
+  }
+  
+  const { data: players, error: playersError } = await playersQuery;
 
   if (playersError) {
     console.error('Error fetching players:', playersError);
   }
 
   // Also get all families directly to ensure we show family tutors even without players
-  const { data: families, error: familiesError } = await supabase
+  let familiesQuery = supabase
     .from('families')
     .select(`
       id,
@@ -43,6 +50,12 @@ export default async function TutorsPage() {
       secondary_email,
       players (id)
     `);
+  
+  if (academyId) {
+    familiesQuery = familiesQuery.eq('academy_id', academyId);
+  }
+  
+  const { data: families, error: familiesError } = await familiesQuery;
 
   if (familiesError) {
     console.error('Error fetching families:', familiesError);

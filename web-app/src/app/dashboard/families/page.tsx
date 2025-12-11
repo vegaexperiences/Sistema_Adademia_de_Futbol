@@ -1,13 +1,20 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import FamiliesList from '@/components/families/FamiliesList';
 
 export default async function FamiliesPage() {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
-  const { data: families } = await supabase
+  let query = supabase
     .from('families')
     .select('*, players(id, first_name, last_name, status)')
     .order('tutor_name');
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data: families } = await query;
 
   // Filter to only show approved players (Active or Scholarship) and only families with at least 2 approved players
   const familiesWithApprovedPlayers = families

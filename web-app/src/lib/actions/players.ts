@@ -4,29 +4,82 @@ import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function getPlayers() {
-  const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
-  
-  // Get all players (including rejected/retired) - they should never be deleted
-  // Include payment_status, custom_monthly_fee, and discount_percent for filtering and sorting
-  let query = supabase
-    .from('players')
-    .select('*, families(name, tutor_name, tutor_email)')
-    .order('created_at', { ascending: false });
-  
-  // Filter by academy if not super admin
-  if (academyId) {
-    query = query.eq('academy_id', academyId);
-  }
-  
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Error fetching players:', error);
+  try {
+    const supabase = await createClient();
+    const academyId = await getCurrentAcademyId();
+    
+    console.log('[getPlayers] Starting - Academy ID:', academyId);
+    
+    // First, try a simple query without the families relation to ensure basic query works
+    let baseQuery = supabase
+      .from('players')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    // Filter by academy if not super admin
+    if (academyId) {
+      baseQuery = baseQuery.eq('academy_id', academyId);
+      console.log('[getPlayers] Filtering by academy_id:', academyId);
+    } else {
+      console.warn('[getPlayers] ⚠️ No academy_id found - query may fail if RLS is enabled');
+      // If no academyId, return empty array to avoid RLS issues
+      return [];
+    }
+    
+    const { data: baseData, error: baseError } = await baseQuery;
+    
+    if (baseError) {
+      console.error('[getPlayers] ❌ Error in base query:', {
+        message: baseError.message,
+        details: baseError.details,
+        hint: baseError.hint,
+        code: baseError.code
+      });
+      return [];
+    }
+    
+    console.log('[getPlayers] ✅ Base query succeeded with', baseData?.length || 0, 'players');
+    
+    // Now try to get families data separately and merge
+    if (baseData && baseData.length > 0) {
+      const familyIds = baseData
+        .map((p: any) => p.family_id)
+        .filter((id: any) => id);
+      
+      if (familyIds.length > 0) {
+        const { data: familiesData, error: familiesError } = await supabase
+          .from('families')
+          .select('id, name, tutor_name, tutor_email')
+          .in('id', familyIds)
+          .eq('academy_id', academyId);
+        
+        if (familiesError) {
+          console.warn('[getPlayers] ⚠️ Error fetching families (non-fatal):', familiesError.message);
+        }
+        
+        // Create a map of family_id to family data
+        const familiesMap = new Map();
+        if (familiesData) {
+          familiesData.forEach((family: any) => {
+            familiesMap.set(family.id, family);
+          });
+        }
+        
+        // Merge family data into players
+        const playersWithFamilies = baseData.map((player: any) => ({
+          ...player,
+          families: player.family_id ? familiesMap.get(player.family_id) || null : null
+        }));
+        
+        return playersWithFamilies;
+      }
+    }
+    
+    return baseData || [];
+  } catch (err: any) {
+    console.error('[getPlayers] ❌ Unexpected error:', err?.message || err);
     return [];
   }
-
-  return data;
 }
 
 export async function createPlayer(formData: FormData) {

@@ -57,13 +57,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+  // Create a new request with modified headers
+  const requestHeaders = new Headers(request.headers)
 
   // Create Supabase client for middleware (for academy detection)
+  // We'll create a temporary response for cookie handling
+  let tempResponse = NextResponse.next()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -75,7 +74,7 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
+            tempResponse.cookies.set(name, value, options)
           })
         },
       },
@@ -99,12 +98,44 @@ export async function middleware(request: NextRequest) {
   // Format: suarez.com, otra.com, or suarez.vercel.app, etc.
   const domainParts = domain.split('.')
   const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
+  const isLocalhost = domain === 'localhost' || domain === '127.0.0.1'
   
   // STEP 2: Wrap academy detection in try-catch to prevent failures from blocking routes
-  console.log('[Middleware] Processing route:', pathname, 'Domain:', domain)
+  console.log('[Middleware] Processing route:', pathname, 'Domain:', domain, 'IsLocalhost:', isLocalhost)
   try {
+    // Special handling for localhost: default to "suarez" academy
+    if (isLocalhost) {
+      console.log('[Middleware] Localhost detected, searching for suarez academy...')
+      const { data: suarezAcademy, error: suarezError } = await supabase
+        .from('academies')
+        .select('id, slug, domain_status')
+        .eq('slug', 'suarez')
+        .maybeSingle()
+      
+      if (suarezAcademy && !suarezError) {
+        academySlug = suarezAcademy.slug
+        academyId = suarezAcademy.id
+        console.log('[Middleware] ✅ Localhost: Found suarez academy:', academyId, 'Slug:', academySlug)
+      } else {
+        console.error('[Middleware] ❌ Localhost: suarez academy not found. Error:', suarezError)
+        // Fallback: try to get the first academy if suarez doesn't exist
+        const { data: firstAcademy, error: firstError } = await supabase
+          .from('academies')
+          .select('id, slug, domain_status')
+          .limit(1)
+          .maybeSingle()
+        
+        if (firstAcademy && !firstError) {
+          academySlug = firstAcademy.slug
+          academyId = firstAcademy.id
+          console.log('[Middleware] ⚠️ Localhost: Using first available academy as fallback:', academyId, 'Slug:', academySlug)
+        } else {
+          console.error('[Middleware] ❌ Localhost: No academies found in database. Error:', firstError)
+        }
+      }
+    }
     // First, try to find academy by exact domain match (for custom domains)
-    if (domainParts.length >= 2) {
+    else if (domainParts.length >= 2) {
       const { data: academyByDomain, error: domainError } = await supabase
         .from('academies')
         .select('id, slug, domain_status')
@@ -172,13 +203,29 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  console.log('[Middleware] Allowing request through. Path:', pathname, 'AcademyId:', academyId)
+  console.log('[Middleware] Allowing request through. Path:', pathname, 'AcademyId:', academyId, 'AcademySlug:', academySlug)
 
-  // Store academy context in headers for server components
+  // Store academy context in request headers for server components
+  // IMPORTANT: We need to set headers on the request, not the response
   if (academyId) {
-    response.headers.set('x-academy-id', academyId)
-    response.headers.set('x-academy-slug', academySlug || '')
+    requestHeaders.set('x-academy-id', academyId)
+    requestHeaders.set('x-academy-slug', academySlug || '')
+    console.log('[Middleware] ✅ Headers set - x-academy-id:', academyId, 'x-academy-slug:', academySlug)
+  } else {
+    console.warn('[Middleware] ⚠️ No academyId found - headers NOT set. This may cause RLS issues.')
   }
+  
+  // Create the final response with modified request headers
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+
+  // Copy cookies from temp response
+  tempResponse.cookies.getAll().forEach(({ name, value, options }) => {
+    response.cookies.set(name, value, options)
+  })
 
   // Store in cookies for client-side access
   if (academyId) {

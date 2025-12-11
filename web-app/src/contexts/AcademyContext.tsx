@@ -54,12 +54,17 @@ export function AcademyProvider({ children }: { children: ReactNode }) {
           fetch(`/api/academy/current`)
             .then(res => {
               if (!res.ok) {
-                throw new Error('Failed to fetch academy')
+                // Don't throw error, just log it and continue
+                console.warn('[AcademyProvider] Failed to fetch academy:', res.status, res.statusText)
+                return res.json().then(data => {
+                  console.warn('[AcademyProvider] Error response:', data)
+                  return null
+                })
               }
               return res.json()
             })
             .then(data => {
-              if (data.academy) {
+              if (data && data.academy) {
                 setAcademy(data.academy)
               }
               setIsLoading(false)

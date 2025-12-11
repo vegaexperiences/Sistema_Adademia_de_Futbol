@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { User, Calendar, Mail, Phone, FileText, DollarSign, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -19,9 +19,10 @@ export default async function PlayerProfilePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   // Get player data with family info
-  const { data: player } = await supabase
+  let query = supabase
     .from('players')
     .select(`
       *,
@@ -33,8 +34,13 @@ export default async function PlayerProfilePage({
         tutor_cedula_url
       )
     `)
-    .eq('id', id)
-    .single();
+    .eq('id', id);
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data: player } = await query.single();
 
   if (!player) {
     notFound();
