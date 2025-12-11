@@ -1,165 +1,37 @@
-import { createClient } from '@/lib/supabase/server';
-import { getSuperAdmins } from '@/lib/actions/super-admin';
-import { getCurrentAcademy, isSuperAdmin } from '@/lib/utils/academy';
-import { getAllUsers } from '@/lib/actions/users';
+// TEMPORARY: Simplified version to test if imports are causing build issues
+// #region agent log
+const logData = {location:'superadmin/page.tsx:1',message:'Page file loaded',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'};
+console.log('[DEBUG]', JSON.stringify(logData));
+if (typeof fetch !== 'undefined') {
+  fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
+}
+// #endregion
 
-// REMOVED: export const dynamic = 'force-dynamic' to test if that's causing the issue
-// export const dynamic = 'force-dynamic';
-// export const revalidate = 0;
-
-export default async function SuperAdminDebugPage() {
+export default function SuperAdminDebugPage() {
   // #region agent log
-  const logData = {location:'superadmin/page.tsx:10',message:'Page component entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'};
-  console.log('[DEBUG]', JSON.stringify(logData));
+  const logData2 = {location:'superadmin/page.tsx:10',message:'Page component entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'};
+  console.log('[DEBUG]', JSON.stringify(logData2));
   if (typeof fetch !== 'undefined') {
-    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData2)}).catch(()=>{});
   }
   // #endregion
-  console.log('[SuperAdminDebugPage] Component rendering started')
-  const supabase = await createClient();
+  console.log('[SuperAdminDebugPage] Component rendering started - SIMPLIFIED VERSION')
   
-  // Get current user
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  console.log('[SuperAdminDebugPage] User fetched:', user?.email || 'null', 'Error:', userError?.message || 'none')
+  // TEMPORARY: Removed all imports and async operations to test if they're causing build issues
+  // const supabase = await createClient();
   
-  // Get super admins
-  let superAdmins: any[] = [];
-  let superAdminsError: any = null;
-  try {
-    const result = await getSuperAdmins();
-    superAdmins = result.data || [];
-  } catch (error) {
-    superAdminsError = error;
-  }
-  
-  // Check if super admin
-  let isSuperAdminResult = false;
-  let isSuperAdminError: any = null;
-  try {
-    if (user?.id) {
-      isSuperAdminResult = await isSuperAdmin(user.id);
-    }
-  } catch (error) {
-    isSuperAdminError = error;
-  }
-  
-  // Get current academy
-  let currentAcademy: any = null;
-  let academyError: any = null;
-  try {
-    currentAcademy = await getCurrentAcademy();
-  } catch (error) {
-    academyError = error;
-  }
-  
-  // Get all users
-  let allUsers: any[] = [];
-  let usersError: any = null;
-  try {
-    const result = await getAllUsers();
-    allUsers = result.data || [];
-  } catch (error) {
-    usersError = error;
-  }
-
   return (
-    <div style={{ padding: '20px', fontFamily: 'monospace', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#000' }}>
-        🔍 DEBUG: Super Admin & Settings
-      </h1>
-      
-      <div style={{ backgroundColor: '#fff', padding: '20px', marginBottom: '20px', border: '2px solid #000' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>1. Current User</h2>
-        {userError && (
-          <div style={{ color: 'red', marginBottom: '10px' }}>
-            Error: {JSON.stringify(userError, null, 2)}
-          </div>
-        )}
-        <pre style={{ backgroundColor: '#f0f0f0', padding: '10px', overflow: 'auto' }}>
-          {JSON.stringify({
-            id: user?.id || 'null',
-            email: user?.email || 'null',
-            created_at: user?.created_at || 'null',
-          }, null, 2)}
-        </pre>
-      </div>
-
-      <div style={{ backgroundColor: '#fff', padding: '20px', marginBottom: '20px', border: '2px solid #000' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>2. Super Admins</h2>
-        {superAdminsError && (
-          <div style={{ color: 'red', marginBottom: '10px' }}>
-            Error: {JSON.stringify(superAdminsError, null, 2)}
-          </div>
-        )}
-        <p style={{ marginBottom: '10px' }}>Count: {superAdmins.length}</p>
-        <pre style={{ backgroundColor: '#f0f0f0', padding: '10px', overflow: 'auto', maxHeight: '300px' }}>
-          {JSON.stringify(superAdmins, null, 2)}
-        </pre>
-      </div>
-
-      <div style={{ backgroundColor: '#fff', padding: '20px', marginBottom: '20px', border: '2px solid #000' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>3. Is Super Admin?</h2>
-        {isSuperAdminError && (
-          <div style={{ color: 'red', marginBottom: '10px' }}>
-            Error: {JSON.stringify(isSuperAdminError, null, 2)}
-          </div>
-        )}
-        <p style={{ fontSize: '20px', fontWeight: 'bold', color: isSuperAdminResult ? 'green' : 'red' }}>
-          {isSuperAdminResult ? '✅ YES' : '❌ NO'}
-        </p>
-      </div>
-
-      <div style={{ backgroundColor: '#fff', padding: '20px', marginBottom: '20px', border: '2px solid #000' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>4. Current Academy</h2>
-        {academyError && (
-          <div style={{ color: 'red', marginBottom: '10px' }}>
-            Error: {JSON.stringify(academyError, null, 2)}
-          </div>
-        )}
-        <pre style={{ backgroundColor: '#f0f0f0', padding: '10px', overflow: 'auto' }}>
-          {JSON.stringify(currentAcademy, null, 2)}
-        </pre>
-      </div>
-
-      <div style={{ backgroundColor: '#fff', padding: '20px', marginBottom: '20px', border: '2px solid #000' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>5. All Users</h2>
-        {usersError && (
-          <div style={{ color: 'red', marginBottom: '10px' }}>
-            Error: {JSON.stringify(usersError, null, 2)}
-          </div>
-        )}
-        <p style={{ marginBottom: '10px' }}>Count: {allUsers.length}</p>
-        <pre style={{ backgroundColor: '#f0f0f0', padding: '10px', overflow: 'auto', maxHeight: '300px' }}>
-          {JSON.stringify(allUsers, null, 2)}
-        </pre>
-      </div>
-
-      <div style={{ backgroundColor: '#fff', padding: '20px', marginBottom: '20px', border: '2px solid #000' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>6. Test Components</h2>
-        <div style={{ padding: '10px', border: '1px solid #ccc', backgroundColor: '#fff' }}>
-          <p style={{ marginBottom: '10px', color: '#666' }}>
-            Components will be tested in a separate client component wrapper...
-          </p>
-          <div style={{ padding: '10px', backgroundColor: '#f9f9f9', border: '1px dashed #999' }}>
-            <p style={{ color: '#999', fontStyle: 'italic' }}>
-              Client components need to be rendered in a separate file due to Next.js architecture.
-              Check the browser console for any JavaScript errors.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ backgroundColor: '#fff', padding: '20px', marginBottom: '20px', border: '2px solid #000' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>7. Links</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <a href="/dashboard/settings" style={{ color: 'blue', textDecoration: 'underline' }}>
-            → /dashboard/settings
-          </a>
-          <a href="/super-admin/academies" style={{ color: 'blue', textDecoration: 'underline' }}>
-            → /super-admin/academies
-          </a>
-        </div>
-      </div>
+    <div style={{ padding: '40px', textAlign: 'center' }}>
+      <h1 style={{ fontSize: '32px', color: '#000' }}>✅ SUPERADMIN TEST (SIMPLIFIED)</h1>
+      <p style={{ fontSize: '18px', marginTop: '20px' }}>
+        If you see this, the route is being recognized by Next.js.
+      </p>
+      <p style={{ fontSize: '14px', marginTop: '10px', color: '#666' }}>
+        Route: /superadmin
+      </p>
+      <p style={{ fontSize: '12px', marginTop: '20px', color: '#999' }}>
+        This is a simplified version without any imports to test if imports are causing build issues.
+      </p>
     </div>
   );
 }
