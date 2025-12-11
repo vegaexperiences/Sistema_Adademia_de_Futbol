@@ -24,7 +24,10 @@ export async function middleware(request: NextRequest) {
                       pathname.startsWith('/test-no-dynamic') ||
                       pathname.startsWith('/test-api-route') ||
                       pathname.startsWith('/test-minimal')
-  const isExcludedRoute = isSuperAdminRoute || isDebugRoute
+  const isAuthRoute = pathname.startsWith('/login') || 
+                     pathname.startsWith('/auth') ||
+                     pathname.startsWith('/enrollment')
+  const isExcludedRoute = isSuperAdminRoute || isDebugRoute || isAuthRoute
   
   // #region agent log
   const logData2 = {location:'middleware.ts:15',message:'Route exclusion check',data:{pathname,isSuperAdminRoute,isDebugRoute,isExcludedRoute},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'};
