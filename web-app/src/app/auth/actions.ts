@@ -5,16 +5,16 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
 export async function login(formData: FormData) {
+  const supabase = await createClient();
+  
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if (!email || !password) {
+    return { error: 'Email y contraseña son requeridos' };
+  }
+
   try {
-    const supabase = await createClient();
-    
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    if (!email || !password) {
-      return { error: 'Email y contraseña son requeridos' };
-    }
-
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -25,9 +25,14 @@ export async function login(formData: FormData) {
       return { error: 'Credenciales inválidas' };
     }
 
+    // Success - redirect (this throws a special error in Next.js that we should not catch)
     revalidatePath('/', 'layout');
     redirect('/dashboard');
-  } catch (error) {
+  } catch (error: any) {
+    // Check if this is a redirect error (NEXT_REDIRECT) - if so, re-throw it
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+      throw error;
+    }
     console.error('[Login] Unexpected error:', error);
     return { error: 'Error al iniciar sesión. Por favor intenta de nuevo.' };
   }
