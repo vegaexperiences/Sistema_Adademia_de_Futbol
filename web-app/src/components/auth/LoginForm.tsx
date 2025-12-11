@@ -1,15 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { login } from '@/app/auth/actions';
 import { Loader2 } from 'lucide-react';
 
 export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isSubmittingRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isSubmittingRef.current || loading) {
+      console.warn('[LoginForm] Already submitting, ignoring duplicate call');
+      return;
+    }
+    
+    isSubmittingRef.current = true;
     setLoading(true);
     setError(null);
     
@@ -20,19 +30,30 @@ export function LoginForm() {
       if (result?.error) {
         setError(result.error);
         setLoading(false);
+        isSubmittingRef.current = false;
       } else {
         // If success, redirect happens in action
-        // Don't set loading to false here as redirect will happen
+        // Set a timeout to reset loading if redirect doesn't happen (shouldn't happen normally)
+        setTimeout(() => {
+          setLoading(false);
+          isSubmittingRef.current = false;
+        }, 5000);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Check if this is a redirect error - if so, it's expected
+      if (error?.digest?.startsWith('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
+        // This is expected, redirect is happening
+        return;
+      }
       console.error('[LoginForm] Error:', error);
       setError('Error al iniciar sesión. Por favor intenta de nuevo.');
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="mt-8 space-y-6">
       <div className="space-y-4">
         <div>
           <label htmlFor="email-address" className="block text-sm font-semibold text-gray-700 mb-2">
