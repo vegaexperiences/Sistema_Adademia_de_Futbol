@@ -1,14 +1,22 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function getFamilies() {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const academyId = await getCurrentAcademyId();
+  
+  let query = supabase
     .from('families')
     .select('*, players(id, status)')
     .order('created_at', { ascending: false });
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching families:', error);
@@ -26,6 +34,11 @@ export async function getFamilies() {
 
 export async function createFamily(formData: FormData) {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+  
+  if (!academyId) {
+    return { error: 'No academy context available' };
+  }
   
   const family = {
     name: formData.get('name'),
@@ -33,6 +46,7 @@ export async function createFamily(formData: FormData) {
     tutor_cedula: formData.get('tutorCedula'),
     tutor_email: formData.get('tutorEmail'),
     tutor_phone: formData.get('tutorPhone'),
+    academy_id: academyId,
   };
 
   const { error } = await supabase.from('families').insert(family);
@@ -55,11 +69,18 @@ export async function updateFamily(familyId: string, data: {
   secondary_email?: string | null;
 }) {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
-  const { error } = await supabase
+  let query = supabase
     .from('families')
     .update(data)
     .eq('id', familyId);
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { error } = await query;
   
   if (error) {
     console.error('Error updating family:', error);

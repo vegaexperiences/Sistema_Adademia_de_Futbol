@@ -4,10 +4,11 @@ import PlayersList from '@/components/players/PlayersList';
 export default async function PlayersPage({
   searchParams,
 }: {
-  searchParams?: { view?: string };
+  searchParams?: Promise<{ view?: string }>;
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const players = await getPlayers();
-  const view = searchParams?.view === 'retired' ? 'retired' : 'active';
+  const view = resolvedSearchParams?.view === 'retired' ? 'retired' : 'active';
 
   return <PlayersList players={players || []} initialView={view} />;
 }

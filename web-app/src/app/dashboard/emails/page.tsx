@@ -14,12 +14,9 @@ type SearchParams = {
 export default async function EmailsPage({
   searchParams,
 }: {
-  searchParams?: SearchParams | Promise<SearchParams>;
+  searchParams?: Promise<SearchParams>;
 }) {
-  const resolvedSearchParams =
-    searchParams && typeof (searchParams as Promise<SearchParams>).then === 'function'
-      ? await searchParams
-      : (searchParams as SearchParams | undefined);
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
 
   const activeTab = resolvedSearchParams?.tab || 'historial';
 

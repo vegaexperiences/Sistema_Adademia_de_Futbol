@@ -1,16 +1,25 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function getPlayers() {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+  
   // Get all players (including rejected/retired) - they should never be deleted
   // Include payment_status, custom_monthly_fee, and discount_percent for filtering and sorting
-  const { data, error } = await supabase
+  let query = supabase
     .from('players')
     .select('*, families(name, tutor_name, tutor_email)')
     .order('created_at', { ascending: false });
+  
+  // Filter by academy if not super admin
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching players:', error);
@@ -22,6 +31,11 @@ export async function getPlayers() {
 
 export async function createPlayer(formData: FormData) {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+  
+  if (!academyId) {
+    return { error: 'No academy context available' };
+  }
   
   const player = {
     first_name: formData.get('firstName'),
@@ -31,6 +45,7 @@ export async function createPlayer(formData: FormData) {
     cedula: formData.get('cedula'),
     category: formData.get('category'),
     status: 'Active',
+    academy_id: academyId,
     // family_id would be linked here in a real scenario
   };
 
@@ -47,13 +62,19 @@ export async function createPlayer(formData: FormData) {
 // Retire a player (change status to Rejected) - player is never deleted
 export async function retirePlayer(playerId: string, reason?: string) {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   // Get current player data
-  const { data: player, error: playerError } = await supabase
+  let query = supabase
     .from('players')
     .select('status, first_name, last_name')
-    .eq('id', playerId)
-    .single();
+    .eq('id', playerId);
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data: player, error: playerError } = await query.single();
   
   if (playerError || !player) {
     console.error('Error fetching player:', playerError);
@@ -78,10 +99,16 @@ export async function retirePlayer(playerId: string, reason?: string) {
       : `Retirado: ${reason}`;
   }
   
-  const { error: updateError } = await supabase
+  let updateQuery = supabase
     .from('players')
     .update(updateData)
     .eq('id', playerId);
+  
+  if (academyId) {
+    updateQuery = updateQuery.eq('academy_id', academyId);
+  }
+  
+  const { error: updateError } = await updateQuery;
   
   if (updateError) {
     console.error('Error retiring player:', updateError);
@@ -111,13 +138,19 @@ export async function updatePlayer(playerId: string, data: {
   familyId?: string | null;
 }) {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   // Get player to check if they have a family
-  const { data: player, error: playerError } = await supabase
+  let query = supabase
     .from('players')
     .select('family_id')
-    .eq('id', playerId)
-    .single();
+    .eq('id', playerId);
+  
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+  
+  const { data: player, error: playerError } = await query.single();
   
   if (playerError) {
     console.error('Error fetching player:', playerError);
@@ -137,10 +170,16 @@ export async function updatePlayer(playerId: string, data: {
     if (tutor_cedula !== undefined) playerUpdateData.tutor_cedula = tutor_cedula;
   }
   
-  const { error: updateError } = await supabase
+  let updateQuery = supabase
     .from('players')
     .update(playerUpdateData)
     .eq('id', playerId);
+  
+  if (academyId) {
+    updateQuery = updateQuery.eq('academy_id', academyId);
+  }
+  
+  const { error: updateError } = await updateQuery;
   
   if (updateError) {
     console.error('Error updating player:', updateError);

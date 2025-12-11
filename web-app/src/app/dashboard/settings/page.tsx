@@ -1,7 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
-import { Settings, DollarSign, Save, CreditCard, Calendar } from 'lucide-react';
+import { Settings, DollarSign, Save, CreditCard, Calendar, Shield, Users } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PaymentMethodsSettings } from '@/components/settings/PaymentMethodsSettings';
+import { SuperAdminSettings } from '@/components/settings/SuperAdminSettings';
+import { UserManagement } from '@/components/settings/UserManagement';
+import { getSuperAdmins } from '@/lib/actions/super-admin';
 import Link from 'next/link';
 
 async function updateSetting(formData: FormData) {
@@ -35,6 +38,20 @@ export default async function SettingsPage() {
     .order('key');
 
   const priceSettings = settings?.filter(s => s.key.startsWith('price_')) || [];
+  
+  // Get current user email
+  const { data: { user } } = await supabase.auth.getUser();
+  const currentUserEmail = user?.email || null;
+  
+  // Get super admins - simplified to avoid blocking render
+  let superAdmins: any[] = [];
+  try {
+    const superAdminsResult = await getSuperAdmins();
+    superAdmins = superAdminsResult.data || [];
+  } catch (error) {
+    // Silently fail - component will handle empty array
+    superAdmins = [];
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -75,6 +92,18 @@ export default async function SettingsPage() {
           >
             📧 Correos
           </Link>
+          <a 
+            href="#super-admin" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            🛡️ Super Admin
+          </a>
+          <a 
+            href="#user-management" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            👥 Usuarios
+          </a>
         </div>
       </div>
 
@@ -355,6 +384,34 @@ export default async function SettingsPage() {
               </div>
             </div>
           </form>
+        </div>
+      </div>
+
+      {/* Super Admin Settings - Simple HTML first to test */}
+      <div id="super-admin" className="glass-card p-6" style={{ backgroundColor: '#fff', border: '2px solid red' }}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          🛡️ Gestión de Super Admins
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Super Admins: {superAdmins.length}, Email: {currentUserEmail || 'null'}
+        </p>
+        <div className="bg-red-50 p-4 rounded">
+          <p className="text-sm font-bold text-red-800">Si ves este texto, el HTML se está renderizando correctamente.</p>
+          <p className="text-sm text-gray-700 mt-2">Los componentes se cargarán después de verificar que el HTML funciona.</p>
+        </div>
+      </div>
+
+      {/* User Management Section - Simple HTML first to test */}
+      <div id="user-management" className="glass-card p-6" style={{ backgroundColor: '#fff', border: '2px solid purple' }}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          👥 Gestión de Usuarios y Permisos
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Email: {currentUserEmail || 'null'}
+        </p>
+        <div className="bg-purple-50 p-4 rounded">
+          <p className="text-sm font-bold text-purple-800">Si ves este texto, el HTML se está renderizando correctamente.</p>
+          <p className="text-sm text-gray-700 mt-2">Los componentes se cargarán después de verificar que el HTML funciona.</p>
         </div>
       </div>
     </div>
