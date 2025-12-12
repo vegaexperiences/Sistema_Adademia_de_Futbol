@@ -60,12 +60,15 @@ export async function getAllUsers(): Promise<{ data: User[] | null; error: strin
   }
   
   // Get all users from auth
+  console.log('[getAllUsers] Attempting to list users via admin API')
   const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers()
   
   if (usersError) {
-    console.error('Error fetching users:', usersError)
-    return { data: null, error: usersError.message }
+    console.error('[getAllUsers] Error fetching users:', usersError)
+    return { data: null, error: usersError.message || 'Error al obtener usuarios' }
   }
+  
+  console.log('[getAllUsers] Successfully fetched', users?.length || 0, 'users')
   
   const formattedUsers: User[] = users.map(u => ({
     id: u.id,

@@ -44,25 +44,35 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
     setError(null)
 
     try {
+      console.log('[UserManagement] Loading data...')
       const [usersResult, rolesResult, academiesResult] = await Promise.all([
         getAllUsers(),
         getAllRoles(),
         getAllAcademies(),
       ])
 
+      console.log('[UserManagement] Results:', {
+        users: { error: usersResult.error, count: usersResult.data?.length || 0 },
+        roles: { error: rolesResult.error, count: rolesResult.data?.length || 0 },
+        academies: { error: academiesResult.error, count: academiesResult.data?.length || 0 },
+      })
+
       if (usersResult.error) {
+        console.error('[UserManagement] Error loading users:', usersResult.error)
         setError(usersResult.error)
         setIsLoading(false)
         return
       }
 
       if (rolesResult.error) {
+        console.error('[UserManagement] Error loading roles:', rolesResult.error)
         setError(rolesResult.error)
         setIsLoading(false)
         return
       }
 
       if (academiesResult.error) {
+        console.error('[UserManagement] Error loading academies:', academiesResult.error)
         setError(academiesResult.error)
         setIsLoading(false)
         return
@@ -73,7 +83,8 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
       setAcademies(academiesResult.data || [])
 
       // Load roles for each user
-      if (usersResult.data) {
+      if (usersResult.data && usersResult.data.length > 0) {
+        console.log('[UserManagement] Loading roles for', usersResult.data.length, 'users')
         const rolesMap: Record<string, UserRole[]> = {}
         for (const user of usersResult.data) {
           const userRolesResult = await getUserRoles(user.id)
@@ -89,6 +100,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
         setSelectedAcademy(academiesResult.data[0].id)
       }
     } catch (err: any) {
+      console.error('[UserManagement] Unexpected error:', err)
       setError(err.message || 'Error al cargar datos')
     } finally {
       setIsLoading(false)
@@ -178,6 +190,24 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800 font-medium">{error}</p>
+          {error.includes('Super admin') && (
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 text-sm font-semibold mb-2">💡 Solución:</p>
+              <p className="text-yellow-700 text-sm mb-2">
+                Si eres super admin y ves este error, tu usuario no está registrado en la tabla <code className="bg-yellow-100 px-1 rounded">super_admins</code> de la base de datos.
+              </p>
+              <p className="text-yellow-700 text-sm">
+                Ejecuta este SQL en Supabase Dashboard para agregar tu usuario:
+              </p>
+              <pre className="mt-2 p-2 bg-yellow-100 rounded text-xs overflow-x-auto">
+{`INSERT INTO super_admins (user_id, email, name)
+SELECT id, email, COALESCE(raw_user_meta_data->>'name', email) as name
+FROM auth.users
+WHERE email = 'vegaexperiences@gmail.com'
+ON CONFLICT (user_id) DO NOTHING;`}
+              </pre>
+            </div>
+          )}
         </div>
       )}
 
