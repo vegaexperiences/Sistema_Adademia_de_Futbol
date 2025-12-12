@@ -182,13 +182,31 @@ export async function createPayment(payment: Payment) {
   
   const { data: { user } } = await supabase.auth.getUser();
   
+  // Validate required fields
+  if (!payment.amount || payment.amount <= 0) {
+    throw new Error('El monto debe ser mayor a 0');
+  }
+
+  if (!payment.payment_date) {
+    throw new Error('La fecha de pago es requerida');
+  }
+
+  // For manual payment methods (cash, transfer, ach), always set status to 'Approved'
+  // For online methods (yappy, paguelofacil), status can be 'Pending' initially
+  const manualMethods = ['cash', 'transfer', 'ach', 'other'];
+  const paymentMethod = payment.method || payment.payment_method || 'cash';
+  const shouldAutoApprove = manualMethods.includes(paymentMethod);
+  
   // Map legacy fields to correct field names
   const paymentData: any = {
     ...payment,
     type: payment.type || payment.payment_type || 'custom', // Use 'type' field
-    method: payment.method || payment.payment_method, // Use 'method' field
-    status: payment.status || 'Approved', // Default to 'Approved' if not specified
+    method: paymentMethod, // Normalize method name
+    // Always set status: 'Approved' for manual methods, or use provided status
+    status: shouldAutoApprove ? 'Approved' : (payment.status || 'Pending'),
     academy_id: academyId,
+    // Ensure player_id is set if provided
+    player_id: payment.player_id || null,
     // Note: created_by column does not exist in payments table, removed to avoid schema errors
   };
   
@@ -197,6 +215,17 @@ export async function createPayment(payment: Payment) {
   delete paymentData.payment_method;
   delete paymentData.month_year; // month_year column does not exist in payments table
   
+  // Log payment creation for debugging
+  console.log('[createPayment] Creating payment:', {
+    amount: paymentData.amount,
+    type: paymentData.type,
+    method: paymentData.method,
+    status: paymentData.status,
+    player_id: paymentData.player_id,
+    academy_id: paymentData.academy_id,
+    payment_date: paymentData.payment_date,
+  });
+  
   const { data, error } = await supabase
     .from('payments')
     .insert(paymentData)
@@ -204,9 +233,26 @@ export async function createPayment(payment: Payment) {
     .single();
   
   if (error) {
-    console.error('Error creating payment:', error);
-    throw new Error('Error al crear el pago');
+    console.error('[createPayment] Error creating payment:', {
+      error,
+      paymentData,
+    });
+    throw new Error(`Error al crear el pago: ${error.message}`);
   }
+
+  // Verify the payment was created correctly
+  if (!data) {
+    console.error('[createPayment] Payment created but no data returned');
+    throw new Error('Error al crear el pago: no se recibió confirmación');
+  }
+
+  // Log successful creation
+  console.log('[createPayment] Payment created successfully:', {
+    id: data.id,
+    status: data.status,
+    method: data.method,
+    amount: data.amount,
+  });
   
   // Update player's last payment date
   let playerUpdateQuery = supabase

@@ -1,0 +1,336 @@
+'use server';
+
+import { createClient } from '@/lib/supabase/server';
+import { getCurrentAcademyId } from '@/lib/supabase/server';
+
+export interface Transaction {
+  id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  date: string;
+  description: string;
+  method?: string;
+  status?: string;
+  category?: string;
+  player_name?: string;
+  family_name?: string;
+  reference?: string;
+}
+
+export interface Balance {
+  totalIncome: number;
+  totalExpenses: number;
+  netBalance: number;
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface TransactionsFilter {
+  startDate?: string;
+  endDate?: string;
+  type?: 'income' | 'expense' | 'all';
+  method?: string;
+  status?: string;
+  search?: string;
+}
+
+/**
+ * Get all transactions (payments and expenses) for the current academy
+ */
+export async function getTransactions(filter: TransactionsFilter = {}): Promise<Transaction[]> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  if (!academyId) {
+    return [];
+  }
+
+  const transactions: Transaction[] = [];
+
+  // Get payments (income)
+  let paymentsQuery = supabase
+    .from('payments')
+    .select(`
+      id,
+      amount,
+      payment_date,
+      type,
+      method,
+      status,
+      notes,
+      reference,
+      player_id,
+      players(
+        first_name,
+        last_name,
+        family_id,
+        families(tutor_name)
+      )
+    `)
+    .not('player_id', 'is', null)
+    .neq('status', 'Rejected')
+    .neq('status', 'Cancelled')
+    .eq('academy_id', academyId);
+
+  if (filter.startDate) {
+    paymentsQuery = paymentsQuery.gte('payment_date', filter.startDate);
+  }
+  if (filter.endDate) {
+    paymentsQuery = paymentsQuery.lte('payment_date', filter.endDate);
+  }
+  if (filter.method) {
+    paymentsQuery = paymentsQuery.eq('method', filter.method);
+  }
+  if (filter.status) {
+    paymentsQuery = paymentsQuery.eq('status', filter.status);
+  }
+
+  const { data: payments, error: paymentsError } = await paymentsQuery.order('payment_date', { ascending: false });
+
+  if (paymentsError) {
+    console.error('[getTransactions] Error fetching payments:', paymentsError);
+  } else if (payments) {
+    payments.forEach((payment) => {
+      const player = Array.isArray(payment.players) ? payment.players[0] : payment.players;
+      const family = player?.families ? (Array.isArray(player.families) ? player.families[0] : player.families) : null;
+      
+      const description = payment.notes || 
+        (player ? `${player.first_name} ${player.last_name}` : 'Pago sin jugador') ||
+        `Pago ${payment.type || 'custom'}`;
+
+      // Only include if type filter allows income or is 'all'
+      if (!filter.type || filter.type === 'all' || filter.type === 'income') {
+        // Apply search filter if provided
+        if (!filter.search || 
+            description.toLowerCase().includes(filter.search.toLowerCase()) ||
+            (payment.reference && payment.reference.toLowerCase().includes(filter.search.toLowerCase()))) {
+          transactions.push({
+            id: payment.id,
+            type: 'income',
+            amount: parseFloat(payment.amount.toString()),
+            date: payment.payment_date,
+            description,
+            method: payment.method || undefined,
+            status: payment.status || undefined,
+            player_name: player ? `${player.first_name} ${player.last_name}` : undefined,
+            family_name: family?.tutor_name || undefined,
+            reference: payment.reference || undefined,
+          });
+        }
+      }
+    });
+  }
+
+  // Get expenses (outgoing)
+  let expensesQuery = supabase
+    .from('expenses')
+    .select(`
+      id,
+      amount,
+      date,
+      description,
+      category,
+      payment_method
+    `)
+    .eq('academy_id', academyId);
+
+  if (filter.startDate) {
+    expensesQuery = expensesQuery.gte('date', filter.startDate);
+  }
+  if (filter.endDate) {
+    expensesQuery = expensesQuery.lte('date', filter.endDate);
+  }
+  if (filter.method) {
+    expensesQuery = expensesQuery.eq('payment_method', filter.method);
+  }
+
+  const { data: expenses, error: expensesError } = await expensesQuery.order('date', { ascending: false });
+
+  if (expensesError) {
+    console.error('[getTransactions] Error fetching expenses:', expensesError);
+  } else if (expenses) {
+    expenses.forEach((expense) => {
+      // Only include if type filter allows expense or is 'all'
+      if (!filter.type || filter.type === 'all' || filter.type === 'expense') {
+        // Apply search filter if provided
+        if (!filter.search || 
+            expense.description.toLowerCase().includes(filter.search.toLowerCase())) {
+          transactions.push({
+            id: expense.id,
+            type: 'expense',
+            amount: parseFloat(expense.amount.toString()),
+            date: expense.date,
+            description: expense.description,
+            method: expense.payment_method || undefined,
+            category: expense.category || undefined,
+          });
+        }
+      }
+    });
+  }
+
+  // Get staff payments (outgoing)
+  let staffPaymentsQuery = supabase
+    .from('staff_payments')
+    .select(`
+      id,
+      amount,
+      payment_date,
+      staff(first_name, last_name, position)
+    `);
+
+  if (filter.startDate) {
+    staffPaymentsQuery = staffPaymentsQuery.gte('payment_date', filter.startDate);
+  }
+  if (filter.endDate) {
+    staffPaymentsQuery = staffPaymentsQuery.lte('payment_date', filter.endDate);
+  }
+
+  const { data: staffPayments, error: staffPaymentsError } = await staffPaymentsQuery.order('payment_date', { ascending: false });
+
+  if (staffPaymentsError) {
+    console.error('[getTransactions] Error fetching staff payments:', staffPaymentsError);
+  } else if (staffPayments) {
+    staffPayments.forEach((staffPayment) => {
+      const staff = Array.isArray(staffPayment.staff) ? staffPayment.staff[0] : staffPayment.staff;
+      const description = staff 
+        ? `Nómina - ${staff.first_name} ${staff.last_name}${staff.position ? ` (${staff.position})` : ''}`
+        : 'Nómina';
+
+      // Only include if type filter allows expense or is 'all'
+      if (!filter.type || filter.type === 'all' || filter.type === 'expense') {
+        // Apply search filter if provided
+        if (!filter.search || description.toLowerCase().includes(filter.search.toLowerCase())) {
+          transactions.push({
+            id: staffPayment.id,
+            type: 'expense',
+            amount: parseFloat(staffPayment.amount.toString()),
+            date: staffPayment.payment_date,
+            description,
+            category: 'Nómina',
+            method: 'transfer', // Staff payments are typically transfers
+          });
+        }
+      }
+    });
+  }
+
+  // Sort all transactions by date (newest first)
+  transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  return transactions;
+}
+
+/**
+ * Calculate balance for a given period
+ */
+export async function getBalance(startDate?: string, endDate?: string): Promise<Balance> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  if (!academyId) {
+    return {
+      totalIncome: 0,
+      totalExpenses: 0,
+      netBalance: 0,
+      period: {
+        start: startDate || new Date().toISOString().split('T')[0],
+        end: endDate || new Date().toISOString().split('T')[0],
+      },
+    };
+  }
+
+  // Default to current month if no dates provided
+  const today = new Date();
+  const defaultStart = startDate || new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+  const defaultEnd = endDate || new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+
+  // Get all income (approved payments)
+  let paymentsQuery = supabase
+    .from('payments')
+    .select('amount, status')
+    .not('player_id', 'is', null)
+    .neq('status', 'Rejected')
+    .neq('status', 'Cancelled')
+    .gte('payment_date', defaultStart)
+    .lte('payment_date', defaultEnd)
+    .eq('academy_id', academyId);
+
+  const { data: payments } = await paymentsQuery;
+
+  const validPayments = (payments || []).filter(p => {
+    if (!p.status || p.status === '') return true;
+    return p.status === 'Approved' || p.status === 'Pending';
+  });
+
+  const totalIncome = validPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+
+  // Get all expenses
+  const { data: expenses } = await supabase
+    .from('expenses')
+    .select('amount')
+    .gte('date', defaultStart)
+    .lte('date', defaultEnd)
+    .eq('academy_id', academyId);
+
+  const totalOperationalExpenses = (expenses || []).reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
+
+  // Get staff payments
+  const { data: staffPayments } = await supabase
+    .from('staff_payments')
+    .select('amount')
+    .gte('payment_date', defaultStart)
+    .lte('payment_date', defaultEnd);
+
+  const totalStaffExpenses = (staffPayments || []).reduce((sum, s) => sum + parseFloat(s.amount.toString()), 0);
+
+  const totalExpenses = totalOperationalExpenses + totalStaffExpenses;
+  const netBalance = totalIncome - totalExpenses;
+
+  return {
+    totalIncome,
+    totalExpenses,
+    netBalance,
+    period: {
+      start: defaultStart,
+      end: defaultEnd,
+    },
+  };
+}
+
+/**
+ * Get balance summary for different periods
+ */
+export async function getBalanceSummary() {
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+
+  // Current month
+  const startOfMonth = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+  const endOfMonth = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+
+  // Current quarter
+  const quarter = Math.floor(currentMonth / 3);
+  const startOfQuarter = new Date(currentYear, quarter * 3, 1).toISOString().split('T')[0];
+  const endOfQuarter = new Date(currentYear, (quarter + 1) * 3, 0).toISOString().split('T')[0];
+
+  // Current year
+  const startOfYear = `${currentYear}-01-01`;
+  const endOfYear = `${currentYear}-12-31`;
+
+  const [monthly, quarterly, annual] = await Promise.all([
+    getBalance(startOfMonth, endOfMonth),
+    getBalance(startOfQuarter, endOfQuarter),
+    getBalance(startOfYear, endOfYear),
+  ]);
+
+  return {
+    monthly,
+    quarterly,
+    annual,
+  };
+}
+

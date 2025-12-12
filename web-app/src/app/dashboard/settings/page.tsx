@@ -7,6 +7,7 @@ import { UserManagement } from '@/components/settings/UserManagement';
 import { AcademySettingsSelector } from '@/components/settings/AcademySettingsSelector';
 import { BrandingConfig } from '@/components/super-admin/BrandingConfig';
 import { LogoUploader } from '@/components/super-admin/LogoUploader';
+import { OKRsSettings } from '@/components/settings/OKRsSettings';
 import { getSuperAdmins } from '@/lib/actions/super-admin';
 import { checkIsSuperAdmin, getAcademyById } from '@/lib/actions/academies';
 import { getCurrentAcademyId } from '@/lib/supabase/server';
@@ -555,6 +556,11 @@ export default async function SettingsPage() {
           )}
         </div>
       )}
+
+      {/* OKRs Settings */}
+      <div id="okrs" className="glass-card p-6">
+        <OKRsSettings />
+      </div>
     </div>
   );
 }

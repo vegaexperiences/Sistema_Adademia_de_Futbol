@@ -11,10 +11,18 @@ import type { FinancialKPIs, ScholarshipImpactAnalysis as ScholarshipAnalysis, B
 
 interface ReportsDashboardProps {
   kpis: FinancialKPIs;
-  scholarshipAnalysis: ScholarshipAnalysis;
-  businessProjection: BusinessProjectionType;
-  okrs: OKRsData;
+  scholarshipAnalysis: ScholarshipAnalysis | null;
+  businessProjection: BusinessProjectionType | null;
+  okrs: OKRsData | null;
+  loadingStates?: {
+    scholarship: boolean;
+    projection: boolean;
+    okrs: boolean;
+  };
   onExportReport: (type: string, period?: string, year?: number) => Promise<void>;
+  onLoadScholarship?: () => void;
+  onLoadProjection?: () => void;
+  onLoadOKRs?: (period?: 'monthly' | 'quarterly' | 'annual') => void;
 }
 
 type Tab = 'kpis' | 'reports' | 'scholarship' | 'projections' | 'okrs';
@@ -24,9 +32,27 @@ export function ReportsDashboard({
   scholarshipAnalysis,
   businessProjection,
   okrs,
+  loadingStates = { scholarship: false, projection: false, okrs: false },
   onExportReport,
+  onLoadScholarship,
+  onLoadProjection,
+  onLoadOKRs,
 }: ReportsDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('kpis');
+
+  // Load data when tab is selected
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    
+    // Load data on demand
+    if (tab === 'scholarship' && !scholarshipAnalysis && onLoadScholarship) {
+      onLoadScholarship();
+    } else if (tab === 'projections' && !businessProjection && onLoadProjection) {
+      onLoadProjection();
+    } else if (tab === 'okrs' && !okrs && onLoadOKRs) {
+      onLoadOKRs('monthly');
+    }
+  };
 
   const tabs = [
     { id: 'kpis' as Tab, label: 'KPIs', icon: BarChart3 },
@@ -48,7 +74,7 @@ export function ReportsDashboard({
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200
                   ${isActive
@@ -99,7 +125,18 @@ export function ReportsDashboard({
                 Análisis detallado del impacto financiero de jugadores becados en el negocio
               </p>
             </div>
-            <ScholarshipImpactAnalysis analysis={scholarshipAnalysis} />
+            {loadingStates.scholarship ? (
+              <div className="glass-card p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Cargando análisis de becados...</p>
+              </div>
+            ) : scholarshipAnalysis ? (
+              <ScholarshipImpactAnalysis analysis={scholarshipAnalysis} />
+            ) : (
+              <div className="glass-card p-12 text-center">
+                <p className="text-gray-600">Haz clic en la pestaña para cargar los datos</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -111,13 +148,35 @@ export function ReportsDashboard({
                 Proyecciones financieras basadas en tendencias históricas
               </p>
             </div>
-            <BusinessProjection projection={businessProjection} />
+            {loadingStates.projection ? (
+              <div className="glass-card p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Cargando proyecciones...</p>
+              </div>
+            ) : businessProjection ? (
+              <BusinessProjection projection={businessProjection} />
+            ) : (
+              <div className="glass-card p-12 text-center">
+                <p className="text-gray-600">Haz clic en la pestaña para cargar los datos</p>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'okrs' && (
           <div className="space-y-6">
-            <OKRsDashboard okrs={okrs} />
+            {loadingStates.okrs ? (
+              <div className="glass-card p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Cargando OKRs...</p>
+              </div>
+            ) : okrs ? (
+              <OKRsDashboard okrs={okrs} />
+            ) : (
+              <div className="glass-card p-12 text-center">
+                <p className="text-gray-600">Haz clic en la pestaña para cargar los datos</p>
+              </div>
+            )}
           </div>
         )}
       </div>

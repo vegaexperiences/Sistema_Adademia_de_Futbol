@@ -176,13 +176,14 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
   const academyId = await getCurrentAcademyId();
 
   // Get all data in parallel
+  // Include all payment methods and filter properly
   const [paymentsResult, expensesResult, staffPaymentsResult, playersResult] = await Promise.all([
     supabase
       .from('payments')
-      .select('amount, status')
+      .select('amount, status, method')
       .not('player_id', 'is', null)
       .neq('status', 'Rejected')
-      .eq('status', 'Approved')
+      .neq('status', 'Cancelled')
       .gte('payment_date', startDate)
       .lte('payment_date', endDate)
       .eq('academy_id', academyId),
@@ -204,8 +205,20 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
       .eq('academy_id', academyId),
   ]);
 
-  // Calculate income
-  const totalIncome = (paymentsResult.data || [])
+  // Calculate income - include Approved and Pending payments (Pending might be approved later)
+  // Exclude only Rejected and Cancelled
+  const validPayments = (paymentsResult.data || []).filter(p => {
+    if (!p.status || p.status === '') return true; // Backward compatibility
+    return p.status === 'Approved' || p.status === 'Pending';
+  });
+  
+  // Log for debugging
+  const rejectedPayments = (paymentsResult.data || []).filter(p => p.status === 'Rejected' || p.status === 'Cancelled');
+  if (rejectedPayments.length > 0) {
+    console.log('[getFinancialKPIs] Excluded payments:', rejectedPayments.length);
+  }
+  
+  const totalIncome = validPayments
     .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
 
   // Calculate expenses
@@ -224,17 +237,121 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
   const activePlayers = allPlayers.filter(p => p.status === 'Active').length;
   const scholarshipPlayers = allPlayers.filter(p => p.status === 'Scholarship').length;
 
-  // Calculate expected monthly income and scholarship opportunity cost
+  // Optimized: Calculate expected monthly income and scholarship opportunity cost in batch
+  // Get settings once
+  const { data: settings } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('academy_id', academyId);
+
+  const settingsMap = settings?.reduce((acc: any, s: any) => {
+    acc[s.key] = parseFloat(s.value);
+    return acc;
+  }, {}) || {};
+
+  const normalFee = settingsMap['price_monthly'] || 130;
+  const familyFee = settingsMap['price_monthly_family'] || 110.50;
+
+  // Get all players with their family info and calculate fees in batch
+  const { data: playersWithFees } = await supabase
+    .from('players')
+    .select(`
+      id,
+      status,
+      custom_monthly_fee,
+      family_id,
+      families(id)
+    `)
+    .in('status', ['Active', 'Scholarship'])
+    .eq('academy_id', academyId);
+
+  if (!playersWithFees || playersWithFees.length === 0) {
+    return {
+      totalIncome,
+      totalExpenses,
+      profit,
+      profitMargin,
+      activePlayers: 0,
+      scholarshipPlayers: 0,
+      scholarshipOpportunityCost: 0,
+      expectedMonthlyIncome: 0,
+      actualVsExpected: totalIncome,
+      actualVsExpectedPercent: 0,
+    };
+  }
+
+  // Get family player counts in one query
+  const { data: familyCounts } = await supabase
+    .from('players')
+    .select('family_id')
+    .in('status', ['Active', 'Scholarship'])
+    .not('family_id', 'is', null)
+    .eq('academy_id', academyId);
+
+  const familyPlayerCounts: Record<string, number> = {};
+  (familyCounts || []).forEach(p => {
+    if (p.family_id) {
+      familyPlayerCounts[p.family_id] = (familyPlayerCounts[p.family_id] || 0) + 1;
+    }
+  });
+
+  // Get player order within families for family discount calculation
+  const { data: familyPlayerOrder } = await supabase
+    .from('players')
+    .select('id, family_id, created_at')
+    .in('status', ['Active', 'Scholarship'])
+    .not('family_id', 'is', null)
+    .eq('academy_id', academyId)
+    .order('family_id')
+    .order('created_at');
+
+  const playerOrderInFamily: Record<string, number> = {};
+  let currentFamilyId: string | null = null;
+  let currentIndex = 0;
+  (familyPlayerOrder || []).forEach(p => {
+    if (p.family_id !== currentFamilyId) {
+      currentFamilyId = p.family_id;
+      currentIndex = 0;
+    }
+    playerOrderInFamily[p.id] = currentIndex;
+    currentIndex++;
+  });
+
+  // Calculate fees in batch
   let expectedMonthlyIncome = 0;
   let scholarshipOpportunityCost = 0;
 
-  for (const player of allPlayers) {
-    const monthlyFee = await calculateMonthlyFee(player.id);
+  for (const player of playersWithFees) {
+    let monthlyFee = 0;
+    let opportunityCost = 0;
+
     if (player.status === 'Scholarship') {
-      // Calculate what they would pay if not scholarship
-      const opportunityCost = await calculateScholarshipOpportunityCost(player.id);
+      // Calculate opportunity cost (what they would pay if not scholarship)
+      if (player.custom_monthly_fee !== null && player.custom_monthly_fee !== undefined) {
+        opportunityCost = player.custom_monthly_fee;
+      } else {
+        const family = Array.isArray(player.families) ? player.families[0] : player.families;
+        if (family?.id && familyPlayerCounts[family.id] >= 2) {
+          const playerIndex = playerOrderInFamily[player.id] || 0;
+          opportunityCost = playerIndex >= 1 ? familyFee : normalFee;
+        } else {
+          opportunityCost = normalFee;
+        }
+      }
       scholarshipOpportunityCost += opportunityCost;
     } else {
+      // Calculate monthly fee for active players
+      if (player.custom_monthly_fee !== null && player.custom_monthly_fee !== undefined) {
+        monthlyFee = player.custom_monthly_fee;
+      } else {
+        const family = Array.isArray(player.families) ? player.families[0] : player.families;
+        if (family?.id && familyPlayerCounts[family.id] >= 2) {
+          const playerIndex = playerOrderInFamily[player.id] || 0;
+          monthlyFee = playerIndex >= 1 ? familyFee : normalFee;
+        } else {
+          monthlyFee = normalFee;
+        }
+      }
       expectedMonthlyIncome += monthlyFee;
     }
   }
@@ -366,22 +483,101 @@ export async function getScholarshipImpactAnalysis(
   const activePlayers = allPlayers.filter(p => p.status === 'Active');
   const scholarshipPlayers = allPlayers.filter(p => p.status === 'Scholarship');
 
-  // Calculate opportunity cost for each scholarship player
-  const scholarshipPlayersWithCost: ScholarshipPlayer[] = await Promise.all(
-    scholarshipPlayers.map(async (player) => {
-      const opportunityCost = await calculateScholarshipOpportunityCost(player.id);
-      return {
-        id: player.id,
-        first_name: player.first_name,
-        last_name: player.last_name,
-        category: player.category,
-        family_id: player.family_id,
-        custom_monthly_fee: player.custom_monthly_fee,
-        opportunityCost,
-        created_at: player.created_at,
-      };
-    })
-  );
+  // Optimized: Calculate opportunity costs in batch
+  // Get settings once
+  const { data: settings } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('academy_id', academyId);
+
+  const settingsMap = settings?.reduce((acc: any, s: any) => {
+    acc[s.key] = parseFloat(s.value);
+    return acc;
+  }, {}) || {};
+
+  const normalFee = settingsMap['price_monthly'] || 130;
+  const familyFee = settingsMap['price_monthly_family'] || 110.50;
+
+  // Get family player counts
+  const { data: familyCounts } = await supabase
+    .from('players')
+    .select('family_id')
+    .in('status', ['Active', 'Scholarship'])
+    .not('family_id', 'is', null)
+    .eq('academy_id', academyId);
+
+  const familyPlayerCounts: Record<string, number> = {};
+  (familyCounts || []).forEach(p => {
+    if (p.family_id) {
+      familyPlayerCounts[p.family_id] = (familyPlayerCounts[p.family_id] || 0) + 1;
+    }
+  });
+
+  // Get player order within families
+  const { data: familyPlayerOrder } = await supabase
+    .from('players')
+    .select('id, family_id, created_at')
+    .in('status', ['Active', 'Scholarship'])
+    .not('family_id', 'is', null)
+    .eq('academy_id', academyId)
+    .order('family_id')
+    .order('created_at');
+
+  const playerOrderInFamily: Record<string, number> = {};
+  let currentFamilyId: string | null = null;
+  let currentIndex = 0;
+  (familyPlayerOrder || []).forEach(p => {
+    if (p.family_id !== currentFamilyId) {
+      currentFamilyId = p.family_id;
+      currentIndex = 0;
+    }
+    playerOrderInFamily[p.id] = currentIndex;
+    currentIndex++;
+  });
+
+  // Get family info for scholarship players
+  const scholarshipPlayerIds = scholarshipPlayers.map(p => p.id);
+  const { data: scholarshipPlayersWithFamilies } = await supabase
+    .from('players')
+    .select('id, families(id)')
+    .in('id', scholarshipPlayerIds)
+    .eq('academy_id', academyId);
+
+  const familyMap: Record<string, any> = {};
+  (scholarshipPlayersWithFamilies || []).forEach(p => {
+    const family = Array.isArray(p.families) ? p.families[0] : p.families;
+    if (family) {
+      familyMap[p.id] = family;
+    }
+  });
+
+  // Calculate opportunity costs in batch
+  const scholarshipPlayersWithCost: ScholarshipPlayer[] = scholarshipPlayers.map((player) => {
+    let opportunityCost = 0;
+
+    if (player.custom_monthly_fee !== null && player.custom_monthly_fee !== undefined) {
+      opportunityCost = player.custom_monthly_fee;
+    } else {
+      const family = familyMap[player.id];
+      if (family?.id && familyPlayerCounts[family.id] >= 2) {
+        const playerIndex = playerOrderInFamily[player.id] || 0;
+        opportunityCost = playerIndex >= 1 ? familyFee : normalFee;
+      } else {
+        opportunityCost = normalFee;
+      }
+    }
+
+    return {
+      id: player.id,
+      first_name: player.first_name,
+      last_name: player.last_name,
+      category: player.category,
+      family_id: player.family_id,
+      custom_monthly_fee: player.custom_monthly_fee,
+      opportunityCost,
+      created_at: player.created_at,
+    };
+  });
 
   const monthlyOpportunityCost = scholarshipPlayersWithCost.reduce(
     (sum, p) => sum + p.opportunityCost,
@@ -916,12 +1112,14 @@ export async function getOKRsData(period: 'monthly' | 'quarterly' | 'annual' = '
     ? (currentPlayerCount / previousPlayerCount) * 100 
     : 100;
 
-  // Targets (can be configured in settings, for now using reasonable defaults)
-  const revenueTarget = kpis.totalIncome * 1.2; // 20% growth target
-  const profitTarget = kpis.profit * 1.15; // 15% growth target
-  const marginTarget = 30; // 30% margin target
-  const activePlayersTarget = currentPlayerCount * 1.1; // 10% growth target
-  const retentionTarget = 95; // 95% retention target
+  // Get targets from settings (with fallback to calculated defaults)
+  const { getOKRTarget } = await import('@/lib/actions/okrs');
+  
+  const revenueTarget = await getOKRTarget(period, 'revenue', kpis.totalIncome);
+  const profitTarget = await getOKRTarget(period, 'profit', kpis.profit);
+  const marginTarget = await getOKRTarget(period, 'margin', kpis.profitMargin);
+  const activePlayersTarget = await getOKRTarget(period, 'activePlayers', currentPlayerCount);
+  const retentionTarget = await getOKRTarget(period, 'retention', retention);
 
   return {
     period,

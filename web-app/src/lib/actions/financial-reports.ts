@@ -195,10 +195,11 @@ export async function getFinancialSummary() {
   const academyId = await getCurrentAcademyId();
   
   // Execute all queries in parallel - only approved payments
+  // Include all payment methods (cash, transfer, yappy, paguelofacil, card, ach, other)
   const [paymentsResult, expensesResult, staffPaymentsResult] = await Promise.all([
     supabase
       .from('payments')
-      .select('amount, status')
+      .select('amount, status, method')
       .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
       .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
       .gte('payment_date', startOfMonth)
@@ -218,7 +219,24 @@ export async function getFinancialSummary() {
   ]);
   
   // Filter by status if it exists, otherwise include all (backward compatibility)
-  const approvedPayments = (paymentsResult.data || []).filter(p => !p.status || p.status === 'Approved');
+  // Include payments with status 'Approved' or null/empty (for backward compatibility)
+  // Exclude only 'Rejected' and 'Cancelled' payments
+  const approvedPayments = (paymentsResult.data || []).filter(p => {
+    if (!p.status || p.status === '') return true; // Backward compatibility
+    if (p.status === 'Rejected' || p.status === 'Cancelled') return false;
+    return p.status === 'Approved' || p.status === 'Pending'; // Include Pending as they might be approved later
+  });
+  
+  // Log for debugging if we find payments with unexpected status
+  const unexpectedStatus = approvedPayments.filter(p => p.status && p.status !== 'Approved' && p.status !== 'Pending');
+  if (unexpectedStatus.length > 0) {
+    console.log('[getFinancialSummary] Payments with unexpected status:', unexpectedStatus.map(p => ({
+      id: p.id || 'unknown',
+      status: p.status,
+      method: p.method,
+    })));
+  }
+  
   const income = approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
   const operationalExpenses = (expensesResult.data || []).reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
   const staffExpenses = (staffPaymentsResult.data || []).reduce((sum, s) => sum + parseFloat(s.amount.toString()), 0);

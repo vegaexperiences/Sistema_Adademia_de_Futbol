@@ -1,9 +1,12 @@
 import { getFinancialSummary, getMonthlyIncomeVsExpense, getExpensesByCategory } from '@/lib/actions/financial-reports';
 import { getActiveStaff } from '@/lib/actions/staff';
+import { getBalanceSummary, getTransactions } from '@/lib/actions/transactions';
 import { Plus, TrendingUp, TrendingDown, DollarSign, Users } from 'lucide-react';
 import Link from 'next/link';
 import IncomeVsExpenseChart from '@/components/finances/IncomeVsExpenseChart';
 import ExpensePieChart from '@/components/finances/ExpensePieChart';
+import { BalanceCard } from '@/components/finances/BalanceCard';
+import { TransactionsList } from '@/components/finances/TransactionsList';
 import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
 
 export default async function FinancesPage() {
@@ -11,12 +14,24 @@ export default async function FinancesPage() {
   const startOfYear = `${currentYear}-01-01`;
   const endOfYear = `${currentYear}-12-31`;
   
+  // Get current month for transactions
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const startOfMonth = new Date(today.getFullYear(), currentMonth, 1).toISOString().split('T')[0];
+  const endOfMonth = new Date(today.getFullYear(), currentMonth + 1, 0).toISOString().split('T')[0];
+  
   // Execute all queries in parallel for better performance
-  const [summary, monthlyData, expensesByCategory, activeStaff] = await Promise.all([
+  const [summary, monthlyData, expensesByCategory, activeStaff, balanceSummary, recentTransactions] = await Promise.all([
     getFinancialSummary(),
     getMonthlyIncomeVsExpense(currentYear),
     getExpensesByCategory(startOfYear, endOfYear),
-    getActiveStaff()
+    getActiveStaff(),
+    getBalanceSummary(),
+    getTransactions({
+      startDate: startOfMonth,
+      endDate: endOfMonth,
+      type: 'all',
+    }),
   ]);
 
   return (
@@ -134,6 +149,25 @@ export default async function FinancesPage() {
         </div>
       </div>
 
+      {/* Balance Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <BalanceCard
+          balance={balanceSummary.monthly}
+          title="Balance Mensual"
+          periodLabel="Este mes"
+        />
+        <BalanceCard
+          balance={balanceSummary.quarterly}
+          title="Balance Trimestral"
+          periodLabel="Este trimestre"
+        />
+        <BalanceCard
+          balance={balanceSummary.annual}
+          title="Balance Anual"
+          periodLabel="Este año"
+        />
+      </div>
+
       {/* Recent Transactions */}
       <div className="glass-card p-6">
         <div className="flex justify-between items-center mb-4">
@@ -142,29 +176,33 @@ export default async function FinancesPage() {
           </h2>
           <Link 
             href="/dashboard/finances/transactions"
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-600 hover:underline font-medium"
           >
             Ver todas →
           </Link>
         </div>
         
-        <div className="text-center py-8 text-gray-500">
-          Historial de gastos operativos y pagos de nómina
-          <div className="mt-4 flex justify-center gap-3">
-            <Link
-              href="/dashboard/finances/expenses/new"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-            >
-              Registrar Gasto
-            </Link>
-            <Link
-              href="/dashboard/finances/staff"
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-            >
-              Pagar Nómina
-            </Link>
+        {recentTransactions.length > 0 ? (
+          <TransactionsList transactions={recentTransactions.slice(0, 10)} />
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>No hay transacciones este mes</p>
+            <div className="mt-4 flex justify-center gap-3">
+              <Link
+                href="/dashboard/finances/expenses/new"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                Registrar Gasto
+              </Link>
+              <Link
+                href="/dashboard/finances/staff"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Pagar Nómina
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Quick Links */}
