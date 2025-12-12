@@ -16,8 +16,11 @@ export interface Transaction {
   player_cedula?: string;
   family_name?: string;
   tutor_email?: string;
+  tutor_cedula?: string;
   reference?: string;
   accumulated_balance?: number;
+  proof_url?: string | null;
+  notes?: string;
 }
 
 export interface Balance {
@@ -64,6 +67,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       status,
       notes,
       reference,
+      proof_url,
       player_id,
       players(
         first_name,
@@ -71,9 +75,11 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
         cedula,
         family_id,
         tutor_email,
+        tutor_cedula,
         families(
           tutor_name,
-          tutor_email
+          tutor_email,
+          tutor_cedula
         )
       )
     `)
@@ -126,7 +132,10 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
             player_cedula: player?.cedula || undefined,
             family_name: family?.tutor_name || undefined,
             tutor_email: family?.tutor_email || player?.tutor_email || undefined,
+            tutor_cedula: family?.tutor_cedula || player?.tutor_cedula || undefined,
             reference: payment.reference || undefined,
+            proof_url: payment.proof_url || undefined,
+            notes: payment.notes || undefined,
           });
         }
       }
