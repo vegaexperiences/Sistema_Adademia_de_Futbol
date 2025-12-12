@@ -240,7 +240,7 @@ export async function getPlayerAccountBalance(playerId: string): Promise<PlayerA
   const balance = totalCharges - totalPayments;
 
   // Determine which charges are paid
-  const chargesByMonth = new Map<string, typeof charges[0]>();
+  const chargesByMonth = new Map<string, { id: string; amount: any; month_year: string | null; status: any; created_at: string; payment_date: string | null }>();
   (charges || []).forEach(charge => {
     if (charge.month_year) {
       chargesByMonth.set(charge.month_year, charge);
