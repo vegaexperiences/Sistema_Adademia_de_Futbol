@@ -807,7 +807,10 @@ export async function getFinancialReportData(
   const expensesByCategory: Record<string, number> = {};
   (expenses || []).forEach(e => {
     const amount = parseFloat(e.amount.toString());
-    const categoryName = e.expense_categories?.name || e.category || 'Sin categoría';
+    const expenseCategory = Array.isArray(e.expense_categories) 
+      ? e.expense_categories[0] 
+      : e.expense_categories;
+    const categoryName = expenseCategory?.name || e.category || 'Sin categoría';
     expensesByCategory[categoryName] = (expensesByCategory[categoryName] || 0) + amount;
   });
 
