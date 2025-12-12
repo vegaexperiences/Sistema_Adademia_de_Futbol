@@ -21,7 +21,7 @@ export function ReportsPageClient({
   businessProjection,
   okrs,
 }: ReportsPageClientProps) {
-  const handleExportReport = (type: string, period?: string, year?: number) => {
+  const handleExportReport = async (type: string, period?: string, year?: number): Promise<void> => {
     const params = new URLSearchParams({
       type,
       ...(period && { period }),

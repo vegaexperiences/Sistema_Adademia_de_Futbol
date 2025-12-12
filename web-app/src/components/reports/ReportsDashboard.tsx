@@ -14,7 +14,7 @@ interface ReportsDashboardProps {
   scholarshipAnalysis: ScholarshipAnalysis;
   businessProjection: BusinessProjectionType;
   okrs: OKRsData;
-  onExportReport: (type: string, period?: string, year?: number) => void | Promise<void>;
+  onExportReport: (type: string, period?: string, year?: number) => Promise<void>;
 }
 
 type Tab = 'kpis' | 'reports' | 'scholarship' | 'projections' | 'okrs';
