@@ -630,6 +630,7 @@ export async function getPlayerReportData(): Promise<PlayerReportData> {
       family_id,
       last_payment_date,
       payment_status,
+      created_at,
       families(tutor_name)
     `)
     .eq('academy_id', academyId);
