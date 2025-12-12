@@ -175,18 +175,34 @@ export function TransactionsList({ transactions, onFilterChange }: TransactionsL
                     : 'bg-red-50 border-red-500'
                 }`}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    {/* Player Name - Large and Prominent */}
+                    {transaction.player_name && (
+                      <div className="mb-2">
+                        <h4 className="text-lg font-bold text-gray-900">{transaction.player_name}</h4>
+                        {transaction.player_cedula && (
+                          <p className="text-sm text-gray-600">Cédula: {transaction.player_cedula}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Transaction Description */}
+                    <div className="flex items-center gap-2 mb-2">
                       {transaction.type === 'income' ? (
-                        <ArrowUpCircle className="h-5 w-5 text-green-600" />
+                        <ArrowUpCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
                       ) : (
-                        <ArrowDownCircle className="h-5 w-5 text-red-600" />
+                        <ArrowDownCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
                       )}
-                      <h4 className="font-semibold text-gray-900">{transaction.description}</h4>
+                      <p className="text-sm text-gray-700 line-clamp-2">
+                        {transaction.description && transaction.description.length > 100 
+                          ? transaction.description.substring(0, 100) + '...'
+                          : transaction.description}
+                      </p>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 ml-7">
+                    {/* Transaction Details */}
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         {formatDate(transaction.date)}
@@ -215,82 +231,47 @@ export function TransactionsList({ transactions, onFilterChange }: TransactionsL
                       )}
                     </div>
 
-                    {transaction.player_name && (
-                      <div className="text-xs text-gray-500 ml-7 mt-1 space-y-1">
+                    {/* Tutor Information */}
+                    {transaction.family_name && (
+                      <div className="mt-2 text-sm text-gray-600">
                         <p>
-                          <span className="font-semibold">Jugador:</span> {transaction.player_name}
-                          {transaction.player_cedula && ` (Cédula: ${transaction.player_cedula})`}
+                          <span className="font-semibold">Tutor:</span> {transaction.family_name}
+                          {transaction.tutor_cedula && ` (Cédula: ${transaction.tutor_cedula})`}
+                          {transaction.tutor_email && ` • ${transaction.tutor_email}`}
                         </p>
-                        {transaction.family_name && (
-                          <p>
-                            <span className="font-semibold">Tutor:</span> {transaction.family_name}
-                            {transaction.tutor_cedula && ` (Cédula: ${transaction.tutor_cedula})`}
-                            {transaction.tutor_email && ` (${transaction.tutor_email})`}
-                          </p>
-                        )}
-                        {!transaction.family_name && transaction.tutor_email && (
-                          <p>
-                            <span className="font-semibold">Tutor:</span>
-                            {transaction.tutor_cedula && ` Cédula: ${transaction.tutor_cedula}`}
-                            {transaction.tutor_email && ` Email: ${transaction.tutor_email}`}
-                          </p>
-                        )}
+                      </div>
+                    )}
+                    {!transaction.family_name && (transaction.tutor_email || transaction.tutor_cedula) && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <p>
+                          <span className="font-semibold">Tutor:</span>
+                          {transaction.tutor_cedula && ` Cédula: ${transaction.tutor_cedula}`}
+                          {transaction.tutor_email && ` • ${transaction.tutor_email}`}
+                        </p>
                       </div>
                     )}
 
-                    {/* Show proof URL or extract URL from notes */}
+                    {/* Proof URL - Only show button, not the link */}
                     {(transaction.proof_url || (transaction.notes && transaction.notes.includes('http'))) && (
-                      <div className="ml-7 mt-2 pt-2 border-t border-gray-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                          <span className="text-xs font-semibold text-gray-700">Comprobante de Pago</span>
-                        </div>
-                        <div className="space-y-2">
-                          {transaction.proof_url ? (
-                            <>
-                              <a
-                                href={transaction.proof_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                Abrir comprobante en nueva pestaña
-                              </a>
-                              <div>
-                                <DocumentPreview
-                                  url={transaction.proof_url}
-                                  title={`Comprobante - ${transaction.description}`}
-                                />
-                              </div>
-                            </>
-                          ) : transaction.notes && (() => {
-                            const urlMatch = transaction.notes.match(/https?:\/\/[^\s\)]+/);
-                            const url = urlMatch ? urlMatch[0] : null;
-                            if (url) {
-                              return (
-                                <>
-                                  <a
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
-                                    Abrir comprobante en nueva pestaña
-                                  </a>
-                                  <div>
-                                    <DocumentPreview
-                                      url={url}
-                                      title={`Comprobante - ${transaction.description}`}
-                                    />
-                                  </div>
-                                </>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        {transaction.proof_url ? (
+                          <DocumentPreview
+                            url={transaction.proof_url}
+                            title={`Comprobante - ${transaction.player_name || transaction.description}`}
+                          />
+                        ) : transaction.notes && (() => {
+                          const urlMatch = transaction.notes.match(/https?:\/\/[^\s\)]+/);
+                          const url = urlMatch ? urlMatch[0] : null;
+                          if (url) {
+                            return (
+                              <DocumentPreview
+                                url={url}
+                                title={`Comprobante - ${transaction.player_name || transaction.description}`}
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
                   </div>
