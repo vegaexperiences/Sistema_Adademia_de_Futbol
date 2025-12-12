@@ -2,13 +2,14 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, DollarSign, Plus, X, Calendar, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { CreditCard, DollarSign, Plus, X, Calendar, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle, TrendingUp, TrendingDown, FileText, ExternalLink } from 'lucide-react';
 import { createPayment, autoLinkUnlinkedPaymentsForPlayer } from '@/lib/actions/payments';
 import { generateMonthlyCharges } from '@/lib/actions/monthly-charges';
 import type { MonthlyCharge, PlayerAccountBalance } from '@/lib/actions/monthly-charges';
 import PaymentHistory from './PaymentHistory';
 import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
 import { YappyPaymentButton } from './YappyPaymentButton';
+import { DocumentPreview } from '@/components/ui/DocumentPreview';
 
 interface Payment {
   id: string;
@@ -18,6 +19,7 @@ interface Payment {
   payment_date: string;
   month_year: string | null;
   notes: string | null;
+  proof_url?: string | null;
 }
 
 interface PlayerPaymentSectionProps {
@@ -134,6 +136,7 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
 
 
   // Combine charges and payments into a single transaction list
+  // Filter out payments with amount 0
   const allTransactions = [
     ...charges.map(charge => ({
       id: charge.id,
@@ -144,16 +147,20 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
       status: charge.status,
       description: `Cargo mensual ${formatMonthYear(charge.month_year)}`,
     })),
-    ...payments.map(payment => ({
-      id: payment.id,
-      type: 'payment' as const,
-      amount: payment.amount,
-      date: payment.payment_date,
-      month_year: payment.month_year,
-      status: 'Approved' as const,
-      description: payment.notes || `Pago ${payment.payment_type || 'custom'}`,
-      method: payment.payment_method,
-    })),
+    ...payments
+      .filter(payment => parseFloat(payment.amount.toString()) > 0) // Filter out $0 payments
+      .map(payment => ({
+        id: payment.id,
+        type: 'payment' as const,
+        amount: payment.amount,
+        date: payment.payment_date,
+        month_year: payment.month_year,
+        status: 'Approved' as const,
+        description: payment.notes || `Pago ${payment.payment_type || 'custom'}`,
+        method: payment.payment_method,
+        proof_url: payment.proof_url,
+        notes: payment.notes,
+      })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleGenerateCharges = async () => {
@@ -371,16 +378,18 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
                 Salidas (Pagos)
               </h3>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {payments.length === 0 ? (
+                {payments.filter(p => parseFloat(p.amount.toString()) > 0).length === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-8">No hay pagos registrados</p>
                 ) : (
-                  payments.map((payment) => (
+                  payments
+                    .filter(payment => parseFloat(payment.amount.toString()) > 0) // Filter out $0 payments
+                    .map((payment) => (
                     <div
                       key={payment.id}
                       className="p-3 rounded-lg border-l-4 bg-green-50 border-green-500"
                     >
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                           <p className="font-semibold text-gray-900">
                             {payment.payment_type === 'monthly' ? 'Mensualidad' : payment.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'}
                             {payment.month_year && ` - ${formatMonthYear(payment.month_year)}`}
@@ -389,8 +398,16 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
                             {new Date(payment.payment_date).toLocaleDateString('es-PA')}
                             {payment.payment_method && ` • ${payment.payment_method}`}
                           </p>
+                          {payment.proof_url && (
+                            <div className="mt-2">
+                              <DocumentPreview
+                                url={payment.proof_url}
+                                title={`Comprobante - ${payment.payment_type === 'monthly' ? 'Mensualidad' : payment.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'}`}
+                              />
+                            </div>
+                          )}
                         </div>
-                        <p className="text-lg font-bold text-green-700">+{formatCurrency(payment.amount)}</p>
+                        <p className="text-lg font-bold text-green-700 ml-2">+{formatCurrency(payment.amount)}</p>
                       </div>
                     </div>
                   ))
@@ -419,23 +436,61 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
                         : 'bg-blue-50 border-blue-500'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2 flex-1">
                         {transaction.type === 'charge' ? (
-                          <ArrowDownCircle className="h-4 w-4 text-red-600" />
+                          <ArrowDownCircle className="h-4 w-4 text-red-600 mt-1" />
                         ) : (
-                          <ArrowUpCircle className="h-4 w-4 text-green-600" />
+                          <ArrowUpCircle className="h-4 w-4 text-green-600 mt-1" />
                         )}
-                        <div>
+                        <div className="flex-1">
                           <p className="font-semibold text-gray-900">{transaction.description}</p>
                           <p className="text-xs text-gray-600">
                             {new Date(transaction.date).toLocaleDateString('es-PA')}
                             {transaction.month_year && ` • ${formatMonthYear(transaction.month_year)}`}
                             {transaction.type === 'payment' && transaction.method && ` • ${transaction.method}`}
                           </p>
+                          {transaction.type === 'payment' && transaction.proof_url && (
+                            <div className="mt-2">
+                              <DocumentPreview
+                                url={transaction.proof_url}
+                                title={`Comprobante - ${transaction.description}`}
+                              />
+                            </div>
+                          )}
+                          {transaction.type === 'payment' && transaction.notes && transaction.notes.includes('http') && (
+                            <div className="mt-2 space-y-2">
+                              {(() => {
+                                const urlMatch = transaction.notes.match(/https?:\/\/[^\s\)]+/);
+                                const url = urlMatch ? urlMatch[0] : null;
+                                if (url) {
+                                  return (
+                                    <>
+                                      <a
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Abrir comprobante en nueva pestaña
+                                      </a>
+                                      <div>
+                                        <DocumentPreview
+                                          url={url}
+                                          title={`Comprobante - ${transaction.description}`}
+                                        />
+                                      </div>
+                                    </>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <p className={`text-lg font-bold ${
+                      <p className={`text-lg font-bold whitespace-nowrap ${
                         transaction.type === 'charge' ? 'text-red-700' : 'text-green-700'
                       }`}>
                         {transaction.type === 'charge' ? '-' : '+'}
