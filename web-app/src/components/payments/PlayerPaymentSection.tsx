@@ -170,6 +170,7 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
         method: payment.payment_method,
         proof_url: payment.proof_url,
         notes: payment.notes,
+        payment_type: payment.payment_type, // Keep payment_type for label function
       })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
