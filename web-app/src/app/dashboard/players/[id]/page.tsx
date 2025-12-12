@@ -57,6 +57,13 @@ export default async function PlayerProfilePage({
   // Get payments
   const payments = await getPlayerPayments(id);
   
+  // Get player charges and account balance
+  const { getPlayerCharges, getPlayerAccountBalance } = await import('@/lib/actions/monthly-charges');
+  const [charges, accountBalance] = await Promise.all([
+    getPlayerCharges(id),
+    getPlayerAccountBalance(id),
+  ]);
+  
   // Filter payments with proof_url and group by type
   const paymentsWithProof = payments.filter(p => p.proof_url);
   
@@ -308,6 +315,8 @@ export default async function PlayerProfilePage({
         suggestedAmount={suggestedFee} 
         payments={payments}
         playerName={`${player.first_name} ${player.last_name}`}
+        charges={charges}
+        accountBalance={accountBalance}
       />
     </div>
   );

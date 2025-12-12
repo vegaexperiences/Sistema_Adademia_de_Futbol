@@ -215,10 +215,23 @@ export function TransactionsList({ transactions, onFilterChange }: TransactionsL
                     </div>
 
                     {transaction.player_name && (
-                      <p className="text-xs text-gray-500 ml-7 mt-1">
-                        Jugador: {transaction.player_name}
-                        {transaction.family_name && ` | Familia: ${transaction.family_name}`}
-                      </p>
+                      <div className="text-xs text-gray-500 ml-7 mt-1 space-y-1">
+                        <p>
+                          <span className="font-semibold">Jugador:</span> {transaction.player_name}
+                          {transaction.player_cedula && ` (Cédula: ${transaction.player_cedula})`}
+                        </p>
+                        {transaction.family_name && (
+                          <p>
+                            <span className="font-semibold">Tutor:</span> {transaction.family_name}
+                            {transaction.tutor_email && ` (${transaction.tutor_email})`}
+                          </p>
+                        )}
+                        {!transaction.family_name && transaction.tutor_email && (
+                          <p>
+                            <span className="font-semibold">Email:</span> {transaction.tutor_email}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -229,6 +242,13 @@ export function TransactionsList({ transactions, onFilterChange }: TransactionsL
                       {transaction.type === 'income' ? '+' : '-'}
                       {formatCurrency(transaction.amount)}
                     </p>
+                    {transaction.accumulated_balance !== undefined && (
+                      <p className={`text-sm font-semibold mt-1 ${
+                        transaction.accumulated_balance >= 0 ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        Balance: {formatCurrency(transaction.accumulated_balance)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -239,4 +259,5 @@ export function TransactionsList({ transactions, onFilterChange }: TransactionsL
     </div>
   );
 }
+
 

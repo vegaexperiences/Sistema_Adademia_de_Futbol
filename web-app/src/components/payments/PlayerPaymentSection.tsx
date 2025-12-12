@@ -2,8 +2,10 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, DollarSign, Plus, X, Calendar } from 'lucide-react';
+import { CreditCard, DollarSign, Plus, X, Calendar, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import { createPayment, autoLinkUnlinkedPaymentsForPlayer } from '@/lib/actions/payments';
+import { generateMonthlyCharges } from '@/lib/actions/monthly-charges';
+import type { MonthlyCharge, PlayerAccountBalance } from '@/lib/actions/monthly-charges';
 import PaymentHistory from './PaymentHistory';
 import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
 import { YappyPaymentButton } from './YappyPaymentButton';
@@ -22,13 +24,16 @@ interface PlayerPaymentSectionProps {
   playerId: string;
   suggestedAmount: number;
   payments: Payment[];
-  playerName?: string; // Optional player name for payment descriptions
+  playerName?: string;
+  charges: MonthlyCharge[];
+  accountBalance: PlayerAccountBalance;
 }
 
-export function PlayerPaymentSection({ playerId, suggestedAmount, payments, playerName }: PlayerPaymentSectionProps) {
+export function PlayerPaymentSection({ playerId, suggestedAmount, payments, playerName, charges, accountBalance }: PlayerPaymentSectionProps) {
   const router = useRouter();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isGeneratingCharges, setIsGeneratingCharges] = useState(false);
   const [formData, setFormData] = useState({
     amount: suggestedAmount.toString(),
     payment_type: 'monthly' as 'enrollment' | 'monthly' | 'custom',
@@ -40,6 +45,22 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [autoLinking, setAutoLinking] = useState(false);
+  const [viewMode, setViewMode] = useState<'account' | 'history'>('account');
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-PA', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const formatMonthYear = (monthYear: string) => {
+    const [year, month] = monthYear.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    return date.toLocaleDateString('es-PA', { year: 'numeric', month: 'long' });
+  };
 
   // Auto-link unlinked payments when component mounts or payments change
   useEffect(() => {
@@ -112,23 +133,326 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
   };
 
 
+  // Combine charges and payments into a single transaction list
+  const allTransactions = [
+    ...charges.map(charge => ({
+      id: charge.id,
+      type: 'charge' as const,
+      amount: charge.amount,
+      date: charge.created_at,
+      month_year: charge.month_year,
+      status: charge.status,
+      description: `Cargo mensual ${formatMonthYear(charge.month_year)}`,
+    })),
+    ...payments.map(payment => ({
+      id: payment.id,
+      type: 'payment' as const,
+      amount: payment.amount,
+      date: payment.payment_date,
+      month_year: payment.month_year,
+      status: 'Approved' as const,
+      description: payment.notes || `Pago ${payment.payment_type || 'custom'}`,
+      method: payment.payment_method,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const handleGenerateCharges = async () => {
+    setIsGeneratingCharges(true);
+    setError(null);
+    try {
+      const result = await generateMonthlyCharges(undefined, false);
+      if (result.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          router.refresh();
+          setIsGeneratingCharges(false);
+          setSuccess(false);
+        }, 1500);
+      } else {
+        setError(result.errors.join(', ') || 'Error al generar cargos');
+        setIsGeneratingCharges(false);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al generar cargos');
+      setIsGeneratingCharges(false);
+    }
+  };
+
   return (
     <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <CreditCard className="h-6 w-6" />
-          Sistema de Pagos
+          Cuenta Bancaria del Jugador
         </h2>
-        {!showPaymentForm && (
+        <div className="flex gap-2">
           <button
-            onClick={() => setShowPaymentForm(true)}
-            className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600"
+            onClick={() => setViewMode(viewMode === 'account' ? 'history' : 'account')}
+            className="px-4 py-2 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
           >
-            <Plus size={20} />
-            Registrar Pago
+            {viewMode === 'account' ? 'Ver Historial' : 'Ver Cuenta'}
           </button>
-        )}
+          {!showPaymentForm && (
+            <button
+              onClick={() => setShowPaymentForm(true)}
+              className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600"
+            >
+              <Plus size={20} />
+              Registrar Pago
+            </button>
+          )}
+        </div>
       </div>
+
+      {viewMode === 'account' && (
+        <>
+          {/* Account Balance Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Total Charges */}
+            <div className="bg-gradient-to-br from-red-50 to-orange-50 p-4 rounded-xl border-l-4 border-red-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total Cargos</p>
+                  <p className="text-2xl font-bold text-red-700">{formatCurrency(accountBalance.totalCharges)}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-red-600" />
+              </div>
+            </div>
+
+            {/* Total Payments */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total Pagos</p>
+                  <p className="text-2xl font-bold text-green-700">{formatCurrency(accountBalance.totalPayments)}</p>
+                </div>
+                <TrendingDown className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+
+            {/* Balance */}
+            <div className={`p-4 rounded-xl border-l-4 ${
+              accountBalance.balance <= 0
+                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500'
+                : 'bg-gradient-to-br from-red-50 to-orange-50 border-red-500'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Balance</p>
+                  <p className={`text-2xl font-bold ${
+                    accountBalance.balance <= 0 ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    {formatCurrency(Math.abs(accountBalance.balance))}
+                  </p>
+                  {accountBalance.balance > 0 && (
+                    <p className="text-xs text-red-600 mt-1">Debe</p>
+                  )}
+                  {accountBalance.balance < 0 && (
+                    <p className="text-xs text-green-600 mt-1">Crédito</p>
+                  )}
+                </div>
+                {accountBalance.isUpToDate ? (
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-8 w-8 text-red-600" />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Status Indicator */}
+          <div className={`mb-6 p-4 rounded-xl border-l-4 ${
+            accountBalance.isUpToDate
+              ? 'bg-green-50 border-green-500'
+              : 'bg-red-50 border-red-500'
+          }`}>
+            <div className="flex items-center gap-3">
+              {accountBalance.isUpToDate ? (
+                <>
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <div>
+                    <p className="font-bold text-green-800">Al Día</p>
+                    <p className="text-sm text-green-700">El estudiante está al corriente con sus pagos</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                  <div className="flex-1">
+                    <p className="font-bold text-red-800">Moroso</p>
+                    <p className="text-sm text-red-700">
+                      {accountBalance.overdueMonths.length > 0 && (
+                        <>Meses vencidos: {accountBalance.overdueMonths.map(m => formatMonthYear(m)).join(', ')}</>
+                      )}
+                      {accountBalance.pendingCharges.length > 0 && accountBalance.overdueMonths.length === 0 && (
+                        <>Tiene {accountBalance.pendingCharges.length} cargo(s) pendiente(s)</>
+                      )}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Generate Charges Button */}
+          {charges.length === 0 && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-blue-900 mb-1">No hay cargos generados</p>
+                  <p className="text-sm text-blue-700">Genera los cargos mensuales para este jugador</p>
+                </div>
+                <button
+                  onClick={handleGenerateCharges}
+                  disabled={isGeneratingCharges}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {isGeneratingCharges ? 'Generando...' : 'Generar Cargos'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">✅ Cargos generados exitosamente</p>
+            </div>
+          )}
+
+          {/* Entries and Exits */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Entries (Charges) */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <ArrowDownCircle className="h-5 w-5 text-red-600" />
+                Entradas (Cargos)
+              </h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {charges.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-8">No hay cargos registrados</p>
+                ) : (
+                  charges.map((charge) => (
+                    <div
+                      key={charge.id}
+                      className={`p-3 rounded-lg border-l-4 ${
+                        charge.status === 'Paid'
+                          ? 'bg-green-50 border-green-500'
+                          : charge.status === 'Overdue'
+                          ? 'bg-red-50 border-red-500'
+                          : 'bg-yellow-50 border-yellow-500'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">{formatMonthYear(charge.month_year)}</p>
+                          <p className="text-xs text-gray-600">
+                            {charge.status === 'Paid' ? 'Pagado' : charge.status === 'Overdue' ? 'Vencido' : 'Pendiente'}
+                          </p>
+                        </div>
+                        <p className="text-lg font-bold text-red-700">-{formatCurrency(charge.amount)}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Exits (Payments) */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <ArrowUpCircle className="h-5 w-5 text-green-600" />
+                Salidas (Pagos)
+              </h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {payments.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-8">No hay pagos registrados</p>
+                ) : (
+                  payments.map((payment) => (
+                    <div
+                      key={payment.id}
+                      className="p-3 rounded-lg border-l-4 bg-green-50 border-green-500"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {payment.payment_type === 'monthly' ? 'Mensualidad' : payment.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'}
+                            {payment.month_year && ` - ${formatMonthYear(payment.month_year)}`}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {new Date(payment.payment_date).toLocaleDateString('es-PA')}
+                            {payment.payment_method && ` • ${payment.payment_method}`}
+                          </p>
+                        </div>
+                        <p className="text-lg font-bold text-green-700">+{formatCurrency(payment.amount)}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Combined Transaction History */}
+          <div className="mt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Historial Completo</h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {allTransactions.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">No hay transacciones</p>
+              ) : (
+                allTransactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className={`p-3 rounded-lg border-l-4 ${
+                      transaction.type === 'charge'
+                        ? transaction.status === 'Paid'
+                          ? 'bg-green-50 border-green-500'
+                          : transaction.status === 'Overdue'
+                          ? 'bg-red-50 border-red-500'
+                          : 'bg-yellow-50 border-yellow-500'
+                        : 'bg-blue-50 border-blue-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {transaction.type === 'charge' ? (
+                          <ArrowDownCircle className="h-4 w-4 text-red-600" />
+                        ) : (
+                          <ArrowUpCircle className="h-4 w-4 text-green-600" />
+                        )}
+                        <div>
+                          <p className="font-semibold text-gray-900">{transaction.description}</p>
+                          <p className="text-xs text-gray-600">
+                            {new Date(transaction.date).toLocaleDateString('es-PA')}
+                            {transaction.month_year && ` • ${formatMonthYear(transaction.month_year)}`}
+                            {transaction.type === 'payment' && transaction.method && ` • ${transaction.method}`}
+                          </p>
+                        </div>
+                      </div>
+                      <p className={`text-lg font-bold ${
+                        transaction.type === 'charge' ? 'text-red-700' : 'text-green-700'
+                      }`}>
+                        {transaction.type === 'charge' ? '-' : '+'}
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {viewMode === 'history' && (
+        <PaymentHistory payments={payments} />
+      )}
 
       {showPaymentForm && (
         <div className="mt-6 border-t border-gray-200 pt-6">

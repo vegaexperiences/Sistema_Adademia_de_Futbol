@@ -8,14 +8,20 @@ interface BalanceCardProps {
 }
 
 export function BalanceCard({ balance, title = 'Balance', periodLabel }: BalanceCardProps) {
-  const isPositive = balance.netBalance >= 0;
+  // Ensure we have valid numbers (handle NaN or undefined)
+  const totalIncome = balance?.totalIncome ?? 0;
+  const totalExpenses = balance?.totalExpenses ?? 0;
+  const netBalance = balance?.netBalance ?? 0;
+  const isPositive = netBalance >= 0;
+  
   const formatCurrency = (amount: number) => {
+    const safeAmount = isNaN(amount) ? 0 : amount;
     return new Intl.NumberFormat('es-PA', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount);
+    }).format(safeAmount);
   };
 
   return (
@@ -35,7 +41,7 @@ export function BalanceCard({ balance, title = 'Balance', periodLabel }: Balance
             <span className="text-sm font-medium text-gray-700">Ingresos</span>
           </div>
           <span className="text-lg font-bold text-green-600">
-            {formatCurrency(balance.totalIncome)}
+            {formatCurrency(totalIncome)}
           </span>
         </div>
 
@@ -46,7 +52,7 @@ export function BalanceCard({ balance, title = 'Balance', periodLabel }: Balance
             <span className="text-sm font-medium text-gray-700">Gastos</span>
           </div>
           <span className="text-lg font-bold text-red-600">
-            {formatCurrency(balance.totalExpenses)}
+            {formatCurrency(totalExpenses)}
           </span>
         </div>
 
@@ -61,7 +67,7 @@ export function BalanceCard({ balance, title = 'Balance', periodLabel }: Balance
             <span className="text-base font-bold text-gray-900">Balance Neto</span>
           </div>
           <span className={`text-2xl font-bold ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
-            {formatCurrency(balance.netBalance)}
+            {formatCurrency(netBalance)}
           </span>
         </div>
       </div>
@@ -75,4 +81,5 @@ export function BalanceCard({ balance, title = 'Balance', periodLabel }: Balance
     </div>
   );
 }
+
 

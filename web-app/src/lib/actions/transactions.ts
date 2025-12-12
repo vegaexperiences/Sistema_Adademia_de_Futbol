@@ -13,8 +13,11 @@ export interface Transaction {
   status?: string;
   category?: string;
   player_name?: string;
+  player_cedula?: string;
   family_name?: string;
+  tutor_email?: string;
   reference?: string;
+  accumulated_balance?: number;
 }
 
 export interface Balance {
@@ -65,8 +68,13 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       players(
         first_name,
         last_name,
+        cedula,
         family_id,
-        families(tutor_name)
+        tutor_email,
+        families(
+          tutor_name,
+          tutor_email
+        )
       )
     `)
     .not('player_id', 'is', null)
@@ -115,7 +123,9 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
             method: payment.method || undefined,
             status: payment.status || undefined,
             player_name: player ? `${player.first_name} ${player.last_name}` : undefined,
+            player_cedula: player?.cedula || undefined,
             family_name: family?.tutor_name || undefined,
+            tutor_email: family?.tutor_email || player?.tutor_email || undefined,
             reference: payment.reference || undefined,
           });
         }
@@ -217,7 +227,21 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
     });
   }
 
-  // Sort all transactions by date (newest first)
+  // Sort all transactions by date (oldest first for accumulated balance calculation)
+  transactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Calculate accumulated balance for each transaction
+  let runningBalance = 0;
+  transactions.forEach((transaction) => {
+    if (transaction.type === 'income') {
+      runningBalance += transaction.amount;
+    } else {
+      runningBalance -= transaction.amount;
+    }
+    transaction.accumulated_balance = runningBalance;
+  });
+
+  // Sort back to newest first for display
   transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return transactions;
@@ -333,4 +357,5 @@ export async function getBalanceSummary() {
     annual,
   };
 }
+
 
