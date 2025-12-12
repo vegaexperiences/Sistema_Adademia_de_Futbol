@@ -199,7 +199,7 @@ export async function getFinancialSummary() {
   const [paymentsResult, expensesResult, staffPaymentsResult] = await Promise.all([
     supabase
       .from('payments')
-      .select('amount, status, method')
+      .select('id, amount, status, method')
       .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
       .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
       .gte('payment_date', startOfMonth)
