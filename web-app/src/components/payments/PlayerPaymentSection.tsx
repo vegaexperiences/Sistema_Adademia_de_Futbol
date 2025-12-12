@@ -64,6 +64,16 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
     return date.toLocaleDateString('es-PA', { year: 'numeric', month: 'long' });
   };
 
+  const getPaymentTypeLabel = (paymentType: string | null | undefined) => {
+    const labels: Record<string, string> = {
+      'enrollment': 'Matrícula',
+      'monthly': 'Mensualidad',
+      'custom': 'Personalizado',
+      'Matrícula': 'Matrícula',
+    };
+    return paymentType ? (labels[paymentType] || paymentType) : 'Pago';
+  };
+
   // Auto-link unlinked payments when component mounts or payments change
   useEffect(() => {
     // Only try to auto-link if we have no payments (might indicate unlinked payments exist)
@@ -156,7 +166,7 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
         date: payment.payment_date,
         month_year: payment.month_year,
         status: 'Approved' as const,
-        description: payment.notes || `Pago ${payment.payment_type || 'custom'}`,
+        description: payment.notes || getPaymentTypeLabel(payment.payment_type),
         method: payment.payment_method,
         proof_url: payment.proof_url,
         notes: payment.notes,
@@ -391,7 +401,7 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900">
-                            {payment.payment_type === 'monthly' ? 'Mensualidad' : payment.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'}
+                            {getPaymentTypeLabel(payment.payment_type)}
                             {payment.month_year && ` - ${formatMonthYear(payment.month_year)}`}
                           </p>
                           <p className="text-xs text-gray-600">
@@ -402,7 +412,7 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
                             <div className="mt-2">
                               <DocumentPreview
                                 url={payment.proof_url}
-                                title={`Comprobante - ${payment.payment_type === 'monthly' ? 'Mensualidad' : payment.payment_type === 'enrollment' ? 'Matrícula' : 'Pago'}`}
+                                title={`Comprobante - ${getPaymentTypeLabel(payment.payment_type)}`}
                               />
                             </div>
                           )}
@@ -444,7 +454,14 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
                           <ArrowUpCircle className="h-4 w-4 text-green-600 mt-1" />
                         )}
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{transaction.description}</p>
+                          <p className="font-semibold text-gray-900">
+                            {transaction.type === 'payment' 
+                              ? (transaction as any).payment_type 
+                                ? getPaymentTypeLabel((transaction as any).payment_type)
+                                : transaction.description
+                              : transaction.description
+                            }
+                          </p>
                           <p className="text-xs text-gray-600">
                             {new Date(transaction.date).toLocaleDateString('es-PA')}
                             {transaction.month_year && ` • ${formatMonthYear(transaction.month_year)}`}
