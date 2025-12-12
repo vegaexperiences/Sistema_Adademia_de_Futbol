@@ -56,6 +56,12 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
   const transactions: Transaction[] = [];
 
   // Get payments (income)
+  // Include all valid payments:
+  // - status = 'Approved' or 'Pending' (valid payments)
+  // - status IS NULL or '' (backward compatibility - old payments without status)
+  // - Exclude only 'Rejected' and 'Cancelled'
+  // - Must have player_id and amount > 0
+  // - Filter by academy_id: include payments with matching academy_id OR payments without academy_id (we'll check player's academy_id in code)
   let paymentsQuery = supabase
     .from('payments')
     .select(`
@@ -69,11 +75,13 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       reference,
       proof_url,
       player_id,
+      academy_id,
       players(
         first_name,
         last_name,
         cedula,
         family_id,
+        academy_id,
         tutor_email,
         tutor_cedula,
         families(
@@ -84,9 +92,13 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       )
     `)
     .not('player_id', 'is', null)
+    .gt('amount', 0) // Only include payments with amount > 0
     .neq('status', 'Rejected')
-    .neq('status', 'Cancelled')
-    .eq('academy_id', academyId);
+    .neq('status', 'Cancelled');
+  
+  // Filter by academy_id: include payments with matching academy_id OR payments without academy_id
+  // We'll filter by player's academy_id in the code for payments without academy_id
+  paymentsQuery = paymentsQuery.or(`academy_id.eq.${academyId},academy_id.is.null`);
 
   if (filter.startDate) {
     paymentsQuery = paymentsQuery.gte('payment_date', filter.startDate);
@@ -110,9 +122,36 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       const player = Array.isArray(payment.players) ? payment.players[0] : payment.players;
       const family = player?.families ? (Array.isArray(player.families) ? player.families[0] : player.families) : null;
       
+      // Filter by academy_id: if payment doesn't have academy_id, check if player has matching academy_id
+      // This handles old payments that don't have academy_id
+      const paymentAcademyId = payment.academy_id;
+      const playerAcademyId = player?.academy_id;
+      
+      if (paymentAcademyId && paymentAcademyId !== academyId) {
+        return; // Payment has academy_id but doesn't match
+      }
+      
+      if (!paymentAcademyId && playerAcademyId && playerAcademyId !== academyId) {
+        return; // Payment doesn't have academy_id but player has different academy_id
+      }
+      
+      // If payment has no academy_id and player has no academy_id, include it (backward compatibility)
+      // This allows old payments to show up
+      
       const description = payment.notes || 
         (player ? `${player.first_name} ${player.last_name}` : 'Pago sin jugador') ||
         `Pago ${payment.type || 'custom'}`;
+
+      // Filter out payments with amount 0 or less (already filtered in query, but double-check)
+      const paymentAmount = parseFloat(payment.amount.toString());
+      if (paymentAmount <= 0) {
+        console.log('[getTransactions] Skipping payment with amount <= 0:', {
+          id: payment.id,
+          amount: paymentAmount,
+          player_id: payment.player_id,
+        });
+        return; // Skip this payment
+      }
 
       // Only include if type filter allows income or is 'all'
       if (!filter.type || filter.type === 'all' || filter.type === 'income') {
@@ -123,7 +162,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
           transactions.push({
             id: payment.id,
             type: 'income',
-            amount: parseFloat(payment.amount.toString()),
+            amount: paymentAmount,
             date: payment.payment_date,
             description,
             method: payment.method || undefined,
@@ -213,6 +252,12 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
     console.error('[getTransactions] Error fetching staff payments:', staffPaymentsError);
   } else if (staffPayments) {
     staffPayments.forEach((staffPayment) => {
+      // Filter out staff payments with amount 0 or less
+      const staffAmount = parseFloat(staffPayment.amount.toString());
+      if (staffAmount <= 0) {
+        return; // Skip this staff payment
+      }
+
       const staff = Array.isArray(staffPayment.staff) ? staffPayment.staff[0] : staffPayment.staff;
       const description = staff 
         ? `Nómina - ${staff.first_name} ${staff.last_name}${staff.position ? ` (${staff.position})` : ''}`
@@ -225,7 +270,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
           transactions.push({
             id: staffPayment.id,
             type: 'expense',
-            amount: parseFloat(staffPayment.amount.toString()),
+            amount: staffAmount,
             date: staffPayment.payment_date,
             description,
             category: 'Nómina',
