@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { getTotalStaffExpenses } from './staff';
 
 export interface MonthlyData {
@@ -18,6 +18,7 @@ export interface ExpenseByCategoryData {
 
 export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyData[]> {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   const months = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -36,12 +37,14 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
       .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
       .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
       .gte('payment_date', startDate)
-      .lte('payment_date', endDate),
+      .lte('payment_date', endDate)
+      .eq('academy_id', academyId),
     supabase
       .from('expenses')
       .select('amount, date')
       .gte('date', startDate)
-      .lte('date', endDate),
+      .lte('date', endDate)
+      .eq('academy_id', academyId),
     supabase
       .from('staff_payments')
       .select('amount, payment_date')
@@ -98,6 +101,7 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
 
 export async function getExpensesByCategory(startDate: string, endDate: string): Promise<ExpenseByCategoryData[]> {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   const { data: expenses } = await supabase
     .from('expenses')
@@ -109,7 +113,8 @@ export async function getExpensesByCategory(startDate: string, endDate: string):
       )
     `)
     .gte('date', startDate)
-    .lte('date', endDate);
+    .lte('date', endDate)
+    .eq('academy_id', academyId);
   
   if (!expenses) return [];
   
@@ -135,6 +140,7 @@ export async function getExpensesByCategory(startDate: string, endDate: string):
 
 export async function getCashFlow(startDate: string, endDate: string) {
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   // Get all income - only approved payments, rejections are not real payments
   const { data: payments } = await supabase
@@ -144,6 +150,7 @@ export async function getCashFlow(startDate: string, endDate: string) {
     .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
     .gte('payment_date', startDate)
     .lte('payment_date', endDate)
+    .eq('academy_id', academyId)
     .order('payment_date');
   
   // Filter by status if it exists, otherwise include all (backward compatibility)
@@ -156,6 +163,7 @@ export async function getCashFlow(startDate: string, endDate: string) {
     .select('amount, date')
     .gte('date', startDate)
     .lte('date', endDate)
+    .eq('academy_id', academyId)
     .order('date');
   
   const operationalExpenses = expenses?.reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0) || 0;
@@ -184,6 +192,7 @@ export async function getFinancialSummary() {
   const endOfMonth = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
   
   const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
   
   // Execute all queries in parallel - only approved payments
   const [paymentsResult, expensesResult, staffPaymentsResult] = await Promise.all([
@@ -193,12 +202,14 @@ export async function getFinancialSummary() {
       .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
       .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
       .gte('payment_date', startOfMonth)
-      .lte('payment_date', endOfMonth),
+      .lte('payment_date', endOfMonth)
+      .eq('academy_id', academyId),
     supabase
       .from('expenses')
       .select('amount')
       .gte('date', startOfMonth)
-      .lte('date', endOfMonth),
+      .lte('date', endOfMonth)
+      .eq('academy_id', academyId),
     supabase
       .from('staff_payments')
       .select('amount')
@@ -224,4 +235,86 @@ export async function getFinancialSummary() {
       end: endOfMonth
     }
   };
+}
+
+/**
+ * Get scholarship opportunity cost for a specific month
+ * This calculates what the academy would earn if scholarship players were active instead
+ */
+export async function getScholarshipOpportunityCost(monthYear: string): Promise<number> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  // Get all scholarship players
+  let playersQuery = supabase
+    .from('players')
+    .select('id, status, custom_monthly_fee, family_id, families(id)')
+    .eq('status', 'Scholarship')
+    .eq('academy_id', academyId);
+
+  const { data: scholarshipPlayers } = await playersQuery;
+
+  if (!scholarshipPlayers || scholarshipPlayers.length === 0) {
+    return 0;
+  }
+
+  // Get settings for pricing
+  const { data: settings } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('academy_id', academyId);
+
+  const settingsMap = settings?.reduce((acc: any, s: any) => {
+    acc[s.key] = parseFloat(s.value);
+    return acc;
+  }, {}) || {};
+
+  const normalFee = settingsMap['price_monthly'] || 130;
+  const familyFee = settingsMap['price_monthly_family'] || 110.50;
+
+  let totalOpportunityCost = 0;
+
+  // Calculate opportunity cost for each scholarship player
+  for (const player of scholarshipPlayers) {
+    let opportunityCost = 0;
+
+    // If has custom fee, use it
+    if (player.custom_monthly_fee !== null && player.custom_monthly_fee !== undefined) {
+      opportunityCost = player.custom_monthly_fee;
+    } else {
+      // Check if part of family with 2+ players
+      const family = Array.isArray(player.families) ? player.families[0] : player.families;
+      if (family?.id) {
+        let familyQuery = supabase
+          .from('players')
+          .select('id')
+          .eq('family_id', family.id)
+          .in('status', ['Active', 'Scholarship'])
+          .order('created_at');
+
+        if (academyId) {
+          familyQuery = familyQuery.eq('academy_id', academyId);
+        }
+
+        const { data: familyPlayers } = await familyQuery;
+
+        if (familyPlayers && familyPlayers.length >= 2) {
+          const playerIndex = familyPlayers.findIndex(p => p.id === player.id);
+          if (playerIndex >= 1) {
+            opportunityCost = familyFee;
+          } else {
+            opportunityCost = normalFee;
+          }
+        } else {
+          opportunityCost = normalFee;
+        }
+      } else {
+        opportunityCost = normalFee;
+      }
+    }
+
+    totalOpportunityCost += opportunityCost;
+  }
+
+  return totalOpportunityCost;
 }
