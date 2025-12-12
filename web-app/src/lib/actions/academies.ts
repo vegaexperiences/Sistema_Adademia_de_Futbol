@@ -17,25 +17,49 @@ export interface Academy extends AcademyBase {
  * Get all academies (super admin only)
  */
 export async function getAllAcademies() {
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:19',message:'getAllAcademies entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const supabase = await createClient()
   
   // Get current user
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:25',message:'Before getUser',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
+    // #region agent log
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:28',message:'No user authenticated',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+    // #endregion
     return { error: 'Not authenticated' }
   }
   
   // Check if super admin
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:32',message:'Before isSuperAdmin check',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const isAdmin = await isSuperAdmin(user.id)
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:35',message:'After isSuperAdmin check',data:{userId:user.id,isAdmin},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   if (!isAdmin) {
+    // #region agent log
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:37',message:'Not super admin',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+    // #endregion
     return { error: 'Unauthorized: Super admin access required' }
   }
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:42',message:'Before query academies',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const { data, error } = await supabase
     .from('academies')
     .select('*')
     .order('name', { ascending: true })
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:47',message:'After query academies',data:{hasError:!!error,errorMessage:error?.message,academiesCount:data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   if (error) {
     console.error('Error fetching academies:', error)
     return { error: error.message }
@@ -437,13 +461,29 @@ export async function updateAcademySettings(
  * Check if current user is super admin
  */
 export async function checkIsSuperAdmin(): Promise<boolean> {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'academies.ts:439',message:'checkIsSuperAdmin entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'academies.ts:442',message:'checkIsSuperAdmin getUser result',data:{hasUser:!!user,userId:user?.id,userEmail:user?.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   
   if (!user) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'academies.ts:444',message:'checkIsSuperAdmin no user',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     return false
   }
   
-  return await isSuperAdmin(user.id)
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'academies.ts:447',message:'checkIsSuperAdmin calling isSuperAdmin',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  const result = await isSuperAdmin(user.id)
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'academies.ts:448',message:'checkIsSuperAdmin result',data:{userId:user.id,isSuperAdmin:result},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  return result
 }
 

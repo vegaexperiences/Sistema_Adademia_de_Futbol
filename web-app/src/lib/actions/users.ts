@@ -42,33 +42,84 @@ export interface Permission {
  * Get all users (super admin only)
  */
 export async function getAllUsers(): Promise<{ data: User[] | null; error: string | null }> {
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:44',message:'getAllUsers entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})+'\n');}catch(e){}
+  // #endregion
   const supabase = await createClient()
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:47',message:'Before getUser',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})+'\n');}catch(e){}
+  // #endregion
   // Get current user
   const { data: { user: currentUser } } = await supabase.auth.getUser()
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:49',message:'After getUser',data:{hasUser:!!currentUser,userId:currentUser?.id,userEmail:currentUser?.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})+'\n');}catch(e){}
+  // #endregion
   if (!currentUser) {
     console.error('[getAllUsers] No authenticated user')
+    // #region agent log
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:51',message:'No authenticated user',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})+'\n');}catch(e){}
+    // #endregion
     return { data: null, error: 'Not authenticated' }
   }
   
   // Check if super admin
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:55',message:'Before isSuperAdmin check',data:{userId:currentUser.id,userEmail:currentUser.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
+  // #endregion
   const isAdmin = await isSuperAdmin(currentUser.id)
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:56',message:'After isSuperAdmin check',data:{userId:currentUser.id,userEmail:currentUser.email,isAdmin},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
+  // #endregion
   console.log('[getAllUsers] User:', currentUser.email, 'Is Super Admin:', isAdmin)
   if (!isAdmin) {
     console.error('[getAllUsers] User is not super admin:', currentUser.id)
+    // #region agent log
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:59',message:'User not super admin - returning error',data:{userId:currentUser.id,userEmail:currentUser.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
+    // #endregion
     return { data: null, error: 'Unauthorized: Super admin access required' }
   }
   
   // Get all users from auth
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:83',message:'Before admin.listUsers',data:{hasServiceRoleKey:!!process.env.SUPABASE_SERVICE_ROLE_KEY},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})+'\n');}catch(e){}
+  // #endregion
   console.log('[getAllUsers] Attempting to list users via admin API')
-  const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers()
+  
+  // Check if we need to use service role key for admin operations
+  let adminSupabase = supabase
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    // #region agent log
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:88',message:'Creating admin client with SERVICE_ROLE_KEY',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})+'\n');}catch(e){}
+    // #endregion
+    const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+    adminSupabase = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+  }
+  
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:95',message:'Calling admin.listUsers',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})+'\n');}catch(e){}
+  // #endregion
+  const { data: { users }, error: usersError } = await adminSupabase.auth.admin.listUsers()
+  
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:98',message:'After admin.listUsers',data:{hasUsers:!!users,usersCount:users?.length||0,hasError:!!usersError,errorMessage:usersError?.message,errorCode:usersError?.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})+'\n');}catch(e){}
+  // #endregion
   
   if (usersError) {
     console.error('[getAllUsers] Error fetching users:', usersError)
+    // #region agent log
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:102',message:'admin.listUsers error',data:{errorMessage:usersError.message,errorCode:usersError.code,errorStatus:usersError.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})+'\n');}catch(e){}
+    // #endregion
     return { data: null, error: usersError.message || 'Error al obtener usuarios' }
   }
   
   console.log('[getAllUsers] Successfully fetched', users?.length || 0, 'users')
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:108',message:'Successfully fetched users',data:{usersCount:users?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})+'\n');}catch(e){}
+  // #endregion
   
   const formattedUsers: User[] = users.map(u => ({
     id: u.id,
@@ -85,13 +136,22 @@ export async function getAllUsers(): Promise<{ data: User[] | null; error: strin
  * Get all roles
  */
 export async function getAllRoles(): Promise<{ data: Role[] | null; error: string | null }> {
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:138',message:'getAllRoles entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const supabase = await createClient()
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:142',message:'Before query user_roles',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const { data, error } = await supabase
     .from('user_roles')
     .select('*')
     .order('display_name', { ascending: true })
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:147',message:'After query user_roles',data:{hasError:!!error,errorMessage:error?.message,rolesCount:data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   if (error) {
     console.error('Error fetching roles:', error)
     return { data: null, error: error.message }
@@ -123,21 +183,42 @@ export async function getAllPermissions(): Promise<{ data: Permission[] | null; 
  * Get user roles for a specific user
  */
 export async function getUserRoles(userId: string, academyId?: string): Promise<{ data: UserRole[] | null; error: string | null }> {
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:176',message:'getUserRoles entry',data:{userId,academyId},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const supabase = await createClient()
   const currentAcademyId = academyId || await getCurrentAcademyId()
   
   // Get current user
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:182',message:'Before getUser',data:{userId,currentAcademyId},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const { data: { user: currentUser } } = await supabase.auth.getUser()
   if (!currentUser) {
+    // #region agent log
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:186',message:'No user authenticated',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+    // #endregion
     return { data: null, error: 'Not authenticated' }
   }
   
   // Check if super admin or viewing own roles
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:191',message:'Before isSuperAdmin check',data:{userId,currentUserId:currentUser.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const isAdmin = await isSuperAdmin(currentUser.id)
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:194',message:'After isSuperAdmin check',data:{userId,currentUserId:currentUser.id,isAdmin,isOwnUser:currentUser.id===userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   if (!isAdmin && currentUser.id !== userId) {
+    // #region agent log
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:197',message:'Unauthorized',data:{userId,currentUserId:currentUser.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+    // #endregion
     return { data: null, error: 'Unauthorized' }
   }
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:202',message:'Before query user_role_assignments',data:{userId,currentAcademyId},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   let query = supabase
     .from('user_role_assignments')
     .select(`
@@ -162,8 +243,14 @@ export async function getUserRoles(userId: string, academyId?: string): Promise<
     query = query.eq('academy_id', currentAcademyId)
   }
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:246',message:'Before query execution',data:{userId,currentAcademyId,isAdmin},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   const { data, error } = await query
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:250',message:'After query execution',data:{userId,hasError:!!error,errorMessage:error?.message,dataCount:data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   if (error) {
     console.error('Error fetching user roles:', error)
     return { data: null, error: error.message }
@@ -179,6 +266,9 @@ export async function getUserRoles(userId: string, academyId?: string): Promise<
     assigned_at: assignment.created_at,
   }))
   
+  // #region agent log
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:266',message:'getUserRoles success',data:{userId,rolesCount:formattedRoles.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  // #endregion
   return { data: formattedRoles, error: null }
 }
 
