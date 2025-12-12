@@ -1,6 +1,6 @@
 import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { User, Calendar, Mail, Phone, FileText, DollarSign, ArrowLeft } from 'lucide-react';
+import { User, Calendar, Mail, Phone, FileText, DollarSign, ArrowLeft, Receipt, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
 import { getPlayerPayments, calculateMonthlyFee } from '@/lib/actions/payments';
@@ -56,6 +56,21 @@ export default async function PlayerProfilePage({
 
   // Get payments
   const payments = await getPlayerPayments(id);
+  
+  // Filter payments with proof_url and group by type
+  const paymentsWithProof = payments.filter(p => p.proof_url);
+  
+  // Group payments by type, prioritizing enrollment
+  const enrollmentPayments = paymentsWithProof.filter(p => 
+    p.type === 'enrollment' || p.type === 'Matrícula' || p.payment_type === 'enrollment'
+  );
+  const monthlyPayments = paymentsWithProof.filter(p => 
+    p.type === 'monthly' || p.payment_type === 'monthly'
+  );
+  const otherPayments = paymentsWithProof.filter(p => 
+    p.type !== 'enrollment' && p.type !== 'Matrícula' && p.type !== 'monthly' &&
+    p.payment_type !== 'enrollment' && p.payment_type !== 'monthly'
+  );
   
   // Calculate suggested monthly fee
   const suggestedFee = await calculateMonthlyFee(id);
@@ -147,9 +162,12 @@ export default async function PlayerProfilePage({
           <FileText className="h-6 w-6" />
           Documentos
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {player.cedula_front_url || player.cedula_back_url || player.families?.tutor_cedula_url ? (
-            <>
+        
+        {/* Cédulas Section */}
+        {(player.cedula_front_url || player.cedula_back_url || player.families?.tutor_cedula_url) && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Cédulas de Identidad</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {player.cedula_front_url && (
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
                   <p className="text-xs font-semibold text-gray-600 mb-3">📄 Cédula Jugador (Frente)</p>
@@ -168,14 +186,103 @@ export default async function PlayerProfilePage({
                   <DocumentPreview url={player.families.tutor_cedula_url} title="Cédula Tutor" />
                 </div>
               )}
-            </>
-          ) : (
-            <div className="col-span-3 text-center py-8">
-              <FileText className="mx-auto h-12 w-12 text-gray-400 mb-2" />
-              <p className="text-gray-600">No hay documentos adjuntos</p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Payment Proofs Section */}
+        {paymentsWithProof.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Comprobantes de Pago
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Enrollment Payments (Prioritized) */}
+              {enrollmentPayments.map((payment) => {
+                const paymentDate = new Date(payment.payment_date).toLocaleDateString('es-ES');
+                const paymentMethod = payment.method || payment.payment_method || 'N/A';
+                return (
+                  <div key={payment.id} className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border-l-4 border-emerald-500">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-xs font-semibold text-gray-700">💰 Matrícula</p>
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">
+                        ${parseFloat(payment.amount.toString()).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600 mb-3 space-y-1">
+                      <p>📅 {paymentDate}</p>
+                      <p>💳 {paymentMethod}</p>
+                    </div>
+                    <DocumentPreview 
+                      url={payment.proof_url!} 
+                      title={`Comprobante Matrícula - ${paymentDate}`} 
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Monthly Payments */}
+              {monthlyPayments.map((payment) => {
+                const paymentDate = new Date(payment.payment_date).toLocaleDateString('es-ES');
+                const paymentMethod = payment.method || payment.payment_method || 'N/A';
+                const monthYear = payment.month_year || paymentDate;
+                return (
+                  <div key={payment.id} className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-xs font-semibold text-gray-700">📆 Mensualidad</p>
+                      <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded">
+                        ${parseFloat(payment.amount.toString()).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600 mb-3 space-y-1">
+                      <p>📅 {paymentDate}</p>
+                      <p>📆 {monthYear}</p>
+                      <p>💳 {paymentMethod}</p>
+                    </div>
+                    <DocumentPreview 
+                      url={payment.proof_url!} 
+                      title={`Comprobante Mensualidad - ${monthYear}`} 
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Other Payments */}
+              {otherPayments.map((payment) => {
+                const paymentDate = new Date(payment.payment_date).toLocaleDateString('es-ES');
+                const paymentMethod = payment.method || payment.payment_method || 'N/A';
+                const paymentType = payment.type || payment.payment_type || 'Otro';
+                return (
+                  <div key={payment.id} className="bg-gradient-to-br from-slate-50 to-gray-50 p-4 rounded-xl border-l-4 border-slate-500">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-xs font-semibold text-gray-700">💵 {paymentType}</p>
+                      <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                        ${parseFloat(payment.amount.toString()).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600 mb-3 space-y-1">
+                      <p>📅 {paymentDate}</p>
+                      <p>💳 {paymentMethod}</p>
+                    </div>
+                    <DocumentPreview 
+                      url={payment.proof_url!} 
+                      title={`Comprobante ${paymentType} - ${paymentDate}`} 
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* No Documents Message */}
+        {!player.cedula_front_url && !player.cedula_back_url && !player.families?.tutor_cedula_url && paymentsWithProof.length === 0 && (
+          <div className="text-center py-8">
+            <FileText className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+            <p className="text-gray-600">No hay documentos adjuntos</p>
+          </div>
+        )}
       </div>
 
       {/* Player Management (Custom Fee & Status) */}
