@@ -47,12 +47,15 @@ export async function getAllUsers(): Promise<{ data: User[] | null; error: strin
   // Get current user
   const { data: { user: currentUser } } = await supabase.auth.getUser()
   if (!currentUser) {
+    console.error('[getAllUsers] No authenticated user')
     return { data: null, error: 'Not authenticated' }
   }
   
   // Check if super admin
   const isAdmin = await isSuperAdmin(currentUser.id)
+  console.log('[getAllUsers] User:', currentUser.email, 'Is Super Admin:', isAdmin)
   if (!isAdmin) {
+    console.error('[getAllUsers] User is not super admin:', currentUser.id)
     return { data: null, error: 'Unauthorized: Super admin access required' }
   }
   
@@ -303,7 +306,9 @@ export async function createUser(
   
   // Check if super admin
   const isAdmin = await isSuperAdmin(currentUser.id)
+  console.log('[createUser] User:', currentUser.email, 'Is Super Admin:', isAdmin)
   if (!isAdmin) {
+    console.error('[createUser] User is not super admin:', currentUser.id)
     return { data: null, error: 'Unauthorized: Super admin access required' }
   }
 
@@ -318,6 +323,7 @@ export async function createUser(
 
   try {
     // Create user using Supabase Admin API
+    console.log('[createUser] Attempting to create user:', email)
     const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -328,9 +334,11 @@ export async function createUser(
     })
 
     if (createError) {
-      console.error('Error creating user:', createError)
+      console.error('[createUser] Error creating user:', createError)
       return { data: null, error: createError.message || 'Error al crear usuario' }
     }
+    
+    console.log('[createUser] User created successfully:', newUser.user?.id)
 
     if (!newUser.user) {
       return { data: null, error: 'Error al crear usuario: usuario no retornado' }
@@ -364,9 +372,9 @@ export async function getUserPermissions(
     return { data: null, error: 'Not authenticated' }
   }
   
-  // Check if super admin
-  const isAdmin = await isSuperAdmin(userId)
-  if (isAdmin) {
+  // Check if the user being queried is super admin
+  const targetUserIsAdmin = await isSuperAdmin(userId)
+  if (targetUserIsAdmin) {
     // Super admins have all permissions
     const { data: allPermissions } = await supabase
       .from('user_permissions')
@@ -374,6 +382,12 @@ export async function getUserPermissions(
       .order('module, display_name')
     
     return { data: allPermissions, error: null }
+  }
+  
+  // Check if current user has permission to view (super admin or viewing own permissions)
+  const currentUserIsAdmin = await isSuperAdmin(currentUser.id)
+  if (!currentUserIsAdmin && currentUser.id !== userId) {
+    return { data: null, error: 'Unauthorized: You can only view your own permissions' }
   }
   
   // Get user's role in the academy

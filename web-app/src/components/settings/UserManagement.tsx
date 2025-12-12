@@ -138,11 +138,14 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
     setError(null)
     setSuccess(null)
 
-    const result = await createUser(email, password, name)
+    try {
+      const result = await createUser(email, password, name)
 
-    if (result.error) {
-      setError(result.error)
-    } else {
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+
       setSuccess('Usuario creado exitosamente')
       setShowCreateUserForm(false)
       await loadData() // Reload data to show new user
@@ -151,6 +154,8 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
         setSelectedUser(result.data.id)
         setShowAssignForm(true)
       }
+    } catch (err: any) {
+      setError(err.message || 'Error al crear usuario')
     }
   }
 
@@ -357,10 +362,12 @@ function CreateUserForm({
   const [name, setName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuccess(false)
 
     if (!email || !email.includes('@')) {
       setError('Email inválido')
@@ -378,15 +385,20 @@ function CreateUserForm({
     }
 
     setIsSubmitting(true)
-    await onCreate(email, password, name || undefined)
-    setIsSubmitting(false)
-
-    // Reset form on success
-    if (!error) {
+    try {
+      await onCreate(email, password, name || undefined)
+      // If we get here without error, the user was created successfully
+      setSuccess(true)
       setEmail('')
       setPassword('')
       setConfirmPassword('')
       setName('')
+      // Reset success message after 2 seconds
+      setTimeout(() => setSuccess(false), 2000)
+    } catch (err: any) {
+      setError(err.message || 'Error al crear usuario')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -400,6 +412,11 @@ function CreateUserForm({
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <p className="text-red-800 text-sm font-medium">{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-green-800 text-sm font-medium">Usuario creado exitosamente</p>
           </div>
         )}
         <div>

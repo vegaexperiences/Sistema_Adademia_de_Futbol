@@ -88,7 +88,18 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
     .eq('user_id', userId)
     .single()
   
-  if (error || !data) {
+  if (error) {
+    // Log error but don't expose details
+    console.log('[isSuperAdmin] Error checking super admin:', error.code, error.message)
+    // If it's a "not found" error (PGRST116), user is not super admin
+    if (error.code === 'PGRST116') {
+      return false
+    }
+    // For other errors, log and return false
+    return false
+  }
+  
+  if (!data) {
     return false
   }
   
