@@ -395,6 +395,16 @@ export async function updateAcademySettings(
       ...(currentSettings.email || {}),
       ...(settings.email || {}),
     },
+    // Deep merge for metadata
+    metadata: {
+      ...(currentSettings.metadata || {}),
+      ...(settings.metadata || {}),
+    },
+    // Deep merge for navigation
+    navigation: {
+      ...(currentSettings.navigation || {}),
+      ...(settings.navigation || {}),
+    },
   }
   
   // Update academy with merged settings

@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getAcademyFavicon } from '@/lib/utils/academy-logos'
+import { getCurrentAcademy } from '@/lib/utils/academy'
 
 export const size = {
   width: 32,
@@ -7,6 +8,18 @@ export const size = {
 }
 
 export const contentType = 'image/png'
+
+function getAcademyInitials(academyName: string): string {
+  // Get first letter of each word, up to 2 letters
+  const words = academyName.trim().split(/\s+/)
+  if (words.length === 0) return 'A'
+  
+  if (words.length === 1) {
+    return words[0].substring(0, 2).toUpperCase()
+  }
+  
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase()
+}
 
 export default async function Icon() {
   try {
@@ -42,7 +55,19 @@ export default async function Icon() {
       // Ignore file system errors
     }
     
-    // Final fallback: return a simple icon
+    // Get academy for initials
+    let initials = 'SA'
+    try {
+      const academy = await getCurrentAcademy()
+      if (academy) {
+        const academyName = academy.display_name || academy.name || 'Suarez Academy'
+        initials = getAcademyInitials(academyName)
+      }
+    } catch (e) {
+      // Use default initials
+    }
+    
+    // Final fallback: return a simple icon with academy initials
     return new ImageResponse(
       (
         <div
@@ -58,7 +83,7 @@ export default async function Icon() {
             fontWeight: 'bold',
           }}
         >
-          SA
+          {initials}
         </div>
       ),
       {
@@ -66,7 +91,7 @@ export default async function Icon() {
       }
     )
   } catch (e: any) {
-    // Fallback icon
+    // Fallback icon with default initials
     return new ImageResponse(
       (
         <div

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, Image, Type, Navigation } from 'lucide-react'
+import { Save, Image, Type, Navigation, FileText } from 'lucide-react'
 import { updateAcademy, updateAcademySettings, type Academy } from '@/lib/actions/academies'
 
 interface BrandingConfigProps {
@@ -12,6 +12,8 @@ interface BrandingConfigProps {
 export function BrandingConfig({ academy }: BrandingConfigProps) {
   const router = useRouter()
   const [displayName, setDisplayName] = useState(academy.display_name || academy.name)
+  const [pageTitle, setPageTitle] = useState(academy.settings?.metadata?.page_title || '')
+  const [pageDescription, setPageDescription] = useState(academy.settings?.metadata?.page_description || '')
   const [navigationLabels, setNavigationLabels] = useState<Record<string, string>>({
     home: academy.settings?.navigation?.home || 'Inicio',
     enrollment: academy.settings?.navigation?.enrollment || 'Matrícula',
@@ -50,11 +52,15 @@ export function BrandingConfig({ academy }: BrandingConfigProps) {
         return
       }
 
-      // Update navigation labels in settings
+      // Update navigation labels and metadata in settings
       const currentSettings = academy.settings || {}
       const updatedSettings = {
         ...currentSettings,
         navigation: navigationLabels,
+        metadata: {
+          page_title: pageTitle.trim() || null,
+          page_description: pageDescription.trim() || null,
+        },
       }
 
       const settingsResult = await updateAcademySettings(academy.id, updatedSettings)
@@ -88,6 +94,8 @@ export function BrandingConfig({ academy }: BrandingConfigProps) {
 
   const handleReset = () => {
     setDisplayName(academy.name)
+    setPageTitle('')
+    setPageDescription('')
     setNavigationLabels({
       home: 'Inicio',
       enrollment: 'Matrícula',
@@ -158,6 +166,49 @@ export function BrandingConfig({ academy }: BrandingConfigProps) {
           <p className="text-xs text-gray-500 mt-1">
             Nombre técnico: <span className="font-mono">{academy.name}</span>
           </p>
+        </div>
+      </div>
+
+      {/* Page Metadata Section */}
+      <div className="border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <FileText className="h-5 w-5 text-green-600" />
+          <h3 className="text-lg font-bold text-gray-900">Metadatos de la Página</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Personaliza el título y la descripción que aparecen en la pestaña del navegador y en los resultados de búsqueda.
+        </p>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Título de la Pestaña
+            </label>
+            <input
+              type="text"
+              value={pageTitle}
+              onChange={(e) => setPageTitle(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              placeholder={`${academy.display_name || academy.name} | Sistema de Gestión`}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Si se deja vacío, se usará: <span className="font-mono">{academy.display_name || academy.name} | Sistema de Gestión</span>
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Descripción de la Página
+            </label>
+            <textarea
+              value={pageDescription}
+              onChange={(e) => setPageDescription(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+              placeholder={`Sistema de gestión integral para ${academy.display_name || academy.name}`}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Si se deja vacío, se usará: <span className="font-mono">Sistema de gestión integral para {academy.display_name || academy.name}</span>
+            </p>
+          </div>
         </div>
       </div>
 
