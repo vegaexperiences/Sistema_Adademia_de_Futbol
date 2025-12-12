@@ -174,29 +174,58 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
                     </div>
                   )}
                   
-                  {/* Show proof URL if available */}
-                  {payment.proof_url && (
+                  {/* Show proof URL if available or extract from notes */}
+                  {(payment.proof_url || (payment.notes && payment.notes.includes('http'))) && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="h-4 w-4 text-blue-600" />
                         <span className="text-xs font-semibold text-gray-700">Comprobante de Pago</span>
                       </div>
                       <div className="space-y-2">
-                        <a
-                          href={payment.proof_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Abrir comprobante en nueva pestaña
-                        </a>
-                        <div>
-                          <DocumentPreview
-                            url={payment.proof_url}
-                            title="Comprobante de Pago"
-                          />
-                        </div>
+                        {payment.proof_url ? (
+                          <>
+                            <a
+                              href={payment.proof_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Abrir comprobante en nueva pestaña
+                            </a>
+                            <div>
+                              <DocumentPreview
+                                url={payment.proof_url}
+                                title="Comprobante de Pago"
+                              />
+                            </div>
+                          </>
+                        ) : payment.notes && (() => {
+                          const urlMatch = payment.notes.match(/https?:\/\/[^\s\)]+/);
+                          const url = urlMatch ? urlMatch[0] : null;
+                          if (url) {
+                            return (
+                              <>
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  Abrir comprobante en nueva pestaña
+                                </a>
+                                <div>
+                                  <DocumentPreview
+                                    url={url}
+                                    title="Comprobante de Pago"
+                                  />
+                                </div>
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                   )}
