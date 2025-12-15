@@ -583,13 +583,9 @@ export async function resetUserPassword(userId: string): Promise<{ success: bool
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       'http://localhost:3000'
 
-    // Send password reset email
-    const { error: resetError } = await adminSupabase.auth.admin.generateLink({
-      type: 'recovery',
-      email: user.email,
-      options: {
-        redirectTo: `${baseUrl}/auth/reset-password`,
-      },
+    // Send password reset email using admin API
+    const { error: resetError } = await adminSupabase.auth.admin.resetPasswordForEmail(user.email, {
+      redirectTo: `${baseUrl}/auth/reset-password`,
     })
 
     if (resetError) {
