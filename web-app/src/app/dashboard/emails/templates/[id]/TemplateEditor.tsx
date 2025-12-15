@@ -57,17 +57,23 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
     const name = template.name;
     
     // For payment templates, use the full HTML template with example variables
-    if (name === 'payment_thank_you' || name === 'payment_confirmation') {
+    if (name === 'payment_thank_you' || name === 'payment_confirmation' || name === 'payment_reminder') {
       let html = template.html_template || '';
       // Replace variables with example values
       html = html.replace(/\{\{logoUrl\}\}/g, logoUrl);
       html = html.replace(/\{\{tutorName\}\}/g, 'Juan Pérez');
       html = html.replace(/\{\{playerName\}\}/g, 'Carlos Pérez');
-      html = html.replace(/\{\{amount\}\}/g, '100.00');
+      html = html.replace(/\{\{playerNames\}\}/g, 'Carlos Pérez, María Pérez');
+      html = html.replace(/\{\{playerList\}\}/g, '<li>Carlos Pérez</li><li>María Pérez</li>');
+      html = html.replace(/\{\{amount\}\}/g, '260.00');
+      html = html.replace(/\{\{dueDate\}\}/g, '5 de Diciembre');
       html = html.replace(/\{\{paymentType\}\}/g, 'Mensualidad');
       html = html.replace(/\{\{paymentDate\}\}/g, '4 de diciembre de 2025');
       html = html.replace(/\{\{operationId\}\}/g, 'LK-ABC123XYZ');
       html = html.replace(/\{\{monthYear\}\}/g, '');
+      html = html.replace(/\{\{paymentLink\}\}/g, 'https://sistema-adademia-de-futbol-tura.vercel.app/pay?cedula=8-1234-5678');
+      html = html.replace(/\{\{academy_name\}\}/g, 'Suarez Academy');
+      html = html.replace(/\{\{current_year\}\}/g, new Date().getFullYear().toString());
       return html;
     }
     
@@ -107,26 +113,6 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
           <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">© 2025 Suarez Academy</p>
         </div>
       `;
-    } else if (name === 'payment_reminder') {
-      return `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: white;">
-          <img src="${logoUrl}" alt="Logo" style="width: 80px; height: 80px; margin-bottom: 20px;">
-          <h1 style="color: #f59e0b;">Recordatorio de Pago</h1>
-          <p>Hola <strong>Juan Pérez</strong>,</p>
-          <p>${fields.greeting || ''}</p>
-          <h3 style="color: #d97706;">👥 Jugadores</h3>
-          <ul><li>Carlos Pérez</li><li>María Pérez</li></ul>
-          <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 15px; text-align: center; margin: 20px 0;">
-            <div style="color: #92400e; font-size: 14px; font-weight: 600;">MONTO A PAGAR</div>
-            <div style="color: #92400e; font-size: 32px; font-weight: 800;">$260.00</div>
-            <div style="color: #92400e; font-size: 14px; margin-top: 5px;">Fecha límite: 5 de Diciembre</div>
-          </div>
-          <h3 style="color: #1e3a8a;">📲 Métodos de Pago</h3>
-          <p style="white-space: pre-line;">${fields.paymentMethods || ''}</p>
-          <p style="margin-top: 20px; color: #666;">${fields.footer || ''}</p>
-          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">© 2025 Suarez Academy</p>
-        </div>
-      `;
     } else if (name === 'monthly_statement') {
       return `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: white;">
@@ -153,7 +139,7 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
     setSaving(true);
     try {
       // For payment templates, we only save the subject (HTML is stored in html_template column)
-      if (template.name === 'payment_thank_you' || template.name === 'payment_confirmation') {
+      if (template.name === 'payment_thank_you' || template.name === 'payment_confirmation' || template.name === 'payment_reminder') {
         await onSave({ subject, fields: {} });
       } else {
         await onSave({ subject, fields });
@@ -184,11 +170,11 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
             📝 Contenido Editable
           </h3>
           
-          {(template.name === 'payment_thank_you' || template.name === 'payment_confirmation') ? (
+          {(template.name === 'payment_thank_you' || template.name === 'payment_confirmation' || template.name === 'payment_reminder') ? (
             <div>
               <p className="text-sm text-gray-600 mb-4">
                 Este template usa HTML completo. El contenido se muestra en la vista previa a la derecha.
-                Las variables disponibles son: <code className="bg-gray-100 px-2 py-1 rounded">{'{{tutorName}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{playerName}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{amount}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{paymentType}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{paymentDate}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{operationId}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{logoUrl}}'}</code>
+                Las variables disponibles son: <code className="bg-gray-100 px-2 py-1 rounded">{'{{tutorName}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{playerList}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{amount}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{dueDate}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{paymentLink}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{logoUrl}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{academy_name}}'}</code>, <code className="bg-gray-100 px-2 py-1 rounded">{'{{current_year}}'}</code>
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
