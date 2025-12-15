@@ -290,14 +290,20 @@ export async function GET(request: NextRequest) {
     const parm4 = searchParams.get('PARM_4') || callbackParams.PARM_4 || '';
     const parm5 = searchParams.get('PARM_5') || callbackParams.PARM_5 || '';
     const parm6 = searchParams.get('PARM_6') || callbackParams.PARM_6 || '';
+    const parm7 = searchParams.get('PARM_7') || callbackParams.PARM_7 || '';
+    const parm8 = searchParams.get('PARM_8') || callbackParams.PARM_8 || '';
+    const parm9 = searchParams.get('PARM_9') || callbackParams.PARM_9 || '';
     
     // Try to extract from URL params first, then from PARM
-    // Based on how we send: customParams = { type, playerId, paymentType, monthYear }
-    let type = searchParams.get('type') || parm2 || ''; // 'enrollment' | 'payment'
+    // Based on how we send: customParams = { type, playerId, paymentType, monthYear, sponsorId, sponsorName, etc. }
+    let type = searchParams.get('type') || parm2 || ''; // 'enrollment' | 'payment' | 'sponsor'
     let playerId = searchParams.get('playerId') || parm3 || '';
     let paymentType = searchParams.get('paymentType') || parm4 || '';
     let amount = searchParams.get('amount') || parm5 || '';
     let monthYear = searchParams.get('monthYear') || parm6 || '';
+    let sponsorId = searchParams.get('sponsorId') || searchParams.get('sponsor_id') || parm7 || '';
+    let sponsorName = searchParams.get('sponsorName') || searchParams.get('sponsor_name') || parm8 || '';
+    let sponsorEmail = searchParams.get('sponsorEmail') || searchParams.get('sponsor_email') || parm9 || '';
     
     // If amount is not in URL params or PARM, try to get it from callback params
     if (!amount && callbackParams.TotalPagado) {
@@ -939,6 +945,8 @@ export async function GET(request: NextRequest) {
       // Failure page
       if (type === 'enrollment') {
         redirectUrl = `${baseUrl}/enrollment?paguelofacil=failed&razon=${encodeURIComponent(callbackParams.Razon || 'Transacción denegada')}`;
+      } else if (type === 'sponsor') {
+        redirectUrl = `${baseUrl}/sponsors/checkout/${sponsorId}?paguelofacil=failed&razon=${encodeURIComponent(callbackParams.Razon || 'Transacción denegada')}`;
       } else if (type === 'payment' && playerId) {
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?paguelofacil=failed&razon=${encodeURIComponent(callbackParams.Razon || 'Transacción denegada')}`;
       } else {

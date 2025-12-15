@@ -19,9 +19,10 @@ interface YappyPaymentButtonProps {
   returnUrl?: string;
   customParams?: Record<string, string>;
   playerId?: string;
-  paymentType?: 'enrollment' | 'monthly' | 'custom';
+  paymentType?: 'enrollment' | 'monthly' | 'custom' | 'sponsor';
   monthYear?: string;
   notes?: string;
+  metadata?: Record<string, any>; // For sponsor data
 }
 
 /**

@@ -60,7 +60,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
   // - status = 'Approved' or 'Pending' (valid payments)
   // - status IS NULL or '' (backward compatibility - old payments without status)
   // - Exclude only 'Rejected' and 'Cancelled'
-  // - Must have player_id and amount > 0
+  // - Must have (player_id OR sponsor_id) and amount > 0
   // - Filter by academy_id: include payments with matching academy_id OR payments without academy_id (we'll check player's academy_id in code)
   let paymentsQuery = supabase
     .from('payments')
@@ -75,6 +75,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       reference,
       proof_url,
       player_id,
+      sponsor_id,
       academy_id,
       players(
         first_name,
@@ -89,9 +90,18 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
           tutor_email,
           tutor_cedula
         )
+      ),
+      sponsors(
+        id,
+        name
+      ),
+      sponsor_registrations(
+        sponsor_name,
+        sponsor_email,
+        sponsor_cedula
       )
     `)
-    .not('player_id', 'is', null)
+    .or('player_id.not.is.null,sponsor_id.not.is.null') // Include payments with player_id OR sponsor_id
     .gt('amount', 0) // Only include payments with amount > 0
     .neq('status', 'Rejected')
     .neq('status', 'Cancelled');
@@ -121,6 +131,8 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
     payments.forEach((payment) => {
       const player = Array.isArray(payment.players) ? payment.players[0] : payment.players;
       const family = player?.families ? (Array.isArray(player.families) ? player.families[0] : player.families) : null;
+      const sponsor = Array.isArray(payment.sponsors) ? payment.sponsors[0] : payment.sponsors;
+      const sponsorRegistration = Array.isArray(payment.sponsor_registrations) ? payment.sponsor_registrations[0] : payment.sponsor_registrations;
       
       // Filter by academy_id: if payment doesn't have academy_id, check if player has matching academy_id
       // This handles old payments that don't have academy_id
@@ -135,12 +147,24 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
         return; // Payment doesn't have academy_id but player has different academy_id
       }
       
+      // For sponsor payments, check academy_id directly
+      if (payment.type === 'sponsor' && paymentAcademyId && paymentAcademyId !== academyId) {
+        return; // Sponsor payment has academy_id but doesn't match
+      }
+      
       // If payment has no academy_id and player has no academy_id, include it (backward compatibility)
       // This allows old payments to show up
       
-      const description = payment.notes || 
-        (player ? `${player.first_name} ${player.last_name}` : 'Pago sin jugador') ||
-        `Pago ${payment.type || 'custom'}`;
+      // Build description based on payment type
+      let description = '';
+      if (payment.type === 'sponsor') {
+        const sponsorName = sponsorRegistration?.sponsor_name || sponsor?.name || 'Padrino';
+        description = payment.notes || `Padrinazgo: ${sponsorName}`;
+      } else {
+        description = payment.notes || 
+          (player ? `${player.first_name} ${player.last_name}` : 'Pago sin jugador') ||
+          `Pago ${payment.type || 'custom'}`;
+      }
 
       // Filter out payments with amount 0 or less (already filtered in query, but double-check)
       const paymentAmount = parseFloat(payment.amount.toString());
@@ -149,6 +173,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
           id: payment.id,
           amount: paymentAmount,
           player_id: payment.player_id,
+          sponsor_id: payment.sponsor_id,
         });
         return; // Skip this payment
       }
@@ -169,9 +194,15 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
             status: payment.status || undefined,
             player_name: player ? `${player.first_name} ${player.last_name}` : undefined,
             player_cedula: player?.cedula || undefined,
-            family_name: family?.tutor_name || undefined,
-            tutor_email: family?.tutor_email || player?.tutor_email || undefined,
-            tutor_cedula: family?.tutor_cedula || player?.tutor_cedula || undefined,
+            family_name: payment.type === 'sponsor' 
+              ? sponsorRegistration?.sponsor_name 
+              : (family?.tutor_name || undefined),
+            tutor_email: payment.type === 'sponsor'
+              ? sponsorRegistration?.sponsor_email
+              : (family?.tutor_email || player?.tutor_email || undefined),
+            tutor_cedula: payment.type === 'sponsor'
+              ? sponsorRegistration?.sponsor_cedula
+              : (family?.tutor_cedula || player?.tutor_cedula || undefined),
             reference: payment.reference || undefined,
             proof_url: payment.proof_url || undefined,
             notes: payment.notes || undefined,
@@ -325,11 +356,11 @@ export async function getBalance(startDate?: string, endDate?: string): Promise<
   const defaultStart = startDate || new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
   const defaultEnd = endDate || new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
 
-  // Get all income (approved payments)
+  // Get all income (approved payments) - include both player payments and sponsor payments
   let paymentsQuery = supabase
     .from('payments')
     .select('amount, status')
-    .not('player_id', 'is', null)
+    .or('player_id.not.is.null,sponsor_id.not.is.null') // Include payments with player_id OR sponsor_id
     .neq('status', 'Rejected')
     .neq('status', 'Cancelled')
     .gte('payment_date', defaultStart)

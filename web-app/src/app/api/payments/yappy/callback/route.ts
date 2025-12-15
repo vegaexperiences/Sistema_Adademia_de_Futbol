@@ -35,6 +35,10 @@ export async function POST(request: NextRequest) {
     let amount = callbackParams.amount || body.amount || '';
     let monthYear = metadata.monthYear || body.monthYear || '';
     let notes = metadata.notes || body.notes || '';
+    let sponsorId = metadata.sponsor_id || body.sponsor_id || metadata.sponsorId || body.sponsorId || '';
+    let sponsorName = metadata.sponsor_name || body.sponsor_name || metadata.sponsorName || body.sponsorName || '';
+    let sponsorEmail = metadata.sponsor_email || body.sponsor_email || metadata.sponsorEmail || body.sponsorEmail || '';
+    let sponsorCedula = metadata.sponsor_cedula || body.sponsor_cedula || metadata.sponsorCedula || body.sponsorCedula || '';
 
     // Try to extract playerId from orderId if it follows the pattern "payment-{playerId}-{timestamp}"
     if (!playerId && callbackParams.orderId) {
@@ -514,6 +518,8 @@ export async function POST(request: NextRequest) {
     } else {
       if (type === 'enrollment') {
         redirectUrl = `${baseUrl}/enrollment?yappy=failed&orderId=${callbackParams.orderId}`;
+      } else if (type === 'sponsor') {
+        redirectUrl = `${baseUrl}/sponsors/checkout/${sponsorId}?yappy=failed&orderId=${callbackParams.orderId}`;
       } else if (type === 'payment' && playerId) {
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=failed&orderId=${callbackParams.orderId}`;
       } else {
@@ -1278,6 +1284,11 @@ export async function GET(request: NextRequest) {
     } else {
       if (type === 'enrollment') {
         redirectUrl = `${baseUrl}/enrollment?yappy=failed&orderId=${orderId}`;
+      } else if (type === 'sponsor') {
+        const sponsorId = searchParams.get('sponsorId') || searchParams.get('sponsor_id') || '';
+        redirectUrl = sponsorId 
+          ? `${baseUrl}/sponsors/checkout/${sponsorId}?yappy=failed&orderId=${orderId}`
+          : `${baseUrl}/sponsors?yappy=failed&orderId=${orderId}`;
       } else if (type === 'payment' && playerId) {
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=failed&orderId=${orderId}`;
       } else {
