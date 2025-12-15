@@ -36,16 +36,19 @@ export interface SponsorRegistration {
 /**
  * Get all active sponsors
  */
-export async function getAllSponsors(): Promise<{ data: Sponsor[] | null; error: string | null }> {
+export async function getAllSponsors(includeInactive: boolean = false): Promise<{ data: Sponsor[] | null; error: string | null }> {
   const supabase = await createClient();
   const academyId = await getCurrentAcademyId();
 
   let query = supabase
     .from('sponsors')
     .select('*')
-    .eq('is_active', true)
     .order('display_order', { ascending: true })
     .order('amount', { ascending: true });
+
+  if (!includeInactive) {
+    query = query.eq('is_active', true);
+  }
 
   if (academyId) {
     query = query.eq('academy_id', academyId);
