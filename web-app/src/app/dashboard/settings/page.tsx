@@ -150,12 +150,14 @@ export default async function SettingsPage() {
           >
             📧 Correos
           </Link>
-          <a 
-            href="#super-admin" 
-            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
-          >
-            🛡️ Super Admin
-          </a>
+          {isSuperAdminUser && (
+            <a 
+              href="#super-admin" 
+              className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+            >
+              🛡️ Super Admin
+            </a>
+          )}
           <a 
             href="#user-management" 
             className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
@@ -476,29 +478,31 @@ export default async function SettingsPage() {
         </div>
       </div>
 
-      {/* Super Admin Settings */}
-      <div id="super-admin" className="glass-card p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{
-              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-            }}>
-              <Shield className="h-6 w-6 text-white" />
+      {/* Super Admin Settings - Only visible to super admins */}
+      {isSuperAdminUser && (
+        <div id="super-admin" className="glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg" style={{
+                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              }}>
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                🛡️ Gestión de Super Admins
+              </h2>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              🛡️ Gestión de Super Admins
-            </h2>
+            <Link
+              href="/super-admin/academies"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl font-medium"
+            >
+              <Building2 size={18} />
+              Gestionar Academias
+            </Link>
           </div>
-          <Link
-            href="/super-admin/academies"
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl font-medium"
-          >
-            <Building2 size={18} />
-            Gestionar Academias
-          </Link>
+          <SuperAdminSettings initialAdmins={superAdmins} currentUserEmail={currentUserEmail} />
         </div>
-        <SuperAdminSettings initialAdmins={superAdmins} currentUserEmail={currentUserEmail} />
-      </div>
+      )}
 
       {/* User Management Section */}
       <div id="user-management" className="glass-card p-6">

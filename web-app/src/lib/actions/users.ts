@@ -2,6 +2,7 @@
 
 import { createClient, getCurrentAcademyId } from '@/lib/supabase/server'
 import { isSuperAdmin } from '@/lib/utils/academy'
+import { hasRole } from '@/lib/utils/permissions'
 import { revalidatePath } from 'next/cache'
 
 export interface User {
@@ -36,6 +37,24 @@ export interface Permission {
   display_name: string
   module: string
   description?: string
+}
+
+/**
+ * Check if user is admin (super admin OR has admin role in academy)
+ */
+async function isAdminOrSuperAdmin(userId: string, academyId?: string): Promise<boolean> {
+  // Check if super admin first
+  if (await isSuperAdmin(userId)) {
+    return true
+  }
+  
+  // Check if has admin role in academy
+  const currentAcademyId = academyId || await getCurrentAcademyId()
+  if (!currentAcademyId) {
+    return false
+  }
+  
+  return await hasRole(userId, 'admin', currentAcademyId)
 }
 
 /**
@@ -350,10 +369,10 @@ export async function removeRoleFromUser(
     return { success: false, error: 'Not authenticated' }
   }
   
-  // Check if super admin
-  const isAdmin = await isSuperAdmin(currentUser.id)
+  // Check if super admin or has admin role
+  const isAdmin = await isAdminOrSuperAdmin(currentUser.id)
   if (!isAdmin) {
-    return { success: false, error: 'Unauthorized: Super admin access required' }
+    return { success: false, error: 'Unauthorized: Admin access required' }
   }
   
   // Prevent removing own role
@@ -397,12 +416,12 @@ export async function createUser(
     return { data: null, error: 'Not authenticated' }
   }
   
-  // Check if super admin
-  const isAdmin = await isSuperAdmin(currentUser.id)
-  console.log('[createUser] User:', currentUser.email, 'Is Super Admin:', isAdmin)
+  // Check if super admin or has admin role
+  const isAdmin = await isAdminOrSuperAdmin(currentUser.id)
+  console.log('[createUser] User:', currentUser.email, 'Is Admin or Super Admin:', isAdmin)
   if (!isAdmin) {
-    console.error('[createUser] User is not super admin:', currentUser.id)
-    return { data: null, error: 'Unauthorized: Super admin access required' }
+    console.error('[createUser] User is not admin or super admin:', currentUser.id)
+    return { data: null, error: 'Unauthorized: Admin access required' }
   }
 
   // Validate input
