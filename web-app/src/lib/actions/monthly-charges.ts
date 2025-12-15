@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentAcademyId } from '@/lib/supabase/server';
-import { calculateMonthlyFee } from './payments';
+import { calculateMonthlyFee, isSeasonActive } from './payments';
 import { revalidatePath } from 'next/cache';
 
 export interface MonthlyCharge {
@@ -57,6 +57,19 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
   const year = targetMonth.getFullYear();
   const month = targetMonth.getMonth() + 1;
   const monthYearStr = `${year}-${String(month).padStart(2, '0')}`;
+  
+  // Check if season is active for this month (first day of the month)
+  const firstDayOfMonth = new Date(year, month - 1, 1);
+  const seasonActive = await isSeasonActive(firstDayOfMonth);
+  
+  if (!seasonActive) {
+    return {
+      success: false,
+      generated: 0,
+      skipped: 0,
+      errors: [`La temporada no está activa para el mes ${monthYearStr}. Verifica las fechas de temporada en Configuraciones.`],
+    };
+  }
 
   // Get all active players (not scholarship)
   const { data: players, error: playersError } = await supabase

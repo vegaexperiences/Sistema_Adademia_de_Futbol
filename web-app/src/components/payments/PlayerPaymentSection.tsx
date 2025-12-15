@@ -4,7 +4,6 @@ import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, DollarSign, Plus, X, Calendar, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle, TrendingUp, TrendingDown, FileText, ExternalLink } from 'lucide-react';
 import { createPayment, autoLinkUnlinkedPaymentsForPlayer } from '@/lib/actions/payments';
-import { generateMonthlyCharges } from '@/lib/actions/monthly-charges';
 import type { MonthlyCharge, PlayerAccountBalance } from '@/lib/actions/monthly-charges';
 import PaymentHistory from './PaymentHistory';
 import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
@@ -35,7 +34,6 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
   const router = useRouter();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [isGeneratingCharges, setIsGeneratingCharges] = useState(false);
   const [formData, setFormData] = useState({
     amount: suggestedAmount.toString(),
     payment_type: 'monthly' as 'enrollment' | 'monthly' | 'custom',
@@ -174,27 +172,6 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
       })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const handleGenerateCharges = async () => {
-    setIsGeneratingCharges(true);
-    setError(null);
-    try {
-      const result = await generateMonthlyCharges(undefined, false);
-      if (result.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          router.refresh();
-          setIsGeneratingCharges(false);
-          setSuccess(false);
-        }, 1500);
-      } else {
-        setError(result.errors.join(', ') || 'Error al generar cargos');
-        setIsGeneratingCharges(false);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Error al generar cargos');
-      setIsGeneratingCharges(false);
-    }
-  };
 
   return (
     <div className="glass-card p-6">
@@ -312,21 +289,20 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
             </div>
           </div>
 
-          {/* Generate Charges Button */}
+          {/* Info Message about Charges */}
           {charges.length === 0 && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
+                </div>
                 <div>
                   <p className="font-semibold text-blue-900 mb-1">No hay cargos generados</p>
-                  <p className="text-sm text-blue-700">Genera los cargos mensuales para este jugador</p>
+                  <p className="text-sm text-blue-700">
+                    Los cargos mensuales se generan automáticamente según la configuración de temporada. 
+                    Puedes gestionarlos desde <strong>Configuraciones → Cargos Mensuales</strong>.
+                  </p>
                 </div>
-                <button
-                  onClick={handleGenerateCharges}
-                  disabled={isGeneratingCharges}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  {isGeneratingCharges ? 'Generando...' : 'Generar Cargos'}
-                </button>
               </div>
             </div>
           )}

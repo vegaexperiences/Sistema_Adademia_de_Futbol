@@ -8,6 +8,7 @@ import { AcademySettingsSelector } from '@/components/settings/AcademySettingsSe
 import { BrandingConfig } from '@/components/super-admin/BrandingConfig';
 import { LogoUploader } from '@/components/super-admin/LogoUploader';
 import { OKRsSettings } from '@/components/settings/OKRsSettings';
+import { MonthlyChargesSettings } from '@/components/settings/MonthlyChargesSettings';
 import { getSuperAdmins } from '@/lib/actions/super-admin';
 import { checkIsSuperAdmin, getAcademyById } from '@/lib/actions/academies';
 import { getCurrentAcademyId } from '@/lib/supabase/server';
@@ -130,6 +131,12 @@ export default async function SettingsPage() {
             className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             📅 Temporada
+          </a>
+          <a 
+            href="#monthly-charges" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            💰 Cargos Mensuales
           </a>
           <a 
             href="#payment-methods" 
@@ -403,6 +410,21 @@ export default async function SettingsPage() {
             <span className="font-bold">💡 Nota:</span> Las fechas de temporada controlan cuándo se pueden generar mensualidades automáticamente. Si no se configuran fechas, el sistema generará mensualidades sin restricciones de fecha.
           </p>
         </div>
+      </div>
+
+      {/* Monthly Charges Settings */}
+      <div id="monthly-charges" className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg" style={{
+            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          }}>
+            <DollarSign className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            💰 Gestión de Cargos Mensuales
+          </h2>
+        </div>
+        <MonthlyChargesSettings />
       </div>
 
       {/* Payment Methods Settings */}
