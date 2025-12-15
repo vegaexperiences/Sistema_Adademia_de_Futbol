@@ -123,7 +123,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
         )
       `)
       .eq('academy_id', academyId)
-      .or(`tutor_cedula.ilike.%${normalizedCedula}%,tutor_cedula.eq.${normalizedCedula},tutor_cedula.ilike.%${withDashes}%,tutor_cedula.eq.${withDashes},tutor_cedula.ilike.%${cedula}%`);
+      .or(`tutor_cedula.ilike.%${normalizedCedula}%,tutor_cedula.eq.${normalizedCedula},tutor_cedula.ilike.%${withDashes}%,tutor_cedula.eq.${withDashes},tutor_cedula.ilike.%${originalCedula}%,tutor_cedula.eq.${originalCedula}`);
 
     if (tutorError) {
       console.error('[searchByCedula] Error searching by tutor cedula:', tutorError);
@@ -149,7 +149,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
         )
       `)
       .eq('academy_id', academyId)
-      .or(`tutor_cedula.ilike.%${normalizedCedula}%,tutor_cedula.eq.${normalizedCedula},tutor_cedula.ilike.%${withDashes}%,tutor_cedula.eq.${withDashes},tutor_cedula.ilike.%${cedula}%`);
+      .or(`tutor_cedula.ilike.%${normalizedCedula}%,tutor_cedula.eq.${normalizedCedula},tutor_cedula.ilike.%${withDashes}%,tutor_cedula.eq.${withDashes},tutor_cedula.ilike.%${originalCedula}%,tutor_cedula.eq.${originalCedula}`);
 
     if (familiesError) {
       console.error('[searchByCedula] Error searching families:', familiesError);
