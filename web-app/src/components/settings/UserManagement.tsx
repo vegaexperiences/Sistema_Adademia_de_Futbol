@@ -39,6 +39,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [showPermissions, setShowPermissions] = useState<Record<string, boolean>>({})
+  const [passwordManagementUser, setPasswordManagementUser] = useState<User | null>(null)
 
   useEffect(() => {
     // #region agent log
@@ -392,14 +393,23 @@ ON CONFLICT (user_id) DO NOTHING;`}
                         )}
                       </div>
 
-                      {/* Permissions Button */}
-                      <button
-                        onClick={() => handleShowPermissions(user.id)}
-                        className="mt-3 text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-                      >
-                        <Eye size={16} />
-                        {showPermissions[user.id] ? 'Ocultar' : 'Ver'} Permisos
-                      </button>
+                      {/* Actions */}
+                      <div className="mt-3 flex gap-2 flex-wrap">
+                        <button
+                          onClick={() => handleShowPermissions(user.id)}
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                        >
+                          <Eye size={16} />
+                          {showPermissions[user.id] ? 'Ocultar' : 'Ver'} Permisos
+                        </button>
+                        <button
+                          onClick={() => setPasswordManagementUser(user)}
+                          className="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1"
+                        >
+                          <Key size={16} />
+                          Gestionar Contraseña
+                        </button>
+                      </div>
 
                       {/* Permissions List */}
                       {showPermissions[user.id] && (
@@ -435,6 +445,14 @@ ON CONFLICT (user_id) DO NOTHING;`}
             setShowAssignForm(false)
             setSelectedUser(null)
           }}
+        />
+      )}
+
+      {/* Password Management Modal */}
+      {passwordManagementUser && (
+        <PasswordManagementModal
+          user={passwordManagementUser}
+          onClose={() => setPasswordManagementUser(null)}
         />
       )}
     </div>
