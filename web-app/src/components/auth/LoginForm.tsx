@@ -25,13 +25,20 @@ export function LoginForm() {
     
     try {
       const formData = new FormData(e.currentTarget);
+      const email = formData.get('email') as string;
+      console.log('[LoginForm] Submitting login request for:', email);
+      
       const result = await login(formData);
       
+      console.log('[LoginForm] Server response:', result);
+      
       if (result?.error) {
+        console.error('[LoginForm] Login error:', result.error);
         setError(result.error);
         setLoading(false);
         isSubmittingRef.current = false;
       } else {
+        console.log('[LoginForm] Login successful, redirect should happen');
         // If success, redirect happens in action
         // Set a timeout to reset loading if redirect doesn't happen (shouldn't happen normally)
         setTimeout(() => {
@@ -42,10 +49,16 @@ export function LoginForm() {
     } catch (error: any) {
       // Check if this is a redirect error - if so, it's expected
       if (error?.digest?.startsWith('NEXT_REDIRECT') || error?.message?.includes('NEXT_REDIRECT')) {
+        console.log('[LoginForm] Redirect error (expected):', error.digest);
         // This is expected, redirect is happening
         return;
       }
-      console.error('[LoginForm] Error:', error);
+      console.error('[LoginForm] Exception:', {
+        message: error?.message,
+        digest: error?.digest,
+        stack: error?.stack,
+        name: error?.name,
+      });
       setError('Error al iniciar sesión. Por favor intenta de nuevo.');
       setLoading(false);
       isSubmittingRef.current = false;

@@ -657,17 +657,28 @@ export async function updateUserPassword(
       )
     }
 
+    console.log('[updateUserPassword] Updating password for user:', userId)
+    console.log('[updateUserPassword] New password length:', newPassword.length)
+
     // Update user password
     const { data, error: updateError } = await adminSupabase.auth.admin.updateUserById(userId, {
       password: newPassword,
     })
 
     if (updateError) {
-      console.error('[updateUserPassword] Error updating password:', updateError)
+      console.error('[updateUserPassword] Error:', {
+        message: updateError.message,
+        code: updateError.code,
+        status: updateError.status,
+        name: updateError.name,
+      })
       return { success: false, error: updateError.message || 'Error al actualizar contraseña' }
     }
 
-    console.log('[updateUserPassword] Password updated successfully for user:', userId)
+    console.log('[updateUserPassword] ✅ Password updated successfully')
+    console.log('[updateUserPassword] User ID:', data?.user?.id)
+    console.log('[updateUserPassword] User email:', data?.user?.email)
+    console.log('[updateUserPassword] User updated at:', data?.user?.updated_at)
     return { success: true, error: null }
   } catch (error: any) {
     console.error('[updateUserPassword] Unexpected error:', error)

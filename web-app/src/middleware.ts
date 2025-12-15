@@ -203,10 +203,17 @@ export async function middleware(request: NextRequest) {
         .limit(1)
         .maybeSingle()
       
-      if (userAcademy && userAcademy.academies) {
-        academyId = userAcademy.academies.id
-        academySlug = userAcademy.academies.slug
-        console.log('[Middleware] ✅ Found academy from user role assignment:', academyId, 'Slug:', academySlug)
+      // Handle relation - could be object or array, but with !inner and maybeSingle should be object
+      if (userAcademy) {
+        const academy = Array.isArray(userAcademy.academies) 
+          ? userAcademy.academies[0] 
+          : userAcademy.academies
+        
+        if (academy) {
+          academyId = academy.id
+          academySlug = academy.slug
+          console.log('[Middleware] ✅ Found academy from user role assignment:', academyId, 'Slug:', academySlug)
+        }
       }
     }
     

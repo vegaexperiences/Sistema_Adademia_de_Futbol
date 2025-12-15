@@ -22,14 +22,44 @@ export async function login(formData: FormData) {
     }
 
     console.log('[Login] Attempting login for:', email);
+    console.log('[Login] Password length:', password.length);
     
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
+    // Enhanced error logging
     if (error) {
-      console.error('[Login] Supabase auth error:', error.message, error.status);
+      console.error('[Login] Supabase auth error:', {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+        name: error.name,
+      });
+      
+      // Check if user exists (requires SERVICE_ROLE_KEY)
+      if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        try {
+          const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+          const adminSupabase = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+          )
+          
+          const { data: userCheck, error: userCheckError } = await adminSupabase.auth.admin.getUserByEmail(email)
+          console.log('[Login] User exists check:', {
+            exists: !!userCheck?.user,
+            confirmed: userCheck?.user?.email_confirmed_at ? 'Yes' : 'No',
+            created: userCheck?.user?.created_at,
+            lastSignIn: userCheck?.user?.last_sign_in_at,
+            checkError: userCheckError?.message,
+          })
+        } catch (checkError: any) {
+          console.warn('[Login] Could not check user existence:', checkError?.message)
+        }
+      }
+      
       return { error: 'Credenciales inválidas' };
     }
 
