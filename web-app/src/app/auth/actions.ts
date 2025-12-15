@@ -39,6 +39,7 @@ export async function login(formData: FormData) {
       });
       
       // Check if user exists (requires SERVICE_ROLE_KEY)
+      // Note: We use listUsers and filter by email since getUserByEmail doesn't exist
       if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
         try {
           const { createClient: createAdminClient } = await import('@supabase/supabase-js')
@@ -47,12 +48,15 @@ export async function login(formData: FormData) {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
           )
           
-          const { data: userCheck, error: userCheckError } = await adminSupabase.auth.admin.getUserByEmail(email)
+          // List users and find by email
+          const { data: usersList, error: userCheckError } = await adminSupabase.auth.admin.listUsers()
+          const userCheck = usersList?.users?.find(u => u.email === email)
+          
           console.log('[Login] User exists check:', {
-            exists: !!userCheck?.user,
-            confirmed: userCheck?.user?.email_confirmed_at ? 'Yes' : 'No',
-            created: userCheck?.user?.created_at,
-            lastSignIn: userCheck?.user?.last_sign_in_at,
+            exists: !!userCheck,
+            confirmed: userCheck?.email_confirmed_at ? 'Yes' : 'No',
+            created: userCheck?.created_at,
+            lastSignIn: userCheck?.last_sign_in_at,
             checkError: userCheckError?.message,
           })
         } catch (checkError: any) {
