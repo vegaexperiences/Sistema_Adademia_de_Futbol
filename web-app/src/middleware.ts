@@ -175,28 +175,77 @@ export async function middleware(request: NextRequest) {
     // Continue without academy context - let the route handle it
   }
 
-  // If no academy found and accessing root domain, redirect to suarez
-  // BUT: Don't redirect if this is a route that doesn't need academy context
-  // IMPORTANT: Only redirect if we're on a custom domain, not on Vercel preview domains
+  // If no academy found, try fallback methods
   if (!academyId) {
-    // Check if accessing root without academy context
-    const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
-    const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
+    // Fallback 1: Check cookies for existing academyId
+    const academyIdFromCookie = request.cookies.get('academy-id')?.value
+    if (academyIdFromCookie) {
+      // Verify the academy still exists
+      const { data: academyFromCookie } = await supabase
+        .from('academies')
+        .select('id, slug')
+        .eq('id', academyIdFromCookie)
+        .maybeSingle()
+      
+      if (academyFromCookie) {
+        academyId = academyFromCookie.id
+        academySlug = academyFromCookie.slug
+        console.log('[Middleware] ✅ Found academy from cookie:', academyId, 'Slug:', academySlug)
+      }
+    }
     
-    // Only redirect if:
-    // 1. Not an excluded route
-    // 2. Is a root domain (not a subdomain)
-    // 3. NOT a Vercel domain (to avoid breaking preview deployments)
-    // 4. No academy slug found
-    if (!isExcludedRoute && isRootDomain && !isVercelDomain && !academySlug) {
-      console.log('[Middleware] No academy found, redirecting to suarez. Path:', pathname, 'Domain:', domain)
-      // Redirect to suarez academy (default)
-      const suarezUrl = new URL(request.url)
-      suarezUrl.hostname = `suarez.${domainParts.slice(-2).join('.')}`
-      return NextResponse.redirect(suarezUrl)
-    } else {
-      // On Vercel domains or when academy not found, just continue without redirect
-      console.log('[Middleware] No academy found but allowing request. Path:', pathname, 'Domain:', domain, 'IsVercel:', isVercelDomain)
+    // Fallback 2: If user is authenticated, get their academy from role assignments
+    if (!academyId && user) {
+      const { data: userAcademy } = await supabase
+        .from('user_role_assignments')
+        .select('academy_id, academies!inner(id, slug)')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle()
+      
+      if (userAcademy && userAcademy.academies) {
+        academyId = userAcademy.academies.id
+        academySlug = userAcademy.academies.slug
+        console.log('[Middleware] ✅ Found academy from user role assignment:', academyId, 'Slug:', academySlug)
+      }
+    }
+    
+    // Fallback 3: Use first available academy as last resort (for Vercel preview domains)
+    if (!academyId && isVercelDomain) {
+      const { data: firstAcademy } = await supabase
+        .from('academies')
+        .select('id, slug')
+        .limit(1)
+        .maybeSingle()
+      
+      if (firstAcademy) {
+        academyId = firstAcademy.id
+        academySlug = firstAcademy.slug
+        console.log('[Middleware] ⚠️ Using first available academy as fallback for Vercel domain:', academyId, 'Slug:', academySlug)
+      }
+    }
+    
+    // If still no academy found, check if we should redirect
+    if (!academyId) {
+      // Check if accessing root without academy context
+      const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
+      const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
+      
+      // Only redirect if:
+      // 1. Not an excluded route
+      // 2. Is a root domain (not a subdomain)
+      // 3. NOT a Vercel domain (to avoid breaking preview deployments)
+      // 4. No academy slug found
+      if (!isExcludedRoute && isRootDomain && !isVercelDomain && !academySlug) {
+        console.log('[Middleware] No academy found, redirecting to suarez. Path:', pathname, 'Domain:', domain)
+        // Redirect to suarez academy (default)
+        const suarezUrl = new URL(request.url)
+        suarezUrl.hostname = `suarez.${domainParts.slice(-2).join('.')}`
+        return NextResponse.redirect(suarezUrl)
+      } else {
+        // On Vercel domains or when academy not found, just continue without redirect
+        console.log('[Middleware] No academy found but allowing request. Path:', pathname, 'Domain:', domain, 'IsVercel:', isVercelDomain)
+      }
     }
   }
   
