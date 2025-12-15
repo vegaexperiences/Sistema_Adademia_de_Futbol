@@ -542,3 +542,131 @@ export async function getRolePermissions(roleId: string): Promise<{ data: Permis
   return { data: formattedPermissions, error: null }
 }
 
+/**
+ * Reset user password by sending recovery email (super admin only)
+ */
+export async function resetUserPassword(userId: string): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient()
+  
+  // Get current user
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (!currentUser) {
+    return { success: false, error: 'Not authenticated' }
+  }
+  
+  // Check if super admin
+  const isAdmin = await isSuperAdmin(currentUser.id)
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Super admin access required' }
+  }
+
+  try {
+    // Get user email first
+    let adminSupabase = supabase
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+      adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+    }
+
+    // Get user by ID
+    const { data: { user }, error: getUserError } = await adminSupabase.auth.admin.getUserById(userId)
+    
+    if (getUserError || !user || !user.email) {
+      return { success: false, error: 'Usuario no encontrado' }
+    }
+
+    // Get the base URL for the reset link
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+      'http://localhost:3000'
+
+    // Send password reset email
+    const { error: resetError } = await adminSupabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: user.email,
+      options: {
+        redirectTo: `${baseUrl}/auth/reset-password`,
+      },
+    })
+
+    if (resetError) {
+      console.error('[resetUserPassword] Error sending reset email:', resetError)
+      return { success: false, error: resetError.message || 'Error al enviar email de recuperación' }
+    }
+
+    console.log('[resetUserPassword] Password reset email sent to:', user.email)
+    return { success: true, error: null }
+  } catch (error: any) {
+    console.error('[resetUserPassword] Unexpected error:', error)
+    return { success: false, error: error.message || 'Error al resetear contraseña' }
+  }
+}
+
+/**
+ * Update user password directly (super admin only)
+ */
+export async function updateUserPassword(
+  userId: string,
+  newPassword: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient()
+  
+  // Get current user
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (!currentUser) {
+    return { success: false, error: 'Not authenticated' }
+  }
+  
+  // Check if super admin
+  const isAdmin = await isSuperAdmin(currentUser.id)
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Super admin access required' }
+  }
+
+  // Validate password
+  if (!newPassword || newPassword.length < 6) {
+    return { success: false, error: 'La contraseña debe tener al menos 6 caracteres' }
+  }
+
+  try {
+    // Use admin client with SERVICE_ROLE_KEY
+    let adminSupabase = supabase
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+      adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+    }
+
+    // Update user password
+    const { data, error: updateError } = await adminSupabase.auth.admin.updateUserById(userId, {
+      password: newPassword,
+    })
+
+    if (updateError) {
+      console.error('[updateUserPassword] Error updating password:', updateError)
+      return { success: false, error: updateError.message || 'Error al actualizar contraseña' }
+    }
+
+    console.log('[updateUserPassword] Password updated successfully for user:', userId)
+    return { success: true, error: null }
+  } catch (error: any) {
+    console.error('[updateUserPassword] Unexpected error:', error)
+    return { success: false, error: error.message || 'Error al actualizar contraseña' }
+  }
+}
+
+/**
+ * Set user password (alias for updateUserPassword for clarity)
+ */
+export async function setUserPassword(
+  userId: string,
+  password: string
+): Promise<{ success: boolean; error: string | null }> {
+  return updateUserPassword(userId, password)
+}
+

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Shield, Plus, X, Eye, CheckCircle } from 'lucide-react'
+import { Users, Shield, Plus, X, Eye, CheckCircle, Key, Mail, Lock } from 'lucide-react'
 import { 
   getAllUsers, 
   getAllRoles, 
@@ -10,6 +10,8 @@ import {
   removeRoleFromUser,
   getUserPermissions,
   createUser,
+  resetUserPassword,
+  updateUserPassword,
   type User,
   type Role,
   type UserRole,
