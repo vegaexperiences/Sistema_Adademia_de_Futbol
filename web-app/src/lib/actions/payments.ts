@@ -2,6 +2,8 @@
 
 import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { isSuperAdmin } from '@/lib/utils/academy';
+import { hasRole } from '@/lib/utils/permissions';
 
 export interface Payment {
   id?: string;
@@ -633,4 +635,103 @@ export async function autoLinkUnlinkedPaymentsForPlayer(playerId: string) {
     total: potentiallyLinkedPayments.length,
     errors: errors.length > 0 ? errors : undefined,
   };
+}
+
+/**
+ * Update payment amount
+ * Only admins can update payment amounts
+ */
+export async function updatePaymentAmount(
+  paymentId: string,
+  newAmount: number
+): Promise<{ data: any | null; error: string | null }> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  // Validate new amount
+  if (!newAmount || newAmount <= 0) {
+    return { data: null, error: 'El monto debe ser mayor a 0' };
+  }
+
+  // Check if user is admin
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return { data: null, error: 'No autorizado: debe iniciar sesión' };
+    }
+
+    // Check if super admin
+    const isAdmin = await isSuperAdmin(user.id);
+    if (!isAdmin) {
+      // Check if admin role in current academy
+      if (academyId) {
+        const hasAdminRole = await hasRole(user.id, 'admin', academyId);
+        if (!hasAdminRole) {
+          return { data: null, error: 'No autorizado: se requieren permisos de administrador' };
+        }
+      } else {
+        return { data: null, error: 'No autorizado: se requieren permisos de administrador' };
+      }
+    }
+  } catch (error: any) {
+    console.error('[updatePaymentAmount] Error checking admin status:', error);
+    return { data: null, error: 'Error al verificar permisos' };
+  }
+
+  // Verify payment exists and belongs to current academy
+  let paymentQuery = supabase
+    .from('payments')
+    .select('id, amount, player_id, academy_id')
+    .eq('id', paymentId)
+    .single();
+
+  if (academyId) {
+    paymentQuery = paymentQuery.eq('academy_id', academyId);
+  }
+
+  const { data: existingPayment, error: fetchError } = await paymentQuery;
+
+  if (fetchError || !existingPayment) {
+    console.error('[updatePaymentAmount] Payment not found:', {
+      paymentId,
+      error: fetchError?.message,
+    });
+    return { data: null, error: 'Pago no encontrado o no pertenece a esta academia' };
+  }
+
+  // Update payment amount
+  const { data: updatedPayment, error: updateError } = await supabase
+    .from('payments')
+    .update({
+      amount: newAmount,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', paymentId)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error('[updatePaymentAmount] Error updating payment:', {
+      paymentId,
+      error: updateError.message,
+    });
+    return { data: null, error: `Error al actualizar el pago: ${updateError.message}` };
+  }
+
+  console.log('[updatePaymentAmount] Payment updated successfully:', {
+    paymentId,
+    oldAmount: existingPayment.amount,
+    newAmount,
+  });
+
+  // Revalidate relevant paths
+  revalidatePath('/dashboard/players');
+  revalidatePath('/dashboard/finances');
+  revalidatePath('/dashboard/finances/transactions');
+  if (existingPayment.player_id) {
+    revalidatePath(`/dashboard/players/${existingPayment.player_id}`);
+  }
+
+  return { data: updatedPayment, error: null };
 }

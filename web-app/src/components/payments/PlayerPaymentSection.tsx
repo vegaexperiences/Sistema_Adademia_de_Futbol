@@ -2,13 +2,15 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, DollarSign, Plus, X, Calendar, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle, TrendingUp, TrendingDown, FileText, ExternalLink } from 'lucide-react';
+import { CreditCard, DollarSign, Plus, X, Calendar, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle, TrendingUp, TrendingDown, FileText, ExternalLink, Edit } from 'lucide-react';
 import { createPayment, autoLinkUnlinkedPaymentsForPlayer } from '@/lib/actions/payments';
 import type { MonthlyCharge, PlayerAccountBalance } from '@/lib/actions/monthly-charges';
 import PaymentHistory from './PaymentHistory';
 import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
 import { YappyPaymentButton } from './YappyPaymentButton';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
+import { UpdatePaymentAmountModal } from './UpdatePaymentAmountModal';
+import { checkIsAdmin } from '@/lib/utils/permissions';
 
 interface Payment {
   id: string;
@@ -46,6 +48,21 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
   const [success, setSuccess] = useState(false);
   const [autoLinking, setAutoLinking] = useState(false);
   const [viewMode, setViewMode] = useState<'account' | 'history'>('account');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedPaymentAmount, setSelectedPaymentAmount] = useState<number>(0);
+
+  // Check if user is admin on mount
+  useEffect(() => {
+    checkIsAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+  }, []);
+
+  const handleUpdateAmount = (paymentId: string, currentAmount: number) => {
+    setSelectedPaymentId(paymentId);
+    setSelectedPaymentAmount(currentAmount);
+    setUpdateModalOpen(true);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-PA', {
@@ -484,12 +501,23 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
                           )}
                         </div>
                       </div>
-                      <p className={`text-lg font-bold whitespace-nowrap ${
-                        transaction.type === 'charge' ? 'text-red-700' : 'text-green-700'
-                      }`}>
-                        {transaction.type === 'charge' ? '-' : '+'}
-                        {formatCurrency(transaction.amount)}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <p className={`text-lg font-bold whitespace-nowrap ${
+                          transaction.type === 'charge' ? 'text-red-700' : 'text-green-700'
+                        }`}>
+                          {transaction.type === 'charge' ? '-' : '+'}
+                          {formatCurrency(transaction.amount)}
+                        </p>
+                        {isAdmin && transaction.type === 'payment' && (
+                          <button
+                            onClick={() => handleUpdateAmount(transaction.id, transaction.amount)}
+                            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Actualizar monto"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -500,7 +528,20 @@ export function PlayerPaymentSection({ playerId, suggestedAmount, payments, play
       )}
 
       {viewMode === 'history' && (
-        <PaymentHistory payments={payments} />
+        <PaymentHistory payments={payments} isAdmin={isAdmin} />
+      )}
+
+      {/* Update Payment Amount Modal */}
+      {updateModalOpen && selectedPaymentId && (
+        <UpdatePaymentAmountModal
+          paymentId={selectedPaymentId}
+          currentAmount={selectedPaymentAmount}
+          onClose={() => {
+            setUpdateModalOpen(false);
+            setSelectedPaymentId(null);
+            setSelectedPaymentAmount(0);
+          }}
+        />
       )}
 
       {showPaymentForm && (

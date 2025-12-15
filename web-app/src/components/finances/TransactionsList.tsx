@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Filter, ArrowDownCircle, ArrowUpCircle, Calendar, CreditCard, ExternalLink, FileText } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Filter, ArrowDownCircle, ArrowUpCircle, Calendar, CreditCard, ExternalLink, FileText, Edit } from 'lucide-react';
 import type { Transaction } from '@/lib/actions/transactions';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
+import { UpdatePaymentAmountModal } from '@/components/payments/UpdatePaymentAmountModal';
+import { checkIsAdmin } from '@/lib/utils/permissions';
 
 interface TransactionsListProps {
   transactions: Transaction[];
@@ -20,6 +22,21 @@ export function TransactionsList({ transactions, onFilterChange }: TransactionsL
   const [typeFilter, setTypeFilter] = useState<'income' | 'expense' | 'all'>('all');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedPaymentAmount, setSelectedPaymentAmount] = useState<number>(0);
+
+  // Check if user is admin on mount
+  useEffect(() => {
+    checkIsAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+  }, []);
+
+  const handleUpdateAmount = (paymentId: string, currentAmount: number) => {
+    setSelectedPaymentId(paymentId);
+    setSelectedPaymentAmount(currentAmount);
+    setUpdateModalOpen(true);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-PA', {
@@ -276,19 +293,30 @@ export function TransactionsList({ transactions, onFilterChange }: TransactionsL
                     )}
                   </div>
 
-                  <div className="text-right">
-                    <p className={`text-lg font-bold ${
-                      transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'income' ? '+' : '-'}
-                      {formatCurrency(transaction.amount)}
-                    </p>
-                    {transaction.accumulated_balance !== undefined && (
-                      <p className={`text-sm font-semibold mt-1 ${
-                        transaction.accumulated_balance >= 0 ? 'text-green-700' : 'text-red-700'
+                  <div className="text-right flex items-center gap-3">
+                    <div>
+                      <p className={`text-lg font-bold ${
+                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        Balance: {formatCurrency(transaction.accumulated_balance)}
+                        {transaction.type === 'income' ? '+' : '-'}
+                        {formatCurrency(transaction.amount)}
                       </p>
+                      {transaction.accumulated_balance !== undefined && (
+                        <p className={`text-sm font-semibold mt-1 ${
+                          transaction.accumulated_balance >= 0 ? 'text-green-700' : 'text-red-700'
+                        }`}>
+                          Balance: {formatCurrency(transaction.accumulated_balance)}
+                        </p>
+                      )}
+                    </div>
+                    {isAdmin && transaction.type === 'income' && (
+                      <button
+                        onClick={() => handleUpdateAmount(transaction.id, transaction.amount)}
+                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Actualizar monto"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -297,6 +325,19 @@ export function TransactionsList({ transactions, onFilterChange }: TransactionsL
           </div>
         )}
       </div>
+
+      {/* Update Payment Amount Modal */}
+      {updateModalOpen && selectedPaymentId && (
+        <UpdatePaymentAmountModal
+          paymentId={selectedPaymentId}
+          currentAmount={selectedPaymentAmount}
+          onClose={() => {
+            setUpdateModalOpen(false);
+            setSelectedPaymentId(null);
+            setSelectedPaymentAmount(0);
+          }}
+        />
+      )}
     </div>
   );
 }

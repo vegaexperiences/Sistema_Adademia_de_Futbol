@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { DollarSign, Calendar, CreditCard, FileText, ExternalLink } from 'lucide-react';
+import { DollarSign, Calendar, CreditCard, FileText, ExternalLink, Edit } from 'lucide-react';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
+import { UpdatePaymentAmountModal } from './UpdatePaymentAmountModal';
 
 interface Payment {
   id: string;
@@ -24,10 +25,20 @@ interface Payment {
 interface PaymentHistoryProps {
   payments: Payment[];
   showPlayerName?: boolean;
+  isAdmin?: boolean;
 }
 
-export default function PaymentHistory({ payments, showPlayerName = false }: PaymentHistoryProps) {
+export default function PaymentHistory({ payments, showPlayerName = false, isAdmin = false }: PaymentHistoryProps) {
   const [filter, setFilter] = useState<string>('all');
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedPaymentAmount, setSelectedPaymentAmount] = useState<number>(0);
+
+  const handleUpdateAmount = (paymentId: string, currentAmount: number) => {
+    setSelectedPaymentId(paymentId);
+    setSelectedPaymentAmount(currentAmount);
+    setUpdateModalOpen(true);
+  };
   
   const filteredPayments = payments.filter(p => {
     if (filter === 'all') return true;
@@ -231,10 +242,19 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
                   )}
                 </div>
                 
-                <div className="text-right">
+                <div className="text-right flex items-center gap-3">
                   <p className="text-2xl font-bold text-gray-900">
                     ${parseFloat(payment.amount.toString()).toFixed(2)}
                   </p>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleUpdateAmount(payment.id, parseFloat(payment.amount.toString()))}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Actualizar monto"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -248,6 +268,19 @@ export default function PaymentHistory({ payments, showPlayerName = false }: Pay
           </div>
         )}
       </div>
+
+      {/* Update Payment Amount Modal */}
+      {updateModalOpen && selectedPaymentId && (
+        <UpdatePaymentAmountModal
+          paymentId={selectedPaymentId}
+          currentAmount={selectedPaymentAmount}
+          onClose={() => {
+            setUpdateModalOpen(false);
+            setSelectedPaymentId(null);
+            setSelectedPaymentAmount(0);
+          }}
+        />
+      )}
     </div>
   );
 }
