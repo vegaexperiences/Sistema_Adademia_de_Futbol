@@ -586,10 +586,10 @@ export async function resetUserPassword(userId: string): Promise<{ success: bool
     return { success: false, error: 'Not authenticated' }
   }
   
-  // Check if super admin
-  const isAdmin = await isSuperAdmin(currentUser.id)
+  // Check if super admin or has admin role
+  const isAdmin = await isAdminOrSuperAdmin(currentUser.id)
   if (!isAdmin) {
-    return { success: false, error: 'Unauthorized: Super admin access required' }
+    return { success: false, error: 'Unauthorized: Admin access required' }
   }
 
   try {
@@ -667,10 +667,10 @@ export async function updateUserPassword(
     return { success: false, error: 'Not authenticated' }
   }
   
-  // Check if super admin
-  const isAdmin = await isSuperAdmin(currentUser.id)
+  // Check if super admin or has admin role
+  const isAdmin = await isAdminOrSuperAdmin(currentUser.id)
   if (!isAdmin) {
-    return { success: false, error: 'Unauthorized: Super admin access required' }
+    return { success: false, error: 'Unauthorized: Admin access required' }
   }
 
   // Validate password
