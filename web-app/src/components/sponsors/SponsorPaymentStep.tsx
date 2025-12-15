@@ -34,7 +34,7 @@ export function SponsorPaymentStep({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [enrollmentToken, setEnrollmentToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handlePaymentSelection = (method: string) => {
     updateData({ paymentMethod: method });
