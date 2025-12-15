@@ -6,7 +6,8 @@ import { SponsorDocumentsStep } from './SponsorDocumentsStep';
 import { SponsorPaymentStep } from './SponsorPaymentStep';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { Sponsor, SystemConfig } from '@/lib/actions/sponsors';
+import { Sponsor } from '@/lib/actions/sponsors';
+import { SystemConfig } from '@/lib/actions/config';
 
 const STEPS = [
   { id: 'info', title: 'Información' },
