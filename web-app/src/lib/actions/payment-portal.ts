@@ -47,7 +47,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
   // Normalize cedula (remove dashes, spaces, and try multiple formats)
   // Original format: 8-1155-2001
   // Normalized: 811552001
-  // Also try with dashes in different positions
+  const originalCedula = cedula.trim();
   const normalizedCedula = cedula.replace(/[-\s]/g, '').trim();
   
   // Also try to match with dashes: if input is "8-1155-2001", also try "811552001"
@@ -56,12 +56,20 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
     ? `${normalizedCedula.slice(0, 1)}-${normalizedCedula.slice(1, 5)}-${normalizedCedula.slice(5)}`
     : normalizedCedula;
 
+  console.log('[searchByCedula] Searching with:', {
+    original: originalCedula,
+    normalized: normalizedCedula,
+    withDashes,
+    academyId,
+  });
+
   if (!academyId) {
     return { data: null, error: 'No se pudo determinar la academia' };
   }
 
   try {
     // First, try to find by player cedula
+    // Try multiple formats: original, normalized, and with dashes
     const { data: playersByCedula, error: playersError } = await supabase
       .from('players')
       .select(`
@@ -85,7 +93,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
         )
       `)
       .eq('academy_id', academyId)
-      .or(`cedula.ilike.%${normalizedCedula}%,cedula.eq.${normalizedCedula}`);
+      .or(`cedula.ilike.%${normalizedCedula}%,cedula.eq.${normalizedCedula},cedula.ilike.%${withDashes}%,cedula.eq.${withDashes},cedula.ilike.%${originalCedula}%,cedula.eq.${originalCedula}`);
 
     if (playersError) {
       console.error('[searchByCedula] Error searching by player cedula:', playersError);
@@ -211,6 +219,14 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
     });
 
     const results = Array.from(allPlayers.values());
+
+    console.log('[searchByCedula] Search results:', {
+      playersByCedula: playersByCedula?.length || 0,
+      playersByTutorCedula: playersByTutorCedula?.length || 0,
+      families: families?.length || 0,
+      totalResults: results.length,
+      sampleCedulas: results.slice(0, 3).map(r => r.cedula),
+    });
 
     return { data: results, error: null };
   } catch (error: any) {
