@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { Users, Shield, Plus, X, Eye, CheckCircle, Key, Mail, Lock, Trash2 } from 'lucide-react'
 import { 
   getAllUsers, 
@@ -41,6 +41,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
   const [success, setSuccess] = useState<string | null>(null)
   const [showPermissions, setShowPermissions] = useState<Record<string, boolean>>({})
   const [passwordManagementUser, setPasswordManagementUser] = useState<User | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
     // #region agent log
@@ -172,18 +173,26 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
   }
 
   const handleAssignRole = async (userId: string, roleId: string, academyId: string) => {
+    // Immediate UI feedback
     setError(null)
     setSuccess(null)
 
-    const result = await assignRoleToUser(userId, roleId, academyId)
+    try {
+      const result = await assignRoleToUser(userId, roleId, academyId)
 
-    if (result.error) {
-      setError(result.error)
-    } else {
-      setSuccess('Rol asignado exitosamente')
-      setShowAssignForm(false)
-      setSelectedUser(null)
-      await loadData() // Reload data
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setSuccess('Rol asignado exitosamente')
+        setShowAssignForm(false)
+        setSelectedUser(null)
+        // Use transition for non-urgent data reload
+        startTransition(() => {
+          loadData()
+        })
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al asignar rol')
     }
   }
 
@@ -192,16 +201,24 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
       return
     }
 
+    // Immediate UI feedback
     setError(null)
     setSuccess(null)
 
-    const result = await removeRoleFromUser(userId, roleId, academyId)
+    try {
+      const result = await removeRoleFromUser(userId, roleId, academyId)
 
-    if (result.error) {
-      setError(result.error)
-    } else {
-      setSuccess('Rol removido exitosamente')
-      await loadData() // Reload data
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setSuccess('Rol removido exitosamente')
+        // Use transition for non-urgent data reload
+        startTransition(() => {
+          loadData()
+        })
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al remover rol')
     }
   }
 
@@ -215,6 +232,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
       return
     }
 
+    // Immediate UI feedback
     setError(null)
     setSuccess(null)
 
@@ -222,8 +240,10 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
       const result = await deleteUser(userId)
       if (result.success) {
         setSuccess(`Usuario "${userEmail}" eliminado exitosamente`)
-        // Reload users list
-        await loadData()
+        // Use transition for non-urgent data reload
+        startTransition(() => {
+          loadData()
+        })
       } else {
         setError(result.error || 'Error al eliminar usuario')
       }
@@ -233,6 +253,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
   }
 
   const handleCreateUser = async (email: string, password: string, name?: string) => {
+    // Immediate UI feedback
     setError(null)
     setSuccess(null)
 
@@ -246,12 +267,17 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
 
       setSuccess('Usuario creado exitosamente')
       setShowCreateUserForm(false)
-      await loadData() // Reload data to show new user
+      
       // Automatically show role assignment form for the new user
       if (result.data) {
         setSelectedUser(result.data.id)
         setShowAssignForm(true)
       }
+      
+      // Use transition for non-urgent data reload
+      startTransition(() => {
+        loadData()
+      })
     } catch (err: any) {
       setError(err.message || 'Error al crear usuario')
     }
