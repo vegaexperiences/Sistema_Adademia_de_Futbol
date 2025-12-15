@@ -44,8 +44,17 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
     return { data: null, error: 'La cédula es requerida' };
   }
 
-  // Normalize cedula (remove dashes, spaces)
+  // Normalize cedula (remove dashes, spaces, and try multiple formats)
+  // Original format: 8-1155-2001
+  // Normalized: 811552001
+  // Also try with dashes in different positions
   const normalizedCedula = cedula.replace(/[-\s]/g, '').trim();
+  
+  // Also try to match with dashes: if input is "8-1155-2001", also try "811552001"
+  // And if input is "811552001", also try "8-1155-2001"
+  const withDashes = normalizedCedula.length >= 9 
+    ? `${normalizedCedula.slice(0, 1)}-${normalizedCedula.slice(1, 5)}-${normalizedCedula.slice(5)}`
+    : normalizedCedula;
 
   if (!academyId) {
     return { data: null, error: 'No se pudo determinar la academia' };
@@ -106,7 +115,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
         )
       `)
       .eq('academy_id', academyId)
-      .or(`tutor_cedula.ilike.%${normalizedCedula}%,tutor_cedula.eq.${normalizedCedula}`);
+      .or(`tutor_cedula.ilike.%${normalizedCedula}%,tutor_cedula.eq.${normalizedCedula},tutor_cedula.ilike.%${withDashes}%,tutor_cedula.eq.${withDashes},tutor_cedula.ilike.%${cedula}%`);
 
     if (tutorError) {
       console.error('[searchByCedula] Error searching by tutor cedula:', tutorError);
@@ -132,7 +141,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
         )
       `)
       .eq('academy_id', academyId)
-      .or(`tutor_cedula.ilike.%${normalizedCedula}%,tutor_cedula.eq.${normalizedCedula}`);
+      .or(`tutor_cedula.ilike.%${normalizedCedula}%,tutor_cedula.eq.${normalizedCedula},tutor_cedula.ilike.%${withDashes}%,tutor_cedula.eq.${withDashes},tutor_cedula.ilike.%${cedula}%`);
 
     if (familiesError) {
       console.error('[searchByCedula] Error searching families:', familiesError);
