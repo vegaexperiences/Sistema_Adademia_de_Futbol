@@ -500,3 +500,218 @@ export async function getSponsorsForPlayer(
   return { data: formattedData, error: null };
 }
 
+/**
+ * Create a new sponsor level
+ */
+export async function createSponsor(data: {
+  name: string;
+  description?: string;
+  amount: number;
+  benefits?: string[];
+  display_order?: number;
+  image_url?: string;
+  is_active?: boolean;
+}): Promise<{ data: Sponsor | null; error: string | null }> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  if (!academyId) {
+    return { data: null, error: 'No academy context found' };
+  }
+
+  if (!data.name || !data.amount || data.amount <= 0) {
+    return { data: null, error: 'Name and amount are required. Amount must be greater than 0' };
+  }
+
+  const sponsorData = {
+    name: data.name,
+    description: data.description || null,
+    amount: data.amount,
+    benefits: data.benefits || [],
+    display_order: data.display_order ?? 0,
+    image_url: data.image_url || null,
+    is_active: data.is_active !== undefined ? data.is_active : true,
+    academy_id: academyId,
+  };
+
+  const { data: sponsor, error } = await supabase
+    .from('sponsors')
+    .insert(sponsorData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[createSponsor] Error:', error);
+    return { data: null, error: error.message };
+  }
+
+  revalidatePath('/sponsors');
+  revalidatePath('/dashboard/settings');
+
+  return { data: sponsor, error: null };
+}
+
+/**
+ * Update an existing sponsor level
+ */
+export async function updateSponsor(
+  id: string,
+  data: {
+    name?: string;
+    description?: string;
+    amount?: number;
+    benefits?: string[];
+    display_order?: number;
+    image_url?: string;
+    is_active?: boolean;
+  }
+): Promise<{ data: Sponsor | null; error: string | null }> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  if (!academyId) {
+    return { data: null, error: 'No academy context found' };
+  }
+
+  // Verify sponsor exists and belongs to current academy
+  const { data: existingSponsor, error: checkError } = await supabase
+    .from('sponsors')
+    .select('id, academy_id')
+    .eq('id', id)
+    .eq('academy_id', academyId)
+    .single();
+
+  if (checkError || !existingSponsor) {
+    return { data: null, error: 'Sponsor not found or does not belong to current academy' };
+  }
+
+  // Validate amount if provided
+  if (data.amount !== undefined && data.amount <= 0) {
+    return { data: null, error: 'Amount must be greater than 0' };
+  }
+
+  const updateData: any = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.description !== undefined) updateData.description = data.description || null;
+  if (data.amount !== undefined) updateData.amount = data.amount;
+  if (data.benefits !== undefined) updateData.benefits = data.benefits;
+  if (data.display_order !== undefined) updateData.display_order = data.display_order;
+  if (data.image_url !== undefined) updateData.image_url = data.image_url || null;
+  if (data.is_active !== undefined) updateData.is_active = data.is_active;
+
+  const { data: sponsor, error } = await supabase
+    .from('sponsors')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[updateSponsor] Error:', error);
+    return { data: null, error: error.message };
+  }
+
+  revalidatePath('/sponsors');
+  revalidatePath('/dashboard/settings');
+
+  return { data: sponsor, error: null };
+}
+
+/**
+ * Delete a sponsor level
+ */
+export async function deleteSponsor(id: string): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  if (!academyId) {
+    return { success: false, error: 'No academy context found' };
+  }
+
+  // Verify sponsor exists and belongs to current academy
+  const { data: existingSponsor, error: checkError } = await supabase
+    .from('sponsors')
+    .select('id, academy_id')
+    .eq('id', id)
+    .eq('academy_id', academyId)
+    .single();
+
+  if (checkError || !existingSponsor) {
+    return { success: false, error: 'Sponsor not found or does not belong to current academy' };
+  }
+
+  // Check if sponsor has registrations
+  const { data: registrations, error: regError } = await supabase
+    .from('sponsor_registrations')
+    .select('id')
+    .eq('sponsor_id', id)
+    .limit(1);
+
+  if (regError) {
+    console.error('[deleteSponsor] Error checking registrations:', regError);
+    return { success: false, error: 'Error checking sponsor registrations' };
+  }
+
+  if (registrations && registrations.length > 0) {
+    return { success: false, error: 'Cannot delete sponsor level with existing registrations. Deactivate it instead.' };
+  }
+
+  // Delete the sponsor
+  const { error } = await supabase
+    .from('sponsors')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('[deleteSponsor] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/sponsors');
+  revalidatePath('/dashboard/settings');
+
+  return { success: true, error: null };
+}
+
+/**
+ * Toggle sponsor active status
+ */
+export async function toggleSponsorActive(
+  id: string,
+  isActive: boolean
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  if (!academyId) {
+    return { success: false, error: 'No academy context found' };
+  }
+
+  // Verify sponsor exists and belongs to current academy
+  const { data: existingSponsor, error: checkError } = await supabase
+    .from('sponsors')
+    .select('id, academy_id')
+    .eq('id', id)
+    .eq('academy_id', academyId)
+    .single();
+
+  if (checkError || !existingSponsor) {
+    return { success: false, error: 'Sponsor not found or does not belong to current academy' };
+  }
+
+  const { error } = await supabase
+    .from('sponsors')
+    .update({ is_active: isActive })
+    .eq('id', id);
+
+  if (error) {
+    console.error('[toggleSponsorActive] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/sponsors');
+  revalidatePath('/dashboard/settings');
+
+  return { success: true, error: null };
+}
+
