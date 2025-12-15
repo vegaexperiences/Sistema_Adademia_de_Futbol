@@ -696,3 +696,64 @@ export async function setUserPassword(
   return updateUserPassword(userId, password)
 }
 
+/**
+ * Delete user (super admin only)
+ */
+export async function deleteUser(userId: string): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient()
+  
+  // Get current user
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (!currentUser) {
+    return { success: false, error: 'Not authenticated' }
+  }
+  
+  // Check if super admin
+  const isAdmin = await isSuperAdmin(currentUser.id)
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Super admin access required' }
+  }
+
+  // Prevent self-deletion
+  if (currentUser.id === userId) {
+    return { success: false, error: 'No puedes eliminarte a ti mismo' }
+  }
+
+  try {
+    // Use admin client with SERVICE_ROLE_KEY
+    let adminSupabase = supabase
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+      adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+    }
+
+    console.log('[deleteUser] Deleting user:', userId)
+
+    // Delete user using admin API
+    const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(userId)
+
+    if (deleteError) {
+      console.error('[deleteUser] Error:', {
+        message: deleteError.message,
+        code: deleteError.code,
+        status: deleteError.status,
+        name: deleteError.name,
+      })
+      return { success: false, error: deleteError.message || 'Error al eliminar usuario' }
+    }
+
+    console.log('[deleteUser] ✅ User deleted successfully:', userId)
+    
+    // Revalidate paths
+    revalidatePath('/dashboard/settings')
+    
+    return { success: true, error: null }
+  } catch (error: any) {
+    console.error('[deleteUser] Unexpected error:', error)
+    return { success: false, error: error.message || 'Error al eliminar usuario' }
+  }
+}
+

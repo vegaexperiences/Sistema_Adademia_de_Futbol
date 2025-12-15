@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, Shield, Plus, X, Eye, CheckCircle, Key, Mail, Lock } from 'lucide-react'
+import { Users, Shield, Plus, X, Eye, CheckCircle, Key, Mail, Lock, Trash2 } from 'lucide-react'
 import { 
   getAllUsers, 
   getAllRoles, 
@@ -12,6 +12,7 @@ import {
   createUser,
   resetUserPassword,
   updateUserPassword,
+  deleteUser,
   type User,
   type Role,
   type UserRole,
@@ -207,6 +208,28 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
   const handleShowPermissions = async (userId: string) => {
     const currentShow = showPermissions[userId] || false
     setShowPermissions({ ...showPermissions, [userId]: !currentShow })
+  }
+
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar al usuario "${userEmail}"?\n\nEsta acción no se puede deshacer y eliminará permanentemente el usuario de la plataforma.`)) {
+      return
+    }
+
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const result = await deleteUser(userId)
+      if (result.success) {
+        setSuccess(`Usuario "${userEmail}" eliminado exitosamente`)
+        // Reload users list
+        await loadData()
+      } else {
+        setError(result.error || 'Error al eliminar usuario')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al eliminar usuario')
+    }
   }
 
   const handleCreateUser = async (email: string, password: string, name?: string) => {
@@ -409,6 +432,15 @@ ON CONFLICT (user_id) DO NOTHING;`}
                           <Key size={16} />
                           Gestionar Contraseña
                         </button>
+                        {user.email !== currentUserEmail && (
+                          <button
+                            onClick={() => handleDeleteUser(user.id, user.email)}
+                            className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center gap-1"
+                          >
+                            <Trash2 size={16} />
+                            Eliminar
+                          </button>
+                        )}
                       </div>
 
                       {/* Permissions List */}
