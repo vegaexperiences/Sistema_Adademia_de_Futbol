@@ -35,13 +35,19 @@ async function isAdminOrSuperAdmin(userId: string, academyId?: string): Promise<
   const { data: adminAssignments } = await supabase
     .from('user_role_assignments')
     .select(`
-      user_roles!inner(name)
+      user_roles(name)
     `)
     .eq('user_id', userId)
-    .eq('user_roles.name', 'admin')
-    .limit(1)
+    .limit(100) // Get all assignments to check role name
   
-  return !!adminAssignments && adminAssignments.length > 0
+  if (!adminAssignments || adminAssignments.length === 0) {
+    return false
+  }
+  
+  // Check if any assignment has admin role
+  return adminAssignments.some((assignment: any) => 
+    assignment.user_roles?.name === 'admin'
+  )
 }
 
 // Extended Academy interface with additional fields
