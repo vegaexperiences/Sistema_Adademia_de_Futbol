@@ -78,8 +78,20 @@ export async function getCurrentAcademy(): Promise<Academy | null> {
 
 /**
  * Check if user is super admin
+ * Always returns true for vegaexperiences@gmail.com
  */
 export async function isSuperAdmin(userId: string): Promise<boolean> {
+  // Always allow vegaexperiences@gmail.com as super admin
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.email === 'vegaexperiences@gmail.com') {
+      return true
+    }
+  } catch (error) {
+    // If we can't get user, continue with normal check
+    console.warn('[isSuperAdmin] Could not check email, continuing with normal check:', error)
+  }
   // #region agent log
   try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academy.ts:82',message:'isSuperAdmin entry',data:{userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
   // #endregion

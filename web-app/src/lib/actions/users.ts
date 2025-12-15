@@ -43,6 +43,13 @@ export interface Permission {
  * Check if user is admin (super admin OR has admin role in academy)
  */
 async function isAdminOrSuperAdmin(userId: string, academyId?: string): Promise<boolean> {
+  // Always allow vegaexperiences@gmail.com as super admin
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user?.email === 'vegaexperiences@gmail.com') {
+    return true
+  }
+  
   // Check if super admin first
   if (await isSuperAdmin(userId)) {
     return true
