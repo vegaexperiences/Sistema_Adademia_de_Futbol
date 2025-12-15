@@ -583,14 +583,33 @@ export async function resetUserPassword(userId: string): Promise<{ success: bool
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       'http://localhost:3000'
 
-    // Send password reset email using admin API
-    const { error: resetError } = await adminSupabase.auth.admin.resetPasswordForEmail(user.email, {
-      redirectTo: `${baseUrl}/auth/reset-password`,
+    // Generate recovery link using admin API
+    // Note: generateLink creates the link but doesn't send the email automatically
+    // We need to use the regular client method which sends the email
+    const { error: resetError } = await adminSupabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: user.email,
+      options: {
+        redirectTo: `${baseUrl}/auth/reset-password`,
+      },
     })
 
     if (resetError) {
-      console.error('[resetUserPassword] Error sending reset email:', resetError)
-      return { success: false, error: resetError.message || 'Error al enviar email de recuperación' }
+      console.error('[resetUserPassword] Error generating reset link:', resetError)
+      return { success: false, error: resetError.message || 'Error al generar enlace de recuperación' }
+    }
+
+    // Note: generateLink doesn't send the email automatically
+    // We need to use the regular auth method to send the email
+    // For admin operations, we can use the regular client with the user's email
+    const regularSupabase = await createClient()
+    const { error: emailError } = await regularSupabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${baseUrl}/auth/reset-password`,
+    })
+
+    if (emailError) {
+      console.error('[resetUserPassword] Error sending reset email:', emailError)
+      return { success: false, error: emailError.message || 'Error al enviar email de recuperación' }
     }
 
     console.log('[resetUserPassword] Password reset email sent to:', user.email)
