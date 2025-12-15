@@ -2,8 +2,27 @@
 
 import { createClient, getCurrentAcademyId } from '@/lib/supabase/server'
 import { isSuperAdmin } from '@/lib/utils/academy'
+import { hasRole } from '@/lib/utils/permissions'
 import { revalidatePath } from 'next/cache'
 import type { Academy as AcademyBase } from '@/lib/utils/academy-types'
+
+/**
+ * Check if user is admin (super admin OR has admin role in academy)
+ */
+async function isAdminOrSuperAdmin(userId: string, academyId?: string): Promise<boolean> {
+  // Check if super admin first
+  if (await isSuperAdmin(userId)) {
+    return true
+  }
+  
+  // Check if has admin role in academy
+  const currentAcademyId = academyId || await getCurrentAcademyId()
+  if (!currentAcademyId) {
+    return false
+  }
+  
+  return await hasRole(userId, 'admin', currentAcademyId)
+}
 
 // Extended Academy interface with additional fields
 export interface Academy extends AcademyBase {
@@ -38,24 +57,37 @@ export async function getAllAcademies() {
   // #region agent log
   try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:32',message:'Before isSuperAdmin check',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
   // #endregion
-  const isAdmin = await isSuperAdmin(user.id)
+  const isAdmin = await isAdminOrSuperAdmin(user.id)
   // #region agent log
-  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:35',message:'After isSuperAdmin check',data:{userId:user.id,isAdmin},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:35',message:'After isAdminOrSuperAdmin check',data:{userId:user.id,isAdmin},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
   // #endregion
   if (!isAdmin) {
     // #region agent log
-    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:37',message:'Not super admin',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:37',message:'Not admin or super admin',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
     // #endregion
-    return { error: 'Unauthorized: Super admin access required' }
+    return { error: 'Unauthorized: Admin access required' }
   }
   
   // #region agent log
   try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:42',message:'Before query academies',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
   // #endregion
-  const { data, error } = await supabase
+  
+  // If super admin, get all academies. If regular admin, get only their academy
+  const isSuperAdminUser = await isSuperAdmin(user.id)
+  let query = supabase
     .from('academies')
     .select('*')
     .order('name', { ascending: true })
+  
+  if (!isSuperAdminUser) {
+    // Regular admin: only get their academy
+    const academyId = await getCurrentAcademyId()
+    if (academyId) {
+      query = query.eq('id', academyId)
+    }
+  }
+  
+  const { data, error } = await query
   
   // #region agent log
   try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'academies.ts:47',message:'After query academies',data:{hasError:!!error,errorMessage:error?.message,academiesCount:data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})+'\n');}catch(e){}
