@@ -46,11 +46,20 @@ export function PaymentSearch({ initialCedula }: { initialCedula?: string }) {
   };
 
   // Auto-search if initialCedula is provided
-  const [hasAutoSearched, setHasAutoSearched] = useState(false);
-  if (initialCedula && !hasAutoSearched && !searching && !results && !error) {
-    setHasAutoSearched(true);
-    handleSearch(new Event('submit') as any);
-  }
+  useEffect(() => {
+    if (initialCedula && initialCedula.trim() && !hasAutoSearched && !searching && !results && !error) {
+      setHasAutoSearched(true);
+      // Trigger search automatically
+      const searchEvent = new Event('submit', { bubbles: true, cancelable: true });
+      const form = document.querySelector('form');
+      if (form) {
+        form.dispatchEvent(searchEvent);
+      } else {
+        // Fallback: call handleSearch directly
+        handleSearch(searchEvent as any);
+      }
+    }
+  }, [initialCedula, hasAutoSearched, searching, results, error]);
 
   return (
     <div className="space-y-6">
