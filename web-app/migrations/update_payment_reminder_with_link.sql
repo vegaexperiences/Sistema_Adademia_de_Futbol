@@ -54,7 +54,7 @@ SET
     .button {
       display: inline-block;
       background-color: #2563eb;
-      color: #ffffff;
+      color: #ffffff !important;
       padding: 15px 35px;
       border-radius: 8px;
       text-decoration: none;
@@ -67,6 +67,7 @@ SET
     }
     .button:hover {
       background-color: #1d4ed8;
+      color: #ffffff !important;
     }
     .button-container {
       text-align: center;
@@ -140,7 +141,7 @@ SET
     </p>
     
     <div class="button-container">
-      <a href="{{paymentLink}}" class="button">💳 Pagar Ahora</a>
+      <a href="{{paymentLink}}" class="button" style="color: #ffffff !important;">💳 Pagar Ahora</a>
     </div>
     
     <p style="text-align: center; color: #666; font-size: 14px; margin-top: 20px;">
