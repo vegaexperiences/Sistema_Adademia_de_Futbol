@@ -190,10 +190,12 @@ export function SponsorPaymentStep({
         </div>
 
         {/* Payment Method Specific UI */}
-        {data.paymentMethod === 'Comprobante' && (
+        {(data.paymentMethod === 'Comprobante' || data.paymentMethod === 'Transferencia') && (
           <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Subir Comprobante de Pago
+              {data.paymentMethod === 'Transferencia' 
+                ? 'Subir Comprobante de Transferencia Bancaria'
+                : 'Subir Comprobante de Pago'}
             </label>
             {!data.paymentProofFile ? (
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
@@ -322,7 +324,10 @@ export function SponsorPaymentStep({
         </button>
         <button
           onClick={onSubmit}
-          disabled={!data.paymentMethod || (data.paymentMethod === 'Comprobante' && !data.paymentProofFile)}
+          disabled={
+            !data.paymentMethod || 
+            ((data.paymentMethod === 'Comprobante' || data.paymentMethod === 'Transferencia') && !data.paymentProofFile)
+          }
           className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg hover:from-pink-600 hover:to-rose-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
         >
           {data.paymentMethod === 'Yappy' || data.paymentMethod === 'PagueloFacil'

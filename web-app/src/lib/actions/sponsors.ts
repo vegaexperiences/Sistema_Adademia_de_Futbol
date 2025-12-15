@@ -2,6 +2,7 @@
 
 import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { sendEmailImmediately } from '@/lib/actions/email-queue';
 
 export interface Sponsor {
   id: string;
@@ -25,6 +26,7 @@ export interface SponsorRegistration {
   sponsor_phone?: string;
   sponsor_cedula?: string;
   sponsor_company?: string;
+  sponsor_ruc?: string;
   payment_id?: string;
   status: 'pending' | 'approved' | 'cancelled';
   notes?: string;
@@ -118,15 +120,30 @@ export async function createSponsorRegistration(
     sponsor_phone?: string;
     sponsor_cedula?: string;
     sponsor_company?: string;
+    sponsor_ruc?: string;
     payment_id?: string;
     notes?: string;
   }
 ): Promise<{ data: SponsorRegistration | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
+  let academyId = await getCurrentAcademyId();
 
+  // If no academy context, try to get it from the sponsor
   if (!academyId) {
-    return { data: null, error: 'No academy context found' };
+    console.log('[createSponsorRegistration] No academy context, fetching from sponsor...');
+    const { data: sponsor, error: sponsorError } = await supabase
+      .from('sponsors')
+      .select('academy_id')
+      .eq('id', data.sponsor_id)
+      .single();
+
+    if (sponsorError || !sponsor || !sponsor.academy_id) {
+      console.error('[createSponsorRegistration] Could not get academy_id from sponsor:', sponsorError);
+      return { data: null, error: 'No academy context found and could not determine from sponsor' };
+    }
+
+    academyId = sponsor.academy_id;
+    console.log('[createSponsorRegistration] Got academy_id from sponsor:', academyId);
   }
 
   const registrationData = {
@@ -144,6 +161,71 @@ export async function createSponsorRegistration(
   if (error) {
     console.error('[createSponsorRegistration] Error:', error);
     return { data: null, error: error.message };
+  }
+
+  // Send thank you email if sponsor has an email
+  if (data.sponsor_email && data.sponsor_email.trim()) {
+    try {
+      // Get sponsor level details
+      const sponsorResult = await getSponsorById(data.sponsor_id);
+      if (sponsorResult.data) {
+        const sponsor = sponsorResult.data;
+        
+        // Get academy information
+        const { data: academy, error: academyError } = await supabase
+          .from('academies')
+          .select('id, name, display_name, settings')
+          .eq('id', academyId)
+          .single();
+        
+        const academyName = academy?.display_name || academy?.name || 'Suarez Academy';
+        const academySettings = academy?.settings || {};
+        const academyPhone = academySettings.contact_phone || academySettings.phone || '60368042';
+        const academyEmail = academySettings.contact_email || academySettings.email || 'info@suarezacademy.com';
+        
+        // Format benefits as HTML list
+        const benefitsHtml = sponsor.benefits && sponsor.benefits.length > 0
+          ? '<ul style="list-style: none; padding: 0; margin: 0;">' +
+            sponsor.benefits.map((benefit: string) => 
+              `<li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                <span style="color: #ec4899; margin-right: 8px;">✓</span>
+                <span>${benefit}</span>
+              </li>`
+            ).join('') +
+            '</ul>'
+          : '<p style="color: #666666;">Beneficios según el nivel de padrinazgo seleccionado.</p>';
+        
+        // Format sponsor level name
+        const sponsorLevelName = sponsor.name || 'Padrino';
+        
+        // Send email
+        await sendEmailImmediately(
+          'sponsor_thank_you',
+          data.sponsor_email.trim(),
+          {
+            sponsor_name: data.sponsor_name,
+            sponsor_level: sponsorLevelName,
+            sponsor_amount: sponsor.amount.toFixed(2),
+            sponsor_benefits: benefitsHtml,
+            academy_name: academyName,
+            academy_contact_phone: academyPhone,
+            academy_contact_email: academyEmail,
+          },
+          {
+            sponsor_registration_id: registration.id,
+            email_type: 'sponsor_thank_you',
+            sponsor_id: data.sponsor_id,
+          }
+        );
+        
+        console.log('[createSponsorRegistration] ✅ Thank you email sent to:', data.sponsor_email);
+      } else {
+        console.warn('[createSponsorRegistration] ⚠️ Could not fetch sponsor details for email');
+      }
+    } catch (emailError: any) {
+      // Log error but don't fail the registration
+      console.error('[createSponsorRegistration] Error sending thank you email:', emailError);
+    }
   }
 
   revalidatePath('/sponsors');

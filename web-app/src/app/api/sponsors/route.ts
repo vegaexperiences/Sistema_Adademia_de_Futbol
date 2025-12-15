@@ -10,6 +10,7 @@ const sponsorRegistrationSchema = z.object({
   sponsor_phone: z.string().optional().or(z.literal('')),
   sponsor_cedula: z.string().optional().or(z.literal('')),
   sponsor_company: z.string().optional().or(z.literal('')),
+  sponsor_ruc: z.string().optional().or(z.literal('')),
   payment_id: z.string().uuid().optional(),
   notes: z.string().optional().or(z.literal('')),
 });

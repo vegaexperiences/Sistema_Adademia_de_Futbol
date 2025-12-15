@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Trophy, Users, Calendar, Heart, GraduationCap } from 'lucide-react';
+import { ArrowRight, Trophy, Heart, GraduationCap } from 'lucide-react';
 
 interface CardData {
   id: string;
@@ -46,54 +45,11 @@ const cards: CardData[] = [
     bgColor: 'bg-gradient-to-br from-pink-50 to-rose-50',
     textColor: 'text-pink-900',
   },
-  {
-    id: 'coaches',
-    title: 'Entrenadores Expertos',
-    description: 'Nuestro cuerpo técnico cuenta con amplia experiencia en formación de jugadores jóvenes.',
-    icon: <Users size={48} />,
-    href: '#',
-    gradient: 'from-blue-400 via-blue-500 to-blue-600',
-    bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50',
-    textColor: 'text-blue-900',
-  },
-  {
-    id: 'schedule',
-    title: 'Horarios Flexibles',
-    description: 'Entrenamientos diseñados para no interferir con las actividades escolares.',
-    icon: <Calendar size={48} />,
-    href: '#',
-    gradient: 'from-green-400 via-green-500 to-green-600',
-    bgColor: 'bg-gradient-to-br from-green-50 to-emerald-50',
-    textColor: 'text-green-900',
-  },
 ];
 
 export function RotatingCards() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-
-  // Rotación automática cada 5 segundos
-  useEffect(() => {
-    if (isPaused) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % cards.length);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [isPaused]);
-
-  // Mostrar 3 cards a la vez (o menos en mobile)
-  const getVisibleCards = () => {
-    const visible: CardData[] = [];
-    for (let i = 0; i < 3; i++) {
-      const index = (currentIndex + i) % cards.length;
-      visible.push(cards[index]);
-    }
-    return visible;
-  };
-
-  const visibleCards = getVisibleCards();
+  // No rotation needed - just show the 3 cards
+  const visibleCards = cards;
 
   return (
     <section className="py-12 lg:py-20 relative overflow-hidden min-h-screen flex items-center">
@@ -103,11 +59,7 @@ export function RotatingCards() {
           {visibleCards.map((card, idx) => (
             <div
               key={card.id}
-              className={`glass-card p-8 lg:p-12 transition-all duration-500 transform min-h-[400px] flex flex-col ${
-                idx === 0 ? 'scale-105 z-10 shadow-2xl' : 'scale-100 opacity-90'
-              } hover:shadow-xl hover:scale-105`}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
+              className="glass-card p-8 lg:p-12 transition-all duration-500 transform min-h-[400px] flex flex-col hover:shadow-xl hover:scale-105"
             >
               <div className={`w-24 h-24 rounded-xl flex items-center justify-center mb-8 ${card.bgColor} ${card.textColor}`}>
                 {card.icon}
@@ -134,26 +86,6 @@ export function RotatingCards() {
                 </div>
               )}
             </div>
-          ))}
-        </div>
-
-        {/* Indicadores de navegación */}
-        <div className="flex justify-center gap-2 mt-8">
-          {cards.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setCurrentIndex(index);
-                setIsPaused(true);
-                setTimeout(() => setIsPaused(false), 3000);
-              }}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? 'w-8 bg-primary'
-                  : 'w-2 bg-gray-300 hover:bg-gray-400'
-              }`}
-              aria-label={`Ir a card ${index + 1}`}
-            />
           ))}
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, DollarSign, Users, CheckCircle, AlertCircle, Play, RefreshCw } from 'lucide-react';
+import { Calendar, DollarSign, Users, CheckCircle, AlertCircle, Play, RefreshCw, Link as LinkIcon, ExternalLink, Copy, Check } from 'lucide-react';
 import { generateMonthlyCharges } from '@/lib/actions/monthly-charges';
 import { isSeasonActive } from '@/lib/actions/payments';
 import { createClient } from '@/lib/supabase/client';
@@ -16,6 +16,9 @@ export function MonthlyChargesSettings() {
   const [activePlayersCount, setActivePlayersCount] = useState<number>(0);
   const [lastChargesMonth, setLastChargesMonth] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [paymentLinkBaseUrl, setPaymentLinkBaseUrl] = useState<string>('');
+  const [savingLink, setSavingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -64,6 +67,18 @@ export function MonthlyChargesSettings() {
         .single();
 
       setLastChargesMonth(lastCharge?.month_year || null);
+
+      // Get payment link base URL setting
+      const { data: linkSetting } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'payment_link_base_url')
+        .single();
+
+      const baseUrl = linkSetting?.value || process.env.NEXT_PUBLIC_APP_URL || 
+                     process.env.NEXT_PUBLIC_SITE_URL ||
+                     'https://sistema-adademia-de-futbol-tura.vercel.app';
+      setPaymentLinkBaseUrl(baseUrl);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -121,6 +136,76 @@ export function MonthlyChargesSettings() {
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     return `${year}-${month}`;
+  };
+
+  const handleSavePaymentLink = async () => {
+    setSavingLink(true);
+    try {
+      const supabase = createClient();
+      
+      // Check if setting exists
+      const { data: existing } = await supabase
+        .from('settings')
+        .select('id')
+        .eq('key', 'payment_link_base_url')
+        .single();
+
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from('settings')
+          .update({ 
+            value: paymentLinkBaseUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+        
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('settings')
+          .insert({
+            key: 'payment_link_base_url',
+            value: paymentLinkBaseUrl,
+            description: 'URL base para el link de pago público'
+          });
+        
+        if (error) throw error;
+      }
+
+      setMessage({
+        type: 'success',
+        text: '✅ URL del link de pago guardada exitosamente',
+      });
+      router.refresh();
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: `❌ Error al guardar: ${error.message}`,
+      });
+    } finally {
+      setSavingLink(false);
+    }
+  };
+
+  const getPreviewLink = (cedula: string = '8-1234-5678') => {
+    const baseUrl = paymentLinkBaseUrl.trim() || 
+                   process.env.NEXT_PUBLIC_APP_URL || 
+                   process.env.NEXT_PUBLIC_SITE_URL ||
+                   'https://sistema-adademia-de-futbol-tura.vercel.app';
+    return `${baseUrl}/pay?cedula=${encodeURIComponent(cedula)}`;
+  };
+
+  const copyPreviewLink = async (cedula: string = '8-1234-5678') => {
+    const link = getPreviewLink(cedula);
+    try {
+      await navigator.clipboard.writeText(link);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (error) {
+      console.error('Error copying link:', error);
+    }
   };
 
   if (loading) {
@@ -253,6 +338,94 @@ export function MonthlyChargesSettings() {
           </p>
         </div>
       )}
+
+      {/* Payment Link Management */}
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl border-l-4 border-indigo-500">
+        <div className="flex items-center gap-3 mb-4">
+          <LinkIcon className="h-6 w-6 text-indigo-600" />
+          <h3 className="text-xl font-bold text-gray-900">Gestión de Link de Pago</h3>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              URL Base del Portal de Pago
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={paymentLinkBaseUrl}
+                onChange={(e) => setPaymentLinkBaseUrl(e.target.value)}
+                placeholder="https://sistema-adademia-de-futbol-tura.vercel.app"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <button
+                onClick={handleSavePaymentLink}
+                disabled={savingLink}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {savingLink ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Guardar
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Esta URL se usará para generar los links de pago en los correos de recordatorio.
+            </p>
+          </div>
+
+          {/* Preview */}
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-gray-700">Vista Previa del Link</h4>
+              <button
+                onClick={() => copyPreviewLink()}
+                className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+              >
+                {linkCopied ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    Copiar
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="bg-gray-50 p-3 rounded border border-gray-200">
+              <p className="text-sm font-mono text-gray-800 break-all">
+                {getPreviewLink()}
+              </p>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Este es un ejemplo del link que se enviará en los correos. El parámetro <code className="bg-gray-100 px-1 rounded">cedula</code> se reemplazará con la cédula del tutor.
+            </p>
+          </div>
+
+          {/* Test Link */}
+          <div className="flex items-center gap-2">
+            <a
+              href={getPreviewLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Probar Link en Nueva Pestaña
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* Info Card */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">

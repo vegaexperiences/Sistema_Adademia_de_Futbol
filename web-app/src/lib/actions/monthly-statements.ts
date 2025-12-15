@@ -9,6 +9,7 @@ export interface PlayerStatement {
   playerName: string;
   tutorEmail: string;
   tutorName: string;
+  tutorCedula?: string | null;
   familyId: string | null;
   monthlyFee: number;
   amountDue: number;
@@ -115,6 +116,7 @@ export async function getPlayersDueForStatement(): Promise<PlayerStatement[]> {
       playerName: `${player.first_name} ${player.last_name}`,
       tutorEmail: family.tutor_email,
       tutorName: family.tutor_name || 'Familia',
+      tutorCedula: family.tutor_cedula || null,
       familyId: player.family_id,
       monthlyFee,
       amountDue,
@@ -157,6 +159,24 @@ async function calculateAmountDue(playerId: string, monthYear: string, monthlyFe
  * Send monthly statement email to a player's tutor
  */
 export async function sendMonthlyStatement(statement: PlayerStatement): Promise<{ success: boolean; error?: string }> {
+  // Get base URL for payment link from settings, fallback to env vars
+  const supabase = await createClient();
+  const { data: linkSetting } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'payment_link_base_url')
+    .single();
+  
+  const baseUrl = linkSetting?.value?.trim() || 
+                 process.env.NEXT_PUBLIC_APP_URL || 
+                 process.env.NEXT_PUBLIC_SITE_URL ||
+                 'https://sistema-adademia-de-futbol-tura.vercel.app';
+  
+  // Build payment link with tutor cedula for easy search
+  const tutorCedula = statement.tutorCedula || '';
+  const paymentLink = tutorCedula 
+    ? `${baseUrl}/pay?cedula=${encodeURIComponent(tutorCedula)}`
+    : `${baseUrl}/pay`;
   try {
     const supabase = await createClient();
     

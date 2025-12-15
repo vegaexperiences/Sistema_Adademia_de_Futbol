@@ -22,7 +22,7 @@ export function SponsorManagement() {
         >
           <div className="flex items-center gap-2">
             <Heart className="h-5 w-5" />
-            Niveles de Padrinazgo
+            Niveles de Padrinos
           </div>
         </button>
         <button

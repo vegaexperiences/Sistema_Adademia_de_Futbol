@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Mail, Phone, CreditCard, Building } from 'lucide-react';
+import { User, Mail, Phone, CreditCard, Building, Hash } from 'lucide-react';
 
 interface SponsorInfoStepProps {
   data: {
@@ -10,6 +10,7 @@ interface SponsorInfoStepProps {
     sponsor_phone: string;
     sponsor_cedula: string;
     sponsor_company: string;
+    sponsor_ruc: string;
   };
   updateData: (data: any) => void;
   errors?: Record<string, string>;
@@ -119,12 +120,12 @@ export function SponsorInfoStep({ data, updateData, errors = {} }: SponsorInfoSt
           )}
         </div>
 
-        {/* Empresa (Opcional) */}
+        {/* Empresa y RUC (Opcional) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Empresa <span className="text-gray-400 text-xs">(Opcional)</span>
           </label>
-          <div className="relative">
+          <div className="relative mb-3">
             <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
@@ -134,6 +135,21 @@ export function SponsorInfoStep({ data, updateData, errors = {} }: SponsorInfoSt
               placeholder="Nombre de la empresa"
             />
           </div>
+          <div className="relative">
+            <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <input
+              type="text"
+              value={data.sponsor_ruc}
+              onChange={(e) => handleChange('sponsor_ruc', e.target.value)}
+              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent ${
+                errors.sponsor_ruc ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="RUC de la empresa (ej: 123456789-1-2023)"
+            />
+          </div>
+          {errors.sponsor_ruc && (
+            <p className="mt-1 text-sm text-red-600">{errors.sponsor_ruc}</p>
+          )}
         </div>
       </div>
     </div>

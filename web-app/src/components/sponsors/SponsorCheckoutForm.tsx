@@ -28,6 +28,7 @@ export function SponsorCheckoutForm({ sponsor, config }: SponsorCheckoutFormProp
     sponsor_phone: '',
     sponsor_cedula: '',
     sponsor_company: '',
+    sponsor_ruc: '',
     cedulaFrontFile: '',
     cedulaBackFile: '',
     paymentMethod: '',
@@ -83,6 +84,7 @@ export function SponsorCheckoutForm({ sponsor, config }: SponsorCheckoutFormProp
           sponsor_phone: formData.sponsor_phone || undefined,
           sponsor_cedula: formData.sponsor_cedula || undefined,
           sponsor_company: formData.sponsor_company || undefined,
+          sponsor_ruc: formData.sponsor_ruc || undefined,
         }),
       });
 
