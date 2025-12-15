@@ -171,7 +171,7 @@ export function SponsorPaymentStep({
           )}
 
           {/* ACH */}
-          {config.paymentMethods.ach && (
+          {config.paymentMethods.ach === true && (
             <div
               className={`border rounded-xl p-4 cursor-pointer transition-all ${
                 data.paymentMethod === 'ACH'

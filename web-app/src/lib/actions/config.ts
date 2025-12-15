@@ -13,6 +13,7 @@ export type SystemConfig = {
     transfer: boolean;
     proof: boolean;
     paguelofacil: boolean;
+    ach?: boolean;
   };
 };
 
@@ -35,6 +36,7 @@ export async function getPublicSystemConfig(): Promise<SystemConfig> {
       transfer: true,
       proof: false,
       paguelofacil: true,
+      ach: false,
     },
   };
 
