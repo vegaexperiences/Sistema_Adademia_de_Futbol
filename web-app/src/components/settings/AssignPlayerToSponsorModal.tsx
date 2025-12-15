@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Search, User, Loader2 } from 'lucide-react';
-import { getAllPlayers } from '@/lib/actions/players';
+import { getPlayers } from '@/lib/actions/players';
 import { assignPlayerToSponsor } from '@/lib/actions/sponsors';
 
 interface Player {
