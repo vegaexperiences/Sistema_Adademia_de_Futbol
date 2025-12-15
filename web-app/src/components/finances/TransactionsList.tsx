@@ -5,7 +5,7 @@ import { Search, Filter, ArrowDownCircle, ArrowUpCircle, Calendar, CreditCard, E
 import type { Transaction } from '@/lib/actions/transactions';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
 import { UpdatePaymentAmountModal } from '@/components/payments/UpdatePaymentAmountModal';
-import { checkIsAdmin } from '@/lib/utils/permissions';
+import { checkIsAdmin } from '@/lib/actions/permissions';
 
 interface TransactionsListProps {
   transactions: Transaction[];

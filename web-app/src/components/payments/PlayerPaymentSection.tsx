@@ -10,7 +10,7 @@ import { PagueloFacilPaymentButton } from './PagueloFacilPaymentButton';
 import { YappyPaymentButton } from './YappyPaymentButton';
 import { DocumentPreview } from '@/components/ui/DocumentPreview';
 import { UpdatePaymentAmountModal } from './UpdatePaymentAmountModal';
-import { checkIsAdmin } from '@/lib/utils/permissions';
+import { checkIsAdmin } from '@/lib/actions/permissions';
 
 interface Payment {
   id: string;

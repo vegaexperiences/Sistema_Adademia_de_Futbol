@@ -188,29 +188,7 @@ export async function hasPermission(permissionName: string, academyId?: string):
   return await checkPermission(user.id, permissionName, academyId)
 }
 
-/**
- * Check if current user is admin (super admin OR has admin role)
- * This is a convenience function for client components that need to check admin status
- */
-export async function checkIsAdmin(): Promise<boolean> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    return false
-  }
-  
-  // Check if super admin
-  if (await isSuperAdmin(user.id)) {
-    return true
-  }
-  
-  // Check if admin role in current academy
-  const academyId = await getCurrentAcademyId()
-  if (academyId) {
-    return await hasRole(user.id, 'admin', academyId)
-  }
-  
-  return false
-}
+// Note: checkIsAdmin has been moved to src/lib/actions/permissions.ts
+// as a server action so it can be called from client components.
+// Import it from there instead: import { checkIsAdmin } from '@/lib/actions/permissions'
 
