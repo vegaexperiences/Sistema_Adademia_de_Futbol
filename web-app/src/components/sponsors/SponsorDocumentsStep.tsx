@@ -56,7 +56,7 @@ export function SponsorDocumentsStep({ data, updateData }: SponsorDocumentsStepP
     }
   };
 
-  const removeFile = (field: 'cedulaFrontFile' | 'cedulaBackFile', inputRef: React.RefObject<HTMLInputElement>) => {
+  const removeFile = (field: 'cedulaFrontFile' | 'cedulaBackFile', inputRef: React.RefObject<HTMLInputElement | null>) => {
     updateData({ [field]: '' });
     setUploadError(null);
     if (inputRef.current) {
