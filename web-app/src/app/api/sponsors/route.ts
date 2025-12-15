@@ -58,14 +58,13 @@ export async function POST(request: Request) {
       .from('sponsors')
       .select('id, amount, is_active')
       .eq('id', data.sponsor_id)
-      .eq('is_active', true)
-      .single();
+      .eq('is_active', true);
 
     if (academyId) {
       query = query.eq('academy_id', academyId);
     }
 
-    const { data: sponsor, error: sponsorError } = await query;
+    const { data: sponsor, error: sponsorError } = await query.single();
 
     if (sponsorError || !sponsor) {
       return NextResponse.json(
