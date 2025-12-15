@@ -48,13 +48,33 @@ async function isAdminOrSuperAdmin(userId: string, academyId?: string): Promise<
     return true
   }
   
-  // Check if has admin role in academy
-  const currentAcademyId = academyId || await getCurrentAcademyId()
-  if (!currentAcademyId) {
-    return false
+  // If academyId is provided, check that specific academy
+  if (academyId) {
+    return await hasRole(userId, 'admin', academyId)
   }
   
-  return await hasRole(userId, 'admin', currentAcademyId)
+  // Try to get academy from context first
+  const currentAcademyId = await getCurrentAcademyId()
+  if (currentAcademyId) {
+    const hasAdminRole = await hasRole(userId, 'admin', currentAcademyId)
+    if (hasAdminRole) {
+      return true
+    }
+  }
+  
+  // If no academy context or no admin role in current academy,
+  // check if user has admin role in ANY academy
+  const supabase = await createClient()
+  const { data: adminAssignments } = await supabase
+    .from('user_role_assignments')
+    .select(`
+      user_roles!inner(name)
+    `)
+    .eq('user_id', userId)
+    .eq('user_roles.name', 'admin')
+    .limit(1)
+  
+  return !!adminAssignments && adminAssignments.length > 0
 }
 
 /**
