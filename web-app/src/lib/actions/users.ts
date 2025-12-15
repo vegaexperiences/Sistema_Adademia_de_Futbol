@@ -307,10 +307,10 @@ export async function assignRoleToUser(
     return { success: false, error: 'Not authenticated' }
   }
   
-  // Check if super admin
-  const isAdmin = await isSuperAdmin(currentUser.id)
+  // Check if super admin or has admin role
+  const isAdmin = await isAdminOrSuperAdmin(currentUser.id)
   if (!isAdmin) {
-    return { success: false, error: 'Unauthorized: Super admin access required' }
+    return { success: false, error: 'Unauthorized: Admin access required' }
   }
   
   // Check if assignment already exists
@@ -740,10 +740,10 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; er
     return { success: false, error: 'Not authenticated' }
   }
   
-  // Check if super admin
-  const isAdmin = await isSuperAdmin(currentUser.id)
+  // Check if super admin or has admin role
+  const isAdmin = await isAdminOrSuperAdmin(currentUser.id)
   if (!isAdmin) {
-    return { success: false, error: 'Unauthorized: Super admin access required' }
+    return { success: false, error: 'Unauthorized: Admin access required' }
   }
 
   // Prevent self-deletion
