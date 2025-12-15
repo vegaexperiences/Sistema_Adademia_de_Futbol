@@ -245,16 +245,34 @@ export function SponsorPaymentStep({
           <YappyPaymentButton
             amount={totalAmount}
             description={`Padrinazgo: ${sponsor.name} - ${data.sponsor_name}`}
+            orderId={`sponsor-${sponsor.id}-${Date.now()}`}
             paymentType="sponsor"
+            customParams={{
+              type: 'sponsor',
+              sponsorId: sponsor.id,
+              sponsor_id: sponsor.id,
+              sponsorName: data.sponsor_name,
+              sponsor_name: data.sponsor_name,
+              sponsorEmail: data.sponsor_email,
+              sponsor_email: data.sponsor_email,
+              sponsorCedula: data.sponsor_cedula,
+              sponsor_cedula: data.sponsor_cedula,
+              amount: totalAmount.toString(),
+            }}
             metadata={{
+              type: 'sponsor',
               sponsor_id: sponsor.id,
               sponsor_name: data.sponsor_name,
               sponsor_email: data.sponsor_email,
               sponsor_cedula: data.sponsor_cedula,
             }}
+            returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/payments/yappy/callback?type=sponsor&sponsorId=${sponsor.id}&sponsorName=${encodeURIComponent(data.sponsor_name)}&amount=${totalAmount}`}
             onSuccess={() => {
               // This will be handled by the callback
               onSubmit();
+            }}
+            onError={(error) => {
+              setError(error);
             }}
           />
         )}
