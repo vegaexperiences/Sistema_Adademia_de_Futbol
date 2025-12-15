@@ -658,6 +658,7 @@ export async function processPublicPayment(data: {
   notes?: string;
   proof_url?: string;
   month_year?: string;
+  isAdvancePayment?: boolean;
 }): Promise<{ data: any | null; error: string | null }> {
   const supabase = await createClient();
   const academyId = await getCurrentAcademyId();
@@ -694,12 +695,27 @@ export async function processPublicPayment(data: {
 
   const mappedMethod = methodMap[data.method] || data.method.toLowerCase();
 
-  // Determine payment type
+  // Determine payment type and month_year
+  // If isAdvancePayment is true, always set as custom without month_year
   let paymentType = 'monthly';
-  if (data.month_year) {
+  let monthYear: string | undefined = data.month_year;
+  
+  if (data.isAdvancePayment) {
+    paymentType = 'custom';
+    monthYear = undefined; // No month_year for advance payments (credit)
+  } else if (data.month_year) {
     paymentType = 'monthly';
+    monthYear = data.month_year;
   } else {
     paymentType = 'custom';
+    monthYear = undefined;
+  }
+
+  // Build notes with advance payment indicator if applicable
+  let notes = data.notes || `Pago público - ${data.method}`;
+  if (data.isAdvancePayment) {
+    const advanceNote = `Pago adelantado voluntario - ${new Date().toLocaleDateString('es-PA')}`;
+    notes = notes ? `${notes}\n${advanceNote}` : advanceNote;
   }
 
   // Create payment using existing function
@@ -711,9 +727,9 @@ export async function processPublicPayment(data: {
       method: mappedMethod,
       payment_date: data.payment_date,
       status: (mappedMethod === 'transfer' || mappedMethod === 'cash' || mappedMethod === 'ach') ? 'Pending' : 'Pending',
-      notes: data.notes || `Pago público - ${data.method}`,
+      notes: notes,
       proof_url: data.proof_url,
-      month_year: data.month_year,
+      month_year: monthYear,
     };
 
     const result = await createPayment(paymentData as any);

@@ -281,6 +281,119 @@ export async function createPayment(payment: Payment) {
   return data;
 }
 
+/**
+ * Create an advance payment (credit) for a player
+ * Advance payments don't have a month_year and act as credit for future charges
+ */
+export async function createAdvancePayment(data: {
+  player_id: string;
+  amount: number;
+  method: string;
+  payment_date: string;
+  notes?: string;
+  proof_url?: string;
+}): Promise<{ data: any | null; error: string | null }> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+  
+  if (!academyId) {
+    return { data: null, error: 'No academy context available' };
+  }
+
+  // Validate amount
+  if (!data.amount || data.amount <= 0) {
+    return { data: null, error: 'El monto debe ser mayor a 0' };
+  }
+
+  // Validate player exists
+  const { data: player, error: playerError } = await supabase
+    .from('players')
+    .select('id, academy_id')
+    .eq('id', data.player_id)
+    .eq('academy_id', academyId)
+    .single();
+
+  if (playerError || !player) {
+    return { data: null, error: 'Jugador no encontrado o no pertenece a esta academia' };
+  }
+
+  // Map method names
+  const methodMap: Record<string, string> = {
+    'Transferencia': 'transfer',
+    'Comprobante': 'cash',
+    'ACH': 'ach',
+    'Yappy': 'yappy',
+    'PagueloFacil': 'paguelofacil',
+    'Efectivo': 'cash',
+  };
+
+  const mappedMethod = methodMap[data.method] || data.method.toLowerCase();
+
+  // For manual payment methods, set status to 'Approved'
+  const manualMethods = ['cash', 'transfer', 'ach', 'other'];
+  const shouldAutoApprove = manualMethods.includes(mappedMethod);
+
+  // Build notes with advance payment indicator
+  const advanceNote = `Pago adelantado voluntario - ${new Date().toLocaleDateString('es-PA')}`;
+  const notes = data.notes 
+    ? `${data.notes}\n${advanceNote}` 
+    : advanceNote;
+
+  // Create payment data - always as 'custom' type without month_year
+  const paymentData: any = {
+    player_id: data.player_id,
+    amount: data.amount,
+    type: 'custom',
+    method: mappedMethod,
+    payment_date: data.payment_date,
+    status: shouldAutoApprove ? 'Approved' : 'Pending',
+    notes: notes,
+    proof_url: data.proof_url,
+    academy_id: academyId,
+    // No month_year - this is an advance payment (credit)
+  };
+
+  try {
+    const { data: createdPayment, error } = await supabase
+      .from('payments')
+      .insert(paymentData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[createAdvancePayment] Error creating payment:', error);
+      return { data: null, error: `Error al crear el pago adelantado: ${error.message}` };
+    }
+
+    if (!createdPayment) {
+      return { data: null, error: 'Error al crear el pago: no se recibió confirmación' };
+    }
+
+    // Update player's last payment date
+    await supabase
+      .from('players')
+      .update({ 
+        last_payment_date: data.payment_date,
+        payment_status: 'current'
+      })
+      .eq('id', data.player_id)
+      .eq('academy_id', academyId);
+
+    // Revalidate all relevant paths
+    revalidatePath('/dashboard/players');
+    revalidatePath('/dashboard/families');
+    revalidatePath('/dashboard/tutors');
+    revalidatePath('/dashboard/finances');
+    revalidatePath('/dashboard/finances/transactions');
+    revalidatePath('/pay');
+
+    return { data: createdPayment, error: null };
+  } catch (error: any) {
+    console.error('[createAdvancePayment] Unexpected error:', error);
+    return { data: null, error: error.message || 'Error desconocido al crear el pago adelantado' };
+  }
+}
+
 // Update player's custom monthly fee
 export async function updateCustomMonthlyFee(playerId: string, customFee: number | null) {
   const supabase = await createClient();

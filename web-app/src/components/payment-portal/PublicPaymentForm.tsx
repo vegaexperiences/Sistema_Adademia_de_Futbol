@@ -25,6 +25,7 @@ export function PublicPaymentForm({
   balance,
   pendingCharges,
 }: PublicPaymentFormProps) {
+  const [paymentType, setPaymentType] = useState<'pending' | 'advance'>('pending');
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
@@ -37,13 +38,13 @@ export function PublicPaymentForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load payment methods config
-  useState(() => {
+  useEffect(() => {
     getPaymentMethodsConfig().then((result) => {
       if (result.data) {
         setPaymentMethods(result.data);
       }
     });
-  });
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -116,6 +117,9 @@ export function PublicPaymentForm({
         return;
       }
 
+      const isAdvancePayment = paymentType === 'advance';
+      const monthYear = isAdvancePayment ? undefined : (pendingCharges.length > 0 ? pendingCharges[0].month_year || undefined : undefined);
+
       const result = await processPublicPayment({
         player_id: playerId,
         amount: paymentAmount,
@@ -123,6 +127,8 @@ export function PublicPaymentForm({
         payment_date: new Date().toISOString().split('T')[0],
         notes: notes || `Pago público - ${paymentMethod} - ${playerName}`,
         proof_url: proofFile || undefined,
+        month_year: monthYear,
+        isAdvancePayment: isAdvancePayment,
       });
 
       if (result.error) {
@@ -134,6 +140,7 @@ export function PublicPaymentForm({
         setNotes('');
         setProofFile('');
         setPaymentMethod('');
+        setPaymentType('pending');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -167,8 +174,79 @@ export function PublicPaymentForm({
         </div>
       )}
 
-      {/* Suggested Amount */}
-      {suggestedAmount > 0 && (
+      {/* Payment Type Selection (Radio Buttons) */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Tipo de Pago <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div
+            className={`border rounded-xl p-4 cursor-pointer transition-all ${
+              paymentType === 'pending'
+                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500 ring-opacity-50'
+                : 'border-gray-200 hover:border-blue-400 bg-white'
+            }`}
+            onClick={() => {
+              setPaymentType('pending');
+              setAmount('');
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-gray-900">Pagar Cargo Pendiente</p>
+                <p className="text-sm text-gray-600 mt-1">Pagar cargos mensuales pendientes</p>
+              </div>
+              {paymentType === 'pending' && (
+                <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            className={`border rounded-xl p-4 cursor-pointer transition-all ${
+              paymentType === 'advance'
+                ? 'border-green-500 bg-green-50 ring-2 ring-green-500 ring-opacity-50'
+                : 'border-gray-200 hover:border-green-400 bg-white'
+            }`}
+            onClick={() => {
+              setPaymentType('advance');
+              setAmount('');
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-gray-900">Pago Adelantado</p>
+                <p className="text-sm text-gray-600 mt-1">Pago como crédito para futuros cargos</p>
+              </div>
+              {paymentType === 'advance' && (
+                <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Advance Payment Explanation */}
+      {paymentType === 'advance' && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <p className="text-sm text-green-900 mb-2">
+            <strong>💡 ¿Cómo funciona el pago adelantado?</strong>
+          </p>
+          <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
+            <li>Este pago se aplicará como crédito a tu cuenta</li>
+            <li>El crédito se usará automáticamente para futuros cargos mensuales</li>
+            <li>Puedes ingresar cualquier monto que desees adelantar</li>
+            <li>Tu balance puede quedar negativo (esto indica crédito disponible)</li>
+          </ul>
+        </div>
+      )}
+
+      {/* Suggested Amount (only for pending charges) */}
+      {paymentType === 'pending' && suggestedAmount > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-blue-900 mb-2">
             <strong>Monto sugerido:</strong> ${suggestedAmount.toFixed(2)}
@@ -411,24 +489,27 @@ export function PublicPaymentForm({
       {/* Yappy Payment Button */}
       {paymentMethod === 'Yappy' && paymentMethods?.yappy && (
         <YappyPaymentButton
-          amount={suggestedAmount > 0 ? suggestedAmount : parseFloat(amount) || 0}
-          description={`Pago mensualidad - ${playerName}`}
+          amount={parseFloat(amount) || 0}
+          description={paymentType === 'advance' ? `Pago adelantado - ${playerName}` : `Pago mensualidad - ${playerName}`}
           orderId={`public-payment-${playerId}-${Date.now()}`}
-          paymentType="monthly"
+          paymentType={paymentType === 'advance' ? 'custom' : 'monthly'}
           customParams={{
-            type: 'monthly',
+            type: paymentType === 'advance' ? 'custom' : 'monthly',
             playerId: playerId,
-            amount: (suggestedAmount > 0 ? suggestedAmount : parseFloat(amount) || 0).toString(),
+            amount: (parseFloat(amount) || 0).toString(),
+            isAdvancePayment: paymentType === 'advance' ? 'true' : 'false',
           }}
           metadata={{
-            type: 'monthly',
+            type: paymentType === 'advance' ? 'custom' : 'monthly',
             player_id: playerId,
+            isAdvancePayment: paymentType === 'advance',
           }}
           returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/pay/${playerId}?success=true`}
           onSuccess={() => {
             setSuccess(true);
             setPaymentMethod('');
             setAmount('');
+            setPaymentType('pending');
           }}
           onError={(error) => {
             setError(error);
@@ -439,8 +520,8 @@ export function PublicPaymentForm({
       {/* Paguelo Fácil Payment Button */}
       {paymentMethod === 'PagueloFacil' && paymentMethods?.paguelofacil && (
         <PagueloFacilPaymentButton
-          amount={suggestedAmount > 0 ? suggestedAmount : parseFloat(amount) || 0}
-          description={`Pago mensualidad - ${playerName}`}
+          amount={parseFloat(amount) || 0}
+          description={paymentType === 'advance' ? `Pago adelantado - ${playerName}` : `Pago mensualidad - ${playerName}`}
           email=""
           orderId={`public-payment-${playerId}-${Date.now()}`}
           returnUrl={() => {
@@ -448,15 +529,17 @@ export function PublicPaymentForm({
             return `${baseUrl}/pay/${playerId}?success=true`;
           }}
           customParams={{
-            type: 'monthly',
+            type: paymentType === 'advance' ? 'custom' : 'monthly',
             playerId: playerId,
-            amount: (suggestedAmount > 0 ? suggestedAmount : parseFloat(amount) || 0).toString(),
+            amount: (parseFloat(amount) || 0).toString(),
+            isAdvancePayment: paymentType === 'advance' ? 'true' : 'false',
           }}
           enrollmentData={{}}
           onSuccess={() => {
             setSuccess(true);
             setPaymentMethod('');
             setAmount('');
+            setPaymentType('pending');
           }}
           onError={(errorMsg: string) => {
             setError(errorMsg);

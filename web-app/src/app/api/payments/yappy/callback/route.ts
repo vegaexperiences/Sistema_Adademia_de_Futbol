@@ -35,10 +35,17 @@ export async function POST(request: NextRequest) {
     let amount = callbackParams.amount || body.amount || '';
     let monthYear = metadata.monthYear || body.monthYear || '';
     let notes = metadata.notes || body.notes || '';
+    let isAdvancePayment = metadata.isAdvancePayment === true || metadata.isAdvancePayment === 'true' || body.isAdvancePayment === true || body.isAdvancePayment === 'true';
     let sponsorId = metadata.sponsor_id || body.sponsor_id || metadata.sponsorId || body.sponsorId || '';
     let sponsorName = metadata.sponsor_name || body.sponsor_name || metadata.sponsorName || body.sponsorName || '';
     let sponsorEmail = metadata.sponsor_email || body.sponsor_email || metadata.sponsorEmail || body.sponsorEmail || '';
     let sponsorCedula = metadata.sponsor_cedula || body.sponsor_cedula || metadata.sponsorCedula || body.sponsorCedula || '';
+    
+    // If advance payment, don't use month_year
+    if (isAdvancePayment) {
+      monthYear = '';
+      paymentType = 'custom';
+    }
 
     // Try to extract playerId from orderId if it follows the pattern "payment-{playerId}-{timestamp}"
     if (!playerId && callbackParams.orderId) {
@@ -416,9 +423,9 @@ export async function POST(request: NextRequest) {
               type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
               method: 'yappy' as const,
               payment_date: new Date().toISOString().split('T')[0],
-              month_year: monthYear || undefined,
+              month_year: isAdvancePayment ? undefined : (monthYear || undefined),
               status: 'Approved' as const,
-              notes: paymentNotes,
+              notes: isAdvancePayment ? `${paymentNotes}\nPago adelantado voluntario - ${new Date().toLocaleDateString('es-PA')}` : paymentNotes,
             };
             
             console.log('[Yappy Callback] Payment data to create (pending player):', paymentData);
@@ -442,9 +449,9 @@ export async function POST(request: NextRequest) {
               type: (paymentType as 'enrollment' | 'monthly' | 'custom') || 'custom',
               method: 'yappy' as const,
               payment_date: new Date().toISOString().split('T')[0],
-              month_year: monthYear || undefined,
+              month_year: isAdvancePayment ? undefined : (monthYear || undefined),
               status: 'Approved' as const,
-              notes: paymentNotes,
+              notes: isAdvancePayment ? `${paymentNotes}\nPago adelantado voluntario - ${new Date().toLocaleDateString('es-PA')}` : paymentNotes,
             };
             
             console.log('[Yappy Callback] Payment data to create (approved player):', paymentData);

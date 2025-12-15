@@ -3,6 +3,7 @@ import { TransactionsList } from '@/components/finances/TransactionsList';
 import { BalanceCard } from '@/components/finances/BalanceCard';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { AdvancePaymentButton } from '@/components/finances/AdvancePaymentButton';
 
 export default async function TransactionsPage() {
   // Get current month transactions and balance
@@ -24,21 +25,24 @@ export default async function TransactionsPage() {
     <div className="space-y-4 sm:space-y-6 animate-fade-in p-3 sm:p-6">
       {/* Header */}
       <div className="glass-card p-4 sm:p-6">
-        <div className="flex items-center gap-4 mb-4">
-          <Link
-            href="/dashboard/finances"
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5 text-gray-600" />
-          </Link>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              📋 Transacciones
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600">
-              Historial completo de ingresos y gastos
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard/finances"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-600" />
+            </Link>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                📋 Transacciones
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                Historial completo de ingresos y gastos
+              </p>
+            </div>
           </div>
+          <AdvancePaymentButton />
         </div>
       </div>
 

@@ -1,13 +1,14 @@
 import { getFinancialSummary, getMonthlyIncomeVsExpense, getExpensesByCategory } from '@/lib/actions/financial-reports';
 import { getActiveStaff } from '@/lib/actions/staff';
 import { getBalanceSummary, getTransactions } from '@/lib/actions/transactions';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Users } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Users, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import IncomeVsExpenseChart from '@/components/finances/IncomeVsExpenseChart';
 import ExpensePieChart from '@/components/finances/ExpensePieChart';
 import { BalanceCard } from '@/components/finances/BalanceCard';
 import { TransactionsList } from '@/components/finances/TransactionsList';
 import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
+import { AdvancePaymentButton } from '@/components/finances/AdvancePaymentButton';
 
 export default async function FinancesPage() {
   const currentYear = new Date().getFullYear();
@@ -63,6 +64,7 @@ export default async function FinancesPage() {
               <Plus size={18} className="sm:w-5 sm:h-5" />
               <span>Nuevo Gasto</span>
             </Link>
+            <AdvancePaymentButton />
           </div>
         </div>
       </div>

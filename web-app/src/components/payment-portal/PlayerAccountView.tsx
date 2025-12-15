@@ -150,7 +150,10 @@ export function PlayerAccountView({ playerId }: PlayerAccountViewProps) {
             <p className="text-sm text-gray-600 mt-1">Monto pendiente</p>
           )}
           {accountInfo.balance < 0 && (
-            <p className="text-sm text-gray-600 mt-1">Crédito disponible</p>
+            <div className="mt-1">
+              <p className="text-sm font-semibold text-green-600">Crédito disponible</p>
+              <p className="text-xs text-gray-500 mt-1">Este crédito se aplicará automáticamente a futuros cargos</p>
+            </div>
           )}
           {accountInfo.balance === 0 && (
             <p className="text-sm text-gray-600 mt-1">Sin balance pendiente</p>
@@ -211,6 +214,22 @@ export function PlayerAccountView({ playerId }: PlayerAccountViewProps) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Advance Payment Section */}
+      {accountInfo.balance < 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+          <div className="flex items-start gap-3 mb-4">
+            <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+            <div>
+              <h2 className="text-xl font-bold text-green-900 mb-2">Crédito Disponible</h2>
+              <p className="text-sm text-green-800">
+                Tienes un crédito de <strong>${Math.abs(accountInfo.balance).toFixed(2)}</strong> que se aplicará automáticamente 
+                cuando se generen nuevos cargos mensuales.
+              </p>
+            </div>
           </div>
         </div>
       )}

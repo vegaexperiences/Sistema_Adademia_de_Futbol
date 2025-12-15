@@ -295,15 +295,22 @@ export async function GET(request: NextRequest) {
     const parm9 = searchParams.get('PARM_9') || callbackParams.PARM_9 || '';
     
     // Try to extract from URL params first, then from PARM
-    // Based on how we send: customParams = { type, playerId, paymentType, monthYear, sponsorId, sponsorName, etc. }
+    // Based on how we send: customParams = { type, playerId, paymentType, monthYear, isAdvancePayment, sponsorId, sponsorName, etc. }
     let type = searchParams.get('type') || parm2 || ''; // 'enrollment' | 'payment' | 'sponsor'
     let playerId = searchParams.get('playerId') || parm3 || '';
     let paymentType = searchParams.get('paymentType') || parm4 || '';
     let amount = searchParams.get('amount') || parm5 || '';
     let monthYear = searchParams.get('monthYear') || parm6 || '';
-    let sponsorId = searchParams.get('sponsorId') || searchParams.get('sponsor_id') || parm7 || '';
-    let sponsorName = searchParams.get('sponsorName') || searchParams.get('sponsor_name') || parm8 || '';
-    let sponsorEmail = searchParams.get('sponsorEmail') || searchParams.get('sponsor_email') || parm9 || '';
+    let isAdvancePayment = searchParams.get('isAdvancePayment') === 'true' || parm7 === 'true';
+    let sponsorId = searchParams.get('sponsorId') || searchParams.get('sponsor_id') || parm8 || '';
+    let sponsorName = searchParams.get('sponsorName') || searchParams.get('sponsor_name') || parm9 || '';
+    let sponsorEmail = searchParams.get('sponsorEmail') || searchParams.get('sponsor_email') || '';
+    
+    // If advance payment, don't use month_year
+    if (isAdvancePayment) {
+      monthYear = '';
+      paymentType = 'custom';
+    }
     
     // If amount is not in URL params or PARM, try to get it from callback params
     if (!amount && callbackParams.TotalPagado) {
@@ -744,6 +751,11 @@ export async function GET(request: NextRequest) {
           
           // Build notes with appropriate format
           let paymentNotes = `Pago procesado con Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. Fecha: ${callbackParams.Fecha || 'N/A'} ${callbackParams.Hora || 'N/A'}`;
+          
+          // If advance payment, add note
+          if (isAdvancePayment) {
+            paymentNotes += `\nPago adelantado voluntario - ${new Date().toLocaleDateString('es-PA')}`;
+          }
           
           // If player is pending, add format for later linking
           if (isPendingPlayer) {
