@@ -234,8 +234,8 @@ export function SponsorPaymentStep({
                 </button>
               </div>
             )}
-            {uploadError && (
-              <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+            {(uploadError || error) && (
+              <p className="mt-2 text-sm text-red-600">{uploadError || error}</p>
             )}
           </div>
         )}
