@@ -2,7 +2,7 @@
 
 import { createClient, getCurrentAcademyId } from '@/lib/supabase/server'
 import { isSuperAdmin } from '@/lib/utils/academy'
-import { hasRole, getUserRoles as getUserRolesUtil } from '@/lib/utils/permissions'
+import { hasRole, getUserRoles as getUserRolesFromPermissions } from '@/lib/utils/permissions'
 import { revalidatePath } from 'next/cache'
 
 export interface User {
@@ -76,11 +76,27 @@ async function isAdminOrSuperAdmin(userId: string, academyId?: string): Promise<
   if (assignmentsError) {
     console.error('[isAdminOrSuperAdmin] Error checking admin assignments:', assignmentsError)
     // If there's an RLS error, try a different approach: check via getUserRoles
+    // Try with current academy first, then try without academy filter
     try {
-      const roles = await getUserRoles(userId)
-      return roles.includes('admin')
+      const currentAcademyId = await getCurrentAcademyId()
+      if (currentAcademyId) {
+        const roles = await getUserRolesFromPermissions(userId, currentAcademyId)
+        if (roles.includes('admin')) {
+          return true
+        }
+      }
+      // If no academy context or no admin in current academy, check all academies
+      // by getting all role assignments without academy filter
+      const { data: allAssignments } = await supabase
+        .from('user_role_assignments')
+        .select('user_roles(name)')
+        .eq('user_id', userId)
+      
+      if (allAssignments) {
+        return allAssignments.some((a: any) => a.user_roles?.name === 'admin')
+      }
     } catch (err) {
-      console.error('[isAdminOrSuperAdmin] Error in getUserRoles fallback:', err)
+      console.error('[isAdminOrSuperAdmin] Error in fallback check:', err)
       return false
     }
   }
