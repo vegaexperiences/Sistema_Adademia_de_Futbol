@@ -784,3 +784,277 @@ function AssignRoleForm({
   )
 }
 
+
+function PasswordManagementModal({
+  user,
+  onClose,
+}: {
+  user: User
+  onClose: () => void
+}) {
+  const [mode, setMode] = useState<'menu' | 'reset' | 'change'>('menu')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const handleResetPassword = async () => {
+    setIsSubmitting(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const result = await resetUserPassword(user.id)
+      if (result.success) {
+        setSuccess('Email de recuperación enviado exitosamente')
+        setTimeout(() => {
+          onClose()
+        }, 2000)
+      } else {
+        setError(result.error || 'Error al enviar email de recuperación')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al enviar email de recuperación')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+
+    if (!newPassword || newPassword.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Las contraseñas no coinciden')
+      return
+    }
+
+    if (!confirm('¿Estás seguro de que deseas cambiar la contraseña de este usuario? El usuario podrá iniciar sesión inmediatamente con la nueva contraseña.')) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const result = await updateUserPassword(user.id, newPassword)
+      if (result.success) {
+        setSuccess('Contraseña actualizada exitosamente')
+        setNewPassword('')
+        setConfirmPassword('')
+        setTimeout(() => {
+          onClose()
+        }, 2000)
+      } else {
+        setError(result.error || 'Error al actualizar contraseña')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al actualizar contraseña')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Key className="h-5 w-5 text-purple-600" />
+              Gestionar Contraseña
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              Usuario: <span className="font-semibold text-gray-900">{user.email}</span>
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-red-800 text-sm font-medium">{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-green-800 text-sm font-medium">{success}</p>
+            </div>
+          )}
+
+          {mode === 'menu' && (
+            <div className="space-y-3">
+              <button
+                onClick={() => setMode('reset')}
+                className="w-full p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-l-4 border-blue-500 hover:shadow-md transition-all text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Mail className="h-6 w-6 text-blue-600" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Enviar Email de Recuperación</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      El usuario recibirá un email para cambiar su propia contraseña (Recomendado)
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setMode('change')}
+                className="w-full p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-l-4 border-amber-500 hover:shadow-md transition-all text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Lock className="h-6 w-6 text-amber-600" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Cambiar Contraseña Directamente</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Establece una nueva contraseña inmediatamente (Requiere confirmación)
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === 'reset' && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  Se enviará un email de recuperación de contraseña a <strong>{user.email}</strong>. 
+                  El usuario podrá cambiar su contraseña haciendo click en el enlace del email.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleResetPassword}
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Mail size={18} />
+                      Enviar Email
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setMode('menu')
+                    setError(null)
+                    setSuccess(null)
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                >
+                  Volver
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === 'change' && (
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800 font-semibold mb-2">⚠️ Advertencia de Seguridad</p>
+                <p className="text-sm text-amber-700">
+                  Al cambiar la contraseña directamente, el usuario podrá iniciar sesión inmediatamente con la nueva contraseña. 
+                  Asegúrate de comunicarle la nueva contraseña de forma segura.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-amber-200 bg-white text-gray-900 font-medium focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                  required
+                  minLength={6}
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Confirmar Contraseña
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-amber-200 bg-white text-gray-900 font-medium focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+                  required
+                  minLength={6}
+                  placeholder="Repite la contraseña"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !newPassword || newPassword.length < 6 || newPassword !== confirmPassword}
+                  className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Cambiando...
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={18} />
+                      Cambiar Contraseña
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('menu')
+                    setNewPassword('')
+                    setConfirmPassword('')
+                    setError(null)
+                    setSuccess(null)
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                >
+                  Volver
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
