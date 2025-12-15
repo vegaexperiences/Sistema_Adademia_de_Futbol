@@ -79,11 +79,35 @@ Si encuentras algún error al ejecutar las migraciones:
 
 ---
 
+---
+
+## 📋 Paso 3: Ejecutar Seeding de Niveles Iniciales (Opcional pero Recomendado)
+
+### Ejecuta esta migración TERCERO (opcional):
+
+#### ✅ Migración 3: `seed_sponsor_levels.sql`
+
+Esta migración crea automáticamente los 3 niveles de padrinazgo iniciales:
+- **PADRINO GOLD** ($1,500 anual)
+- **PADRINO PLATA** ($1,000 anual)
+- **PADRINO BRONCE** ($500 anual)
+
+1. Abre el archivo: `migrations/seed_sponsor_levels.sql`
+2. **Copia TODO el contenido** (desde la línea 1 hasta el final)
+3. Pégalo en el SQL Editor de Supabase
+4. Haz clic en **"Run"** o presiona `Ctrl+Enter` (o `Cmd+Enter` en Mac)
+5. Verifica que aparezca "Success" sin errores
+
+**Nota**: Esta migración es segura de ejecutar múltiples veces - no creará duplicados si los niveles ya existen.
+
+---
+
 ## 🎉 Después de ejecutar las migraciones
 
-Una vez que ambas migraciones se ejecuten exitosamente:
+Una vez que todas las migraciones se ejecuten exitosamente:
 
-1. La página `/sponsors` debería funcionar correctamente
+1. La página `/sponsors` mostrará los 3 niveles de padrinazgo (si ejecutaste el seeding)
 2. La sección "Gestión de Padrinos" en Configuraciones debería funcionar
-3. Podrás crear niveles de padrinazgo y asignar jugadores a padrinos
+3. Podrás crear, editar y gestionar niveles de padrinazgo
+4. Podrás asignar jugadores a padrinos desde el tab "Registros de Padrinos"
 
