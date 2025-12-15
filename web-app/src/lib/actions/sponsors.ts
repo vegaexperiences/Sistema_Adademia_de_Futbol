@@ -78,14 +78,13 @@ export async function getSponsorById(id: string): Promise<{ data: Sponsor | null
     .from('sponsors')
     .select('*')
     .eq('id', id)
-    .eq('is_active', true)
-    .single();
+    .eq('is_active', true);
 
   if (academyId) {
     query = query.eq('academy_id', academyId);
   }
 
-  const { data, error } = await query;
+  const { data, error } = await query.single();
 
   if (error) {
     console.error('[getSponsorById] Error:', error);
