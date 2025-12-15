@@ -71,7 +71,7 @@ async function isAdminOrSuperAdmin(userId: string, academyId?: string): Promise<
   
   // If no academy context or no admin role in current academy,
   // check if user has admin role in ANY academy
-  const supabase = await createClient()
+  // Reuse supabase client from above
   const { data: adminAssignments, error: assignmentsError } = await supabase
     .from('user_role_assignments')
     .select(`
