@@ -230,6 +230,7 @@ export async function sendMonthlyStatement(statement: PlayerStatement): Promise<
 
 /**
  * Send monthly statements to all players due
+ * Groups players by tutor email to send one email per tutor
  */
 export async function sendMonthlyStatements(): Promise<{
   success: boolean;
@@ -250,22 +251,95 @@ export async function sendMonthlyStatements(): Promise<{
     };
   }
   
+  // Group statements by tutor email
+  const groupedByTutor = new Map<string, PlayerStatement[]>();
+  for (const statement of statements) {
+    const email = statement.tutorEmail.toLowerCase();
+    if (!groupedByTutor.has(email)) {
+      groupedByTutor.set(email, []);
+    }
+    groupedByTutor.get(email)!.push(statement);
+  }
+  
   let queued = 0;
   let failed = 0;
   const errors: string[] = [];
   
-  for (const statement of statements) {
-    const result = await sendMonthlyStatement(statement);
+  // Send one email per tutor with all their players
+  for (const [tutorEmail, tutorStatements] of groupedByTutor.entries()) {
+    if (tutorStatements.length === 0) continue;
     
-    if (result.success) {
-      queued++;
-    } else {
+    // Use the first statement for tutor info (all should have same tutor)
+    const firstStatement = tutorStatements[0];
+    
+    // Calculate total amount due for all players
+    const totalAmountDue = tutorStatements.reduce((sum, s) => sum + s.amountDue, 0);
+    
+    // Format player list without bullets (just names separated by commas)
+    const playerNames = tutorStatements.map(s => s.playerName);
+    const playerList = playerNames.map(name => `<strong>${name}</strong>`).join(', ');
+    
+    // Get base URL for payment link
+    const supabase = await createClient();
+    const { data: linkSetting } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'payment_link_base_url')
+      .single();
+    
+    const baseUrl = linkSetting?.value?.trim() || 
+                   process.env.NEXT_PUBLIC_APP_URL || 
+                   process.env.NEXT_PUBLIC_SITE_URL ||
+                   'https://sistema-adademia-de-futbol-tura.vercel.app';
+    
+    // Build payment link with tutor cedula for easy search
+    const tutorCedula = firstStatement.tutorCedula || '';
+    const paymentLink = tutorCedula 
+      ? `${baseUrl}/pay?cedula=${encodeURIComponent(tutorCedula)}`
+      : `${baseUrl}/pay`;
+    
+    // Queue the email using payment_reminder template
+    const emailResult = await queueEmail(
+      'payment_reminder',
+      firstStatement.tutorEmail,
+      {
+        tutorName: firstStatement.tutorName,
+        playerList: playerList,
+        amount: totalAmountDue.toFixed(2),
+        dueDate: getPaymentDueDate(),
+        paymentLink: paymentLink,
+        academy_name: 'Suarez Academy',
+        current_year: new Date().getFullYear().toString(),
+      },
+      undefined, // scheduledFor - will be calculated by queueEmail
+      {
+        player_id: tutorStatements.map(s => s.playerId).join(','), // Comma-separated player IDs
+        family_id: firstStatement.familyId || undefined,
+        email_type: 'payment_reminder',
+        month_year: firstStatement.monthYear,
+      }
+    );
+    
+    if (emailResult.error) {
       failed++;
-      errors.push(`${statement.playerName}: ${result.error || 'Unknown error'}`);
+      errors.push(`${firstStatement.tutorName} (${tutorStatements.length} jugadores): ${emailResult.error}`);
+    } else {
+      queued++;
+      // Update monthly_statement_sent_at for all players
+      for (const statement of tutorStatements) {
+        try {
+          await supabase
+            .from('players')
+            .update({ monthly_statement_sent_at: new Date().toISOString() })
+            .eq('id', statement.playerId);
+        } catch (err) {
+          console.error(`[sendMonthlyStatements] Error updating monthly_statement_sent_at for player ${statement.playerId}:`, err);
+        }
+      }
     }
   }
   
-  console.log(`[sendMonthlyStatements] Processed ${statements.length} statements: ${queued} queued, ${failed} failed`);
+  console.log(`[sendMonthlyStatements] Processed ${statements.length} players for ${groupedByTutor.size} tutors: ${queued} queued, ${failed} failed`);
   
   return {
     success: failed === 0,
