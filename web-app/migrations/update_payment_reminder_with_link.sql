@@ -153,7 +153,7 @@ SET
   </div>
 </body>
 </html>',
-  variables = '{"tutorName": "", "playerList": "<li>Jugador 1</li><li>Jugador 2</li>", "amount": 0, "dueDate": "", "logoUrl": "", "paymentLink": "", "academy_name": "", "current_year": 2025}'::jsonb,
+  variables = '{"tutorName": "", "playerList": "<strong>Jugador 1</strong>, <strong>Jugador 2</strong>", "amount": 0, "dueDate": "", "logoUrl": "", "paymentLink": "", "academy_name": "", "current_year": 2025}'::jsonb,
   updated_at = NOW()
 WHERE name = 'payment_reminder';
 
