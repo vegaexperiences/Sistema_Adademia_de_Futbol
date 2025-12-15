@@ -68,7 +68,7 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
       html = html.replace(/\{\{paymentDate\}\}/g, '4 de diciembre de 2025');
       html = html.replace(/\{\{operationId\}\}/g, 'LK-ABC123XYZ');
       html = html.replace(/\{\{monthYear\}\}/g, '');
-      html = html.replace(/\{\{paymentLink\}\}/g, 'https://sistema-adademia-de-futbol-tura.vercel.app/pay?cedula=8-1234-5678');
+      html = html.replace(/\{\{paymentLink\}\}/g, 'https://sistema-adademia-de-futbol-tura.vercel.app/pay?cedula=');
       html = html.replace(/\{\{academy_name\}\}/g, 'Suarez Academy');
       html = html.replace(/\{\{current_year\}\}/g, new Date().getFullYear().toString());
       return html;

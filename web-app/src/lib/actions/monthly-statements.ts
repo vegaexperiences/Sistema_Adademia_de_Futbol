@@ -185,23 +185,27 @@ export async function sendMonthlyStatement(statement: PlayerStatement): Promise<
     const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const monthName = monthDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
     
-    // Queue the email (not immediate, as this is a bulk operation)
+    // Format player list without bullets (just names separated by commas or newlines)
+    const playerList = `<strong>${statement.playerName}</strong>`;
+    
+    // Queue the email using payment_reminder template (not immediate, as this is a bulk operation)
     const emailResult = await queueEmail(
-      'monthly_statement',
+      'payment_reminder',
       statement.tutorEmail,
       {
         tutorName: statement.tutorName,
-        playerName: statement.playerName,
-        monthYear: monthName,
-        monthlyFee: statement.monthlyFee.toFixed(2),
-        amountDue: statement.amountDue.toFixed(2),
-        paymentDueDate: getPaymentDueDate(), // Usually 5 days after payment date
+        playerList: playerList,
+        amount: statement.amountDue.toFixed(2),
+        dueDate: getPaymentDueDate(), // Usually 5 days after payment date
+        paymentLink: paymentLink,
+        academy_name: 'Suarez Academy',
+        current_year: new Date().getFullYear().toString(),
       },
       undefined, // scheduledFor - will be calculated by queueEmail
       {
         player_id: statement.playerId,
         family_id: statement.familyId || undefined,
-        email_type: 'monthly_statement',
+        email_type: 'payment_reminder',
         month_year: statement.monthYear,
       }
     );

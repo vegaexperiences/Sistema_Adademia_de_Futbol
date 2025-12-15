@@ -125,9 +125,9 @@ SET
     <p>Este es un recordatorio amigable sobre el pago pendiente de la mensualidad.</p>
     
     <h2>👥 Jugadores</h2>
-    <ul>
+    <p style="margin-bottom: 15px;">
       {{{playerList}}}
-    </ul>
+    </p>
     
     <div class="amount-box">
       <div class="amount-label">Monto a Pagar</div>
