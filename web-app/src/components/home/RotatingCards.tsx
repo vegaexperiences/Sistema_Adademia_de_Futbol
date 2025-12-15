@@ -20,7 +20,7 @@ const cards: CardData[] = [
     id: 'enrollment',
     title: 'Matrícula',
     description: 'Inscribe a tu hijo/a en Suarez Academy y forma parte de nuestra familia futbolística.',
-    icon: <GraduationCap size={32} />,
+    icon: <GraduationCap size={48} />,
     href: '/enrollment',
     gradient: 'from-yellow-400 via-yellow-500 to-orange-500',
     bgColor: 'bg-gradient-to-br from-yellow-50 to-orange-50',
@@ -30,7 +30,7 @@ const cards: CardData[] = [
     id: 'tournaments',
     title: 'Torneos',
     description: 'Participa en las mejores ligas y torneos para poner a prueba lo aprendido.',
-    icon: <Trophy size={32} />,
+    icon: <Trophy size={48} />,
     href: '/tournaments',
     gradient: 'from-amber-400 via-amber-500 to-amber-600',
     bgColor: 'bg-gradient-to-br from-amber-50 to-yellow-50',
@@ -40,7 +40,7 @@ const cards: CardData[] = [
     id: 'sponsors',
     title: 'Padrinos',
     description: 'Apoya a nuestros jugadores y sé parte del crecimiento de Suarez Academy.',
-    icon: <Heart size={32} />,
+    icon: <Heart size={48} />,
     href: '/sponsors',
     gradient: 'from-pink-400 via-pink-500 to-rose-500',
     bgColor: 'bg-gradient-to-br from-pink-50 to-rose-50',
@@ -50,7 +50,7 @@ const cards: CardData[] = [
     id: 'coaches',
     title: 'Entrenadores Expertos',
     description: 'Nuestro cuerpo técnico cuenta con amplia experiencia en formación de jugadores jóvenes.',
-    icon: <Users size={32} />,
+    icon: <Users size={48} />,
     href: '#',
     gradient: 'from-blue-400 via-blue-500 to-blue-600',
     bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50',
@@ -60,7 +60,7 @@ const cards: CardData[] = [
     id: 'schedule',
     title: 'Horarios Flexibles',
     description: 'Entrenamientos diseñados para no interferir con las actividades escolares.',
-    icon: <Calendar size={32} />,
+    icon: <Calendar size={48} />,
     href: '#',
     gradient: 'from-green-400 via-green-500 to-green-600',
     bgColor: 'bg-gradient-to-br from-green-50 to-emerald-50',
@@ -96,48 +96,41 @@ export function RotatingCards() {
   const visibleCards = getVisibleCards();
 
   return (
-    <section className="py-20 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">¿Por qué elegirnos?</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Ofrecemos una formación integral que va más allá del campo de juego.
-          </p>
-        </div>
-
+    <section className="py-12 lg:py-20 relative overflow-hidden min-h-screen flex items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 mb-8">
           {visibleCards.map((card, idx) => (
             <div
               key={card.id}
-              className={`glass-card p-6 lg:p-8 transition-all duration-500 transform ${
+              className={`glass-card p-8 lg:p-12 transition-all duration-500 transform min-h-[400px] flex flex-col ${
                 idx === 0 ? 'scale-105 z-10 shadow-2xl' : 'scale-100 opacity-90'
               } hover:shadow-xl hover:scale-105`}
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
-              <div className={`w-16 h-16 rounded-xl flex items-center justify-center mb-6 ${card.bgColor} ${card.textColor}`}>
+              <div className={`w-24 h-24 rounded-xl flex items-center justify-center mb-8 ${card.bgColor} ${card.textColor}`}>
                 {card.icon}
               </div>
-              <h3 className={`text-xl font-bold mb-3 ${card.textColor}`}>{card.title}</h3>
-              <p className="text-gray-600 mb-6 text-sm lg:text-base">
+              <h3 className={`text-3xl lg:text-4xl font-bold mb-4 ${card.textColor}`}>{card.title}</h3>
+              <p className="text-gray-600 mb-8 text-base lg:text-lg flex-1">
                 {card.description}
               </p>
               {card.href !== '#' ? (
                 <Link
                   href={card.href}
-                  className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white transition-all duration-300 hover:scale-110 hover:shadow-lg bg-gradient-to-r ${card.gradient}`}
+                  className={`inline-flex items-center gap-2 px-8 py-4 rounded-full font-semibold text-white transition-all duration-300 hover:scale-110 hover:shadow-lg bg-gradient-to-r ${card.gradient} text-lg`}
                 >
                   {card.id === 'enrollment' && 'MATRICÚLATE AHORA'}
                   {card.id === 'tournaments' && 'Ver Torneos'}
                   {card.id === 'sponsors' && 'Ser Padrino'}
                   {card.href === '#' && 'Más Información'}
-                  <ArrowRight size={18} />
+                  <ArrowRight size={20} />
                 </Link>
               ) : (
-                <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-white bg-gradient-to-r ${card.gradient} opacity-75 cursor-default`}>
+                <div className={`inline-flex items-center gap-2 px-8 py-4 rounded-full font-semibold text-white bg-gradient-to-r ${card.gradient} opacity-75 cursor-default text-lg`}>
                   Más Información
-                  <ArrowRight size={18} />
+                  <ArrowRight size={20} />
                 </div>
               )}
             </div>

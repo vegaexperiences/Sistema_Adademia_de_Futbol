@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
-import { Settings, DollarSign, Save, CreditCard, Calendar, Shield, Users, Building2 } from 'lucide-react';
+import { Settings, DollarSign, Save, CreditCard, Calendar, Shield, Users, Building2, Heart } from 'lucide-react';
 import { revalidatePath } from 'next/cache';
 import { PaymentMethodsSettings } from '@/components/settings/PaymentMethodsSettings';
 import { SuperAdminSettings } from '@/components/settings/SuperAdminSettings';
 import { UserManagement } from '@/components/settings/UserManagement';
+import { SponsorManagement } from '@/components/settings/SponsorManagement';
 import { AcademySettingsSelector } from '@/components/settings/AcademySettingsSelector';
 import { BrandingConfig } from '@/components/super-admin/BrandingConfig';
 import { LogoUploader } from '@/components/super-admin/LogoUploader';
@@ -163,6 +164,12 @@ export default async function SettingsPage() {
             className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
           >
             👥 Usuarios
+          </a>
+          <a 
+            href="#sponsor-management" 
+            className="px-4 py-2.5 min-h-[44px] bg-white border border-gray-200 rounded-lg active:bg-gray-50 hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base touch-manipulation text-center"
+          >
+            ❤️ Padrinos
           </a>
           {isSuperAdminUser && (
             <>
