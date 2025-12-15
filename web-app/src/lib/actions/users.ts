@@ -82,21 +82,21 @@ export async function getAllUsers(): Promise<{ data: User[] | null; error: strin
     return { data: null, error: 'Not authenticated' }
   }
   
-  // Check if super admin
+  // Check if super admin or has admin role
   // #region agent log
-  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:55',message:'Before isSuperAdmin check',data:{userId:currentUser.id,userEmail:currentUser.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:55',message:'Before isAdminOrSuperAdmin check',data:{userId:currentUser.id,userEmail:currentUser.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
   // #endregion
-  const isAdmin = await isSuperAdmin(currentUser.id)
+  const isAdmin = await isAdminOrSuperAdmin(currentUser.id)
   // #region agent log
-  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:56',message:'After isSuperAdmin check',data:{userId:currentUser.id,userEmail:currentUser.email,isAdmin},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
+  try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:56',message:'After isAdminOrSuperAdmin check',data:{userId:currentUser.id,userEmail:currentUser.email,isAdmin},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
   // #endregion
-  console.log('[getAllUsers] User:', currentUser.email, 'Is Super Admin:', isAdmin)
+  console.log('[getAllUsers] User:', currentUser.email, 'Is Admin or Super Admin:', isAdmin)
   if (!isAdmin) {
-    console.error('[getAllUsers] User is not super admin:', currentUser.id)
+    console.error('[getAllUsers] User is not admin or super admin:', currentUser.id)
     // #region agent log
-    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:59',message:'User not super admin - returning error',data:{userId:currentUser.id,userEmail:currentUser.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
+    try{const fs=await import('fs');const path=await import('path');const logPath=path.join(process.cwd(),'.cursor','debug.log');fs.appendFileSync(logPath,JSON.stringify({location:'users.ts:59',message:'User not admin or super admin - returning error',data:{userId:currentUser.id,userEmail:currentUser.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})+'\n');}catch(e){}
     // #endregion
-    return { data: null, error: 'Unauthorized: Super admin access required' }
+    return { data: null, error: 'Unauthorized: Admin access required' }
   }
   
   // Get all users from auth
