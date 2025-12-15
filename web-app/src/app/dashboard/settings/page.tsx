@@ -526,6 +526,21 @@ export default async function SettingsPage() {
         <UserManagement currentUserEmail={currentUserEmail} />
       </div>
 
+      {/* Sponsor Management Section */}
+      <div id="sponsor-management" className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg" style={{
+            background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+          }}>
+            <Heart className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            ❤️ Gestión de Padrinos
+          </h2>
+        </div>
+        <SponsorManagement />
+      </div>
+
       {/* Branding Configuration (Super Admin only) */}
       {isSuperAdminUser && (
         <div id="branding" className="glass-card p-6">
