@@ -11,6 +11,7 @@ import { getPlayerCategory, getCategoryColor, calculateAge } from '@/lib/utils/p
 import { PagueloFacilSuccessHandler } from '@/components/payments/PagueloFacilSuccessHandler';
 import { YappySuccessHandler } from '@/components/payments/YappySuccessHandler';
 import { EditablePlayerInfo } from '@/components/players/EditablePlayerInfo';
+import { PaymentCard } from '@/components/payments/PaymentCard';
 
 export default async function PlayerProfilePage({ 
   params 
@@ -206,77 +207,44 @@ export default async function PlayerProfilePage({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Enrollment Payments (Prioritized) */}
-              {enrollmentPayments.map((payment) => {
-                const paymentDate = new Date(payment.payment_date).toLocaleDateString('es-ES');
-                const paymentMethod = payment.method || payment.payment_method || 'N/A';
-                return (
-                  <div key={payment.id} className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border-l-4 border-emerald-500">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="text-xs font-semibold text-gray-700">💰 Matrícula</p>
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">
-                        ${parseFloat(payment.amount.toString()).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-600 mb-3 space-y-1">
-                      <p>📅 {paymentDate}</p>
-                      <p>💳 {paymentMethod}</p>
-                    </div>
-                    <DocumentPreview 
-                      url={payment.proof_url!} 
-                      title={`Comprobante Matrícula - ${paymentDate}`} 
-                    />
-                  </div>
-                );
-              })}
+              {enrollmentPayments.map((payment) => (
+                <PaymentCard
+                  key={payment.id}
+                  payment={payment}
+                  title="💰 Matrícula"
+                  bgColor="from-emerald-50 to-green-50"
+                  borderColor="border-emerald-500"
+                  amountBgColor="bg-emerald-100"
+                  amountTextColor="text-emerald-700"
+                />
+              ))}
 
               {/* Monthly Payments */}
-              {monthlyPayments.map((payment) => {
-                const paymentDate = new Date(payment.payment_date).toLocaleDateString('es-ES');
-                const paymentMethod = payment.method || payment.payment_method || 'N/A';
-                const monthYear = payment.month_year || paymentDate;
-                return (
-                  <div key={payment.id} className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-500">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="text-xs font-semibold text-gray-700">📆 Mensualidad</p>
-                      <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded">
-                        ${parseFloat(payment.amount.toString()).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-600 mb-3 space-y-1">
-                      <p>📅 {paymentDate}</p>
-                      <p>📆 {monthYear}</p>
-                      <p>💳 {paymentMethod}</p>
-                    </div>
-                    <DocumentPreview 
-                      url={payment.proof_url!} 
-                      title={`Comprobante Mensualidad - ${monthYear}`} 
-                    />
-                  </div>
-                );
-              })}
+              {monthlyPayments.map((payment) => (
+                <PaymentCard
+                  key={payment.id}
+                  payment={payment}
+                  title="📆 Mensualidad"
+                  bgColor="from-blue-50 to-indigo-50"
+                  borderColor="border-blue-500"
+                  amountBgColor="bg-blue-100"
+                  amountTextColor="text-blue-700"
+                />
+              ))}
 
               {/* Other Payments */}
               {otherPayments.map((payment) => {
-                const paymentDate = new Date(payment.payment_date).toLocaleDateString('es-ES');
-                const paymentMethod = payment.method || payment.payment_method || 'N/A';
                 const paymentType = payment.type || payment.payment_type || 'Otro';
                 return (
-                  <div key={payment.id} className="bg-gradient-to-br from-slate-50 to-gray-50 p-4 rounded-xl border-l-4 border-slate-500">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="text-xs font-semibold text-gray-700">💵 {paymentType}</p>
-                      <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">
-                        ${parseFloat(payment.amount.toString()).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-600 mb-3 space-y-1">
-                      <p>📅 {paymentDate}</p>
-                      <p>💳 {paymentMethod}</p>
-                    </div>
-                    <DocumentPreview 
-                      url={payment.proof_url!} 
-                      title={`Comprobante ${paymentType} - ${paymentDate}`} 
-                    />
-                  </div>
+                  <PaymentCard
+                    key={payment.id}
+                    payment={payment}
+                    title={`💵 ${paymentType}`}
+                    bgColor="from-slate-50 to-gray-50"
+                    borderColor="border-slate-500"
+                    amountBgColor="bg-slate-100"
+                    amountTextColor="text-slate-700"
+                  />
                 );
               })}
             </div>
