@@ -415,9 +415,22 @@ export async function createUser(
   }
 
   try {
+    // Create admin client with SERVICE_ROLE_KEY for admin operations
+    let adminSupabase = supabase
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+      adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      console.log('[createUser] Using admin client with SERVICE_ROLE_KEY')
+    } else {
+      console.warn('[createUser] SERVICE_ROLE_KEY not available, using regular client (may fail)')
+    }
+
     // Create user using Supabase Admin API
     console.log('[createUser] Attempting to create user:', email)
-    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+    const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true, // Auto-confirm email
