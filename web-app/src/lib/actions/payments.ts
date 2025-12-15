@@ -683,14 +683,13 @@ export async function updatePaymentAmount(
   let paymentQuery = supabase
     .from('payments')
     .select('id, amount, player_id, academy_id')
-    .eq('id', paymentId)
-    .single();
+    .eq('id', paymentId);
 
   if (academyId) {
     paymentQuery = paymentQuery.eq('academy_id', academyId);
   }
 
-  const { data: existingPayment, error: fetchError } = await paymentQuery;
+  const { data: existingPayment, error: fetchError } = await paymentQuery.single();
 
   if (fetchError || !existingPayment) {
     console.error('[updatePaymentAmount] Payment not found:', {
