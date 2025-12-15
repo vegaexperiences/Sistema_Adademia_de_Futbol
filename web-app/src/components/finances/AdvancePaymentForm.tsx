@@ -51,14 +51,15 @@ export function AdvancePaymentForm({ onClose, onSuccess }: AdvancePaymentFormPro
     setPlayers([]);
 
     try {
-      const result = await getPlayers();
-      if (result.error) {
-        setError(result.error);
+      const playersData = await getPlayers();
+      
+      if (!playersData || playersData.length === 0) {
+        setError('No se encontraron jugadores');
         return;
       }
 
       const search = searchTerm.toLowerCase().trim();
-      const filtered = (result.data || []).filter((player: Player) => {
+      const filtered = playersData.filter((player: Player) => {
         const fullName = `${player.first_name} ${player.last_name}`.toLowerCase();
         const cedula = player.cedula?.toLowerCase() || '';
         return (
