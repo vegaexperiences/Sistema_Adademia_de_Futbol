@@ -36,22 +36,22 @@ export function SponsorCard({ sponsor }: SponsorCardProps) {
       <div className="flex-1 flex flex-col">
         <h3 className="text-2xl font-bold text-gray-900 mb-2">{sponsor.name}</h3>
         
-        {sponsor.description && (
-          <p className="text-gray-600 mb-4 text-sm lg:text-base flex-1">
-            {sponsor.description}
-          </p>
-        )}
-
-        {/* Price */}
+        {/* Price - Fixed position at top */}
         <div className="mb-4">
           <span className="text-3xl font-extrabold text-gray-900">
             ${sponsor.amount.toFixed(2)}
           </span>
         </div>
+        
+        {sponsor.description && (
+          <p className="text-gray-600 mb-4 text-sm lg:text-base line-clamp-3">
+            {sponsor.description}
+          </p>
+        )}
 
         {/* Benefits */}
         {sponsor.benefits && sponsor.benefits.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6 flex-1">
             <h4 className="text-sm font-semibold text-gray-700 mb-2">Beneficios incluidos:</h4>
             <ul className="space-y-2">
               {sponsor.benefits.map((benefit, index) => (
