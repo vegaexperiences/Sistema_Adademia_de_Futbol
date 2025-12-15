@@ -116,7 +116,7 @@ export async function getPlayersDueForStatement(): Promise<PlayerStatement[]> {
       playerName: `${player.first_name} ${player.last_name}`,
       tutorEmail: family.tutor_email,
       tutorName: family.tutor_name || 'Familia',
-      tutorCedula: family.tutor_cedula || null,
+      tutorCedula: (family as any).tutor_cedula || null,
       familyId: player.family_id,
       monthlyFee,
       amountDue,
