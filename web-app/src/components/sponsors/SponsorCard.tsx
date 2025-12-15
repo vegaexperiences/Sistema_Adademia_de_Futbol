@@ -34,13 +34,14 @@ export function SponsorCard({ sponsor }: SponsorCardProps) {
 
       {/* Content */}
       <div className="flex-1 flex flex-col">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">{sponsor.name}</h3>
-        
-        {/* Price - Fixed position at top */}
-        <div className="mb-4">
-          <span className="text-3xl font-extrabold text-gray-900">
-            ${sponsor.amount.toFixed(2)}
-          </span>
+        {/* Title and Price - Fixed height container */}
+        <div className="min-h-[100px] mb-4">
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">{sponsor.name}</h3>
+          <div>
+            <span className="text-3xl font-extrabold text-gray-900">
+              ${sponsor.amount.toFixed(2)}
+            </span>
+          </div>
         </div>
         
         {sponsor.description && (
