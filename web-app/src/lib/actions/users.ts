@@ -58,7 +58,7 @@ async function isAdminOrSuperAdmin(userId: string, academyId?: string): Promise<
 }
 
 /**
- * Get all users (super admin only)
+ * Get all users (super admin or admin role)
  */
 export async function getAllUsers(): Promise<{ data: User[] | null; error: string | null }> {
   // #region agent log
@@ -401,7 +401,7 @@ export async function removeRoleFromUser(
  * Get effective permissions for a user in a specific academy
  */
 /**
- * Create a new user (super admin only)
+ * Create a new user (super admin or admin role)
  */
 export async function createUser(
   email: string,
@@ -575,7 +575,7 @@ export async function getRolePermissions(roleId: string): Promise<{ data: Permis
 }
 
 /**
- * Reset user password by sending recovery email (super admin only)
+ * Reset user password by sending recovery email (super admin or admin role)
  */
 export async function resetUserPassword(userId: string): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient()
@@ -653,7 +653,7 @@ export async function resetUserPassword(userId: string): Promise<{ success: bool
 }
 
 /**
- * Update user password directly (super admin only)
+ * Update user password directly (super admin or admin role)
  */
 export async function updateUserPassword(
   userId: string,
@@ -729,7 +729,7 @@ export async function setUserPassword(
 }
 
 /**
- * Delete user (super admin only)
+ * Delete user (super admin or admin role)
  */
 export async function deleteUser(userId: string): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient()
