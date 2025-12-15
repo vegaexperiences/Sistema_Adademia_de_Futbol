@@ -10,7 +10,7 @@ interface SponsorLevelsGridProps {
 export function SponsorLevelsGrid({ sponsors }: SponsorLevelsGridProps) {
   if (!sponsors || sponsors.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 bg-white rounded-lg border border-gray-200 p-8">
         <p className="text-gray-600 text-lg">
           No hay niveles de padrinazgo disponibles en este momento.
         </p>

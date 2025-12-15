@@ -11,7 +11,7 @@ interface SponsorCardProps {
 
 export function SponsorCard({ sponsor }: SponsorCardProps) {
   return (
-    <div className="glass-card p-6 lg:p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 flex flex-col h-full">
+    <div className="bg-white border border-gray-200 rounded-lg p-6 lg:p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 flex flex-col h-full">
       {/* Image */}
       {sponsor.image_url && (
         <div className="relative w-full h-48 mb-6 rounded-lg overflow-hidden">
@@ -27,7 +27,7 @@ export function SponsorCard({ sponsor }: SponsorCardProps) {
 
       {/* Icon if no image */}
       {!sponsor.image_url && (
-        <div className="w-16 h-16 bg-gradient-to-br from-pink-100 to-rose-100 rounded-xl flex items-center justify-center text-pink-600 mb-6">
+        <div className="w-16 h-16 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center text-gray-700 mb-6 shadow-sm">
           <Heart size={32} />
         </div>
       )}
@@ -44,7 +44,7 @@ export function SponsorCard({ sponsor }: SponsorCardProps) {
 
         {/* Price */}
         <div className="mb-4">
-          <span className="text-3xl font-extrabold text-pink-600">
+          <span className="text-3xl font-extrabold text-gray-900">
             ${sponsor.amount.toFixed(2)}
           </span>
         </div>
@@ -56,7 +56,7 @@ export function SponsorCard({ sponsor }: SponsorCardProps) {
             <ul className="space-y-2">
               {sponsor.benefits.map((benefit, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                  <span className="text-pink-500 mt-1">✓</span>
+                  <span className="text-gray-700 mt-1 font-bold">✓</span>
                   <span>{benefit}</span>
                 </li>
               ))}
@@ -67,7 +67,7 @@ export function SponsorCard({ sponsor }: SponsorCardProps) {
         {/* CTA Button */}
         <Link
           href={`/sponsors/checkout/${sponsor.id}`}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-pink-500 via-pink-600 to-rose-600 hover:from-pink-600 hover:to-rose-700 transition-all duration-300 hover:scale-110 hover:shadow-lg mt-auto"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-all duration-300 hover:scale-110 hover:shadow-lg mt-auto"
         >
           Ser Padrino
           <ArrowRight size={18} />
