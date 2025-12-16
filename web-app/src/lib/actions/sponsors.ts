@@ -797,3 +797,76 @@ export async function toggleSponsorActive(
   return { success: true, error: null };
 }
 
+/**
+ * Get or create the default "Donación Abierta" sponsor level for open donations
+ * This level is used for all open donations where users can specify any amount >= $1
+ */
+export async function getOrCreateOpenDonationSponsorLevel(): Promise<{ data: Sponsor | null; error: string | null }> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  if (!academyId) {
+    return { data: null, error: 'No academy context found' };
+  }
+
+  // Try to find existing "Donación Abierta" level
+  let query = supabase
+    .from('sponsors')
+    .select('*')
+    .eq('name', 'Donación Abierta')
+    .eq('academy_id', academyId)
+    .maybeSingle();
+
+  const { data: existing, error: findError } = await query;
+
+  if (findError && findError.code !== 'PGRST116') { // PGRST116 = no rows returned
+    console.error('[getOrCreateOpenDonationSponsorLevel] Error finding sponsor:', findError);
+    return { data: null, error: findError.message };
+  }
+
+  // If found, return it
+  if (existing) {
+    return { 
+      data: {
+        ...existing,
+        benefits: Array.isArray(existing.benefits) ? existing.benefits : [],
+      }, 
+      error: null 
+    };
+  }
+
+  // If not found, create it
+  const sponsorData = {
+    name: 'Donación Abierta',
+    description: 'Donación libre de padrino - monto a definir por el donante',
+    amount: 1, // Minimum amount, actual amount is stored in payment
+    benefits: [],
+    display_order: 9999, // Put it at the end
+    image_url: null,
+    is_active: true,
+    academy_id: academyId,
+  };
+
+  const { data: newSponsor, error: createError } = await supabase
+    .from('sponsors')
+    .insert(sponsorData)
+    .select()
+    .single();
+
+  if (createError) {
+    console.error('[getOrCreateOpenDonationSponsorLevel] Error creating sponsor:', createError);
+    return { data: null, error: createError.message };
+  }
+
+  revalidatePath('/sponsors');
+  revalidatePath('/dashboard/settings');
+
+  return { 
+    data: {
+      ...newSponsor,
+      benefits: Array.isArray(newSponsor.benefits) ? newSponsor.benefits : [],
+    }, 
+    error: null 
+  };
+}
+

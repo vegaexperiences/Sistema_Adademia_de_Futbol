@@ -14,6 +14,8 @@ export interface PlayerStatement {
   monthlyFee: number;
   amountDue: number;
   monthYear: string; // Format: 'YYYY-MM'
+  lateFees?: number; // Total late fees for this month
+  lateFeesBreakdown?: Array<{ monthYear: string; amount: number }>; // Breakdown by month
 }
 
 /**
@@ -111,6 +113,21 @@ export async function getPlayersDueForStatement(): Promise<PlayerStatement[]> {
     // Calculate amount due (monthly fee minus any payments made for this month)
     const amountDue = await calculateAmountDue(player.id, monthYear, monthlyFee);
     
+    // Get late fees for this player
+    const { getPlayerLateFees } = await import('./late-fees');
+    const lateFees = await getPlayerLateFees(player.id);
+    const lateFeesForMonth = lateFees
+      .filter(fee => fee.month_year === monthYear)
+      .reduce((sum, fee) => sum + fee.late_fee_amount, 0);
+    
+    // Get late fees breakdown (all overdue months with late fees)
+    const lateFeesBreakdown = lateFees
+      .filter(fee => fee.late_fee_amount > 0)
+      .map(fee => ({
+        monthYear: fee.month_year || '',
+        amount: fee.late_fee_amount,
+      }));
+    
     statements.push({
       playerId: player.id,
       playerName: `${player.first_name} ${player.last_name}`,
@@ -121,6 +138,8 @@ export async function getPlayersDueForStatement(): Promise<PlayerStatement[]> {
       monthlyFee,
       amountDue,
       monthYear,
+      lateFees: lateFeesForMonth,
+      lateFeesBreakdown,
     });
   }
   
@@ -131,7 +150,7 @@ export async function getPlayersDueForStatement(): Promise<PlayerStatement[]> {
 
 /**
  * Calculate amount due for a player for a specific month
- * Returns monthly fee minus any payments already made for that month
+ * Returns monthly fee plus late fees minus any payments already made for that month
  */
 async function calculateAmountDue(playerId: string, monthYear: string, monthlyFee: number): Promise<number> {
   const supabase = await createClient();
@@ -149,8 +168,15 @@ async function calculateAmountDue(playerId: string, monthYear: string, monthlyFe
     .filter(p => !p.status || p.status === 'Approved')
     .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
   
-  // Amount due is monthly fee minus what was paid
-  const amountDue = Math.max(0, monthlyFee - totalPaid);
+  // Get late fees for this month
+  const { getPlayerLateFees } = await import('./late-fees');
+  const lateFees = await getPlayerLateFees(playerId);
+  const lateFeesForMonth = lateFees
+    .filter(fee => fee.month_year === monthYear)
+    .reduce((sum, fee) => sum + fee.late_fee_amount, 0);
+  
+  // Amount due is monthly fee plus late fees minus what was paid
+  const amountDue = Math.max(0, monthlyFee + lateFeesForMonth - totalPaid);
   
   return amountDue;
 }
@@ -188,6 +214,24 @@ export async function sendMonthlyStatement(statement: PlayerStatement): Promise<
     // Format player list without bullets (just names separated by commas or newlines)
     const playerList = `<strong>${statement.playerName}</strong>`;
     
+    // Build late fees breakdown text if there are late fees
+    let lateFeesText = '';
+    if (statement.lateFees && statement.lateFees > 0) {
+      if (statement.lateFeesBreakdown && statement.lateFeesBreakdown.length > 0) {
+        const breakdownItems = statement.lateFeesBreakdown
+          .map(fee => {
+            const [year, month] = fee.monthYear.split('-');
+            const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+            const monthName = monthDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            return `${monthName}: $${fee.amount.toFixed(2)}`;
+          })
+          .join('\n');
+        lateFeesText = `\n\nRecargos por pagos atrasados:\n${breakdownItems}\nTotal de recargos: $${statement.lateFees.toFixed(2)}`;
+      } else {
+        lateFeesText = `\n\nRecargos por pagos atrasados: $${statement.lateFees.toFixed(2)}`;
+      }
+    }
+    
     // Queue the email using payment_reminder template (not immediate, as this is a bulk operation)
     const emailResult = await queueEmail(
       'payment_reminder',
@@ -200,6 +244,8 @@ export async function sendMonthlyStatement(statement: PlayerStatement): Promise<
         paymentLink: paymentLink,
         academy_name: 'Suarez Academy',
         current_year: new Date().getFullYear().toString(),
+        lateFees: lateFeesText, // Add late fees information
+        monthlyFee: statement.monthlyFee.toFixed(2), // Add monthly fee breakdown
       },
       undefined, // scheduledFor - will be calculated by queueEmail
       {

@@ -362,6 +362,79 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle sponsor payments (including open donations)
+    if (isApproved && type === 'sponsor' && amount) {
+      try {
+        console.log('[Yappy Callback] Processing sponsor payment...');
+        const supabase = await createClient();
+        const { getOrCreateOpenDonationSponsorLevel, createSponsorRegistration } = await import('@/lib/actions/sponsors');
+        
+        const isOpenDonation = metadata.isOpenDonation === true || metadata.isOpenDonation === 'true' || body.isOpenDonation === true || body.isOpenDonation === 'true';
+        const paymentAmount = parseFloat(amount);
+        
+        let sponsorLevelId = sponsorId;
+        
+        // If it's an open donation, get or create the open donation sponsor level
+        if (isOpenDonation) {
+          console.log('[Yappy Callback] Processing open donation...');
+          const openDonationLevel = await getOrCreateOpenDonationSponsorLevel();
+          if (openDonationLevel.error || !openDonationLevel.data) {
+            console.error('[Yappy Callback] Error getting open donation level:', openDonationLevel.error);
+          } else {
+            sponsorLevelId = openDonationLevel.data.id;
+            console.log('[Yappy Callback] Using open donation level:', sponsorLevelId);
+          }
+        }
+        
+        // Create sponsor registration if we have sponsor data
+        if (sponsorName && sponsorLevelId) {
+          const registrationResult = await createSponsorRegistration({
+            sponsor_id: sponsorLevelId,
+            sponsor_name: sponsorName,
+            sponsor_email: sponsorEmail || undefined,
+            sponsor_phone: undefined,
+            sponsor_cedula: sponsorCedula || undefined,
+            sponsor_company: metadata.sponsor_company || body.sponsor_company || undefined,
+            sponsor_ruc: metadata.sponsor_ruc || body.sponsor_ruc || undefined,
+          });
+          
+          if (registrationResult.error) {
+            console.error('[Yappy Callback] Error creating sponsor registration:', registrationResult.error);
+          } else {
+            console.log('[Yappy Callback] ✅ Sponsor registration created:', registrationResult.data?.id);
+          }
+        }
+        
+        // Create payment
+        const paymentData = {
+          amount: paymentAmount,
+          type: 'sponsor' as const,
+          method: 'yappy' as const,
+          payment_date: new Date().toISOString().split('T')[0],
+          status: 'Approved' as const,
+          notes: `Donación de padrino procesada con Yappy. Orden: ${callbackParams.orderId || 'N/A'}. Transacción: ${callbackParams.transactionId || 'N/A'}. ${sponsorName ? `Padrino: ${sponsorName}` : ''}`,
+          sponsor_id: sponsorLevelId || undefined,
+        };
+        
+        const { data: createdPayment, error: paymentError } = await supabase
+          .from('payments')
+          .insert(paymentData)
+          .select()
+          .single();
+        
+        if (paymentError) {
+          console.error('[Yappy Callback] Error creating sponsor payment:', paymentError);
+        } else {
+          console.log('[Yappy Callback] ✅ Sponsor payment created:', createdPayment?.id);
+          revalidatePath('/sponsors');
+          revalidatePath('/dashboard/finances');
+        }
+      } catch (sponsorError: any) {
+        console.error('[Yappy Callback] Error handling sponsor payment:', sponsorError);
+        // Don't throw - continue with response
+      }
+    }
+
     if (isApproved && type === 'payment' && playerId && amount) {
       try {
         console.log('[Yappy Callback] Attempting to create payment record...');
@@ -514,11 +587,17 @@ export async function POST(request: NextRequest) {
 
     // Build redirect URL
     let redirectUrl: string;
+    const isOpenDonation = metadata.isOpenDonation === true || metadata.isOpenDonation === 'true' || body.isOpenDonation === true || body.isOpenDonation === 'true';
+    
     if (isApproved) {
       if (type === 'enrollment') {
         redirectUrl = `${baseUrl}/enrollment/success?yappy=success&orderId=${callbackParams.orderId}&amount=${amount}`;
       } else if (type === 'payment' && playerId) {
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=success&orderId=${callbackParams.orderId}`;
+      } else if (type === 'sponsor') {
+        redirectUrl = isOpenDonation 
+          ? `${baseUrl}/sponsors?yappy=success&orderId=${callbackParams.orderId}`
+          : `${baseUrl}/sponsors/checkout/${sponsorId}?yappy=success&orderId=${callbackParams.orderId}`;
       } else {
         redirectUrl = `${baseUrl}/dashboard/finances?yappy=success&orderId=${callbackParams.orderId}&amount=${amount}`;
       }
@@ -526,7 +605,9 @@ export async function POST(request: NextRequest) {
       if (type === 'enrollment') {
         redirectUrl = `${baseUrl}/enrollment?yappy=failed&orderId=${callbackParams.orderId}`;
       } else if (type === 'sponsor') {
-        redirectUrl = `${baseUrl}/sponsors/checkout/${sponsorId}?yappy=failed&orderId=${callbackParams.orderId}`;
+        redirectUrl = isOpenDonation
+          ? `${baseUrl}/sponsors?yappy=failed&orderId=${callbackParams.orderId}`
+          : `${baseUrl}/sponsors/checkout/${sponsorId}?yappy=failed&orderId=${callbackParams.orderId}`;
       } else if (type === 'payment' && playerId) {
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=failed&orderId=${callbackParams.orderId}`;
       } else {
@@ -1156,6 +1237,83 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Handle sponsor payments (including open donations) - GET callback
+    if (isApproved && type === 'sponsor' && finalAmount) {
+      try {
+        console.log('[Yappy Callback] Processing sponsor payment from GET callback...');
+        const supabase = await createClient();
+        const { getOrCreateOpenDonationSponsorLevel, createSponsorRegistration } = await import('@/lib/actions/sponsors');
+        
+        const isOpenDonation = searchParams.get('isOpenDonation') === 'true';
+        const paymentAmount = parseFloat(finalAmount);
+        const sponsorIdFromParams = searchParams.get('sponsorId') || searchParams.get('sponsor_id') || '';
+        const sponsorNameFromParams = searchParams.get('sponsorName') || searchParams.get('sponsor_name') || '';
+        const sponsorEmailFromParams = searchParams.get('sponsorEmail') || searchParams.get('sponsor_email') || '';
+        const sponsorCedulaFromParams = searchParams.get('sponsorCedula') || searchParams.get('sponsor_cedula') || '';
+        
+        let sponsorLevelId = sponsorIdFromParams;
+        
+        // If it's an open donation, get or create the open donation sponsor level
+        if (isOpenDonation) {
+          console.log('[Yappy Callback] Processing open donation from GET...');
+          const openDonationLevel = await getOrCreateOpenDonationSponsorLevel();
+          if (openDonationLevel.error || !openDonationLevel.data) {
+            console.error('[Yappy Callback] Error getting open donation level:', openDonationLevel.error);
+          } else {
+            sponsorLevelId = openDonationLevel.data.id;
+            console.log('[Yappy Callback] Using open donation level:', sponsorLevelId);
+          }
+        }
+        
+        // Create sponsor registration if we have sponsor data
+        if (sponsorNameFromParams && sponsorLevelId) {
+          const registrationResult = await createSponsorRegistration({
+            sponsor_id: sponsorLevelId,
+            sponsor_name: sponsorNameFromParams,
+            sponsor_email: sponsorEmailFromParams || undefined,
+            sponsor_phone: undefined,
+            sponsor_cedula: sponsorCedulaFromParams || undefined,
+            sponsor_company: searchParams.get('sponsorCompany') || searchParams.get('sponsor_company') || undefined,
+            sponsor_ruc: searchParams.get('sponsorRuc') || searchParams.get('sponsor_ruc') || undefined,
+          });
+          
+          if (registrationResult.error) {
+            console.error('[Yappy Callback] Error creating sponsor registration:', registrationResult.error);
+          } else {
+            console.log('[Yappy Callback] ✅ Sponsor registration created:', registrationResult.data?.id);
+          }
+        }
+        
+        // Create payment
+        const paymentData = {
+          amount: paymentAmount,
+          type: 'sponsor' as const,
+          method: 'yappy' as const,
+          payment_date: new Date().toISOString().split('T')[0],
+          status: 'Approved' as const,
+          notes: `Donación de padrino procesada con Yappy. Orden: ${orderId || 'N/A'}. Transacción: ${confirmationNumber || 'N/A'}. ${sponsorNameFromParams ? `Padrino: ${sponsorNameFromParams}` : ''}`,
+          sponsor_id: sponsorLevelId || undefined,
+        };
+        
+        const { data: createdPayment, error: paymentError } = await supabase
+          .from('payments')
+          .insert(paymentData)
+          .select()
+          .single();
+        
+        if (paymentError) {
+          console.error('[Yappy Callback] Error creating sponsor payment:', paymentError);
+        } else {
+          console.log('[Yappy Callback] ✅ Sponsor payment created:', createdPayment?.id);
+          revalidatePath('/sponsors');
+          revalidatePath('/dashboard/finances');
+        }
+      } catch (sponsorError: any) {
+        console.error('[Yappy Callback] Error handling sponsor payment (GET):', sponsorError);
+        // Don't throw - continue with response
+      }
+    }
+
     if (shouldCreatePayment) {
       try {
         console.log('[Yappy Callback] Attempting to create payment record from GET callback...');
@@ -1280,11 +1438,18 @@ export async function GET(request: NextRequest) {
 
     // Build redirect URL
     let redirectUrl: string;
+    const isOpenDonation = searchParams.get('isOpenDonation') === 'true';
+    const sponsorIdFromParams = searchParams.get('sponsorId') || searchParams.get('sponsor_id') || '';
+    
     if (isApproved) {
       if (type === 'enrollment') {
         redirectUrl = `${baseUrl}/enrollment/success?yappy=success&orderId=${orderId}&amount=${finalAmount || amount}`;
       } else if (type === 'payment' && playerId) {
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=success&orderId=${orderId}&amount=${finalAmount || amount}`;
+      } else if (type === 'sponsor') {
+        redirectUrl = isOpenDonation
+          ? `${baseUrl}/sponsors?yappy=success&orderId=${orderId}`
+          : `${baseUrl}/sponsors/checkout/${sponsorIdFromParams}?yappy=success&orderId=${orderId}`;
       } else {
         redirectUrl = `${baseUrl}/dashboard/finances?yappy=success&orderId=${orderId}&amount=${finalAmount || amount}`;
       }
@@ -1292,10 +1457,9 @@ export async function GET(request: NextRequest) {
       if (type === 'enrollment') {
         redirectUrl = `${baseUrl}/enrollment?yappy=failed&orderId=${orderId}`;
       } else if (type === 'sponsor') {
-        const sponsorId = searchParams.get('sponsorId') || searchParams.get('sponsor_id') || '';
-        redirectUrl = sponsorId 
-          ? `${baseUrl}/sponsors/checkout/${sponsorId}?yappy=failed&orderId=${orderId}`
-          : `${baseUrl}/sponsors?yappy=failed&orderId=${orderId}`;
+        redirectUrl = isOpenDonation
+          ? `${baseUrl}/sponsors?yappy=failed&orderId=${orderId}`
+          : `${baseUrl}/sponsors/checkout/${sponsorIdFromParams}?yappy=failed&orderId=${orderId}`;
       } else if (type === 'payment' && playerId) {
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?yappy=failed&orderId=${orderId}`;
       } else {

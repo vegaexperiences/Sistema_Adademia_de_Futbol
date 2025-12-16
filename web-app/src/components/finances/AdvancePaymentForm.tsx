@@ -168,33 +168,25 @@ export function AdvancePaymentForm({ onClose, onSuccess }: AdvancePaymentFormPro
   const selectedPlayer = players.find(p => p.id === selectedPlayerId);
 
   return (
-    <div 
-      className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Pago Adelantado a Jugador</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Crea un pago adelantado que se aplicará como crédito para futuros cargos
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
+    <div className="glass-card p-6 animate-fade-in w-full">
+      {/* Header */}
+      <div className="mb-6 pb-4 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Pago Adelantado a Jugador</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Crea un pago adelantado que se aplicará como crédito para futuros cargos
+          </p>
         </div>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <X className="h-5 w-5 text-gray-600" />
+        </button>
+      </div>
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      {/* Content */}
+      <form onSubmit={handleSubmit} className="space-y-6">
           {success && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
               <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0" />
@@ -432,7 +424,6 @@ export function AdvancePaymentForm({ onClose, onSuccess }: AdvancePaymentFormPro
             </button>
           </div>
         </form>
-      </div>
     </div>
   );
 }

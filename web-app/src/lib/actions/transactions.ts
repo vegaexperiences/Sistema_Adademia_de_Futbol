@@ -101,7 +101,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
         sponsor_cedula
       )
     `)
-    .or('player_id.not.is.null,sponsor_id.not.is.null') // Include payments with player_id OR sponsor_id
+    .or('player_id.not.is.null,sponsor_id.not.is.null,and(type.eq.custom,player_id.is.null)') // Include payments with player_id OR sponsor_id OR external incomes
     .gt('amount', 0) // Only include payments with amount > 0
     .neq('status', 'Rejected')
     .neq('status', 'Cancelled');
@@ -261,13 +261,15 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
   }
 
   // Get staff payments (outgoing)
+  // First get staff payments, then filter by academy through staff relationship
   let staffPaymentsQuery = supabase
     .from('staff_payments')
     .select(`
       id,
       amount,
       payment_date,
-      staff(first_name, last_name, position)
+      staff_id,
+      staff(first_name, last_name, role, academy_id)
     `);
 
   if (filter.startDate) {
@@ -280,7 +282,14 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
   const { data: staffPayments, error: staffPaymentsError } = await staffPaymentsQuery.order('payment_date', { ascending: false });
 
   if (staffPaymentsError) {
-    console.error('[getTransactions] Error fetching staff payments:', staffPaymentsError);
+    console.error('[getTransactions] Error fetching staff payments:', {
+      error: staffPaymentsError,
+      message: staffPaymentsError.message,
+      code: staffPaymentsError.code,
+      details: staffPaymentsError.details,
+      hint: staffPaymentsError.hint,
+    });
+    // Continue without staff payments rather than failing completely
   } else if (staffPayments) {
     staffPayments.forEach((staffPayment) => {
       // Filter out staff payments with amount 0 or less
@@ -289,9 +298,16 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
         return; // Skip this staff payment
       }
 
+      // Get staff info - handle both array and single object responses
       const staff = Array.isArray(staffPayment.staff) ? staffPayment.staff[0] : staffPayment.staff;
+      
+      // Filter by academy_id if staff has academy_id field
+      if (staff && (staff as any).academy_id && (staff as any).academy_id !== academyId) {
+        return; // Skip staff payments from other academies
+      }
+
       const description = staff 
-        ? `Nómina - ${staff.first_name} ${staff.last_name}${staff.position ? ` (${staff.position})` : ''}`
+        ? `Nómina - ${staff.first_name} ${staff.last_name}${(staff as any).role ? ` (${(staff as any).role})` : ''}`
         : 'Nómina';
 
       // Only include if type filter allows expense or is 'all'
@@ -359,8 +375,8 @@ export async function getBalance(startDate?: string, endDate?: string): Promise<
   // Get all income (approved payments) - include both player payments and sponsor payments
   let paymentsQuery = supabase
     .from('payments')
-    .select('amount, status')
-    .or('player_id.not.is.null,sponsor_id.not.is.null') // Include payments with player_id OR sponsor_id
+    .select('amount, status, player_id, type')
+    .or('player_id.not.is.null,sponsor_id.not.is.null,and(type.eq.custom,player_id.is.null)') // Include payments with player_id OR sponsor_id OR external incomes
     .neq('status', 'Rejected')
     .neq('status', 'Cancelled')
     .gte('payment_date', defaultStart)
@@ -370,8 +386,18 @@ export async function getBalance(startDate?: string, endDate?: string): Promise<
   const { data: payments } = await paymentsQuery;
 
   const validPayments = (payments || []).filter(p => {
-    if (!p.status || p.status === '') return true;
-    return p.status === 'Approved' || p.status === 'Pending';
+    // Status check
+    if (!p.status || p.status === '') {
+      // For backward compatibility, check if it's a valid payment type
+      const isPlayerPayment = p.player_id !== null;
+      const isExternalIncome = p.player_id === null && p.type === 'custom';
+      return isPlayerPayment || isExternalIncome;
+    }
+    const hasValidStatus = p.status === 'Approved' || p.status === 'Pending';
+    // Include player payments OR external incomes
+    const isPlayerPayment = p.player_id !== null;
+    const isExternalIncome = p.player_id === null && p.type === 'custom';
+    return hasValidStatus && (isPlayerPayment || isExternalIncome);
   });
 
   const totalIncome = validPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);

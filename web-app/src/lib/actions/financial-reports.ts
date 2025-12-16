@@ -30,11 +30,11 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
   
   // Get all payments and expenses for the year in parallel
   // Only approved payments - rejections are not real payments
-  const [paymentsResult, expensesResult, staffResult] = await Promise.all([
+  // Include external incomes (player_id = null, type = 'custom') and player payments
+  const [paymentsResult, expensesResult, staffResult, lateFeesResult] = await Promise.all([
     supabase
       .from('payments')
-      .select('amount, payment_date, status')
-      .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
+      .select('amount, payment_date, status, player_id, type')
       .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
       .gte('payment_date', startDate)
       .lte('payment_date', endDate)
@@ -49,7 +49,13 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
       .from('staff_payments')
       .select('amount, payment_date')
       .gte('payment_date', startDate)
-      .lte('payment_date', endDate)
+      .lte('payment_date', endDate),
+    supabase
+      .from('late_fees')
+      .select('late_fee_amount, applied_at')
+      .gte('applied_at', startDate)
+      .lte('applied_at', endDate)
+      .eq('academy_id', academyId)
   ]);
   
   // Group by month in JavaScript
@@ -59,6 +65,7 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
     
     // Calculate income for this month
     // Filter by status if it exists, otherwise include all payments (for backward compatibility)
+    // Include player payments (player_id not null) OR external incomes (player_id null and type = 'custom')
     const income = (paymentsResult.data || [])
       .filter(p => {
         const date = new Date(p.payment_date);
@@ -66,9 +73,22 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
         // If status field exists, only include 'Approved' payments
         // If status doesn't exist (before migration), include all payments
         const hasValidStatus = !p.status || p.status === 'Approved';
-        return isInMonth && hasValidStatus;
+        // Include player payments OR external incomes (player_id null and type custom)
+        const isPlayerPayment = p.player_id !== null;
+        const isExternalIncome = p.player_id === null && p.type === 'custom';
+        return isInMonth && hasValidStatus && (isPlayerPayment || isExternalIncome);
       })
       .reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+    
+    // Add late fees income for this month
+    const lateFeesIncome = (lateFeesResult.data || [])
+      .filter(fee => {
+        const date = new Date(fee.applied_at);
+        return date >= monthStart && date <= monthEnd;
+      })
+      .reduce((sum, fee) => sum + parseFloat(fee.late_fee_amount.toString()), 0);
+    
+    const totalIncome = income + lateFeesIncome;
     
     // Calculate operational expenses for this month
     const operationalExpenses = (expensesResult.data || [])
@@ -90,9 +110,9 @@ export async function getMonthlyIncomeVsExpense(year: number): Promise<MonthlyDa
     
     return {
       month: monthName,
-      income,
+      income: totalIncome,
       expenses: totalExpenses,
-      net: income - totalExpenses
+      net: totalIncome - totalExpenses
     };
   });
   
@@ -143,10 +163,10 @@ export async function getCashFlow(startDate: string, endDate: string) {
   const academyId = await getCurrentAcademyId();
   
   // Get all income - only approved payments, rejections are not real payments
+  // Include external incomes (player_id = null, type = 'custom') and player payments
   const { data: payments } = await supabase
     .from('payments')
-    .select('amount, payment_date, status')
-    .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
+    .select('amount, payment_date, status, player_id, type')
     .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
     .gte('payment_date', startDate)
     .lte('payment_date', endDate)
@@ -154,8 +174,25 @@ export async function getCashFlow(startDate: string, endDate: string) {
     .order('payment_date');
   
   // Filter by status if it exists, otherwise include all (backward compatibility)
-  const approvedPayments = payments?.filter(p => !p.status || p.status === 'Approved') || [];
-  const totalIncome = approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+  // Include player payments (player_id not null) OR external incomes (player_id null and type = 'custom')
+  const approvedPayments = (payments || []).filter(p => {
+    const hasValidStatus = !p.status || p.status === 'Approved';
+    const isPlayerPayment = p.player_id !== null;
+    const isExternalIncome = p.player_id === null && p.type === 'custom';
+    return hasValidStatus && (isPlayerPayment || isExternalIncome);
+  });
+  const paymentsIncome = approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+  
+  // Get late fees income for the period
+  const { data: lateFees } = await supabase
+    .from('late_fees')
+    .select('late_fee_amount')
+    .gte('applied_at', startDate)
+    .lte('applied_at', endDate)
+    .eq('academy_id', academyId);
+  
+  const lateFeesIncome = (lateFees || []).reduce((sum, fee) => sum + parseFloat(fee.late_fee_amount.toString()), 0);
+  const totalIncome = paymentsIncome + lateFeesIncome;
   
   // Get all expenses
   const { data: expenses } = await supabase
@@ -196,11 +233,11 @@ export async function getFinancialSummary() {
   
   // Execute all queries in parallel - only approved payments
   // Include all payment methods (cash, transfer, yappy, paguelofacil, card, ach, other)
-  const [paymentsResult, expensesResult, staffPaymentsResult] = await Promise.all([
+  // Include external incomes (player_id = null, type = 'custom') and player payments
+  const [paymentsResult, expensesResult, staffPaymentsResult, lateFeesResult] = await Promise.all([
     supabase
       .from('payments')
-      .select('id, amount, status, method')
-      .not('player_id', 'is', null) // Exclude payments without player_id (pending enrollments)
+      .select('id, amount, status, method, player_id, type')
       .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
       .gte('payment_date', startOfMonth)
       .lte('payment_date', endOfMonth)
@@ -215,16 +252,29 @@ export async function getFinancialSummary() {
       .from('staff_payments')
       .select('amount')
       .gte('payment_date', startOfMonth)
-      .lte('payment_date', endOfMonth)
+      .lte('payment_date', endOfMonth),
+    supabase
+      .from('late_fees')
+      .select('late_fee_amount')
+      .gte('applied_at', startOfMonth)
+      .lte('applied_at', endOfMonth)
+      .eq('academy_id', academyId)
   ]);
   
   // Filter by status if it exists, otherwise include all (backward compatibility)
   // Include payments with status 'Approved' or null/empty (for backward compatibility)
   // Exclude only 'Rejected' and 'Cancelled' payments
+  // Include player payments (player_id not null) OR external incomes (player_id null and type = 'custom')
   const approvedPayments = (paymentsResult.data || []).filter(p => {
-    if (!p.status || p.status === '') return true; // Backward compatibility
+    // Status check
     if (p.status === 'Rejected' || p.status === 'Cancelled') return false;
-    return p.status === 'Approved' || p.status === 'Pending'; // Include Pending as they might be approved later
+    const hasValidStatus = !p.status || p.status === '' || p.status === 'Approved' || p.status === 'Pending';
+    
+    // Include player payments OR external incomes
+    const isPlayerPayment = p.player_id !== null;
+    const isExternalIncome = p.player_id === null && p.type === 'custom';
+    
+    return hasValidStatus && (isPlayerPayment || isExternalIncome);
   });
   
   // Log for debugging if we find payments with unexpected status
@@ -237,16 +287,18 @@ export async function getFinancialSummary() {
     })));
   }
   
-  const income = approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+  const paymentsIncome = approvedPayments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+  const lateFeesIncome = (lateFeesResult.data || []).reduce((sum, fee) => sum + parseFloat(fee.late_fee_amount.toString()), 0);
+  const totalIncome = paymentsIncome + lateFeesIncome;
   const operationalExpenses = (expensesResult.data || []).reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
   const staffExpenses = (staffPaymentsResult.data || []).reduce((sum, s) => sum + parseFloat(s.amount.toString()), 0);
   const totalExpenses = operationalExpenses + staffExpenses;
   
   return {
     current_month: {
-      income,
+      income: totalIncome,
       expenses: totalExpenses,
-      net: income - totalExpenses
+      net: totalIncome - totalExpenses
     },
     period: {
       start: startOfMonth,

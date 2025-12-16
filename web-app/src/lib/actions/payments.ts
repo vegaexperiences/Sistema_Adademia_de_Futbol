@@ -394,6 +394,111 @@ export async function createAdvancePayment(data: {
   }
 }
 
+/**
+ * Create an external income (payment without player)
+ * External incomes are payments that don't come from players (sponsorships, donations, etc.)
+ */
+export async function createExternalIncome(data: {
+  amount: number;
+  income_date: string;
+  payment_method: string;
+  description: string;
+  category: string;
+  source?: string;
+  notes?: string;
+  proof_url?: string;
+}): Promise<{ data: any | null; error: string | null }> {
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+  
+  if (!academyId) {
+    return { data: null, error: 'No academy context available' };
+  }
+
+  // Validate amount
+  if (!data.amount || data.amount <= 0) {
+    return { data: null, error: 'El monto debe ser mayor a 0' };
+  }
+
+  // Validate required fields
+  if (!data.description || !data.description.trim()) {
+    return { data: null, error: 'La descripción es requerida' };
+  }
+
+  if (!data.category || !data.category.trim()) {
+    return { data: null, error: 'La categoría es requerida' };
+  }
+
+  // Map method names
+  const methodMap: Record<string, string> = {
+    'Transferencia': 'transfer',
+    'Efectivo': 'cash',
+    'ACH': 'ach',
+    'Yappy': 'yappy',
+    'Paguelo Fácil': 'paguelofacil',
+    'PagueloFacil': 'paguelofacil',
+    'Otro': 'other',
+  };
+
+  const mappedMethod = methodMap[data.payment_method] || data.payment_method.toLowerCase();
+
+  // For manual payment methods, set status to 'Approved'
+  const manualMethods = ['cash', 'transfer', 'ach', 'other'];
+  const shouldAutoApprove = manualMethods.includes(mappedMethod);
+
+  // Build notes with external income information
+  let notes = `Ingreso externo - ${data.description}`;
+  if (data.category) {
+    notes += ` | Categoría: ${data.category}`;
+  }
+  if (data.source) {
+    notes += ` | Fuente: ${data.source}`;
+  }
+  if (data.notes) {
+    notes += `\n${data.notes}`;
+  }
+
+  // Create payment data - player_id is null for external incomes
+  const paymentData: any = {
+    player_id: null, // External income has no player
+    amount: data.amount,
+    type: 'custom', // Use 'custom' type for external incomes
+    method: mappedMethod,
+    payment_date: data.income_date,
+    status: shouldAutoApprove ? 'Approved' : 'Pending',
+    notes: notes,
+    proof_url: data.proof_url,
+    academy_id: academyId,
+  };
+
+  try {
+    const { data: createdPayment, error } = await supabase
+      .from('payments')
+      .insert(paymentData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[createExternalIncome] Error creating payment:', error);
+      return { data: null, error: `Error al crear el ingreso externo: ${error.message}` };
+    }
+
+    if (!createdPayment) {
+      return { data: null, error: 'Error al crear el ingreso: no se recibió confirmación' };
+    }
+
+    // Revalidate all relevant paths
+    revalidatePath('/dashboard/finances');
+    revalidatePath('/dashboard/finances/transactions');
+    revalidatePath('/dashboard/finances/expenses');
+
+    return { data: createdPayment, error: null };
+  } catch (error: any) {
+    console.error('[createExternalIncome] Unexpected error:', error);
+    return { data: null, error: error.message || 'Error desconocido al crear el ingreso externo' };
+  }
+}
+
 // Update player's custom monthly fee
 export async function updateCustomMonthlyFee(playerId: string, customFee: number | null) {
   const supabase = await createClient();

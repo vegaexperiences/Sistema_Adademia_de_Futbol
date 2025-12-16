@@ -2,7 +2,6 @@
 
 // This component is now deprecated - use FinancesActionButtons instead
 // Keeping for backward compatibility
-export function AdvancePaymentButton() {
+export function ExternalIncomeButton() {
   return null;
 }
-

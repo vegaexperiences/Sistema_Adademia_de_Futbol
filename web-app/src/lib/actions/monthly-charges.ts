@@ -213,7 +213,7 @@ export async function getPlayerCharges(playerId: string): Promise<MonthlyCharge[
 }
 
 /**
- * Get player account balance - calculates charges vs payments
+ * Get player account balance - calculates charges vs payments (including late fees)
  */
 export async function getPlayerAccountBalance(playerId: string): Promise<PlayerAccountBalance> {
   const supabase = await createClient();
@@ -248,7 +248,11 @@ export async function getPlayerAccountBalance(playerId: string): Promise<PlayerA
     .in('status', ['Approved', 'Pending'])
     .eq('academy_id', academyId);
 
-  const totalCharges = (charges || []).reduce((sum, c) => sum + parseFloat(c.amount.toString()), 0);
+  // Get late fees for this player
+  const { getPlayerTotalLateFees } = await import('./late-fees');
+  const totalLateFees = await getPlayerTotalLateFees(playerId);
+
+  const totalCharges = (charges || []).reduce((sum, c) => sum + parseFloat(c.amount.toString()), 0) + totalLateFees;
   const totalPayments = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
   const balance = totalCharges - totalPayments;
 

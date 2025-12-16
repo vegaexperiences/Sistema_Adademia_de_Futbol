@@ -14,6 +14,8 @@ export function PlayerAccountView({ playerId }: PlayerAccountViewProps) {
   const [accountInfo, setAccountInfo] = useState<PlayerAccountInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lateFees, setLateFees] = useState<Array<{ monthYear: string; amount: number }>>([]);
+  const [loadingLateFees, setLoadingLateFees] = useState(true);
 
   useEffect(() => {
     async function loadAccount() {
@@ -34,6 +36,29 @@ export function PlayerAccountView({ playerId }: PlayerAccountViewProps) {
     }
 
     loadAccount();
+  }, [playerId]);
+
+  useEffect(() => {
+    async function loadLateFees() {
+      try {
+        const { getPlayerLateFees } = await import('@/lib/actions/late-fees');
+        const fees = await getPlayerLateFees(playerId);
+        const feesByMonth = fees
+          .filter(fee => fee.late_fee_amount > 0)
+          .map(fee => ({
+            monthYear: fee.month_year || '',
+            amount: fee.late_fee_amount,
+          }));
+        setLateFees(feesByMonth);
+      } catch (error) {
+        console.error('Error loading late fees:', error);
+      } finally {
+        setLoadingLateFees(false);
+      }
+    }
+    if (playerId) {
+      loadLateFees();
+    }
   }, [playerId]);
 
   if (loading) {
@@ -214,6 +239,44 @@ export function PlayerAccountView({ playerId }: PlayerAccountViewProps) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Late Fees Section */}
+      {!loadingLateFees && lateFees.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-red-200">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+            <h2 className="text-xl font-bold text-gray-900">Recargos por Pagos Atrasados</h2>
+          </div>
+          <div className="space-y-3">
+            {lateFees.map((fee, index) => (
+              <div
+                key={index}
+                className="p-4 rounded-lg border bg-red-50 border-red-200"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {fee.monthYear ? formatMonthYear(fee.monthYear) : 'Recargo aplicado'}
+                    </p>
+                    <p className="text-sm text-red-700">Recargo por pago atrasado</p>
+                  </div>
+                  <p className="text-lg font-bold text-red-600">
+                    ${fee.amount.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            ))}
+            <div className="pt-3 border-t border-red-200">
+              <div className="flex items-center justify-between">
+                <p className="font-bold text-gray-900">Total de Recargos:</p>
+                <p className="text-xl font-bold text-red-600">
+                  ${lateFees.reduce((sum, fee) => sum + fee.amount, 0).toFixed(2)}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

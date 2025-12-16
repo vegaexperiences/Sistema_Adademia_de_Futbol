@@ -10,6 +10,7 @@ import { BrandingConfig } from '@/components/super-admin/BrandingConfig';
 import { LogoUploader } from '@/components/super-admin/LogoUploader';
 import { OKRsSettings } from '@/components/settings/OKRsSettings';
 import { MonthlyChargesSettings } from '@/components/settings/MonthlyChargesSettings';
+import { LateFeesSettings } from '@/components/settings/LateFeesSettings';
 import { getSuperAdmins } from '@/lib/actions/super-admin';
 import { checkIsSuperAdmin, getAcademyById } from '@/lib/actions/academies';
 import { getCurrentAcademyId } from '@/lib/supabase/server';
@@ -434,6 +435,11 @@ export default async function SettingsPage() {
           </h2>
         </div>
         <MonthlyChargesSettings />
+      </div>
+
+      {/* Late Fees Settings */}
+      <div id="late-fees" className="glass-card p-6">
+        <LateFeesSettings />
       </div>
 
       {/* Payment Methods Settings */}

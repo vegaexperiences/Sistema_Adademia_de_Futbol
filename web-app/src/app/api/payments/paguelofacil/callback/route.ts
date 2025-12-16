@@ -939,8 +939,83 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Handle sponsor payments (including open donations)
+    if (isApproved && type === 'sponsor' && amount) {
+      try {
+        console.log('[PagueloFacil Callback] Processing sponsor payment...');
+        const supabase = await createClient();
+        const { getOrCreateOpenDonationSponsorLevel, createSponsorRegistration } = await import('@/lib/actions/sponsors');
+        
+        const isOpenDonation = parm10 === 'true' || searchParams.get('isOpenDonation') === 'true';
+        const paymentAmount = parseFloat(amount);
+        
+        let sponsorLevelId = sponsorId;
+        
+        // If it's an open donation, get or create the open donation sponsor level
+        if (isOpenDonation) {
+          console.log('[PagueloFacil Callback] Processing open donation...');
+          const openDonationLevel = await getOrCreateOpenDonationSponsorLevel();
+          if (openDonationLevel.error || !openDonationLevel.data) {
+            console.error('[PagueloFacil Callback] Error getting open donation level:', openDonationLevel.error);
+          } else {
+            sponsorLevelId = openDonationLevel.data.id;
+            console.log('[PagueloFacil Callback] Using open donation level:', sponsorLevelId);
+          }
+        }
+        
+        // Create sponsor registration if we have sponsor data
+        if (sponsorName && sponsorLevelId) {
+          const registrationResult = await createSponsorRegistration({
+            sponsor_id: sponsorLevelId,
+            sponsor_name: sponsorName,
+            sponsor_email: sponsorEmail || undefined,
+            sponsor_phone: undefined,
+            sponsor_cedula: undefined,
+            sponsor_company: parm11 || searchParams.get('sponsorCompany') || undefined,
+            sponsor_ruc: parm12 || searchParams.get('sponsorRuc') || undefined,
+          });
+          
+          if (registrationResult.error) {
+            console.error('[PagueloFacil Callback] Error creating sponsor registration:', registrationResult.error);
+          } else {
+            console.log('[PagueloFacil Callback] ✅ Sponsor registration created:', registrationResult.data?.id);
+          }
+        }
+        
+        // Create payment
+        const paymentData = {
+          amount: paymentAmount,
+          type: 'sponsor' as const,
+          method: 'paguelofacil' as const,
+          payment_date: new Date().toISOString().split('T')[0],
+          status: 'Approved' as const,
+          notes: `Donación de padrino procesada con Paguelo Fácil. Operación: ${callbackParams.Oper || 'N/A'}. ${sponsorName ? `Padrino: ${sponsorName}` : ''}`,
+          sponsor_id: sponsorLevelId || undefined,
+        };
+        
+        const { data: createdPayment, error: paymentError } = await supabase
+          .from('payments')
+          .insert(paymentData)
+          .select()
+          .single();
+        
+        if (paymentError) {
+          console.error('[PagueloFacil Callback] Error creating sponsor payment:', paymentError);
+        } else {
+          console.log('[PagueloFacil Callback] ✅ Sponsor payment created:', createdPayment?.id);
+          revalidatePath('/sponsors');
+          revalidatePath('/dashboard/finances');
+        }
+      } catch (sponsorError: any) {
+        console.error('[PagueloFacil Callback] Error handling sponsor payment:', sponsorError);
+        // Don't throw - continue with response
+      }
+    }
+
     // Build redirect URL
     let redirectUrl: string;
+    const isOpenDonation = parm10 === 'true' || searchParams.get('isOpenDonation') === 'true';
+    
     if (isApproved) {
       // Success page
       if (type === 'enrollment') {
@@ -949,6 +1024,10 @@ export async function GET(request: NextRequest) {
       } else if (type === 'payment' && playerId) {
         // For regular payments, redirect to player or family page
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?paguelofacil=success&oper=${callbackParams.Oper}`;
+      } else if (type === 'sponsor') {
+        redirectUrl = isOpenDonation
+          ? `${baseUrl}/sponsors?paguelofacil=success&oper=${callbackParams.Oper}`
+          : `${baseUrl}/sponsors/checkout/${sponsorId}?paguelofacil=success&oper=${callbackParams.Oper}`;
       } else {
         // Generic success
         redirectUrl = `${baseUrl}/dashboard/finances?paguelofacil=success&oper=${callbackParams.Oper}&monto=${callbackParams.TotalPagado}`;
@@ -958,7 +1037,9 @@ export async function GET(request: NextRequest) {
       if (type === 'enrollment') {
         redirectUrl = `${baseUrl}/enrollment?paguelofacil=failed&razon=${encodeURIComponent(callbackParams.Razon || 'Transacción denegada')}`;
       } else if (type === 'sponsor') {
-        redirectUrl = `${baseUrl}/sponsors/checkout/${sponsorId}?paguelofacil=failed&razon=${encodeURIComponent(callbackParams.Razon || 'Transacción denegada')}`;
+        redirectUrl = isOpenDonation
+          ? `${baseUrl}/sponsors?paguelofacil=failed&razon=${encodeURIComponent(callbackParams.Razon || 'Transacción denegada')}`
+          : `${baseUrl}/sponsors/checkout/${sponsorId}?paguelofacil=failed&razon=${encodeURIComponent(callbackParams.Razon || 'Transacción denegada')}`;
       } else if (type === 'payment' && playerId) {
         redirectUrl = `${baseUrl}/dashboard/players/${playerId}?paguelofacil=failed&razon=${encodeURIComponent(callbackParams.Razon || 'Transacción denegada')}`;
       } else {
