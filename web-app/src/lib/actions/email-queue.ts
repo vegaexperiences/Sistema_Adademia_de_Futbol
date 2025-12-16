@@ -1019,3 +1019,86 @@ export async function getTutorRecipientsByStatuses(statuses: string[]): Promise<
 
   return Array.from(dedup.values());
 }
+
+export async function getTutorRecipientsByPlayerIds(playerIds: string[]): Promise<TutorRecipient[]> {
+  if (!playerIds.length) return [];
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('players')
+    .select('id, family_id, status, families ( tutor_email, tutor_name )')
+    .in('id', playerIds)
+    .not('family_id', 'is', null);
+
+  if (error || !data) {
+    console.error('Error fetching tutor recipients by player IDs:', error);
+    return [];
+  }
+
+  const dedup = new Map<string, TutorRecipient>();
+
+  (data as PlayerWithFamily[]).forEach((player) => {
+    const family = Array.isArray(player.families) ? player.families[0] : player.families;
+    const email = family?.tutor_email?.toLowerCase();
+    if (!email) return;
+
+    if (!dedup.has(email)) {
+      dedup.set(email, {
+        email,
+        tutorName: family?.tutor_name || 'Familia Suarez',
+      });
+    }
+  });
+
+  return Array.from(dedup.values());
+}
+
+export async function getRandomPlayers(count: number): Promise<{ id: string; first_name: string; last_name: string; cedula: string | null; status: string; tutor_email: string | null; tutor_name: string | null }[]> {
+  if (count <= 0) return [];
+
+  const supabase = await createClient();
+  const academyId = await getCurrentAcademyId();
+
+  // Get all players with families
+  let query = supabase
+    .from('players')
+    .select('id, first_name, last_name, cedula, status, family_id, families ( tutor_email, tutor_name )')
+    .not('family_id', 'is', null);
+
+  if (academyId) {
+    query = query.eq('academy_id', academyId);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data) {
+    console.error('Error fetching players for random selection:', error);
+    return [];
+  }
+
+  // Filter players that have tutor email
+  const playersWithEmail = (data as any[]).filter((player) => {
+    const family = Array.isArray(player.families) ? player.families[0] : player.families;
+    return family?.tutor_email;
+  });
+
+  if (playersWithEmail.length === 0) return [];
+
+  // Shuffle and take count
+  const shuffled = [...playersWithEmail].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+
+  return selected.map((player) => {
+    const family = Array.isArray(player.families) ? player.families[0] : player.families;
+    return {
+      id: player.id,
+      first_name: player.first_name,
+      last_name: player.last_name,
+      cedula: player.cedula,
+      status: player.status,
+      tutor_email: family?.tutor_email || null,
+      tutor_name: family?.tutor_name || null,
+    };
+  });
+}

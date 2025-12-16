@@ -1,8 +1,9 @@
 'use client';
 
-import { useActionState, useMemo, type ReactNode } from 'react';
+import { useActionState, useMemo, useState, type ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Send, Megaphone, Users } from 'lucide-react';
+import { Send, Megaphone, Users, UserCheck, Shuffle } from 'lucide-react';
+import { PlayerSelector } from './PlayerSelector';
 
 type FormState = {
   ok?: boolean;
@@ -16,12 +17,24 @@ interface BroadcastFormsProps {
   sendGeneralAction: (state: FormState, formData: FormData) => Promise<FormState>;
 }
 
+type SelectionMode = 'all' | 'manual' | 'random';
+
 export function BroadcastForms({
   sendTournamentAction,
   sendGeneralAction,
 }: BroadcastFormsProps) {
   const [tournamentState, tournamentAction] = useActionState(sendTournamentAction, initialState);
   const [generalState, generalAction] = useActionState(sendGeneralAction, initialState);
+
+  // Tournament form state
+  const [tournamentMode, setTournamentMode] = useState<SelectionMode>('all');
+  const [tournamentSelectedIds, setTournamentSelectedIds] = useState<string[]>([]);
+  const [tournamentRandomCount, setTournamentRandomCount] = useState<number>(10);
+
+  // General form state
+  const [generalMode, setGeneralMode] = useState<SelectionMode>('all');
+  const [generalSelectedIds, setGeneralSelectedIds] = useState<string[]>([]);
+  const [generalRandomCount, setGeneralRandomCount] = useState<number>(10);
 
   const audienceOptions = useMemo(
     () => [
@@ -68,8 +81,55 @@ export function BroadcastForms({
             rows={4}
             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500"
           />
-          <AudienceSelect options={audienceOptions} />
-          <SubmitButton label="Enviar invitación" />
+          
+          <SelectionModeSelector
+            mode={tournamentMode}
+            onModeChange={setTournamentMode}
+            label="Modo de envío"
+          />
+          
+          {tournamentMode === 'all' && <AudienceSelect options={audienceOptions} />}
+          
+          {tournamentMode === 'manual' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Seleccionar jugadores
+              </label>
+              <PlayerSelector
+                selectedPlayerIds={tournamentSelectedIds}
+                onSelectionChange={setTournamentSelectedIds}
+              />
+            </div>
+          )}
+          
+          {tournamentMode === 'random' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Cantidad de jugadores
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={tournamentRandomCount}
+                onChange={(e) => setTournamentRandomCount(parseInt(e.target.value) || 1)}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500"
+                required
+              />
+              <p className="text-xs text-gray-500">
+                Se seleccionarán aleatoriamente {tournamentRandomCount} jugador{tournamentRandomCount !== 1 ? 'es' : ''}
+              </p>
+            </div>
+          )}
+          
+          {/* Hidden fields for form submission */}
+          <input type="hidden" name="selectionMode" value={tournamentMode} />
+          <input type="hidden" name="selectedPlayerIds" value={JSON.stringify(tournamentSelectedIds)} />
+          <input type="hidden" name="randomCount" value={tournamentRandomCount} />
+          
+          <SubmitButton 
+            label="Enviar invitación" 
+            disabled={tournamentMode === 'manual' && tournamentSelectedIds.length === 0}
+          />
           <FormMessage state={tournamentState} />
         </form>
       </BroadcastCard>
@@ -94,8 +154,56 @@ export function BroadcastForms({
             required
             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
-          <AudienceSelect options={audienceOptions} />
-          <SubmitButton label="Enviar comunicado" color="blue" />
+          
+          <SelectionModeSelector
+            mode={generalMode}
+            onModeChange={setGeneralMode}
+            label="Modo de envío"
+          />
+          
+          {generalMode === 'all' && <AudienceSelect options={audienceOptions} />}
+          
+          {generalMode === 'manual' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Seleccionar jugadores
+              </label>
+              <PlayerSelector
+                selectedPlayerIds={generalSelectedIds}
+                onSelectionChange={setGeneralSelectedIds}
+              />
+            </div>
+          )}
+          
+          {generalMode === 'random' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Cantidad de jugadores
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={generalRandomCount}
+                onChange={(e) => setGeneralRandomCount(parseInt(e.target.value) || 1)}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+              <p className="text-xs text-gray-500">
+                Se seleccionarán aleatoriamente {generalRandomCount} jugador{generalRandomCount !== 1 ? 'es' : ''}
+              </p>
+            </div>
+          )}
+          
+          {/* Hidden fields for form submission */}
+          <input type="hidden" name="selectionMode" value={generalMode} />
+          <input type="hidden" name="selectedPlayerIds" value={JSON.stringify(generalSelectedIds)} />
+          <input type="hidden" name="randomCount" value={generalRandomCount} />
+          
+          <SubmitButton 
+            label="Enviar comunicado" 
+            color="blue"
+            disabled={generalMode === 'manual' && generalSelectedIds.length === 0}
+          />
           <FormMessage state={generalState} />
         </form>
       </BroadcastCard>
@@ -152,7 +260,58 @@ function AudienceSelect({ options }: { options: { value: string; label: string }
   );
 }
 
-function SubmitButton({ label, color = 'purple' }: { label: string; color?: 'purple' | 'blue' }) {
+function SelectionModeSelector({
+  mode,
+  onModeChange,
+  label,
+}: {
+  mode: SelectionMode;
+  onModeChange: (mode: SelectionMode) => void;
+  label: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+        <Users size={16} />
+        {label}
+      </label>
+      <select
+        value={mode}
+        onChange={(e) => onModeChange(e.target.value as SelectionMode)}
+        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="all">Todos (por estado)</option>
+        <option value="manual">Grupo Selecto (Manual)</option>
+        <option value="random">Grupo Selecto (Aleatorio)</option>
+      </select>
+      {mode === 'all' && (
+        <p className="text-xs text-gray-500 mt-1">
+          Envía a todos los jugadores según el estado seleccionado
+        </p>
+      )}
+      {mode === 'manual' && (
+        <p className="text-xs text-gray-500 mt-1">
+          Busca y selecciona jugadores específicos manualmente
+        </p>
+      )}
+      {mode === 'random' && (
+        <p className="text-xs text-gray-500 mt-1">
+          Selecciona automáticamente una cantidad aleatoria de jugadores
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SubmitButton({ 
+  label, 
+  color = 'purple',
+  disabled = false,
+}: { 
+  label: string; 
+  color?: 'purple' | 'blue';
+  disabled?: boolean;
+}) {
   const { pending } = useFormStatus();
   const classes =
     color === 'blue'
@@ -162,7 +321,7 @@ function SubmitButton({ label, color = 'purple' }: { label: string; color?: 'pur
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       className={`w-full px-4 py-2 rounded-lg text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 ${classes}`}
     >
       {pending ? 'Enviando...' : label}
