@@ -379,28 +379,40 @@ export function PublicPaymentForm({
         </div>
       </div>
 
+      {/* Amount Field - Show for all payment methods except when none is selected */}
+      {paymentMethod && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Monto a Pagar <span className="text-red-500">*</span>
+            {paymentType === 'advance' && (
+              <span className="text-xs text-gray-500 ml-2">(Mínimo $1.00)</span>
+            )}
+          </label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <input
+              type="number"
+              step="0.01"
+              min={paymentType === 'advance' ? '1.00' : '0.01'}
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setError(null); // Clear error when user types
+              }}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="0.00"
+              required
+            />
+          </div>
+          {paymentType === 'advance' && parseFloat(amount) > 0 && parseFloat(amount) < 1.00 && (
+            <p className="text-sm text-red-600 mt-1">El monto mínimo para pago adelantado es $1.00</p>
+          )}
+        </div>
+      )}
+
       {/* Payment Method Specific Forms */}
       {(paymentMethod === 'Transferencia' || paymentMethod === 'Comprobante' || paymentMethod === 'ACH') && (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Amount */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Monto a Pagar <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0.00"
-                required
-              />
-            </div>
-          </div>
 
           {/* Notes */}
           <div>
@@ -488,63 +500,109 @@ export function PublicPaymentForm({
 
       {/* Yappy Payment Button */}
       {paymentMethod === 'Yappy' && paymentMethods?.yappy && (
-        <YappyPaymentButton
-          amount={parseFloat(amount) || 0}
-          description={paymentType === 'advance' ? `Pago adelantado - ${playerName}` : `Pago mensualidad - ${playerName}`}
-          orderId={`public-payment-${playerId}-${Date.now()}`}
-          paymentType={paymentType === 'advance' ? 'custom' : 'monthly'}
-          customParams={{
-            type: paymentType === 'advance' ? 'custom' : 'monthly',
-            playerId: playerId,
-            amount: (parseFloat(amount) || 0).toString(),
-            isAdvancePayment: paymentType === 'advance' ? 'true' : 'false',
-          }}
-          metadata={{
-            type: paymentType === 'advance' ? 'custom' : 'monthly',
-            player_id: playerId,
-            isAdvancePayment: paymentType === 'advance',
-          }}
-          returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/pay/${playerId}?success=true`}
-          onSuccess={() => {
-            setSuccess(true);
-            setPaymentMethod('');
-            setAmount('');
-            setPaymentType('pending');
-          }}
-          onError={(error) => {
-            setError(error);
-          }}
-        />
+        <div className="space-y-4">
+          {(() => {
+            const paymentAmount = parseFloat(amount) || 0;
+            const isValidAmount = paymentAmount > 0 && (paymentType === 'advance' ? paymentAmount >= 1.00 : true);
+            
+            if (!isValidAmount || !amount) {
+              return (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-yellow-800 text-sm">
+                    {!amount 
+                      ? 'Por favor ingresa el monto a pagar'
+                      : paymentType === 'advance' 
+                        ? 'El monto mínimo para pago adelantado es $1.00'
+                        : 'Por favor ingresa un monto válido mayor a $0.00'}
+                  </p>
+                </div>
+              );
+            }
+            
+            return (
+              <YappyPaymentButton
+                amount={paymentAmount}
+                description={paymentType === 'advance' ? `Pago adelantado - ${playerName}` : `Pago mensualidad - ${playerName}`}
+                orderId={`public-payment-${playerId}-${Date.now()}`}
+                paymentType={paymentType === 'advance' ? 'custom' : 'monthly'}
+                customParams={{
+                  type: paymentType === 'advance' ? 'custom' : 'monthly',
+                  playerId: playerId,
+                  amount: paymentAmount.toString(),
+                  isAdvancePayment: paymentType === 'advance' ? 'true' : 'false',
+                }}
+                metadata={{
+                  type: paymentType === 'advance' ? 'custom' : 'monthly',
+                  player_id: playerId,
+                  isAdvancePayment: paymentType === 'advance',
+                }}
+                returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/pay/${playerId}?success=true`}
+                onSuccess={() => {
+                  setSuccess(true);
+                  setPaymentMethod('');
+                  setAmount('');
+                  setPaymentType('pending');
+                }}
+                onError={(error) => {
+                  setError(error);
+                }}
+              />
+            );
+          })()}
+        </div>
       )}
 
       {/* Paguelo Fácil Payment Button */}
       {paymentMethod === 'PagueloFacil' && paymentMethods?.paguelofacil && (
-        <PagueloFacilPaymentButton
-          amount={parseFloat(amount) || 0}
-          description={paymentType === 'advance' ? `Pago adelantado - ${playerName}` : `Pago mensualidad - ${playerName}`}
-          email=""
-          orderId={`public-payment-${playerId}-${Date.now()}`}
-          returnUrl={() => {
-            const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-            return `${baseUrl}/pay/${playerId}?success=true`;
-          }}
-          customParams={{
-            type: paymentType === 'advance' ? 'custom' : 'monthly',
-            playerId: playerId,
-            amount: (parseFloat(amount) || 0).toString(),
-            isAdvancePayment: paymentType === 'advance' ? 'true' : 'false',
-          }}
-          enrollmentData={{}}
-          onSuccess={() => {
-            setSuccess(true);
-            setPaymentMethod('');
-            setAmount('');
-            setPaymentType('pending');
-          }}
-          onError={(errorMsg: string) => {
-            setError(errorMsg);
-          }}
-        />
+        <div className="space-y-4">
+          {(() => {
+            const paymentAmount = parseFloat(amount) || 0;
+            const isValidAmount = paymentAmount > 0 && (paymentType === 'advance' ? paymentAmount >= 1.00 : true);
+            
+            if (!isValidAmount || !amount) {
+              return (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-yellow-800 text-sm">
+                    {!amount 
+                      ? 'Por favor ingresa el monto a pagar'
+                      : paymentType === 'advance' 
+                        ? 'El monto mínimo para pago adelantado es $1.00'
+                        : 'Por favor ingresa un monto válido mayor a $0.00'}
+                  </p>
+                </div>
+              );
+            }
+            
+            return (
+              <PagueloFacilPaymentButton
+                amount={paymentAmount}
+                description={paymentType === 'advance' ? `Pago adelantado - ${playerName}` : `Pago mensualidad - ${playerName}`}
+                email=""
+                orderId={`public-payment-${playerId}-${Date.now()}`}
+                returnUrl={() => {
+                  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                  return `${baseUrl}/pay/${playerId}?success=true`;
+                }}
+                customParams={{
+                  type: paymentType === 'advance' ? 'custom' : 'monthly',
+                  playerId: playerId,
+                  amount: paymentAmount.toString(),
+                  isAdvancePayment: paymentType === 'advance' ? 'true' : 'false',
+                }}
+                enrollmentData={{}}
+                onSuccess={() => {
+                  setSuccess(true);
+                  setPaymentMethod('');
+                  setAmount('');
+                  setPaymentType('pending');
+                }}
+                onError={(errorMsg: string) => {
+                  setError(errorMsg);
+                }}
+              />
+            );
+          })()}
+        </div>
       )}
     </div>
   );

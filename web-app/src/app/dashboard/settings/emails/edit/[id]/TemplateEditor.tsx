@@ -61,7 +61,7 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
       html = html.replace(/\{\{tutorName\}\}/g, 'Juan Pérez');
       html = html.replace(/\{\{playerName\}\}/g, 'Carlos Pérez');
       html = html.replace(/\{\{playerNames\}\}/g, 'Carlos Pérez, María Pérez');
-      html = html.replace(/\{\{playerList\}\}/g, '<li>Carlos Pérez</li><li>María Pérez</li>');
+      html = html.replace(/\{\{playerList\}\}/g, '<strong>Carlos Pérez</strong>, <strong>María Pérez</strong>');
       html = html.replace(/\{\{amount\}\}/g, '260.00');
       html = html.replace(/\{\{dueDate\}\}/g, '5 de Diciembre');
       html = html.replace(/\{\{paymentType\}\}/g, 'Mensualidad');
