@@ -293,6 +293,9 @@ export async function GET(request: NextRequest) {
     const parm7 = searchParams.get('PARM_7') || callbackParams.PARM_7 || '';
     const parm8 = searchParams.get('PARM_8') || callbackParams.PARM_8 || '';
     const parm9 = searchParams.get('PARM_9') || callbackParams.PARM_9 || '';
+    const parm10 = searchParams.get('PARM_10') || callbackParams.PARM_10 || '';
+    const parm11 = searchParams.get('PARM_11') || callbackParams.PARM_11 || '';
+    const parm12 = searchParams.get('PARM_12') || callbackParams.PARM_12 || '';
     
     // Try to extract from URL params first, then from PARM
     // Based on how we send: customParams = { type, playerId, paymentType, monthYear, isAdvancePayment, sponsorId, sponsorName, etc. }
