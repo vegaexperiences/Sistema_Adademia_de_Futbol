@@ -64,7 +64,7 @@ export function TutorStep({ data, updateData, onNext, getFieldError }: TutorStep
                 className={`focus:ring-primary focus:border-primary block w-full pl-10 text-base py-3.5 min-h-[48px] rounded-lg text-gray-900 placeholder-gray-400 bg-gray-50 transition-colors touch-manipulation ${
                   getFieldError?.('tutorCedula') ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="8-888-8888"
+                placeholder="Cédula o Pasaporte (ej: 8-888-8888, ABC123456)"
                 value={data.tutorCedula || ''}
                 onChange={(e) => updateData({ tutorCedula: e.target.value })}
               />

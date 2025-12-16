@@ -52,16 +52,29 @@ export async function POST(request: NextRequest) {
       // Normalize and validate enrollment data before storing
       let normalizedEnrollmentData = { ...enrollmentData };
       
-      // Normalize tutorCedula: pad with zeros if too short (minimum 7 chars)
-      if (normalizedEnrollmentData.tutorCedula && normalizedEnrollmentData.tutorCedula.length < 7) {
-        const originalCedula = normalizedEnrollmentData.tutorCedula;
-        normalizedEnrollmentData.tutorCedula = originalCedula.padStart(7, '0');
-        console.log('[PagueloFacil Link] 🔧 Normalized tutorCedula:', {
-          original: originalCedula,
-          normalized: normalizedEnrollmentData.tutorCedula,
-          originalLength: originalCedula.length,
-          normalizedLength: normalizedEnrollmentData.tutorCedula.length,
-        });
+      // Normalize tutorCedula: pad with zeros only if it's numeric and too short
+      // Don't normalize if it contains letters (passports, foreign IDs)
+      if (normalizedEnrollmentData.tutorCedula && typeof normalizedEnrollmentData.tutorCedula === 'string') {
+        const originalCedula = normalizedEnrollmentData.tutorCedula.trim();
+        // Only normalize if it contains only numbers, dashes, and spaces (no letters)
+        const isNumericOnly = /^[\d\s\-]+$/.test(originalCedula);
+        if (isNumericOnly && originalCedula.length > 0 && originalCedula.length < 7) {
+          const digitsOnly = originalCedula.replace(/[\s\-]/g, '');
+          if (digitsOnly.length < 7) {
+            normalizedEnrollmentData.tutorCedula = digitsOnly.padStart(7, '0');
+            console.log('[PagueloFacil Link] 🔧 Normalized tutorCedula:', {
+              original: originalCedula,
+              normalized: normalizedEnrollmentData.tutorCedula,
+              originalLength: originalCedula.length,
+              normalizedLength: normalizedEnrollmentData.tutorCedula.length,
+            });
+          } else {
+            normalizedEnrollmentData.tutorCedula = originalCedula;
+          }
+        } else {
+          // Contains letters or is already long enough - keep as is
+          normalizedEnrollmentData.tutorCedula = originalCedula;
+        }
       }
       
       // Validate normalized data

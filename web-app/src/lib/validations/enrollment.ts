@@ -62,16 +62,15 @@ export const enrollmentSchema = z.object({
     })
     .transform((val) => val.trim()),
   tutorCedula: z.string()
-    .min(7, 'La cédula del tutor debe tener al menos 7 caracteres')
-    .max(20, 'La cédula del tutor no puede exceder 20 caracteres')
-    .refine((val) => /^[\d-]+$/.test(val.trim()), {
-      message: 'La cédula solo puede contener números y guiones (formato: X-XXXX-XXXX)'
-    })
+    .min(5, 'El documento de identidad debe tener al menos 5 caracteres')
+    .max(30, 'El documento de identidad no puede exceder 30 caracteres')
     .refine((val) => {
-      const digitsOnly = val.replace(/-/g, '').trim();
-      return digitsOnly.length >= 7;
+      // Aceptar letras, números, guiones y espacios
+      // Permitir formatos como: 8-888-8888, ABC123456, 123456789, etc.
+      const cleaned = val.trim();
+      return /^[A-Za-z0-9\s\-]+$/.test(cleaned) && cleaned.length >= 5;
     }, {
-      message: 'La cédula debe tener al menos 7 dígitos'
+      message: 'El documento puede contener letras, números, guiones y espacios (mínimo 5 caracteres)'
     })
     .transform((val) => val.trim()),
   tutorEmail: z.string()

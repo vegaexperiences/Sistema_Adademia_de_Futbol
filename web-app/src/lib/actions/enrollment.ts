@@ -49,18 +49,27 @@ export async function createEnrollmentFromPayment(
     // Normalize enrollment data before validation
     let normalizedData = { ...enrollmentData };
     
-    // Normalize tutorCedula: pad with zeros if too short (minimum 7 chars)
+    // Normalize tutorCedula: pad with zeros only if it's numeric and too short
+    // Don't normalize if it contains letters (passports, foreign IDs)
     if (normalizedData.tutorCedula && typeof normalizedData.tutorCedula === 'string') {
       const originalCedula = normalizedData.tutorCedula.trim();
-      if (originalCedula.length > 0 && originalCedula.length < 7) {
-        normalizedData.tutorCedula = originalCedula.padStart(7, '0');
-        console.log('[createEnrollmentFromPayment] 🔧 Normalized tutorCedula:', {
-          original: originalCedula,
-          normalized: normalizedData.tutorCedula,
-          originalLength: originalCedula.length,
-          normalizedLength: normalizedData.tutorCedula.length,
-        });
+      // Only normalize if it contains only numbers, dashes, and spaces (no letters)
+      const isNumericOnly = /^[\d\s\-]+$/.test(originalCedula);
+      if (isNumericOnly && originalCedula.length > 0 && originalCedula.length < 7) {
+        const digitsOnly = originalCedula.replace(/[\s\-]/g, '');
+        if (digitsOnly.length < 7) {
+          normalizedData.tutorCedula = digitsOnly.padStart(7, '0');
+          console.log('[createEnrollmentFromPayment] 🔧 Normalized tutorCedula:', {
+            original: originalCedula,
+            normalized: normalizedData.tutorCedula,
+            originalLength: originalCedula.length,
+            normalizedLength: normalizedData.tutorCedula.length,
+          });
+        } else {
+          normalizedData.tutorCedula = originalCedula;
+        }
       } else {
+        // Contains letters or is already long enough - keep as is
         normalizedData.tutorCedula = originalCedula;
       }
     }
