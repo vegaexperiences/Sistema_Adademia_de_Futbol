@@ -61,7 +61,7 @@ function ForgotPasswordForm() {
             <div className="mt-6 space-y-3">
               <Link
                 href="/login"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-all"
               >
                 Volver al inicio de sesión
               </Link>
@@ -70,7 +70,7 @@ function ForgotPasswordForm() {
                   setSuccess(false);
                   setError(null);
                 }}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-colors"
               >
                 Enviar otro correo
               </button>
@@ -141,7 +141,7 @@ function ForgotPasswordForm() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-70 transition-all"
             >
               {loading ? (
                 <Loader2 className="animate-spin h-5 w-5" />
@@ -154,7 +154,7 @@ function ForgotPasswordForm() {
           <div className="text-center">
             <Link
               href="/login"
-              className="text-sm text-primary hover:text-primary/80"
+              className="text-sm text-pink-600 hover:text-pink-700 font-medium transition-colors"
             >
               ← Volver al inicio de sesión
             </Link>
@@ -170,7 +170,7 @@ export default function ForgotPasswordPage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="animate-spin h-8 w-8 mx-auto text-primary" />
+          <Loader2 className="animate-spin h-8 w-8 mx-auto text-pink-600" />
           <p className="mt-4 text-gray-600">Cargando...</p>
         </div>
       </div>
