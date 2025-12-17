@@ -1,6 +1,4 @@
 import { ImageResponse } from 'next/og'
-import { getAcademyAppleTouchIcon } from '@/lib/utils/academy-logos'
-import { getCurrentAcademy } from '@/lib/utils/academy'
 
 export const size = {
   width: 180,

@@ -1,10 +1,9 @@
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { Users, CheckCircle, Clock, GraduationCap, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Get stats - filter by academy_id
   let playersQuery = supabase.from('players').select('status, family_id, academy_id');

@@ -14,7 +14,6 @@ import {
   TrendingUp,
   Mail
 } from 'lucide-react';
-import { useAcademy } from '@/contexts/AcademyContext';
 
 interface SidebarNavProps {
   pendingCount: number;
@@ -22,7 +21,6 @@ interface SidebarNavProps {
 
 export function SidebarNav({ pendingCount }: SidebarNavProps) {
   const pathname = usePathname();
-  const { academy } = useAcademy();
   const [navLabels, setNavLabels] = useState({
     dashboard: 'Dashboard',
     approvals: 'Aprobaciones',

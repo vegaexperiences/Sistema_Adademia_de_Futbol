@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PagueloFacilService } from '@/lib/payments/paguelofacil';
 import { getBaseUrlFromRequest } from '@/lib/utils/get-base-url';
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { enrollmentSchema } from '@/lib/validations/enrollment';
 
 /**
@@ -202,7 +202,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Get academy ID for payment config
-    const academyId = await getCurrentAcademyId();
 
     // Create payment link
     const result = await PagueloFacilService.createPaymentLink({

@@ -2,10 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAcademy } from '@/contexts/AcademyContext';
 
 export function Footer() {
-  const { academy } = useAcademy();
   
   // Get logo URL from academy context, fallback to default
   const logoUrl = academy?.logo_medium_url || academy?.logo_url || academy?.logo_small_url || '/logo.png';

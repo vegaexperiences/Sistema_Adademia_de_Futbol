@@ -3,36 +3,21 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, X, User } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useAcademy } from '@/contexts/AcademyContext';
-import { getNavigationLabel, getAcademyDisplayName } from '@/lib/utils/academy-branding';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { academy } = useAcademy();
-  const [displayName, setDisplayName] = useState(academy?.display_name || academy?.name || 'SUAREZ ACADEMY');
-  const [navLabels, setNavLabels] = useState({
+  
+  // Hardcoded for single-tenant
+  const displayName = process.env.NEXT_PUBLIC_ACADEMY_NAME || 'SUAREZ ACADEMY';
+  const logoUrl = '/logo.png';
+  const navLabels = {
     home: 'Inicio',
     enrollment: 'Matrícula',
     tournaments: 'Torneos',
     access: 'Acceso',
-  });
-  
-  // Get logo URL from academy context, fallback to default
-  const logoUrl = academy?.logo_url || academy?.logo_medium_url || academy?.logo_small_url || '/logo.png';
-  
-  useEffect(() => {
-    if (academy) {
-      setDisplayName(academy.display_name || academy.name || 'SUAREZ ACADEMY');
-      setNavLabels({
-        home: academy.settings?.navigation?.home || 'Inicio',
-        enrollment: academy.settings?.navigation?.enrollment || 'Matrícula',
-        tournaments: academy.settings?.navigation?.tournaments || 'Torneos',
-        access: academy.settings?.navigation?.access || 'Acceso',
-      });
-    }
-  }, [academy]);
+  };
 
   return (
     <nav className="glass-card sticky top-4 z-50 mx-4 mt-4 mb-6 border-none">

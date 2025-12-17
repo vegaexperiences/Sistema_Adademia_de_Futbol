@@ -5,16 +5,12 @@ import { PaymentMethodsSettings } from '@/components/settings/PaymentMethodsSett
 import { SuperAdminSettings } from '@/components/settings/SuperAdminSettings';
 import { UserManagement } from '@/components/settings/UserManagement';
 import { SponsorManagement } from '@/components/settings/SponsorManagement';
-import { AcademySettingsSelector } from '@/components/settings/AcademySettingsSelector';
 import { BrandingConfig } from '@/components/super-admin/BrandingConfig';
 import { LogoUploader } from '@/components/super-admin/LogoUploader';
 import { OKRsSettings } from '@/components/settings/OKRsSettings';
 import { MonthlyChargesSettings } from '@/components/settings/MonthlyChargesSettings';
 import { LateFeesSettings } from '@/components/settings/LateFeesSettings';
 import { getSuperAdmins } from '@/lib/actions/super-admin';
-import { checkIsSuperAdmin, getAcademyById } from '@/lib/actions/academies';
-import { getCurrentAcademyId } from '@/lib/supabase/server';
-import { getCurrentAcademy } from '@/lib/utils/academy';
 import Link from 'next/link';
 
 async function updateSetting(formData: FormData) {

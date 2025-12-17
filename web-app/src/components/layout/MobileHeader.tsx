@@ -19,7 +19,6 @@ import {
   Mail
 } from 'lucide-react';
 import { logout } from '@/app/auth/actions';
-import { useAcademy } from '@/contexts/AcademyContext';
 
 interface MobileHeaderProps {
   userEmail: string;
@@ -29,8 +28,7 @@ interface MobileHeaderProps {
 export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const pathname = usePathname();
-  const { academy } = useAcademy();
-  const [displayName, setDisplayName] = useState(academy?.display_name || academy?.name || 'SUAREZ ACADEMY');
+  const [displayName, setDisplayName] = useState('SUAREZ ACADEMY');
   const [navLabels, setNavLabels] = useState({
     dashboard: 'Dashboard',
     approvals: 'Aprobaciones',

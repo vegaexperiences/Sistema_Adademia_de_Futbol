@@ -8,7 +8,6 @@ import { MobileHeader } from '@/components/layout/MobileHeader';
 import { SidebarNav } from '@/components/layout/SidebarNav';
 import { getPendingPlayersCount } from '@/lib/actions/approvals';
 import { getAcademyLogo } from '@/lib/utils/academy-logos';
-import { getCurrentAcademy } from '@/lib/utils/academy';
 
 export default async function DashboardLayout({
   children,
@@ -25,7 +24,6 @@ export default async function DashboardLayout({
 
   const pendingCount = await getPendingPlayersCount();
   const logoUrl = await getAcademyLogo('medium');
-  const academy = await getCurrentAcademy();
   const { getAcademyDisplayName } = await import('@/lib/utils/academy-branding');
   const academyName = await getAcademyDisplayName();
 

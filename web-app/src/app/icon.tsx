@@ -1,6 +1,4 @@
 import { ImageResponse } from 'next/og'
-import { getAcademyFavicon } from '@/lib/utils/academy-logos'
-import { getCurrentAcademy } from '@/lib/utils/academy'
 
 export const size = {
   width: 32,

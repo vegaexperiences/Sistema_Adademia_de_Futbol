@@ -1,6 +1,6 @@
 import { PlayerAccountView } from '@/components/payment-portal/PlayerAccountView';
 import { notFound } from 'next/navigation';
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,6 @@ export default async function PayPlayerPage({ params, searchParams }: PayPlayerP
 
   // Verify player exists and belongs to academy
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     notFound();

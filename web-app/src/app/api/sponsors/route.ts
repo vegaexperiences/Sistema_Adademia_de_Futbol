@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAllSponsors, createSponsorRegistration } from '@/lib/actions/sponsors';
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const sponsorRegistrationSchema = z.object({
@@ -53,7 +53,6 @@ export async function POST(request: Request) {
 
     // Verify sponsor exists and is active
     const supabase = await createClient();
-    const academyId = await getCurrentAcademyId();
 
     let query = supabase
       .from('sponsors')

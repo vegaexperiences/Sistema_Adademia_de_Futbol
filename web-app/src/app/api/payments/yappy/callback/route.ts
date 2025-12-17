@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YappyService, YappyCallbackParams } from '@/lib/payments/yappy';
 import { createPayment } from '@/lib/actions/payments';
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendPaymentConfirmationEmail } from '@/lib/actions/payment-confirmation';
 import { createEnrollmentFromPayment } from '@/lib/actions/enrollment';
@@ -702,7 +702,6 @@ export async function GET(request: NextRequest) {
     };
 
     // Get academy ID for payment config
-    const academyId = await getCurrentAcademyId();
 
     // Validate hash if provided
     if (hash) {

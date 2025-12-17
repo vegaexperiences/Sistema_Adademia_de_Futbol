@@ -1,4 +1,4 @@
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { User, Calendar, Mail, Phone, FileText, DollarSign, ArrowLeft, Receipt, CreditCard } from 'lucide-react';
 import Link from 'next/link';
@@ -20,7 +20,6 @@ export default async function PlayerProfilePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Get player data with family info
   let query = supabase

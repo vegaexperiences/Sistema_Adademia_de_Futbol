@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Shield, Plus, Trash2, Key, Eye, EyeOff } from 'lucide-react'
-import { createSuperAdmin, deleteSuperAdmin, getSuperAdminsAction, verifySuperAdminKey } from '@/lib/actions/super-admin'
 
 interface SuperAdmin {
   id: string
