@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { enrollmentSchema } from '@/lib/validations/enrollment';
 import { getPlayerCategory } from '@/lib/utils/player-category';
 
@@ -21,12 +21,6 @@ export async function createEnrollmentFromPayment(
   operationNumber?: string
 ) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
-  
-  if (!academyId) {
-    console.error('[createEnrollmentFromPayment] ❌ No academy context available');
-    throw new Error('No academy context available');
-  }
   
   console.log('[createEnrollmentFromPayment] Starting enrollment creation from payment callback...');
   console.log('[createEnrollmentFromPayment] Payment details:', {
@@ -190,9 +184,6 @@ export async function createEnrollmentFromPayment(
         .select('id')
         .eq('tutor_cedula', validatedData.tutorCedula);
       
-      if (academyId) {
-        familyQuery = familyQuery.eq('academy_id', academyId);
-      }
       
       const { data: existingFamily } = await familyQuery.single();
 
@@ -208,7 +199,7 @@ export async function createEnrollmentFromPayment(
             tutor_email: validatedData.tutorEmail,
             tutor_phone: validatedData.tutorPhone,
             tutor_cedula_url: validatedData.cedulaTutorFile || null,
-            academy_id: academyId,
+            
           })
           .select()
           .single();
@@ -243,7 +234,7 @@ export async function createEnrollmentFromPayment(
           tutor_cedula: familyId ? null : validatedData.tutorCedula,
           tutor_email: familyId ? null : validatedData.tutorEmail,
           tutor_phone: familyId ? null : validatedData.tutorPhone,
-          academy_id: academyId,
+          
           // Note: tutor_cedula_url is stored in families table, not in pending_players
         })
         .select()
@@ -278,7 +269,7 @@ export async function createEnrollmentFromPayment(
         payment_date: new Date().toISOString().split('T')[0],
         status: 'Approved', // Payment already confirmed by payment gateway
         notes: paymentNotes,
-        academy_id: academyId,
+        
       })
       .select()
       .single();

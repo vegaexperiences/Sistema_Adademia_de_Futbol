@@ -27,16 +27,14 @@ const DEFAULT_TARGETS: OKRTargets = {
 };
 
 /**
- * Get OKR settings for the current academy
+ * Get OKR settings
  */
 export async function getOKRSettings(): Promise<OKRSettings> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   const { data: settings } = await supabase
     .from('settings')
     .select('key, value')
-    .eq('academy_id', academyId)
     .like('key', 'okr_%');
 
   const settingsMap = settings?.reduce((acc: Record<string, string>, s: any) => {
@@ -85,7 +83,6 @@ export async function updateOKRSettings(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createClient();
-    const academyId = await getCurrentAcademyId();
 
     const periodPrefix = period === 'monthly' ? 'monthly' : period === 'quarterly' ? 'quarterly' : 'annual';
 
@@ -129,8 +126,7 @@ export async function updateOKRSettings(
         .from('settings')
         .select('id')
         .eq('key', update.key)
-        .eq('academy_id', academyId)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         const { error } = await supabase
@@ -152,7 +148,7 @@ export async function updateOKRSettings(
           .insert({
             key: update.key,
             value: update.value,
-            academy_id: academyId,
+            
             updated_at: new Date().toISOString(),
           });
 
