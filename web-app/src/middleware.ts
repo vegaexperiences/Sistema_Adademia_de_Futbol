@@ -1,66 +1,34 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Simplified Middleware - Single Tenant
+ * 
+ * Responsibilities:
+ * 1. Protect dashboard routes (auth check)
+ * 2. Refresh auth session
+ * 3. Allow public routes
+ */
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   
-  // STEP 1: Check for routes that don't need academy context FIRST
-  // This prevents any database queries or processing for these routes
-  // CRITICAL: This check must happen before ANY other processing
-  const isSuperAdminRoute = pathname.startsWith('/super-admin') || 
-                           pathname.startsWith('/superadmin')
-  const isDebugRoute = pathname.startsWith('/debug-test') || 
-                      pathname.startsWith('/test-simple') ||
-                      pathname.startsWith('/test-working') ||
-                      pathname.startsWith('/test-no-dynamic') ||
-                      pathname.startsWith('/test-api-route') ||
-                      pathname.startsWith('/test-minimal')
-  const isAuthRoute = pathname.startsWith('/login') || 
-                     pathname.startsWith('/auth') ||
-                     pathname.startsWith('/enrollment')
-  const isExcludedRoute = isSuperAdminRoute || isDebugRoute || isAuthRoute
+  // Public routes that don't require authentication
+  const isPublicRoute = 
+    pathname.startsWith('/login') || 
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/enrollment') ||
+    pathname.startsWith('/pay/') ||
+    pathname === '/' ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/webhooks')
   
-  // IMMEDIATE return for excluded routes - no processing, no logging, nothing
-  // This ensures Next.js can process these routes without any interference
-  if (isExcludedRoute) {
+  if (isPublicRoute) {
     return NextResponse.next()
   }
 
-  // STEP 2: Protect dashboard routes - require authentication
-  // This must happen BEFORE any Supabase client creation for academy detection
-  if (pathname.startsWith('/dashboard')) {
-    // Create minimal Supabase client just for auth check
-    const authSupabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            // For auth check, we don't need to set cookies
-            cookiesToSet.forEach(({ name, value }) => {
-              request.cookies.set(name, value)
-            })
-          },
-        },
-      }
-    )
-    
-    const { data: { user }, error: authError } = await authSupabase.auth.getUser()
-    
-    // If no user or auth error, redirect to login
-    if (authError || !user) {
-      const loginUrl = new URL('/login', request.url)
-      return NextResponse.redirect(loginUrl)
-    }
-  }
-
-  // Create a new request with modified headers
-  const requestHeaders = new Headers(request.headers)
-
-  // Create Supabase client for middleware (for academy detection)
+  // Protected routes - require authentication
+  const response = NextResponse.next()
+  
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -71,224 +39,22 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
           })
         },
       },
     }
   )
 
-  // Refresh session if expired (for academy detection context)
+  // Refresh session and check authentication
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Extract domain from request
-  const hostname = request.headers.get('host') || ''
-  const domain = hostname.split(':')[0] // Remove port if present
-  
-  // Determine academy from domain
-  let academySlug: string | null = null
-  let academyId: string | null = null
-
-  // Check if it's a custom domain or subdomain
-  // Format: suarez.com, otra.com, or suarez.vercel.app, etc.
-  const domainParts = domain.split('.')
-  const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
-  const isLocalhost = domain === 'localhost' || domain === '127.0.0.1'
-  
-  // STEP 2: Wrap academy detection in try-catch to prevent failures from blocking routes
-  console.log('[Middleware] Processing route:', pathname, 'Domain:', domain, 'IsLocalhost:', isLocalhost)
-  try {
-    // Special handling for localhost: default to "suarez" academy
-    if (isLocalhost) {
-      console.log('[Middleware] Localhost detected, searching for suarez academy...')
-      const { data: suarezAcademy, error: suarezError } = await supabase
-        .from('academies')
-        .select('id, slug, domain_status')
-        .eq('slug', 'suarez')
-        .maybeSingle()
-      
-      if (suarezAcademy && !suarezError) {
-        academySlug = suarezAcademy.slug
-        academyId = suarezAcademy.id
-        console.log('[Middleware] ✅ Localhost: Found suarez academy:', academyId, 'Slug:', academySlug)
-      } else {
-        console.error('[Middleware] ❌ Localhost: suarez academy not found. Error:', suarezError)
-        // Fallback: try to get the first academy if suarez doesn't exist
-        const { data: firstAcademy, error: firstError } = await supabase
-          .from('academies')
-          .select('id, slug, domain_status')
-          .limit(1)
-          .maybeSingle()
-        
-        if (firstAcademy && !firstError) {
-          academySlug = firstAcademy.slug
-          academyId = firstAcademy.id
-          console.log('[Middleware] ⚠️ Localhost: Using first available academy as fallback:', academyId, 'Slug:', academySlug)
-        } else {
-          console.error('[Middleware] ❌ Localhost: No academies found in database. Error:', firstError)
-        }
-      }
-    }
-    // First, try to find academy by exact domain match (for custom domains)
-    else if (domainParts.length >= 2) {
-      const { data: academyByDomain, error: domainError } = await supabase
-        .from('academies')
-        .select('id, slug, domain_status')
-        .eq('domain', domain)
-        .maybeSingle()
-      
-      if (academyByDomain && !domainError) {
-        // Found by exact domain match
-        academySlug = academyByDomain.slug
-        academyId = academyByDomain.id
-        console.log('[Middleware] Found academy by domain:', academySlug, academyId, 'Status:', academyByDomain.domain_status)
-      } else {
-        // If not found by domain, try by slug (for subdomain access)
-        // This allows access via {slug}.vercel.app even if custom domain is pending
-        const potentialSlug = domainParts[0]
-        
-        // Skip common subdomains like 'www', 'app', 'admin'
-        if (!['www', 'app', 'admin', 'api'].includes(potentialSlug.toLowerCase())) {
-          // Try to find academy by slug
-          const { data: academyBySlug, error: slugError } = await supabase
-            .from('academies')
-            .select('id, slug, domain_status')
-            .eq('slug', potentialSlug)
-            .maybeSingle()
-          
-          if (academyBySlug && !slugError) {
-            // Found by slug - this works for Vercel subdomains and allows temporary access
-            academySlug = academyBySlug.slug
-            academyId = academyBySlug.id
-            console.log('[Middleware] Found academy by slug:', academySlug, academyId, 'Domain status:', academyBySlug.domain_status)
-          } else {
-            console.log('[Middleware] No academy found for domain:', domain, 'Slug:', potentialSlug, 'Error:', slugError)
-          }
-        }
-      }
-    }
-  } catch (error) {
-    // If academy detection fails, log but don't block the request
-    console.error('[Middleware] Error detecting academy:', error)
-    // Continue without academy context - let the route handle it
-  }
-
-  // If no academy found, try fallback methods
-  if (!academyId) {
-    // Fallback 1: Check cookies for existing academyId
-    const academyIdFromCookie = request.cookies.get('academy-id')?.value
-    if (academyIdFromCookie) {
-      // Verify the academy still exists
-      const { data: academyFromCookie } = await supabase
-        .from('academies')
-        .select('id, slug')
-        .eq('id', academyIdFromCookie)
-        .maybeSingle()
-      
-      if (academyFromCookie) {
-        academyId = academyFromCookie.id
-        academySlug = academyFromCookie.slug
-        console.log('[Middleware] ✅ Found academy from cookie:', academyId, 'Slug:', academySlug)
-      }
-    }
-    
-    // Fallback 2: If user is authenticated, get their academy from role assignments
-    if (!academyId && user) {
-      const { data: userAcademy } = await supabase
-        .from('user_role_assignments')
-        .select('academy_id, academies!inner(id, slug)')
-        .eq('user_id', user.id)
-        .limit(1)
-        .maybeSingle()
-      
-      // Handle relation - could be object or array, but with !inner and maybeSingle should be object
-      if (userAcademy) {
-        const academy = Array.isArray(userAcademy.academies) 
-          ? userAcademy.academies[0] 
-          : userAcademy.academies
-        
-        if (academy) {
-          academyId = academy.id
-          academySlug = academy.slug
-          console.log('[Middleware] ✅ Found academy from user role assignment:', academyId, 'Slug:', academySlug)
-        }
-      }
-    }
-    
-    // Fallback 3: Use first available academy as last resort (for Vercel preview domains)
-    if (!academyId && isVercelDomain) {
-      const { data: firstAcademy } = await supabase
-        .from('academies')
-        .select('id, slug')
-        .limit(1)
-        .maybeSingle()
-      
-      if (firstAcademy) {
-        academyId = firstAcademy.id
-        academySlug = firstAcademy.slug
-        console.log('[Middleware] ⚠️ Using first available academy as fallback for Vercel domain:', academyId, 'Slug:', academySlug)
-      }
-    }
-    
-    // If still no academy found, check if we should redirect
-    if (!academyId) {
-      // Check if accessing root without academy context
-      const isRootDomain = domainParts.length === 2 && !domainParts[0].includes('.')
-      const isVercelDomain = domain.includes('vercel.app') || domain.includes('vercel.com')
-      
-      // Only redirect if:
-      // 1. Not an excluded route
-      // 2. Is a root domain (not a subdomain)
-      // 3. NOT a Vercel domain (to avoid breaking preview deployments)
-      // 4. No academy slug found
-      if (!isExcludedRoute && isRootDomain && !isVercelDomain && !academySlug) {
-        console.log('[Middleware] No academy found, redirecting to suarez. Path:', pathname, 'Domain:', domain)
-        // Redirect to suarez academy (default)
-        const suarezUrl = new URL(request.url)
-        suarezUrl.hostname = `suarez.${domainParts.slice(-2).join('.')}`
-        return NextResponse.redirect(suarezUrl)
-      } else {
-        // On Vercel domains or when academy not found, just continue without redirect
-        console.log('[Middleware] No academy found but allowing request. Path:', pathname, 'Domain:', domain, 'IsVercel:', isVercelDomain)
-      }
-    }
-  }
-  
-  console.log('[Middleware] Allowing request through. Path:', pathname, 'AcademyId:', academyId, 'AcademySlug:', academySlug)
-
-  // Store academy context in request headers for server components
-  // IMPORTANT: We need to set headers on the request, not the response
-  if (academyId) {
-    requestHeaders.set('x-academy-id', academyId)
-    requestHeaders.set('x-academy-slug', academySlug || '')
-    console.log('[Middleware] ✅ Headers set - x-academy-id:', academyId, 'x-academy-slug:', academySlug)
-  } else {
-    console.warn('[Middleware] ⚠️ No academyId found - headers NOT set. This may cause RLS issues.')
-  }
-  
-  // Create the final response with modified request headers
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  })
-
-  // Store in cookies for client-side access
-  if (academyId) {
-    response.cookies.set('academy-id', academyId, {
-      httpOnly: false, // Allow client-side access
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    })
-    response.cookies.set('academy-slug', academySlug || '', {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    })
+  // Redirect to login if not authenticated
+  if (!user && pathname.startsWith('/dashboard')) {
+    const loginUrl = new URL('/login', request.url)
+    return NextResponse.redirect(loginUrl)
   }
 
   return response
@@ -297,18 +63,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
-     * - image files
-     * 
-     * CRITICAL: We now include ALL routes in the matcher, including debug routes.
-     * The middleware will handle them with early returns, which allows Vercel
-     * to recognize them as valid routes while still skipping processing.
+     * - public folder files (images, etc.)
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-
