@@ -1,14 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { resetPassword } from '@/app/auth/actions';
-import { Loader2, CheckCircle2, Mail } from 'lucide-react';
+import { Loader2, CheckCircle2, Mail, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Check for error from callback redirect
+  useEffect(() => {
+    const errorFromCallback = searchParams.get('error');
+    if (errorFromCallback) {
+      setError(decodeURIComponent(errorFromCallback));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (formData: FormData) => {
     setLoading(true);
@@ -82,6 +92,27 @@ export default function ForgotPasswordPage() {
             Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
           </p>
         </div>
+
+        {/* Show error from callback if present */}
+        {error && searchParams.get('error') && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Enlace Expirado o Inválido
+                </h3>
+                <p className="mt-1 text-sm text-yellow-700">
+                  {error}
+                </p>
+                <p className="mt-2 text-sm text-yellow-700">
+                  Solicita un nuevo enlace ingresando tu correo abajo.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form action={handleSubmit} className="mt-8 space-y-6">
           <div className="rounded-md shadow-sm">
             <div>

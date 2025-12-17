@@ -54,6 +54,20 @@ El nuevo flujo utiliza `/auth/callback` en lugar de apuntar directamente a `/aut
 - Soportar múltiples tipos de autenticación (password reset, email verification, OAuth)
 - Funcionar automáticamente para cualquier dominio de academia
 
+**IMPORTANTE - Flow Type:**
+
+El callback soporta dos tipos de flows de Supabase:
+
+1. **PKCE Flow (Recomendado)**: Usa `code` parameter
+   - Más seguro
+   - Mejor soporte para múltiples dominios
+   
+2. **OTP/MagicLink Flow (Legacy)**: Usa `token_hash` parameter
+   - Formato antiguo
+   - Puede causar errores de expiración más rápidos
+
+Si experimentas errores de `otp_expired`, verifica la configuración de Supabase Auth.
+
 ### 2. Configurar Email Templates (Opcional)
 
 Supabase tiene templates de email por defecto, pero puedes personalizarlos:
@@ -143,23 +157,57 @@ NEXT_PUBLIC_SITE_URL=https://academy.pimepanama.com
 
 ## 🆘 Troubleshooting
 
+### Error: "otp_expired" o "Email link is invalid or has expired"
+
+**Síntomas**: Al hacer click en el enlace del email, redirige con error de OTP expirado.
+
+**Causas posibles**:
+1. El enlace se usó más de una vez
+2. El enlace expiró (tiempo predeterminado: 1 hora)
+3. Hay un problema con el flow de Supabase
+
+**Soluciones**:
+
+1. **Solicitar nuevo enlace**: 
+   - Ve a `/auth/forgot-password`
+   - Ingresa tu email nuevamente
+   - Usa el nuevo enlace inmediatamente
+
+2. **Verificar configuración de Supabase**:
+   - Ve a Supabase Dashboard → Authentication → Email Auth
+   - Verifica que "Email OTP Expiry" esté en un valor razonable (ej: 3600 segundos = 1 hora)
+   - Verifica que las Redirect URLs estén configuradas correctamente
+
+3. **Verificar que el callback esté desplegado**:
+   - La ruta `/auth/callback` debe existir en tu deployment
+   - Verifica en Vercel Logs si hay errores en el callback
+
+4. **No hacer click múltiples veces**:
+   - Cada link solo puede usarse una vez
+   - Si haces click varias veces, el segundo intento fallará
+
 ### El correo no llega
 
 1. Verifica que el email esté en tu base de datos de usuarios
 2. Revisa la configuración de SMTP en Supabase (si usas SMTP personalizado)
 3. Revisa los logs de Supabase para ver si hay errores
+4. Revisa la carpeta de spam/correo no deseado
 
-### El enlace no funciona
+### El enlace redirige a localhost en producción
 
-1. Verifica que la Redirect URL esté configurada correctamente en Supabase
-2. Asegúrate de que `NEXT_PUBLIC_SITE_URL` esté configurada en producción
-3. Verifica que el enlace no haya expirado
+**Causa**: El origin no se está detectando correctamente.
+
+**Solución**:
+1. Verifica que el navegador soporte `window.location.origin`
+2. Verifica los logs de Vercel para ver qué `baseUrl` se está usando
+3. Como fallback temporal, configura `NEXT_PUBLIC_SITE_URL` en Vercel
 
 ### Error al actualizar contraseña
 
 1. Verifica que el enlace no haya expirado
 2. Asegúrate de que las contraseñas coincidan
 3. Verifica que la contraseña tenga al menos 6 caracteres
+4. Revisa que tengas una sesión válida (el callback debe haber funcionado correctamente)
 
 ---
 
