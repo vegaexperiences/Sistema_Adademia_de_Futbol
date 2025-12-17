@@ -1,39 +1,25 @@
 /**
- * Permission utility functions
- * These functions help check user permissions throughout the application
+ * Permission utility functions - Single Tenant
+ * Simplified version without academy context
  */
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server'
-import { isSuperAdmin } from './academy'
+import { createClient } from '@/lib/supabase/server'
 
 /**
- * Check if user has a specific permission in the current academy
+ * Check if user has a specific permission
  */
 export async function checkPermission(
   userId: string,
-  permissionName: string,
-  academyId?: string
+  permissionName: string
 ): Promise<boolean> {
-  // Super admins have all permissions
-  const isAdmin = await isSuperAdmin(userId)
-  if (isAdmin) {
-    return true
-  }
-  
-  const currentAcademyId = academyId || await getCurrentAcademyId()
-  if (!currentAcademyId) {
-    return false // No academy context = no permissions
-  }
-  
   const supabase = await createClient()
   
-  // Get user's role in the academy
+  // Get user's role
   const { data: roleAssignment } = await supabase
     .from('user_role_assignments')
     .select('role_id')
     .eq('user_id', userId)
-    .eq('academy_id', currentAcademyId)
-    .single()
+    .maybeSingle()
   
   if (!roleAssignment) {
     return false // No role = no permissions
@@ -44,7 +30,7 @@ export async function checkPermission(
     .from('user_permissions')
     .select('id')
     .eq('name', permissionName)
-    .single()
+    .maybeSingle()
   
   if (!permissionData) {
     return false
@@ -56,29 +42,15 @@ export async function checkPermission(
     .select('id')
     .eq('role_id', roleAssignment.role_id)
     .eq('permission_id', permissionData.id)
-    .single()
+    .maybeSingle()
   
   return !!rolePermission
 }
 
 /**
- * Get all roles for a user in a specific academy
+ * Get all roles for a user
  */
-export async function getUserRoles(
-  userId: string,
-  academyId?: string
-): Promise<string[]> {
-  // Super admins have all roles implicitly
-  const isAdmin = await isSuperAdmin(userId)
-  if (isAdmin) {
-    return ['super_admin']
-  }
-  
-  const currentAcademyId = academyId || await getCurrentAcademyId()
-  if (!currentAcademyId) {
-    return []
-  }
-  
+export async function getUserRoles(userId: string): Promise<string[]> {
   const supabase = await createClient()
   
   const { data: assignments } = await supabase
@@ -89,7 +61,6 @@ export async function getUserRoles(
       )
     `)
     .eq('user_id', userId)
-    .eq('academy_id', currentAcademyId)
   
   if (!assignments || assignments.length === 0) {
     return []
@@ -101,45 +72,24 @@ export async function getUserRoles(
 }
 
 /**
- * Check if user has a specific role in the current academy
+ * Check if user has a specific role
  */
 export async function hasRole(
   userId: string,
-  roleName: string,
-  academyId?: string
+  roleName: string
 ): Promise<boolean> {
-  // Super admins have all roles
-  if (roleName === 'super_admin') {
-    return await isSuperAdmin(userId)
-  }
-  
-  const roles = await getUserRoles(userId, academyId)
+  const roles = await getUserRoles(userId)
   return roles.includes(roleName)
 }
 
 /**
  * Get effective permissions for current user
  */
-export async function getCurrentUserPermissions(academyId?: string): Promise<string[]> {
+export async function getCurrentUserPermissions(): Promise<string[]> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
-    return []
-  }
-  
-  // Super admins have all permissions
-  const isAdmin = await isSuperAdmin(user.id)
-  if (isAdmin) {
-    const { data: allPermissions } = await supabase
-      .from('user_permissions')
-      .select('name')
-    
-    return (allPermissions || []).map(p => p.name)
-  }
-  
-  const currentAcademyId = academyId || await getCurrentAcademyId()
-  if (!currentAcademyId) {
     return []
   }
   
@@ -148,8 +98,7 @@ export async function getCurrentUserPermissions(academyId?: string): Promise<str
     .from('user_role_assignments')
     .select('role_id')
     .eq('user_id', user.id)
-    .eq('academy_id', currentAcademyId)
-    .single()
+    .maybeSingle()
   
   if (!roleAssignment) {
     return []
@@ -177,7 +126,7 @@ export async function getCurrentUserPermissions(academyId?: string): Promise<str
 /**
  * Check if current user has a specific permission
  */
-export async function hasPermission(permissionName: string, academyId?: string): Promise<boolean> {
+export async function hasPermission(permissionName: string): Promise<boolean> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -185,10 +134,9 @@ export async function hasPermission(permissionName: string, academyId?: string):
     return false
   }
   
-  return await checkPermission(user.id, permissionName, academyId)
+  return await checkPermission(user.id, permissionName)
 }
 
 // Note: checkIsAdmin has been moved to src/lib/actions/permissions.ts
 // as a server action so it can be called from client components.
 // Import it from there instead: import { checkIsAdmin } from '@/lib/actions/permissions'
-

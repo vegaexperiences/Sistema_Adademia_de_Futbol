@@ -1,30 +1,19 @@
 'use server';
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function getPlayers() {
   try {
     const supabase = await createClient();
-    const academyId = await getCurrentAcademyId();
     
-    console.log('[getPlayers] Starting - Academy ID:', academyId);
+    console.log('[getPlayers] Starting');
     
-    // First, try a simple query without the families relation to ensure basic query works
-    let baseQuery = supabase
+    // Get players with basic query
+    const baseQuery = supabase
       .from('players')
       .select('*')
       .order('created_at', { ascending: false });
-    
-    // Filter by academy if not super admin
-    if (academyId) {
-      baseQuery = baseQuery.eq('academy_id', academyId);
-      console.log('[getPlayers] Filtering by academy_id:', academyId);
-    } else {
-      console.warn('[getPlayers] ⚠️ No academy_id found - query may fail if RLS is enabled');
-      // If no academyId, return empty array to avoid RLS issues
-      return [];
-    }
     
     const { data: baseData, error: baseError } = await baseQuery;
     
@@ -50,8 +39,7 @@ export async function getPlayers() {
         const { data: familiesData, error: familiesError } = await supabase
           .from('families')
           .select('id, name, tutor_name, tutor_email')
-          .in('id', familyIds)
-          .eq('academy_id', academyId);
+          .in('id', familyIds);
         
         if (familiesError) {
           console.warn('[getPlayers] ⚠️ Error fetching families (non-fatal):', familiesError.message);
@@ -84,11 +72,6 @@ export async function getPlayers() {
 
 export async function createPlayer(formData: FormData) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
-  
-  if (!academyId) {
-    return { error: 'No academy context available' };
-  }
   
   const player = {
     first_name: formData.get('firstName'),
@@ -98,7 +81,6 @@ export async function createPlayer(formData: FormData) {
     cedula: formData.get('cedula'),
     category: formData.get('category'),
     status: 'Active',
-    academy_id: academyId,
     // family_id would be linked here in a real scenario
   };
 
@@ -115,17 +97,12 @@ export async function createPlayer(formData: FormData) {
 // Retire a player (change status to Rejected) - player is never deleted
 export async function retirePlayer(playerId: string, reason?: string) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Get current player data
-  let query = supabase
+  const query = supabase
     .from('players')
     .select('status, first_name, last_name')
     .eq('id', playerId);
-  
-  if (academyId) {
-    query = query.eq('academy_id', academyId);
-  }
   
   const { data: player, error: playerError } = await query.single();
   
@@ -152,14 +129,10 @@ export async function retirePlayer(playerId: string, reason?: string) {
       : `Retirado: ${reason}`;
   }
   
-  let updateQuery = supabase
+  const updateQuery = supabase
     .from('players')
     .update(updateData)
     .eq('id', playerId);
-  
-  if (academyId) {
-    updateQuery = updateQuery.eq('academy_id', academyId);
-  }
   
   const { error: updateError } = await updateQuery;
   
@@ -191,17 +164,12 @@ export async function updatePlayer(playerId: string, data: {
   familyId?: string | null;
 }) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Get player to check if they have a family
-  let query = supabase
+  const query = supabase
     .from('players')
     .select('family_id')
     .eq('id', playerId);
-  
-  if (academyId) {
-    query = query.eq('academy_id', academyId);
-  }
   
   const { data: player, error: playerError } = await query.single();
   
@@ -223,14 +191,10 @@ export async function updatePlayer(playerId: string, data: {
     if (tutor_cedula !== undefined) playerUpdateData.tutor_cedula = tutor_cedula;
   }
   
-  let updateQuery = supabase
+  const updateQuery = supabase
     .from('players')
     .update(playerUpdateData)
     .eq('id', playerId);
-  
-  if (academyId) {
-    updateQuery = updateQuery.eq('academy_id', academyId);
-  }
   
   const { error: updateError } = await updateQuery;
   
