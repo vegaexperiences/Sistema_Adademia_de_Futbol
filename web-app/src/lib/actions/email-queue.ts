@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { brevo, SendSmtpEmail } from '@/lib/brevo/client';
 import { getBrevoClientForAcademy } from '@/lib/brevo/academy-client';
@@ -206,7 +206,7 @@ export async function sendEmailImmediately(
         sent_at: sentAt,
         scheduled_for: new Date().toISOString().split('T')[0],
         brevo_email_id: messageId || null,
-        academy_id: academyId || null, // Store academy_id for webhook matching
+         || null, // Store academy_id for webhook matching
         metadata: emailMetadata,
       })
       .select()
@@ -466,7 +466,7 @@ export async function queueEmail(
       subject,
       html_content: htmlContent,
       scheduled_for: scheduledDateOnly,
-      academy_id: academyId || null, // Store academy_id for Brevo client selection
+       || null, // Store academy_id for Brevo client selection
       metadata: emailMetadata
     });
   
@@ -1058,7 +1058,6 @@ export async function getRandomPlayers(count: number): Promise<{ id: string; fir
   if (count <= 0) return [];
 
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   // Get all players with families
   let query = supabase
@@ -1067,7 +1066,7 @@ export async function getRandomPlayers(count: number): Promise<{ id: string; fir
     .not('family_id', 'is', null);
 
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
 
   const { data, error } = await query;

@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { isSuperAdmin } from '@/lib/utils/academy';
 import { hasRole } from '@/lib/utils/permissions';
@@ -24,7 +24,6 @@ export interface Payment {
 // Get all payments for a player
 export async function getPlayerPayments(playerId: string) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   console.log('[getPlayerPayments] Fetching payments for player:', playerId);
   
@@ -35,7 +34,7 @@ export async function getPlayerPayments(playerId: string) {
     .eq('id', playerId);
   
   if (academyId) {
-    playerQuery = playerQuery.eq('academy_id', academyId);
+    playerQuery = playerQuery;
   }
   
   const { data: playerCheck, error: playerCheckError } = await playerQuery.single();
@@ -56,7 +55,7 @@ export async function getPlayerPayments(playerId: string) {
     .order('payment_date', { ascending: false });
   
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
   
   const { data, error } = await query;
@@ -82,7 +81,7 @@ export async function getPlayerPayments(playerId: string) {
     .limit(10);
   
   if (academyId) {
-    unlinkedQuery = unlinkedQuery.eq('academy_id', academyId);
+    unlinkedQuery = unlinkedQuery;
   }
   
   const { data: unlinkedPayments, error: unlinkedError } = await unlinkedQuery;
@@ -149,7 +148,6 @@ export async function getPlayerPayments(playerId: string) {
 // Get payments for multiple players (family/tutor)
 export async function getPlayersPayments(playerIds: string[]) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Only get approved/successful payments - rejections are not real payments
   let query = supabase
@@ -160,7 +158,7 @@ export async function getPlayersPayments(playerIds: string[]) {
     .order('payment_date', { ascending: false });
   
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
   
   const { data, error } = await query;
@@ -176,11 +174,7 @@ export async function getPlayersPayments(playerIds: string[]) {
 // Create a new payment
 export async function createPayment(payment: Payment) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
-  if (!academyId) {
-    throw new Error('No academy context available');
-  }
   
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -206,7 +200,7 @@ export async function createPayment(payment: Payment) {
     method: paymentMethod, // Normalize method name
     // Always set status: 'Approved' for manual methods, or use provided status
     status: shouldAutoApprove ? 'Approved' : (payment.status || 'Pending'),
-    academy_id: academyId,
+    
     // Ensure player_id is set if provided
     player_id: payment.player_id || null,
     // Note: created_by column does not exist in payments table, removed to avoid schema errors
@@ -266,7 +260,7 @@ export async function createPayment(payment: Payment) {
     .eq('id', payment.player_id);
   
   if (academyId) {
-    playerUpdateQuery = playerUpdateQuery.eq('academy_id', academyId);
+    playerUpdateQuery = playerUpdateQuery;
   }
   
   await playerUpdateQuery;
@@ -294,11 +288,7 @@ export async function createAdvancePayment(data: {
   proof_url?: string;
 }): Promise<{ data: any | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
-  if (!academyId) {
-    return { data: null, error: 'No academy context available' };
-  }
 
   // Validate amount
   if (!data.amount || data.amount <= 0) {
@@ -310,7 +300,7 @@ export async function createAdvancePayment(data: {
     .from('players')
     .select('id, academy_id')
     .eq('id', data.player_id)
-    .eq('academy_id', academyId)
+    
     .single();
 
   if (playerError || !player) {
@@ -349,7 +339,7 @@ export async function createAdvancePayment(data: {
     status: shouldAutoApprove ? 'Approved' : 'Pending',
     notes: notes,
     proof_url: data.proof_url,
-    academy_id: academyId,
+    
     // No month_year - this is an advance payment (credit)
   };
 
@@ -377,7 +367,7 @@ export async function createAdvancePayment(data: {
         payment_status: 'current'
       })
       .eq('id', data.player_id)
-      .eq('academy_id', academyId);
+      ;
 
     // Revalidate all relevant paths
     revalidatePath('/dashboard/players');
@@ -409,11 +399,7 @@ export async function createExternalIncome(data: {
   proof_url?: string;
 }): Promise<{ data: any | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
-  if (!academyId) {
-    return { data: null, error: 'No academy context available' };
-  }
 
   // Validate amount
   if (!data.amount || data.amount <= 0) {
@@ -468,7 +454,7 @@ export async function createExternalIncome(data: {
     status: shouldAutoApprove ? 'Approved' : 'Pending',
     notes: notes,
     proof_url: data.proof_url,
-    academy_id: academyId,
+    
   };
 
   try {
@@ -502,7 +488,6 @@ export async function createExternalIncome(data: {
 // Update player's custom monthly fee
 export async function updateCustomMonthlyFee(playerId: string, customFee: number | null) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   let query = supabase
     .from('players')
@@ -510,7 +495,7 @@ export async function updateCustomMonthlyFee(playerId: string, customFee: number
     .eq('id', playerId);
   
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
   
   const { error } = await query;
@@ -527,7 +512,6 @@ export async function updateCustomMonthlyFee(playerId: string, customFee: number
 // Update player status (Normal/Scholarship)
 export async function updatePlayerStatus(playerId: string, status: 'Active' | 'Scholarship') {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   let query = supabase
     .from('players')
@@ -535,7 +519,7 @@ export async function updatePlayerStatus(playerId: string, status: 'Active' | 'S
     .eq('id', playerId);
   
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
   
   const { error } = await query;
@@ -601,7 +585,6 @@ export async function isSeasonActive(checkDate?: Date): Promise<boolean> {
 // Calculate monthly fee for a player
 export async function calculateMonthlyFee(playerId: string) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Get player data
   let query = supabase
@@ -610,7 +593,7 @@ export async function calculateMonthlyFee(playerId: string) {
     .eq('id', playerId);
   
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
   
   const { data: player } = await query.single();
@@ -649,7 +632,7 @@ export async function calculateMonthlyFee(playerId: string) {
       .order('created_at');
     
     if (academyId) {
-      familyQuery = familyQuery.eq('academy_id', academyId);
+      familyQuery = familyQuery;
     }
     
     const { data: familyPlayers } = await familyQuery;
@@ -668,7 +651,6 @@ export async function calculateMonthlyFee(playerId: string) {
 // Get payment summary for a player
 export async function getPaymentSummary(playerId: string) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Only get approved/successful payments - rejections are not real payments
   let query = supabase
@@ -678,7 +660,7 @@ export async function getPaymentSummary(playerId: string) {
     .neq('status', 'Rejected'); // Exclude rejected payments - they are not real payments
   
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
   
   const { data: payments } = await query;
@@ -696,7 +678,6 @@ export async function getPaymentSummary(playerId: string) {
 // Link a payment to a player
 export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Verify payment exists and is unlinked
   let paymentQuery = supabase
@@ -705,7 +686,7 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
     .eq('id', paymentId);
   
   if (academyId) {
-    paymentQuery = paymentQuery.eq('academy_id', academyId);
+    paymentQuery = paymentQuery;
   }
   
   const { data: payment, error: paymentError } = await paymentQuery.single();
@@ -725,7 +706,7 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
     .eq('id', playerId);
   
   if (academyId) {
-    playerQuery = playerQuery.eq('academy_id', academyId);
+    playerQuery = playerQuery;
   }
   
   const { data: player, error: playerError } = await playerQuery.single();
@@ -753,7 +734,7 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
     .eq('id', paymentId);
   
   if (academyId) {
-    updateQuery = updateQuery.eq('academy_id', academyId);
+    updateQuery = updateQuery;
   }
   
   const { error: updateError } = await updateQuery;
@@ -776,7 +757,6 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
 // Auto-link unlinked payments for a player (can be called from Server Actions)
 export async function autoLinkUnlinkedPaymentsForPlayer(playerId: string) {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   console.log('[autoLinkUnlinkedPaymentsForPlayer] Starting auto-link for player:', playerId);
   
@@ -789,7 +769,7 @@ export async function autoLinkUnlinkedPaymentsForPlayer(playerId: string) {
     .limit(50);
   
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
   
   const { data: unlinkedPayments, error: unlinkedError } = await query;
@@ -864,7 +844,6 @@ export async function updatePaymentAmount(
   newAmount: number
 ): Promise<{ data: any | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   // Validate new amount
   if (!newAmount || newAmount <= 0) {
@@ -904,7 +883,7 @@ export async function updatePaymentAmount(
     .eq('id', paymentId);
 
   if (academyId) {
-    paymentQuery = paymentQuery.eq('academy_id', academyId);
+    paymentQuery = paymentQuery;
   }
 
   const { data: existingPayment, error: fetchError } = await paymentQuery.single();

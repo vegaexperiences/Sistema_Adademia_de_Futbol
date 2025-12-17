@@ -47,11 +47,7 @@ export interface TransactionsFilter {
  */
 export async function getTransactions(filter: TransactionsFilter = {}): Promise<Transaction[]> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
-  if (!academyId) {
-    return [];
-  }
 
   const transactions: Transaction[] = [];
 
@@ -223,7 +219,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       category,
       payment_method
     `)
-    .eq('academy_id', academyId);
+    ;
 
   if (filter.startDate) {
     expensesQuery = expensesQuery.gte('date', filter.startDate);
@@ -353,19 +349,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
  */
 export async function getBalance(startDate?: string, endDate?: string): Promise<Balance> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
-  if (!academyId) {
-    return {
-      totalIncome: 0,
-      totalExpenses: 0,
-      netBalance: 0,
-      period: {
-        start: startDate || new Date().toISOString().split('T')[0],
-        end: endDate || new Date().toISOString().split('T')[0],
-      },
-    };
-  }
 
   // Default to current month if no dates provided
   const today = new Date();
@@ -381,7 +365,7 @@ export async function getBalance(startDate?: string, endDate?: string): Promise<
     .neq('status', 'Cancelled')
     .gte('payment_date', defaultStart)
     .lte('payment_date', defaultEnd)
-    .eq('academy_id', academyId);
+    ;
 
   const { data: payments } = await paymentsQuery;
 
@@ -408,7 +392,7 @@ export async function getBalance(startDate?: string, endDate?: string): Promise<
     .select('amount')
     .gte('date', defaultStart)
     .lte('date', defaultEnd)
-    .eq('academy_id', academyId);
+    ;
 
   const totalOperationalExpenses = (expenses || []).reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
 

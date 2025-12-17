@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { sendEmailImmediately } from '@/lib/actions/email-queue';
 
@@ -40,7 +40,6 @@ export interface SponsorRegistration {
  */
 export async function getAllSponsors(includeInactive: boolean = false): Promise<{ data: Sponsor[] | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   let query = supabase
     .from('sponsors')
@@ -53,7 +52,7 @@ export async function getAllSponsors(includeInactive: boolean = false): Promise<
   }
 
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
 
   const { data, error } = await query;
@@ -77,7 +76,6 @@ export async function getAllSponsors(includeInactive: boolean = false): Promise<
  */
 export async function getSponsorById(id: string): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   let query = supabase
     .from('sponsors')
@@ -86,7 +84,7 @@ export async function getSponsorById(id: string): Promise<{ data: Sponsor | null
     .eq('is_active', true);
 
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
 
   const { data, error } = await query.single();
@@ -148,7 +146,7 @@ export async function createSponsorRegistration(
 
   const registrationData = {
     ...data,
-    academy_id: academyId,
+    
     status: 'pending' as const,
   };
 
@@ -239,7 +237,6 @@ export async function createSponsorRegistration(
  */
 export async function getSponsorRegistrations(): Promise<{ data: SponsorRegistration[] | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   let query = supabase
     .from('sponsor_registrations')
@@ -254,7 +251,7 @@ export async function getSponsorRegistrations(): Promise<{ data: SponsorRegistra
     .order('created_at', { ascending: false });
 
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
 
   const { data, error } = await query;
@@ -310,7 +307,6 @@ export interface SponsorRegistrationWithPlayers extends SponsorRegistration {
  */
 export async function getSponsorRegistrationsWithPlayers(): Promise<{ data: SponsorRegistrationWithPlayers[] | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   let query = supabase
     .from('sponsor_registrations')
@@ -339,7 +335,7 @@ export async function getSponsorRegistrationsWithPlayers(): Promise<{ data: Spon
     .order('created_at', { ascending: false });
 
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
 
   const { data, error } = await query;
@@ -376,7 +372,6 @@ export async function assignPlayerToSponsor(
   notes?: string
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return { success: false, error: 'No academy context found' };
@@ -393,7 +388,7 @@ export async function assignPlayerToSponsor(
     .from('sponsor_registrations')
     .select('id, academy_id')
     .eq('id', sponsorRegistrationId)
-    .eq('academy_id', academyId)
+    
     .single();
 
   if (regError || !registration) {
@@ -405,7 +400,7 @@ export async function assignPlayerToSponsor(
     .from('players')
     .select('id, academy_id')
     .eq('id', playerId)
-    .eq('academy_id', academyId)
+    
     .single();
 
   if (playerError || !player) {
@@ -430,7 +425,7 @@ export async function assignPlayerToSponsor(
     .insert({
       sponsor_registration_id: sponsorRegistrationId,
       player_id: playerId,
-      academy_id: academyId,
+      
       assigned_by: user.id,
       notes: notes || null,
     });
@@ -595,7 +590,6 @@ export async function createSponsor(data: {
   is_active?: boolean;
 }): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return { data: null, error: 'No academy context found' };
@@ -613,7 +607,7 @@ export async function createSponsor(data: {
     display_order: data.display_order ?? 0,
     image_url: data.image_url || null,
     is_active: data.is_active !== undefined ? data.is_active : true,
-    academy_id: academyId,
+    
   };
 
   const { data: sponsor, error } = await supabase
@@ -649,7 +643,6 @@ export async function updateSponsor(
   }
 ): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return { data: null, error: 'No academy context found' };
@@ -660,7 +653,7 @@ export async function updateSponsor(
     .from('sponsors')
     .select('id, academy_id')
     .eq('id', id)
-    .eq('academy_id', academyId)
+    
     .single();
 
   if (checkError || !existingSponsor) {
@@ -704,7 +697,6 @@ export async function updateSponsor(
  */
 export async function deleteSponsor(id: string): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return { success: false, error: 'No academy context found' };
@@ -715,7 +707,7 @@ export async function deleteSponsor(id: string): Promise<{ success: boolean; err
     .from('sponsors')
     .select('id, academy_id')
     .eq('id', id)
-    .eq('academy_id', academyId)
+    
     .single();
 
   if (checkError || !existingSponsor) {
@@ -763,7 +755,6 @@ export async function toggleSponsorActive(
   isActive: boolean
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return { success: false, error: 'No academy context found' };
@@ -774,7 +765,7 @@ export async function toggleSponsorActive(
     .from('sponsors')
     .select('id, academy_id')
     .eq('id', id)
-    .eq('academy_id', academyId)
+    
     .single();
 
   if (checkError || !existingSponsor) {
@@ -803,7 +794,6 @@ export async function toggleSponsorActive(
  */
 export async function getOrCreateOpenDonationSponsorLevel(): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return { data: null, error: 'No academy context found' };
@@ -814,7 +804,7 @@ export async function getOrCreateOpenDonationSponsorLevel(): Promise<{ data: Spo
     .from('sponsors')
     .select('*')
     .eq('name', 'Donación Abierta')
-    .eq('academy_id', academyId)
+    
     .maybeSingle();
 
   const { data: existing, error: findError } = await query;
@@ -844,7 +834,7 @@ export async function getOrCreateOpenDonationSponsorLevel(): Promise<{ data: Spo
     display_order: 9999, // Put it at the end
     image_url: null,
     is_active: true,
-    academy_id: academyId,
+    
   };
 
   const { data: newSponsor, error: createError } = await supabase

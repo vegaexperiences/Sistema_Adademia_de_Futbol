@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { getPlayerAccountBalance, type PlayerAccountBalance } from './monthly-charges';
 import { createPayment } from './payments';
 import { getPublicSystemConfig } from './config';
@@ -90,7 +90,6 @@ async function checkIsAdmin(): Promise<boolean> {
     }
     
     // Check admin role in current academy
-    const academyId = await getCurrentAcademyId();
     if (academyId) {
       return await hasRole(user.id, 'admin', academyId);
     }
@@ -122,26 +121,6 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
   }
 
   // If no academyId, try to get it from the first available academy (fallback for public portal)
-  if (!academyId) {
-    console.log('[searchByCedula] No academyId from context, trying fallback...');
-    try {
-      // Try to get the first academy (usually Suarez Academy)
-      const { data: academies, error: academyError } = await supabase
-        .from('academies')
-        .select('id, slug, name')
-        .order('created_at', { ascending: true })
-        .limit(1);
-      
-      if (!academyError && academies && academies.length > 0) {
-        academyId = academies[0].id;
-        console.log('[searchByCedula] Using fallback academy:', {
-          id: academyId,
-          slug: academies[0].slug,
-          name: academies[0].name,
-        });
-      } else {
-        console.error('[searchByCedula] Could not get fallback academy:', academyError);
-      }
     } catch (error: any) {
       console.error('[searchByCedula] Error getting fallback academy:', error);
     }
@@ -158,10 +137,6 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
   });
 
   // If still no academyId, we can't proceed (RLS will block)
-  if (!academyId) {
-    console.error('[searchByCedula] No academyId available, cannot proceed with search');
-    return { data: null, error: 'No se pudo determinar la academia. Por favor, contacte al administrador.' };
-  }
 
   // Check if user is admin (for cross-academy search fallback)
   const isAdmin = await checkIsAdmin();
@@ -202,7 +177,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
           tutor_phone
         )
       `)
-      .eq('academy_id', academyId)
+      
       .or(cedulaConditions);
 
     if (playersError) {
@@ -240,7 +215,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
           tutor_phone
         )
       `)
-      .eq('academy_id', academyId)
+      
       .or(tutorCedulaConditions);
 
     if (tutorError) {
@@ -273,7 +248,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
           family_id
         )
       `)
-      .eq('academy_id', academyId)
+      
       .or(tutorCedulaConditions);
 
     if (familiesError) {
@@ -371,7 +346,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
                 tutor_phone
               )
             `)
-            .eq('academy_id', academyId);
+            ;
           
           if (lastName) {
             nameQuery = nameQuery.ilike('first_name', `%${firstName}%`).ilike('last_name', `%${lastName}%`);
@@ -416,7 +391,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
                 tutor_phone
               )
             `)
-            .eq('academy_id', academyId);
+            ;
           
           if (lastName) {
             tutorNameQuery = tutorNameQuery.ilike('tutor_name', `%${firstName}%${lastName}%`);
@@ -457,7 +432,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
                 family_id
               )
             `)
-            .eq('academy_id', academyId);
+            ;
           
           if (lastName) {
             familiesNameQuery = familiesNameQuery.ilike('tutor_name', `%${firstName}%${lastName}%`);
@@ -604,11 +579,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
  */
 export async function getPlayerAccountForPayment(playerId: string): Promise<{ data: PlayerAccountInfo | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
-  if (!academyId) {
-    return { data: null, error: 'No se pudo determinar la academia' };
-  }
 
   try {
     // Get player info
@@ -616,7 +587,7 @@ export async function getPlayerAccountForPayment(playerId: string): Promise<{ da
       .from('players')
       .select('id, first_name, last_name, cedula, category, status')
       .eq('id', playerId)
-      .eq('academy_id', academyId)
+      
       .single();
 
     if (playerError || !player) {
@@ -661,11 +632,7 @@ export async function processPublicPayment(data: {
   isAdvancePayment?: boolean;
 }): Promise<{ data: any | null; error: string | null }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
-  if (!academyId) {
-    return { data: null, error: 'No se pudo determinar la academia' };
-  }
 
   // Validate amount
   if (!data.amount || data.amount <= 0) {
@@ -677,7 +644,7 @@ export async function processPublicPayment(data: {
     .from('players')
     .select('id, academy_id')
     .eq('id', data.player_id)
-    .eq('academy_id', academyId)
+    
     .single();
 
   if (playerError || !player) {
