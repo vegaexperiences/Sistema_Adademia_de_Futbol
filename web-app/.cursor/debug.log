@@ -158,3 +158,43 @@
 {"location":"UserManagement.tsx:107","message":"Finally block - setting isLoading to false","data":{},"timestamp":1765572028722,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
 {"location":"UserManagement.tsx:24","message":"Component render","data":{"currentUserEmail":"vegaexperiences@gmail.com"},"timestamp":1765572028722,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
 {"location":"UserManagement.tsx:24","message":"Component render","data":{"currentUserEmail":"vegaexperiences@gmail.com"},"timestamp":1765572029138,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765893953768,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:25","message":"Before getUser","data":{},"timestamp":1765893954141,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:32","message":"Before isSuperAdmin check","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc"},"timestamp":1765893954251,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:35","message":"After isAdminOrSuperAdmin check","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","isAdmin":true},"timestamp":1765893954668,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:42","message":"Before query academies","data":{},"timestamp":1765893954668,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:47","message":"After query academies","data":{"hasError":false,"academiesCount":2},"timestamp":1765893955039,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:44","message":"getAllUsers entry","data":{},"timestamp":1765893957389,"sessionId":"debug-session","runId":"run2","hypothesisId":"C"}
+{"location":"users.ts:47","message":"Before getUser","data":{},"timestamp":1765893957564,"sessionId":"debug-session","runId":"run2","hypothesisId":"D"}
+{"location":"users.ts:49","message":"After getUser","data":{"hasUser":true,"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","userEmail":"vegaexperiences@gmail.com"},"timestamp":1765893957874,"sessionId":"debug-session","runId":"run2","hypothesisId":"D"}
+{"location":"users.ts:55","message":"Before isAdminOrSuperAdmin check","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","userEmail":"vegaexperiences@gmail.com"},"timestamp":1765893957874,"sessionId":"debug-session","runId":"run2","hypothesisId":"A"}
+{"location":"users.ts:56","message":"After isAdminOrSuperAdmin check","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","userEmail":"vegaexperiences@gmail.com","isAdmin":true},"timestamp":1765893958123,"sessionId":"debug-session","runId":"run2","hypothesisId":"A"}
+{"location":"users.ts:83","message":"Before admin.listUsers","data":{"hasServiceRoleKey":true},"timestamp":1765893958124,"sessionId":"debug-session","runId":"run2","hypothesisId":"C"}
+{"location":"users.ts:88","message":"Creating admin client with SERVICE_ROLE_KEY","data":{},"timestamp":1765893958124,"sessionId":"debug-session","runId":"run2","hypothesisId":"C"}
+{"location":"users.ts:95","message":"Calling admin.listUsers","data":{},"timestamp":1765893958124,"sessionId":"debug-session","runId":"run2","hypothesisId":"C"}
+{"location":"users.ts:98","message":"After admin.listUsers","data":{"hasUsers":true,"usersCount":1,"hasError":false},"timestamp":1765893958449,"sessionId":"debug-session","runId":"run2","hypothesisId":"C"}
+{"location":"users.ts:108","message":"Successfully fetched users","data":{"usersCount":1},"timestamp":1765893958449,"sessionId":"debug-session","runId":"run2","hypothesisId":"C"}
+{"location":"users.ts:138","message":"getAllRoles entry","data":{},"timestamp":1765893959253,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:142","message":"Before query user_roles","data":{},"timestamp":1765893959404,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:147","message":"After query user_roles","data":{"hasError":false,"rolesCount":5},"timestamp":1765893959540,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765893960053,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:25","message":"Before getUser","data":{},"timestamp":1765893960269,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:32","message":"Before isSuperAdmin check","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc"},"timestamp":1765893962746,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:35","message":"After isAdminOrSuperAdmin check","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","isAdmin":true},"timestamp":1765893964131,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:42","message":"Before query academies","data":{},"timestamp":1765893964137,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:47","message":"After query academies","data":{"hasError":false,"academiesCount":2},"timestamp":1765893964933,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:176","message":"getUserRoles entry","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc"},"timestamp":1765893977436,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:182","message":"Before getUser","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","currentAcademyId":"00000000-0000-0000-0000-000000000001"},"timestamp":1765893977597,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:191","message":"Before isSuperAdmin check","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","currentUserId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc"},"timestamp":1765893977723,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:194","message":"After isSuperAdmin check","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","currentUserId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","isAdmin":true,"isOwnUser":true},"timestamp":1765893977972,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:202","message":"Before query user_role_assignments","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","currentAcademyId":"00000000-0000-0000-0000-000000000001"},"timestamp":1765893977972,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:246","message":"Before query execution","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","currentAcademyId":"00000000-0000-0000-0000-000000000001","isAdmin":true},"timestamp":1765893977972,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:250","message":"After query execution","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","hasError":false,"dataCount":1},"timestamp":1765893978101,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"users.ts:266","message":"getUserRoles success","data":{"userId":"fbe4d18f-f36f-46e4-957f-d8b5ea1860cc","rolesCount":1},"timestamp":1765893978101,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765894121198,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765894702489,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765894918392,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765895136807,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765895285249,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765895641686,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}
+{"location":"academies.ts:19","message":"getAllAcademies entry","data":{},"timestamp":1765897212030,"sessionId":"debug-session","runId":"run3","hypothesisId":"F"}

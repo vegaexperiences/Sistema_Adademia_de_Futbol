@@ -404,3 +404,4 @@ export async function getPlayerTotalLateFees(playerId: string): Promise<number> 
   const lateFees = await getPlayerLateFees(playerId);
   return lateFees.reduce((sum, fee) => sum + fee.late_fee_amount, 0);
 }
+

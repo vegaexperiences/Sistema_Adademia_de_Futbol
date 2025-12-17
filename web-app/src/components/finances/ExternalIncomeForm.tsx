@@ -389,3 +389,4 @@ export function ExternalIncomeForm({ onClose, onSuccess }: ExternalIncomeFormPro
     </div>
   );
 }
+

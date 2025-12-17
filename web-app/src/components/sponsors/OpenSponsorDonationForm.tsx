@@ -590,3 +590,4 @@ export function OpenSponsorDonationForm({ config }: OpenSponsorDonationFormProps
     </div>
   );
 }
+

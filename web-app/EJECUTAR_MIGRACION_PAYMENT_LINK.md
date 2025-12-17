@@ -46,3 +46,4 @@ Cuando se envíe un correo usando esta plantilla, asegúrate de pasar la variabl
 https://sistema-adademia-de-futbol-tura.vercel.app/pay?cedula=8-1234-5678
 ```
 
+
