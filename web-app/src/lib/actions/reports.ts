@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { calculateMonthlyFee } from './payments';
 import { getTotalStaffExpenses } from './staff';
 
@@ -173,7 +173,6 @@ export interface OKRsData {
  */
 export async function getFinancialKPIs(startDate: string, endDate: string): Promise<FinancialKPIs> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   // Get all data in parallel
   // Include all payment methods and filter properly
@@ -186,13 +185,13 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
       .neq('status', 'Cancelled')
       .gte('payment_date', startDate)
       .lte('payment_date', endDate)
-      .eq('academy_id', academyId),
+      ,
     supabase
       .from('expenses')
       .select('amount')
       .gte('date', startDate)
       .lte('date', endDate)
-      .eq('academy_id', academyId),
+      ,
     supabase
       .from('staff_payments')
       .select('amount')
@@ -202,7 +201,7 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
       .from('players')
       .select('id, status')
       .in('status', ['Active', 'Scholarship'])
-      .eq('academy_id', academyId),
+      ,
   ]);
 
   // Calculate income - include Approved and Pending payments (Pending might be approved later)
@@ -242,7 +241,7 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
   const { data: settings } = await supabase
     .from('settings')
     .select('*')
-    .eq('academy_id', academyId);
+    ;
 
   const settingsMap = settings?.reduce((acc: any, s: any) => {
     acc[s.key] = parseFloat(s.value);
@@ -263,7 +262,7 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
       families(id)
     `)
     .in('status', ['Active', 'Scholarship'])
-    .eq('academy_id', academyId);
+    ;
 
   if (!playersWithFees || playersWithFees.length === 0) {
     return {
@@ -286,7 +285,7 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
     .select('family_id')
     .in('status', ['Active', 'Scholarship'])
     .not('family_id', 'is', null)
-    .eq('academy_id', academyId);
+    ;
 
   const familyPlayerCounts: Record<string, number> = {};
   (familyCounts || []).forEach(p => {
@@ -301,7 +300,7 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
     .select('id, family_id, created_at')
     .in('status', ['Active', 'Scholarship'])
     .not('family_id', 'is', null)
-    .eq('academy_id', academyId)
+    
     .order('family_id')
     .order('created_at');
 
@@ -382,7 +381,6 @@ export async function getFinancialKPIs(startDate: string, endDate: string): Prom
  */
 async function calculateScholarshipOpportunityCost(playerId: string): Promise<number> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   // Get player data
   let query = supabase
@@ -391,7 +389,7 @@ async function calculateScholarshipOpportunityCost(playerId: string): Promise<nu
     .eq('id', playerId);
 
   if (academyId) {
-    query = query.eq('academy_id', academyId);
+    query = query;
   }
 
   const { data: player } = await query.single();
@@ -404,7 +402,7 @@ async function calculateScholarshipOpportunityCost(playerId: string): Promise<nu
   const { data: settings } = await supabase
     .from('settings')
     .select('*')
-    .eq('academy_id', academyId);
+    ;
 
   const settingsMap = settings?.reduce((acc: any, s: any) => {
     acc[s.key] = parseFloat(s.value);
@@ -429,7 +427,7 @@ async function calculateScholarshipOpportunityCost(playerId: string): Promise<nu
       .order('created_at');
 
     if (academyId) {
-      familyQuery = familyQuery.eq('academy_id', academyId);
+      familyQuery = familyQuery;
     }
 
     const { data: familyPlayers } = await familyQuery;
@@ -453,14 +451,13 @@ export async function getScholarshipImpactAnalysis(
   endDate: string
 ): Promise<ScholarshipImpactAnalysis> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   // Get all players
   let playersQuery = supabase
     .from('players')
     .select('id, first_name, last_name, category, family_id, custom_monthly_fee, status, created_at')
     .in('status', ['Active', 'Scholarship'])
-    .eq('academy_id', academyId);
+    ;
 
   const { data: allPlayers } = await playersQuery;
 
@@ -488,7 +485,7 @@ export async function getScholarshipImpactAnalysis(
   const { data: settings } = await supabase
     .from('settings')
     .select('*')
-    .eq('academy_id', academyId);
+    ;
 
   const settingsMap = settings?.reduce((acc: any, s: any) => {
     acc[s.key] = parseFloat(s.value);
@@ -504,7 +501,7 @@ export async function getScholarshipImpactAnalysis(
     .select('family_id')
     .in('status', ['Active', 'Scholarship'])
     .not('family_id', 'is', null)
-    .eq('academy_id', academyId);
+    ;
 
   const familyPlayerCounts: Record<string, number> = {};
   (familyCounts || []).forEach(p => {
@@ -519,7 +516,7 @@ export async function getScholarshipImpactAnalysis(
     .select('id, family_id, created_at')
     .in('status', ['Active', 'Scholarship'])
     .not('family_id', 'is', null)
-    .eq('academy_id', academyId)
+    
     .order('family_id')
     .order('created_at');
 
@@ -541,7 +538,7 @@ export async function getScholarshipImpactAnalysis(
     .from('players')
     .select('id, families(id)')
     .in('id', scholarshipPlayerIds)
-    .eq('academy_id', academyId);
+    ;
 
   const familyMap: Record<string, any> = {};
   (scholarshipPlayersWithFamilies || []).forEach(p => {
@@ -594,13 +591,13 @@ export async function getScholarshipImpactAnalysis(
       .eq('status', 'Approved')
       .gte('payment_date', startDate)
       .lte('payment_date', endDate)
-      .eq('academy_id', academyId),
+      ,
     supabase
       .from('expenses')
       .select('amount')
       .gte('date', startDate)
       .lte('date', endDate)
-      .eq('academy_id', academyId),
+      ,
     supabase
       .from('staff_payments')
       .select('amount')
@@ -642,7 +639,6 @@ export async function getScholarshipImpactAnalysis(
  */
 export async function getBusinessProjection(months: number = 12): Promise<BusinessProjection> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   const today = new Date();
   const currentYear = today.getFullYear();
@@ -665,13 +661,13 @@ export async function getBusinessProjection(months: number = 12): Promise<Busine
       .eq('status', 'Approved')
       .gte('payment_date', startDateStr)
       .lte('payment_date', endDateStr)
-      .eq('academy_id', academyId),
+      ,
     supabase
       .from('expenses')
       .select('amount, date')
       .gte('date', startDateStr)
       .lte('date', endDateStr)
-      .eq('academy_id', academyId),
+      ,
     supabase
       .from('staff_payments')
       .select('amount, payment_date')
@@ -811,7 +807,6 @@ export async function getBusinessProjection(months: number = 12): Promise<Busine
  */
 export async function getPlayerReportData(): Promise<PlayerReportData> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   // Get all players
   let playersQuery = supabase
@@ -829,7 +824,7 @@ export async function getPlayerReportData(): Promise<PlayerReportData> {
       created_at,
       families(tutor_name)
     `)
-    .eq('academy_id', academyId);
+    ;
 
   const { data: allPlayers } = await playersQuery;
 
@@ -850,7 +845,7 @@ export async function getPlayerReportData(): Promise<PlayerReportData> {
   let pendingQuery = supabase
     .from('pending_players')
     .select('id')
-    .eq('academy_id', academyId);
+    ;
 
   const { data: pendingPlayers } = await pendingQuery;
   const totalPending = pendingPlayers?.length || 0;
@@ -920,7 +915,6 @@ export async function getFinancialReportData(
   endDate: string
 ): Promise<FinancialReportData> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   // Get KPIs
   const kpis = await getFinancialKPIs(startDate, endDate);
@@ -940,7 +934,7 @@ export async function getFinancialReportData(
     .eq('status', 'Approved')
     .gte('payment_date', startDate)
     .lte('payment_date', endDate)
-    .eq('academy_id', academyId);
+    ;
 
   // Group income by type
   const incomeByType: Record<string, number> = {};
@@ -998,7 +992,7 @@ export async function getFinancialReportData(
     `)
     .gte('date', startDate)
     .lte('date', endDate)
-    .eq('academy_id', academyId);
+    ;
 
   const expensesByCategory: Record<string, number> = {};
   (expenses || []).forEach(e => {
@@ -1086,7 +1080,6 @@ export async function getOKRsData(period: 'monthly' | 'quarterly' | 'annual' = '
 
   // Get player count from previous period for retention calculation
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   const prevStart = new Date(startDate);
   prevStart.setMonth(prevStart.getMonth() - (period === 'monthly' ? 1 : period === 'quarterly' ? 3 : 12));
@@ -1097,13 +1090,13 @@ export async function getOKRsData(period: 'monthly' | 'quarterly' | 'annual' = '
     .from('players')
     .select('id')
     .in('status', ['Active', 'Scholarship'])
-    .eq('academy_id', academyId);
+    ;
 
   const { data: previousPlayers } = await supabase
     .from('players')
     .select('id')
     .in('status', ['Active', 'Scholarship'])
-    .eq('academy_id', academyId)
+    
     .lte('created_at', prevEnd.toISOString());
 
   const currentPlayerCount = currentPlayers?.length || 0;

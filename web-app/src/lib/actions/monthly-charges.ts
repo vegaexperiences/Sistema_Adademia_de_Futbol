@@ -37,7 +37,6 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
   errors: string[];
 }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return {
@@ -75,7 +74,7 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
   const { data: players, error: playersError } = await supabase
     .from('players')
     .select('id, first_name, last_name, status')
-    .eq('academy_id', academyId)
+    
     .eq('status', 'Active');
 
   if (playersError || !players) {
@@ -96,7 +95,7 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
     const { data: existingCharges } = await supabase
       .from('payments')
       .select('player_id')
-      .eq('academy_id', academyId)
+      
       .eq('type', 'charge')
       .eq('month_year', monthYearStr)
       .limit(1);
@@ -131,7 +130,7 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
           .eq('player_id', player.id)
           .eq('type', 'charge')
           .eq('month_year', monthYearStr)
-          .eq('academy_id', academyId)
+          
           .limit(1);
 
         if (existing && existing.length > 0) {
@@ -152,7 +151,7 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
           month_year: monthYearStr,
           status: 'Pending',
           notes: `Cargo mensual ${monthYearStr}`,
-          academy_id: academyId,
+          
         });
 
       if (chargeError) {
@@ -182,7 +181,6 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
  */
 export async function getPlayerCharges(playerId: string): Promise<MonthlyCharge[]> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return [];
@@ -193,7 +191,7 @@ export async function getPlayerCharges(playerId: string): Promise<MonthlyCharge[
     .select('id, player_id, amount, month_year, status, created_at, payment_date')
     .eq('player_id', playerId)
     .eq('type', 'charge')
-    .eq('academy_id', academyId)
+    
     .order('month_year', { ascending: false });
 
   if (error || !charges) {
@@ -217,7 +215,6 @@ export async function getPlayerCharges(playerId: string): Promise<MonthlyCharge[
  */
 export async function getPlayerAccountBalance(playerId: string): Promise<PlayerAccountBalance> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return {
@@ -237,7 +234,7 @@ export async function getPlayerAccountBalance(playerId: string): Promise<PlayerA
     .select('id, amount, month_year, status, created_at, payment_date')
     .eq('player_id', playerId)
     .eq('type', 'charge')
-    .eq('academy_id', academyId);
+    ;
 
   // Get all payments (excluding charges)
   const { data: payments } = await supabase
@@ -246,7 +243,7 @@ export async function getPlayerAccountBalance(playerId: string): Promise<PlayerA
     .eq('player_id', playerId)
     .neq('type', 'charge')
     .in('status', ['Approved', 'Pending'])
-    .eq('academy_id', academyId);
+    ;
 
   // Get late fees for this player
   const { getPlayerTotalLateFees } = await import('./late-fees');
@@ -323,7 +320,6 @@ export async function getPlayerAccountBalance(playerId: string): Promise<PlayerA
  */
 export async function markChargeAsPaid(chargeId: string, paymentId: string): Promise<boolean> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return false;
@@ -338,7 +334,7 @@ export async function markChargeAsPaid(chargeId: string, paymentId: string): Pro
     })
     .eq('id', chargeId)
     .eq('type', 'charge')
-    .eq('academy_id', academyId);
+    ;
 
   if (error) {
     console.error('[markChargeAsPaid] Error:', error);

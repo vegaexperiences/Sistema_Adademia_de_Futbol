@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { calculateLateFee as calcLateFee, calculateDaysOverdue as calcDaysOverdue, type LateFeeConfig } from '@/lib/utils/late-fees';
 
@@ -26,7 +26,6 @@ export interface LateFee {
  */
 export async function getLateFeeConfig(): Promise<LateFeeConfig> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     // Return default config if no academy context
@@ -84,7 +83,6 @@ export async function getLateFeeConfig(): Promise<LateFeeConfig> {
  */
 export async function updateLateFeeConfig(config: Partial<LateFeeConfig>): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return { success: false, error: 'No academy context available' };
@@ -113,7 +111,7 @@ export async function updateLateFeeConfig(config: Partial<LateFeeConfig>): Promi
         .from('settings')
         .select('id')
         .eq('key', update.key)
-        .eq('academy_id', academyId)
+        
         .maybeSingle();
 
       if (existing) {
@@ -144,7 +142,7 @@ export async function updateLateFeeConfig(config: Partial<LateFeeConfig>): Promi
           const { error } = await supabase
             .from('settings')
             .update({
-              academy_id: academyId,
+              
               value: update.value,
               updated_at: new Date().toISOString(),
             })
@@ -161,7 +159,7 @@ export async function updateLateFeeConfig(config: Partial<LateFeeConfig>): Promi
             .insert({
               key: update.key,
               value: update.value,
-              academy_id: academyId,
+              
               updated_at: new Date().toISOString(),
             });
           
@@ -172,7 +170,7 @@ export async function updateLateFeeConfig(config: Partial<LateFeeConfig>): Promi
                 .from('settings')
                 .update({
                   value: update.value,
-                  academy_id: academyId,
+                  
                   updated_at: new Date().toISOString(),
                 })
                 .eq('key', update.key);
@@ -205,7 +203,6 @@ export async function updateLateFeeConfig(config: Partial<LateFeeConfig>): Promi
  */
 export async function getPlayerLateFees(playerId: string): Promise<LateFee[]> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return [];
@@ -215,7 +212,7 @@ export async function getPlayerLateFees(playerId: string): Promise<LateFee[]> {
     .from('late_fees')
     .select('*')
     .eq('player_id', playerId)
-    .eq('academy_id', academyId)
+    
     .order('applied_at', { ascending: false });
 
   if (error) {
@@ -247,7 +244,6 @@ export async function hasLateFeeBeenApplied(
   paymentId?: string
 ): Promise<boolean> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return false;
@@ -258,7 +254,7 @@ export async function hasLateFeeBeenApplied(
     .select('id')
     .eq('player_id', playerId)
     .eq('month_year', monthYear)
-    .eq('academy_id', academyId);
+    ;
 
   if (paymentId) {
     query = query.eq('payment_id', paymentId);
@@ -286,7 +282,6 @@ export async function applyLateFeesToOverdueCharges(
   errors: string[];
 }> {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
 
   if (!academyId) {
     return { success: false, applied: 0, errors: ['No academy context available'] };
@@ -307,7 +302,7 @@ export async function applyLateFeesToOverdueCharges(
       .from('payments')
       .select('id, player_id, amount, month_year, payment_date, status')
       .eq('type', 'charge')
-      .eq('academy_id', academyId)
+      
       .in('status', ['Pending', 'Overdue']);
 
     if (monthYear) {
@@ -375,7 +370,7 @@ export async function applyLateFeesToOverdueCharges(
           late_fee_type: config.type,
           late_fee_rate: config.value,
           days_overdue: daysOverdue,
-          academy_id: academyId,
+          
         });
 
       if (insertError) {
