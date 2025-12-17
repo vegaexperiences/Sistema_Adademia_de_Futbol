@@ -22,14 +22,37 @@ El sistema de restauración de contraseña está completamente implementado con 
 
 ## 🔧 Configuración en Supabase
 
-### 1. Configurar URL de Redirect
+### 1. Configurar URL de Redirect (Multi-Academia)
+
+⚠️ **IMPORTANTE**: Este sistema soporta múltiples academias con dominios personalizados. Debes configurar los redirects para permitir todas las academias.
 
 1. Ve a tu proyecto en Supabase Dashboard
 2. Navega a: **Authentication** → **URL Configuration**
-3. En **Redirect URLs**, agrega:
-   - **Desarrollo**: `http://localhost:3000/auth/reset-password`
-   - **Producción**: `https://tu-dominio.vercel.app/auth/reset-password`
-   - **Preview (Vercel)**: `https://tu-proyecto-*.vercel.app/auth/reset-password`
+3. En **Redirect URLs**, agrega las siguientes URLs:
+
+   **Para Desarrollo Local**:
+   - `http://localhost:3000/auth/callback`
+
+   **Para Producción (Dominios Personalizados de Academias)**:
+   - `https://academy.pimepanama.com/auth/callback` (Suarez Academy)
+   - Agrega cada dominio de academia adicional: `https://otra-academy.com/auth/callback`
+   
+   **Para Preview Deployments de Vercel**:
+   - `https://*-vegaexperiences.vercel.app/auth/callback` (wildcard para preview branches)
+   - `https://sistema-adademia-de-futbol-*.vercel.app/auth/callback`
+
+   **Nota sobre Wildcards**: 
+   - Supabase soporta wildcards limitados (un nivel: `*.ejemplo.com`)
+   - Para múltiples dominios raíz, debes agregar cada uno manualmente
+   - Si usas subdominios consistentes (ej: `*.pimepanama.com`), puedes usar wildcard
+
+### Flujo del Callback
+
+El nuevo flujo utiliza `/auth/callback` en lugar de apuntar directamente a `/auth/reset-password`. Esto permite:
+- Intercambiar el código de autorización por una sesión válida
+- Manejar errores de forma apropiada
+- Soportar múltiples tipos de autenticación (password reset, email verification, OAuth)
+- Funcionar automáticamente para cualquier dominio de academia
 
 ### 2. Configurar Email Templates (Opcional)
 
@@ -40,27 +63,47 @@ Supabase tiene templates de email por defecto, pero puedes personalizarlos:
 3. Personaliza el template si lo deseas
 4. El enlace de reset se inyecta automáticamente como: `{{ .ConfirmationURL }}`
 
-### 3. Configurar Variables de Entorno
+### 3. Variables de Entorno (Opcional)
 
-Asegúrate de tener configurada la URL del sitio en producción:
+El sistema ahora detecta automáticamente el dominio correcto para cada academia usando `window.location.origin` del navegador. **No necesitas configurar NEXT_PUBLIC_SITE_URL** para el funcionamiento básico.
+
+Sin embargo, puedes configurar estas variables como fallback:
 
 ```env
-# En Vercel, agrega esta variable de entorno:
-NEXT_PUBLIC_SITE_URL=https://tu-dominio.vercel.app
+# Opcional - Solo como fallback si la detección automática falla
+NEXT_PUBLIC_SITE_URL=https://academy.pimepanama.com
 ```
 
-Si no está configurada, el sistema intentará detectarla automáticamente desde `VERCEL_URL`.
+**¿Cuándo configurar NEXT_PUBLIC_SITE_URL?**
+- Como fallback de seguridad
+- Para testing desde servidor (sin navegador)
+- Para dominios preview de Vercel
 
-## 📧 Flujo de Usuario
+**Para múltiples academias**: No uses NEXT_PUBLIC_SITE_URL ya que solo puede tener un valor. El sistema detecta automáticamente el dominio correcto por academia.
 
-1. Usuario hace click en "¿Olvidaste tu contraseña?" en `/login`
+## 📧 Flujo de Usuario (Multi-Academia)
+
+**Ejemplo con academy.pimepanama.com (Suarez Academy)**:
+
+1. Usuario hace click en "¿Olvidaste tu contraseña?" en `https://academy.pimepanama.com/login`
 2. Usuario ingresa su email en `/auth/forgot-password`
-3. Supabase envía un correo con enlace de recuperación
-4. Usuario hace click en el enlace del correo
-5. Es redirigido a `/auth/reset-password`
-6. Usuario ingresa su nueva contraseña
-7. Contraseña se actualiza y es redirigido a `/login?passwordReset=success`
-8. Puede iniciar sesión con su nueva contraseña
+3. El sistema detecta automáticamente el dominio: `academy.pimepanama.com`
+4. Supabase envía un correo con enlace de recuperación apuntando a:
+   ```
+   https://djfwxmvlmvtvlydkimyt.supabase.co/auth/v1/verify?token=...&redirect_to=https://academy.pimepanama.com/auth/callback
+   ```
+5. Usuario hace click en el enlace del correo
+6. Supabase redirige a `https://academy.pimepanama.com/auth/callback`
+7. El callback handler intercambia el código por una sesión válida
+8. Es redirigido a `/auth/reset-password` con sesión activa
+9. Usuario ingresa su nueva contraseña
+10. Contraseña se actualiza y es redirigido a `/login?passwordReset=success`
+11. Puede iniciar sesión con su nueva contraseña
+
+**El mismo flujo funciona para cualquier academia**:
+- `https://otra-academy.com/...` → Links apuntarán a `otra-academy.com`
+- `http://localhost:3000/...` → Links apuntarán a `localhost:3000`
+- Sin configuración adicional por academia
 
 ## 🔒 Seguridad
 

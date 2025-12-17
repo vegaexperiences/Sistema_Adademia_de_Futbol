@@ -14,6 +14,12 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError(null);
     
+    // Add origin for multi-academy support
+    // This ensures the reset link uses the correct domain for each academy
+    if (typeof window !== 'undefined') {
+      formData.append('origin', window.location.origin);
+    }
+    
     const result = await resetPassword(formData);
     
     if (result?.error) {

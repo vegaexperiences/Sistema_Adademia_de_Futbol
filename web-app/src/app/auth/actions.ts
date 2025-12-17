@@ -104,21 +104,35 @@ export async function resetPassword(formData: FormData) {
   const supabase = await createClient();
   
   const email = formData.get('email') as string;
+  const origin = formData.get('origin') as string;
 
   if (!email) {
     return { error: 'El correo electrónico es requerido' };
   }
 
   // Get the base URL for the reset link
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+  // Priority: 
+  // 1. Origin from client (most reliable for multi-academy)
+  // 2. NEXT_PUBLIC_SITE_URL (for server-side fallback)
+  // 3. VERCEL_URL (for Vercel deployments)
+  // 4. localhost (for local development)
+  const baseUrl = origin || 
+    process.env.NEXT_PUBLIC_SITE_URL || 
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
     'http://localhost:3000';
 
+  console.log('[resetPassword] Sending password reset email', {
+    email,
+    baseUrl,
+    redirectTo: `${baseUrl}/auth/callback`,
+  });
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${baseUrl}/auth/reset-password`,
+    redirectTo: `${baseUrl}/auth/callback`,
   });
 
   if (error) {
+    console.error('[resetPassword] Error:', error);
     return { error: 'Error al enviar el correo de recuperación. Verifica tu email.' };
   }
 
