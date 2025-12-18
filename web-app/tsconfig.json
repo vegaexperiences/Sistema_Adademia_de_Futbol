@@ -39,6 +39,7 @@
   "exclude": [
     "node_modules",
     "scripts/**/*",
-    "panama-payments-example/**/*"
+    "panama-payments-example/**/*",
+    "src/lib/payments/**/*"
   ]
 }
