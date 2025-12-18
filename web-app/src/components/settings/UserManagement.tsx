@@ -18,7 +18,7 @@ import {
   type UserRole,
   type Permission
 } from '@/lib/actions/users'
-import { getAllAcademies, type Academy } from '@/lib/actions/academies'
+// Academy imports removed - single tenant mode
 
 interface UserManagementProps {
   currentUserEmail: string | null
@@ -30,10 +30,8 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
   // #endregion
   const [users, setUsers] = useState<User[]>([])
   const [roles, setRoles] = useState<Role[]>([])
-  const [academies, setAcademies] = useState<Academy[]>([])
   const [userRoles, setUserRoles] = useState<Record<string, UserRole[]>>({})
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
-  const [selectedAcademy, setSelectedAcademy] = useState<string | null>(null)
   const [showAssignForm, setShowAssignForm] = useState(false)
   const [showCreateUserForm, setShowCreateUserForm] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -62,10 +60,9 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:47',message:'Before Promise.all',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
       // #endregion
-      const [usersResult, rolesResult, academiesResult] = await Promise.all([
+      const [usersResult, rolesResult] = await Promise.all([
         getAllUsers(),
         getAllRoles(),
-        getAllAcademies(),
       ])
 
       // #region agent log
@@ -74,7 +71,6 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
       console.log('[UserManagement] Results:', {
         users: { error: usersResult.error, count: usersResult.data?.length || 0 },
         roles: { error: rolesResult.error, count: rolesResult.data?.length || 0 },
-        academies: { error: academiesResult.error, count: academiesResult.data?.length || 0 },
       })
 
       if (usersResult.error) {
@@ -89,32 +85,14 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
 
       if (rolesResult.error) {
         console.error('[UserManagement] Error loading roles:', rolesResult.error)
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:67',message:'Roles error path',data:{error:rolesResult.error},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-        // #endregion
         setError(rolesResult.error)
         setIsLoading(false)
         return
       }
 
-      // getAllAcademies returns { data } or { error }, not { data, error }
-      if (academiesResult.error || !academiesResult.data) {
-        const errorMsg = academiesResult.error || 'Error al cargar academias'
-        console.error('[UserManagement] Error loading academies:', errorMsg)
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:85',message:'Academies error path',data:{error:errorMsg},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-        // #endregion
-        setError(errorMsg)
-        setIsLoading(false)
-        return
-      }
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:92',message:'Before setUsers/setRoles/setAcademies',data:{usersCount:usersResult.data?.length||0,rolesCount:rolesResult.data?.length||0,academiesCount:academiesResult.data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
+      // Single-tenant mode: no academies needed
       setUsers(usersResult.data || [])
       setRoles(rolesResult.data || [])
-      setAcademies(academiesResult.data || [])
 
       // Load roles for each user
       if (usersResult.data && usersResult.data.length > 0) {
@@ -150,10 +128,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
         setUserRoles(rolesMap)
       }
 
-      // Set default academy if available
-      if (academiesResult.data && academiesResult.data.length > 0 && !selectedAcademy) {
-        setSelectedAcademy(academiesResult.data[0].id)
-      }
+      // Single-tenant mode: no academy selection needed
       
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:100',message:'Before finally block',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
@@ -305,25 +280,6 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
         </div>
       )}
 
-      {/* Academy Filter */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <label className="block text-sm font-bold text-gray-700 mb-2">
-          Filtrar por Academia
-        </label>
-        <select
-          value={selectedAcademy || ''}
-          onChange={(e) => setSelectedAcademy(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="">Todas las academias</option>
-          {academies.map((academy) => (
-            <option key={academy.id} value={academy.id}>
-              {academy.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Users List */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -362,9 +318,6 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
           <div className="space-y-4">
             {users.map((user) => {
               const userRolesList = userRoles[user.id] || []
-              const filteredRoles = selectedAcademy
-                ? userRolesList.filter(r => r.academy_id === selectedAcademy)
-                : userRolesList
 
               return (
                 <div
@@ -394,11 +347,11 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
                           <Shield className="h-4 w-4 text-gray-500" />
                           <span className="text-sm font-semibold text-gray-700">Roles:</span>
                         </div>
-                        {filteredRoles.length === 0 ? (
+                        {userRolesList.length === 0 ? (
                           <p className="text-sm text-gray-500 italic">Sin roles asignados</p>
                         ) : (
                           <div className="flex flex-wrap gap-2">
-                            {filteredRoles.map((userRole) => (
+                            {userRolesList.map((userRole) => (
                               <div
                                 key={userRole.id}
                                 className="flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium"
@@ -453,7 +406,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
 
                       {/* Permissions List */}
                       {showPermissions[user.id] && (
-                        <UserPermissionsList userId={user.id} academyId={selectedAcademy || undefined} />
+                        <UserPermissionsList userId={user.id} academyId={undefined} />
                       )}
                     </div>
                   </div>
@@ -479,7 +432,6 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
         <AssignRoleForm
           users={users}
           roles={roles}
-          academies={academies}
           onAssign={handleAssignRole}
           onCancel={() => {
             setShowAssignForm(false)
@@ -708,30 +660,28 @@ function UserPermissionsList({ userId, academyId }: { userId: string; academyId?
 function AssignRoleForm({
   users,
   roles,
-  academies,
   onAssign,
   onCancel,
 }: {
   users: User[]
   roles: Role[]
-  academies: Academy[]
   onAssign: (userId: string, roleId: string, academyId: string) => Promise<void>
   onCancel: () => void
 }) {
   const [selectedUserId, setSelectedUserId] = useState('')
   const [selectedRoleId, setSelectedRoleId] = useState('')
-  const [selectedAcademyId, setSelectedAcademyId] = useState(academies[0]?.id || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedUserId || !selectedRoleId || !selectedAcademyId) {
+    if (!selectedUserId || !selectedRoleId) {
       return
     }
 
     setIsSubmitting(true)
-    await onAssign(selectedUserId, selectedRoleId, selectedAcademyId)
+    // Single-tenant mode: use 'default' as academyId
+    await onAssign(selectedUserId, selectedRoleId, 'default')
     setIsSubmitting(false)
   }
 
@@ -763,24 +713,6 @@ function AssignRoleForm({
 
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">
-            Academia
-          </label>
-          <select
-            value={selectedAcademyId}
-            onChange={(e) => setSelectedAcademyId(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border-2 border-blue-200 bg-white text-gray-900 font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-            required
-          >
-            {academies.map((academy) => (
-              <option key={academy.id} value={academy.id}>
-                {academy.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
             Rol
           </label>
           <select
@@ -801,7 +733,7 @@ function AssignRoleForm({
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={isSubmitting || !selectedUserId || !selectedRoleId || !selectedAcademyId}
+            disabled={isSubmitting || !selectedUserId || !selectedRoleId}
             className="px-6 py-3 rounded-xl font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',

@@ -35,8 +35,8 @@ export function createBrevoClient(apiKey: string): {
 }
 
 /**
- * Get Brevo client for a specific academy
- * Loads API key from academy settings, falls back to global env var
+ * Get Brevo client using environment variables (single-tenant mode)
+ * No longer queries academy database - uses only env vars
  */
 export async function getBrevoClientForAcademy(
   academyId?: string | null
@@ -47,68 +47,13 @@ export async function getBrevoClientForAcademy(
   fromEmail: string
   fromName: string
 }> {
-  // If no academy ID provided, try to get from context
-  if (!academyId) {
-    academyId = await getCurrentAcademyId()
-  }
-
-  // Check cache first
-  if (academyId && clientCache.has(academyId)) {
-    const cached = clientCache.get(academyId)!
-    // Get academy settings for fromEmail/fromName
-    const supabase = await createClient()
-    const { data: academy } = await supabase
-      .from('academies')
-      .select('settings')
-      .eq('id', academyId)
-      .single()
-
-    const emailSettings = academy?.settings?.email || {}
-    const apiKey = emailSettings.brevo_api_key || process.env.BREVO_API_KEY || ''
-    
-    return {
-      ...cached,
-      apiKey,
-      fromEmail: emailSettings.brevo_from_email || process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com',
-      fromName: emailSettings.brevo_from_name || 'Suarez Academy',
-    }
-  }
-
-  // Load academy settings
-  let apiKey = process.env.BREVO_API_KEY || ''
-  let fromEmail = process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com'
-  let fromName = 'Suarez Academy'
-
-  if (academyId) {
-    const supabase = await createClient()
-    const { data: academy, error } = await supabase
-      .from('academies')
-      .select('settings')
-      .eq('id', academyId)
-      .single()
-
-    if (!error && academy?.settings?.email) {
-      const emailSettings = academy.settings.email
-      // Use academy-specific Brevo API key if configured
-      if (emailSettings.brevo_api_key) {
-        apiKey = emailSettings.brevo_api_key
-      }
-      if (emailSettings.brevo_from_email) {
-        fromEmail = emailSettings.brevo_from_email
-      }
-      if (emailSettings.brevo_from_name) {
-        fromName = emailSettings.brevo_from_name
-      }
-    }
-  }
+  // Single-tenant mode: use only environment variables
+  const apiKey = process.env.BREVO_API_KEY || ''
+  const fromEmail = process.env.BREVO_FROM_EMAIL || 'noreply@suarezacademy.com'
+  const fromName = process.env.BREVO_FROM_NAME || 'Suarez Academy'
 
   // Create client
   const client = createBrevoClient(apiKey)
-
-  // Cache if we have academy ID
-  if (academyId && apiKey) {
-    clientCache.set(academyId, client)
-  }
 
   return {
     ...client,

@@ -13,64 +13,12 @@ export type LogoSize = 'small' | 'medium' | 'large' | 'main'
 export type FaviconSize = 16 | 32
 
 /**
- * Helper to get current academy from server context (server components only)
- * This avoids importing academy.ts which has next/headers dependency
- * Uses fully dynamic imports to avoid bundling server-only code
+ * Helper to get current academy - always returns null in single-tenant mode
+ * Components should use static logo URLs from environment or defaults
  */
 async function getAcademyFromServer(): Promise<Academy | null> {
-  try {
-    // Use fully dynamic imports to avoid bundling server-only code
-    // This ensures the module is only loaded at runtime in server components
-    const headersModule = await import('next/headers')
-    const supabaseModule = await import('@/lib/supabase/server')
-    
-    const headersList = await headersModule.headers()
-    const academyId = headersList.get('x-academy-id')
-    const academySlug = headersList.get('x-academy-slug')
-    
-    if (!academyId && !academySlug) {
-      return null
-    }
-    
-    const supabase = await supabaseModule.createClient()
-    
-    let query = supabase
-      .from('academies')
-      .select('*')
-    
-    if (academyId) {
-      query = query.eq('id', academyId)
-    } else if (academySlug) {
-      query = query.eq('slug', academySlug)
-    }
-    
-    const { data, error } = await query.single()
-    
-    if (error || !data) {
-      return null
-    }
-    
-    return {
-      id: data.id,
-      name: data.name,
-      display_name: data.display_name,
-      slug: data.slug,
-      domain: data.domain,
-      logo_url: data.logo_url,
-      logo_small_url: data.logo_small_url,
-      logo_medium_url: data.logo_medium_url,
-      logo_large_url: data.logo_large_url,
-      favicon_16_url: data.favicon_16_url,
-      favicon_32_url: data.favicon_32_url,
-      apple_touch_icon_url: data.apple_touch_icon_url,
-      primary_color: data.primary_color,
-      secondary_color: data.secondary_color,
-      settings: data.settings || {},
-    }
-  } catch (e) {
-    // If this fails (client component or other error), return null
-    return null
-  }
+  // Single-tenant mode: no academy database queries
+  return null
 }
 
 /**

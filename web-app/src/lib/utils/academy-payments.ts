@@ -27,68 +27,14 @@ export interface AcademyPaymentConfigs {
 }
 
 /**
- * Get payment configuration for a specific academy
- * Falls back to environment variables if academy config not found
+ * Get payment configuration from environment variables (single-tenant mode)
+ * No longer queries database - uses only environment variables
  */
 export async function getAcademyPaymentConfig(
   academyId?: string | null
 ): Promise<AcademyPaymentConfigs> {
-  const configs: AcademyPaymentConfigs = {}
-
-  // Get academy ID if not provided
-  if (!academyId) {
-    academyId = await getCurrentAcademyId()
-  }
-
-  if (!academyId) {
-    // No academy context, return empty configs (will fallback to env vars)
-    return configs
-  }
-
-  // Fetch academy with settings
-  const supabase = await createClient()
-  const { data: academy, error } = await supabase
-    .from('academies')
-    .select('settings')
-    .eq('id', academyId)
-    .single()
-
-  if (error || !academy) {
-    console.warn(`[AcademyPayments] Could not load academy ${academyId}, will use env vars`)
-    return configs
-  }
-
-  const settings = academy.settings || {}
-  const payments = settings.payments || {}
-
-  // Load Yappy config
-  if (payments.yappy) {
-    const yappyConfig = payments.yappy
-    if (yappyConfig.enabled && yappyConfig.merchant_id && yappyConfig.secret_key) {
-      configs.yappy = {
-        enabled: yappyConfig.enabled,
-        merchant_id: yappyConfig.merchant_id.trim().replace(/[\r\n\t]/g, ''),
-        secret_key: yappyConfig.secret_key.trim().replace(/[\r\n\t]/g, ''),
-        domain_url: yappyConfig.domain_url?.trim().replace(/^https?:\/\//, '').replace(/\/$/, '') || '',
-        environment: yappyConfig.environment || 'production',
-      }
-    }
-  }
-
-  // Load PagueloFacil config
-  if (payments.paguelofacil) {
-    const pagueloConfig = payments.paguelofacil
-    if (pagueloConfig.enabled && pagueloConfig.merchant_id && pagueloConfig.api_key) {
-      configs.paguelofacil = {
-        enabled: pagueloConfig.enabled,
-        merchant_id: pagueloConfig.merchant_id.trim().replace(/[\r\n\t]/g, ''),
-        api_key: pagueloConfig.api_key.trim().replace(/[\r\n\t]/g, ''),
-        environment: pagueloConfig.environment || 'production',
-      }
-    }
-  }
-
-  return configs
+  // Single-tenant mode: return empty configs, will fallback to env vars in getters
+  return {}
 }
 
 /**

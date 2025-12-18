@@ -27,52 +27,13 @@ export async function getAcademySlugFromHeaders(): Promise<string | null> {
 }
 
 /**
- * Get current academy from database (server-side)
+ * Get current academy from environment variables (single-tenant mode)
+ * No longer queries database - returns static configuration
  */
 export async function getCurrentAcademy(): Promise<Academy | null> {
-  const academyId = await getAcademyIdFromHeaders()
-  const academySlug = await getAcademySlugFromHeaders()
-  
-  if (!academyId && !academySlug) {
-    return null
-  }
-
-  const supabase = await createClient()
-  
-  let query = supabase
-    .from('academies')
-    .select('*')
-  
-  if (academyId) {
-    query = query.eq('id', academyId)
-  } else if (academySlug) {
-    query = query.eq('slug', academySlug)
-  }
-  
-  const { data, error } = await query.single()
-  
-  if (error || !data) {
-    console.error('Error fetching academy:', error)
-    return null
-  }
-  
-  return {
-    id: data.id,
-    name: data.name,
-    display_name: data.display_name,
-    slug: data.slug,
-    domain: data.domain,
-    logo_url: data.logo_url,
-    logo_small_url: data.logo_small_url,
-    logo_medium_url: data.logo_medium_url,
-    logo_large_url: data.logo_large_url,
-    favicon_16_url: data.favicon_16_url,
-    favicon_32_url: data.favicon_32_url,
-    apple_touch_icon_url: data.apple_touch_icon_url,
-    primary_color: data.primary_color,
-    secondary_color: data.secondary_color,
-    settings: data.settings || {},
-  }
+  // Return null since we're in single-tenant mode
+  // Components should use env vars or default values directly
+  return null
 }
 
 

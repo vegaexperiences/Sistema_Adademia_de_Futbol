@@ -58,34 +58,16 @@ export async function POST(request: Request) {
       // Clean messageId - remove angle brackets if present
       messageId = messageId.replace(/^<|>$/g, '').trim();
       
-      // Find email in email_queue to get academy_id
+      // Find email in email_queue
       const { data: emailRecord } = await supabase
         .from('email_queue')
-        .select('id, academy_id, brevo_email_id')
+        .select('id, brevo_email_id')
         .or(`brevo_email_id.eq.${messageId},brevo_email_id.ilike.%${messageId}%`)
         .limit(1)
         .maybeSingle()
       
-      let academyId: string | null = null
-      let academyWebhookSecret: string | null = null
-      
-      // If email found, get academy and validate webhook secret
-      if (emailRecord?.academy_id) {
-        academyId = emailRecord.academy_id
-        const { data: academy } = await supabase
-          .from('academies')
-          .select('settings')
-          .eq('id', academyId)
-          .single()
-        
-        if (academy?.settings?.email?.brevo_webhook_secret) {
-          academyWebhookSecret = academy.settings.email.brevo_webhook_secret
-        }
-      }
-      
-      // Validate webhook signature
-      // Priority: 1) Academy-specific secret, 2) Global secret, 3) Skip validation if neither set
-      const webhookSecret = academyWebhookSecret || process.env.BREVO_WEBHOOK_SECRET
+      // Single-tenant mode: use only global webhook secret
+      const webhookSecret = process.env.BREVO_WEBHOOK_SECRET
       
       if (webhookSecret && signature) {
         const expectedSignature = crypto
@@ -95,8 +77,6 @@ export async function POST(request: Request) {
         
         if (signature !== expectedSignature) {
           console.error('Invalid webhook signature', {
-            academyId,
-            hasAcademySecret: !!academyWebhookSecret,
             hasGlobalSecret: !!process.env.BREVO_WEBHOOK_SECRET,
           });
           return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
@@ -104,10 +84,8 @@ export async function POST(request: Request) {
       }
       
       console.log('📧 Webhook validated:', {
-        academyId,
         messageId,
         event,
-        hasAcademySecret: !!academyWebhookSecret,
       });
       
       processed++;

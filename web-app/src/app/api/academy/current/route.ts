@@ -1,67 +1,28 @@
 import { NextResponse } from 'next/server'
-import { getCurrentAcademy } from '@/lib/utils/academy'
-import { getCurrentAcademyId } from '@/lib/supabase/server'
-import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET() {
-  try {
-    const academyId = await getCurrentAcademyId()
-    console.log('[API /academy/current] Academy ID:', academyId)
-    
-    // Try to get academy using getCurrentAcademy first
-    let academy = await getCurrentAcademy()
-    
-    // If that fails, try to get it directly using academyId from cookies
-    if (!academy && academyId) {
-      console.log('[API /academy/current] getCurrentAcademy returned null, trying direct query with academyId:', academyId)
-      const supabase = await createClient()
-      const { data, error } = await supabase
-        .from('academies')
-        .select('*')
-        .eq('id', academyId)
-        .single()
-      
-      if (data && !error) {
-        academy = {
-          id: data.id,
-          name: data.name,
-          display_name: data.display_name,
-          slug: data.slug,
-          domain: data.domain,
-          logo_url: data.logo_url,
-          logo_small_url: data.logo_small_url,
-          logo_medium_url: data.logo_medium_url,
-          logo_large_url: data.logo_large_url,
-          favicon_16_url: data.favicon_16_url,
-          favicon_32_url: data.favicon_32_url,
-          apple_touch_icon_url: data.apple_touch_icon_url,
-          primary_color: data.primary_color,
-          secondary_color: data.secondary_color,
-          settings: data.settings || {},
-        }
-      } else {
-        console.error('[API /academy/current] Error fetching academy directly:', error)
-      }
+  // Single-tenant mode: Return default/static academy info
+  return NextResponse.json({
+    academy: {
+      id: 'default',
+      name: process.env.NEXT_PUBLIC_ACADEMY_NAME || 'Suarez Academy',
+      display_name: process.env.NEXT_PUBLIC_ACADEMY_DISPLAY_NAME || 'Suarez Academy',
+      slug: 'suarez',
+      domain: null,
+      logo_url: process.env.NEXT_PUBLIC_LOGO_URL || '/logo.png',
+      logo_small_url: null,
+      logo_medium_url: null,
+      logo_large_url: null,
+      favicon_16_url: null,
+      favicon_32_url: null,
+      apple_touch_icon_url: null,
+      primary_color: null,
+      secondary_color: null,
+      settings: {},
     }
-    
-    if (!academy) {
-      console.warn('[API /academy/current] Academy not found. AcademyId was:', academyId)
-      return NextResponse.json(
-        { error: 'Academy not found', academyId },
-        { status: 404 }
-      )
-    }
-    
-    return NextResponse.json({ academy })
-  } catch (error: any) {
-    console.error('[API /academy/current] Error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', message: error?.message },
-      { status: 500 }
-    )
-  }
+  })
 }
 

@@ -7,17 +7,12 @@ export default async function DebugAcademyPage() {
   const academyId = await getCurrentAcademyId();
   const supabase = await createClient();
   
-  // Get all academies to verify they exist
-  const { data: academies, error: academiesError } = await supabase
-    .from('academies')
-    .select('id, name, slug');
+  // Single-tenant mode: No academies table
+  const academies = null;
+  const academiesError = 'Table removed - single tenant mode';
   
-  // Get suarez academy specifically
-  const { data: suarezAcademy, error: suarezError } = await supabase
-    .from('academies')
-    .select('id, name, slug')
-    .eq('slug', 'suarez')
-    .maybeSingle();
+  const suarezAcademy = null;
+  const suarezError = 'Table removed - single tenant mode';
   
   // Get all headers
   const allHeaders = Object.fromEntries(headersList.entries());
