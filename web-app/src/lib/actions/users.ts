@@ -190,13 +190,12 @@ export async function getUserRoles(userId: string): Promise<{ data: UserRole[] |
     return { data: null, error: error.message }
   }
   
+  // Single-tenant: no academy references
   const formattedRoles: UserRole[] = (data || []).map((assignment: any) => ({
     id: assignment.id,
     name: assignment.user_roles.name,
     display_name: assignment.user_roles.display_name,
     description: assignment.user_roles.description,
-    academy_id: assignment.academy_id,
-    academy_name: assignment.academies?.name,
     assigned_at: assignment.created_at,
   }))
   
@@ -204,12 +203,11 @@ export async function getUserRoles(userId: string): Promise<{ data: UserRole[] |
 }
 
 /**
- * Assign role to user for a specific academy
+ * Assign role to user (single-tenant)
  */
 export async function assignRoleToUser(
   userId: string,
-  roleId: string,
-  academyId: string
+  roleId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
   
@@ -225,33 +223,31 @@ export async function assignRoleToUser(
     return { success: false, error: 'Unauthorized: Admin access required' }
   }
   
-  // Check if assignment already exists
+  // Check if assignment already exists (single-tenant: one role per user)
   const { data: existing } = await supabase
     .from('user_role_assignments')
     .select('id')
     .eq('user_id', userId)
     .eq('role_id', roleId)
-    
     .single()
   
   if (existing) {
-    return { success: false, error: 'Este rol ya está asignado a este usuario para esta academia' }
+    return { success: false, error: 'Este rol ya está asignado a este usuario' }
   }
   
-  // Remove any existing role for this user in this academy (one role per academy)
+  // Remove any existing role for this user (one role per user in single-tenant)
   await supabase
     .from('user_role_assignments')
     .delete()
     .eq('user_id', userId)
     
   
-  // Assign new role
+  // Assign new role (single-tenant: no academy_id)
   const { error } = await supabase
     .from('user_role_assignments')
     .insert({
       user_id: userId,
       role_id: roleId,
-      
       assigned_by: currentUser.id,
     })
   
@@ -266,12 +262,11 @@ export async function assignRoleToUser(
 }
 
 /**
- * Remove role from user for a specific academy
+ * Remove role from user (single-tenant)
  */
 export async function removeRoleFromUser(
   userId: string,
-  roleId: string,
-  academyId?: string // Optional for compatibility
+  roleId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
   
@@ -292,12 +287,12 @@ export async function removeRoleFromUser(
     return { success: false, error: 'No puedes remover tu propio rol' }
   }
   
+  // Single-tenant: no academy_id filter needed
   const { error } = await supabase
     .from('user_role_assignments')
     .delete()
     .eq('user_id', userId)
     .eq('role_id', roleId)
-    
   
   if (error) {
     console.error('Error removing role:', error)
