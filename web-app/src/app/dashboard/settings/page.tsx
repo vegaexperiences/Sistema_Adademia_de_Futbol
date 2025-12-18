@@ -527,20 +527,12 @@ export default async function SettingsPage() {
               🎨 Configuración de Branding
             </h2>
           </div>
-          {currentAcademy ? (
-            <div className="bg-gradient-to-br from-pink-50 to-rose-50 p-6 rounded-xl border-l-4 border-pink-500">
-              <p className="text-sm text-gray-700 mb-4">
-                <span className="font-bold">💡 Nota:</span> Personaliza el nombre de visualización y las etiquetas de navegación para la academia actual.
-              </p>
+          <div className="bg-gradient-to-br from-pink-50 to-rose-50 p-6 rounded-xl border-l-4 border-pink-500">
+            <p className="text-sm text-gray-700 mb-4">
+              <span className="font-bold">💡 Nota:</span> Personaliza el nombre de visualización y las etiquetas de navegación para tu academia.
+            </p>
             <BrandingConfig />
-            </div>
-          ) : (
-            <div className="bg-gradient-to-br from-pink-50 to-rose-50 p-6 rounded-xl border-l-4 border-pink-500">
-              <p className="text-sm text-gray-700">
-                <span className="font-bold">⚠️ Nota:</span> No hay una academia actual seleccionada. Por favor, selecciona una academia desde el selector de academias arriba para gestionar su branding.
-              </p>
-            </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -557,20 +549,12 @@ export default async function SettingsPage() {
               🖼️ Gestión de Logos y Favicons
             </h2>
           </div>
-          {currentAcademy ? (
-            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-xl border-l-4 border-cyan-500">
-              <p className="text-sm text-gray-700 mb-4">
-                <span className="font-bold">💡 Nota:</span> Sube o configura las URLs de los logos y favicons para la academia actual. Se mostrarán en toda la aplicación.
-              </p>
-              <LogoUploader />
-            </div>
-          ) : (
-            <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-xl border-l-4 border-cyan-500">
-              <p className="text-sm text-gray-700">
-                <span className="font-bold">⚠️ Nota:</span> No hay una academia actual seleccionada. Por favor, selecciona una academia desde el selector de academias arriba para gestionar sus logos.
-              </p>
-            </div>
-          )}
+          <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-xl border-l-4 border-cyan-500">
+            <p className="text-sm text-gray-700 mb-4">
+              <span className="font-bold">💡 Nota:</span> Sube o configura las URLs de los logos y favicons para tu academia. Se mostrarán en toda la aplicación.
+            </p>
+            <LogoUploader />
+          </div>
         </div>
       )}
 
