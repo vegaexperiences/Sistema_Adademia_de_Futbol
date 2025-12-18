@@ -1,7 +1,6 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { getCurrentAcademyId } from '@/lib/supabase/server';
 
 export interface Transaction {
   id: string;

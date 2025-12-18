@@ -1,9 +1,8 @@
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import TutorsList from '@/components/tutors/TutorsList';
 
 export default async function TutorsPage() {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
   // Get all players with tutor info (both from families and individual)
   let playersQuery = supabase
@@ -27,10 +26,6 @@ export default async function TutorsPage() {
       )
     `);
   
-  if (academyId) {
-    playersQuery = playersQuery.eq('academy_id', academyId);
-  }
-  
   const { data: players, error: playersError } = await playersQuery;
 
   if (playersError) {
@@ -50,10 +45,6 @@ export default async function TutorsPage() {
       secondary_email,
       players (id)
     `);
-  
-  if (academyId) {
-    familiesQuery = familiesQuery.eq('academy_id', academyId);
-  }
   
   const { data: families, error: familiesError } = await familiesQuery;
 

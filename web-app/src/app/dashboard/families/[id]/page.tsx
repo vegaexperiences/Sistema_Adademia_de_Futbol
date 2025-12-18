@@ -1,4 +1,4 @@
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { Users, Mail, Phone, User, DollarSign, ArrowLeft, FileText } from 'lucide-react';
 import Link from 'next/link';
@@ -15,17 +15,12 @@ export default async function FamilyProfilePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
-  // Get family data with players
+  // Single-tenant: no academy filtering needed
   let query = supabase
     .from('families')
     .select('*, players(*)')
     .eq('id', id);
-  
-  if (academyId) {
-    query = query.eq('academy_id', academyId);
-  }
   
   const { data: family } = await query.single();
   

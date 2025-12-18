@@ -644,13 +644,12 @@ export async function deleteSponsor(id: string): Promise<{ success: boolean; err
   // Verify sponsor exists (single-tenant)
   const { data: existingSponsor, error: checkError } = await supabase
     .from('sponsors')
-    .select('id, academy_id')
+    .select('id')
     .eq('id', id)
-    
     .single();
 
   if (checkError || !existingSponsor) {
-    return { success: false, error: 'Sponsor not found or does not belong to current academy' };
+    return { success: false, error: 'Sponsor not found' };
   }
 
   // Check if sponsor has registrations

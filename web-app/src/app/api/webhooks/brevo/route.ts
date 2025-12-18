@@ -58,35 +58,18 @@ export async function POST(request: Request) {
       // Clean messageId - remove angle brackets if present
       messageId = messageId.replace(/^<|>$/g, '').trim();
       
-      // Find email in email_queue to get academy_id
+      // Find email in email_queue (single-tenant)
       const { data: emailRecord } = await supabase
         .from('email_queue')
-        .select('id, academy_id, brevo_email_id')
+        .select('id, brevo_email_id')
         .or(`brevo_email_id.eq.${messageId},brevo_email_id.ilike.%${messageId}%`)
         .limit(1)
         .maybeSingle()
       
-      let academyId: string | null = null
-      let academyWebhookSecret: string | null = null
+      // Single-tenant: use env var for webhook secret
+      const webhookSecret = process.env.BREVO_WEBHOOK_SECRET || null
       
-      // If email found, get academy and validate webhook secret
-      if (emailRecord?.academy_id) {
-        academyId = emailRecord.academy_id
-        const { data: academy } = await supabase
-          .from('academies')
-          .select('settings')
-          .eq('id', academyId)
-          .single()
-        
-        if (academy?.settings?.email?.brevo_webhook_secret) {
-          academyWebhookSecret = academy.settings.email.brevo_webhook_secret
-        }
-      }
-      
-      // Validate webhook signature
-      // Priority: 1) Academy-specific secret, 2) Global secret, 3) Skip validation if neither set
-      const webhookSecret = academyWebhookSecret || process.env.BREVO_WEBHOOK_SECRET
-      
+      // Validate webhook signature (single-tenant)
       if (webhookSecret && signature) {
         const expectedSignature = crypto
           .createHmac('sha256', webhookSecret)
@@ -94,20 +77,14 @@ export async function POST(request: Request) {
           .digest('hex');
         
         if (signature !== expectedSignature) {
-          console.error('Invalid webhook signature', {
-            academyId,
-            hasAcademySecret: !!academyWebhookSecret,
-            hasGlobalSecret: !!process.env.BREVO_WEBHOOK_SECRET,
-          });
+          console.error('Invalid webhook signature');
           return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
       }
       
       console.log('📧 Webhook validated:', {
-        academyId,
         messageId,
         event,
-        hasAcademySecret: !!academyWebhookSecret,
       });
       
       processed++;

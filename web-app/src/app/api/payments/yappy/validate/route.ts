@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YappyService } from '@/lib/payments/yappy';
-import { getCurrentAcademyId } from '@/lib/supabase/server';
 
 /**
  * POST /api/payments/yappy/validate
@@ -10,8 +9,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[Yappy Validate] Validating merchant credentials...');
 
-    const academyId = await getCurrentAcademyId();
-    const result = await YappyService.validateMerchant(academyId);
+    // Single-tenant: pass null for academyId
+    const result = await YappyService.validateMerchant(null);
 
     if (!result.success) {
       return NextResponse.json(
@@ -20,8 +19,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const config = await YappyService.getConfig(academyId);
-    const cdnUrl = await YappyService.getCdnUrl(academyId);
+    const config = await YappyService.getConfig(null);
+    const cdnUrl = await YappyService.getCdnUrl(null);
 
     return NextResponse.json({
       success: true,

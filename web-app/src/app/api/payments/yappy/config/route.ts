@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YappyService } from '@/lib/payments/yappy';
-import { getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/payments/yappy/config
@@ -8,9 +8,10 @@ import { getCurrentAcademyId } from '@/lib/supabase/server';
  */
 export async function GET(request: NextRequest) {
   try {
-    const academyId = await getCurrentAcademyId();
-    const config = await YappyService.getConfig(academyId);
-    const cdnUrl = await YappyService.getCdnUrl(academyId);
+    const supabase = await createClient();
+    // Single-tenant: pass null for academyId
+    const config = await YappyService.getConfig(null);
+    const cdnUrl = await YappyService.getCdnUrl(null);
     
     return NextResponse.json({
       success: true,
@@ -30,4 +31,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

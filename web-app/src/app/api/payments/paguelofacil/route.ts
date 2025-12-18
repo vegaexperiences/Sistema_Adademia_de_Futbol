@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { PagueloFacilService } from '@/lib/payments/paguelofacil';
-import { getCurrentAcademyId } from '@/lib/supabase/server';
 
 /**
  * GET /api/payments/paguelofacil
@@ -8,8 +7,8 @@ import { getCurrentAcademyId } from '@/lib/supabase/server';
  */
 export async function GET() {
   try {
-    const academyId = await getCurrentAcademyId();
-    const config = await PagueloFacilService.getSDKConfig(academyId);
+    // Single-tenant: pass null for academyId
+    const config = await PagueloFacilService.getSDKConfig(null);
     return NextResponse.json({
       success: true,
       config: {
@@ -43,14 +42,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const academyId = await getCurrentAcademyId();
+    // Single-tenant: pass null for academyId
     const transaction = await PagueloFacilService.createTransaction({
       amount: parseFloat(amount),
       description,
       email,
       orderId,
       metadata
-    }, academyId);
+    }, null);
 
     if (!transaction.success) {
       return NextResponse.json(
@@ -59,7 +58,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const config = await PagueloFacilService.getSDKConfig(academyId);
+    // Single-tenant: pass null for academyId
+    const config = await PagueloFacilService.getSDKConfig(null);
 
     return NextResponse.json({
       success: true,

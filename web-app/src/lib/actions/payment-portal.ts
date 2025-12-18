@@ -628,16 +628,15 @@ export async function processPublicPayment(data: {
     return { data: null, error: 'El monto debe ser mayor a 0' };
   }
 
-  // Validate player exists and belongs to academy
+  // Validate player exists (single-tenant)
   const { data: player, error: playerError } = await supabase
     .from('players')
-    .select('id, academy_id')
+    .select('id')
     .eq('id', data.player_id)
-    
     .single();
 
   if (playerError || !player) {
-    return { data: null, error: 'Jugador no encontrado o no pertenece a esta academia' };
+    return { data: null, error: 'Jugador no encontrado' };
   }
 
   // Map method names

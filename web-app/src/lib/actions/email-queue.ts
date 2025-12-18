@@ -16,7 +16,6 @@ export interface QueuedEmail {
   sent_at: string | null;
   error_message: string | null;
   metadata: any;
-  academy_id: string | null;
   created_at: string;
 }
 

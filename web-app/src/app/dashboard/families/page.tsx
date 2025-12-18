@@ -1,18 +1,14 @@
-import { createClient, getCurrentAcademyId } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import FamiliesList from '@/components/families/FamiliesList';
 
 export default async function FamiliesPage() {
   const supabase = await createClient();
-  const academyId = await getCurrentAcademyId();
   
+  // Single-tenant: no academy filtering needed
   let query = supabase
     .from('families')
     .select('*, players(id, first_name, last_name, status)')
     .order('tutor_name');
-  
-  if (academyId) {
-    query = query.eq('academy_id', academyId);
-  }
   
   const { data: families } = await query;
 

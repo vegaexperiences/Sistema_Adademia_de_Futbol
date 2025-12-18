@@ -32,20 +32,13 @@ export default async function ApprovalsPage({
   const pendingPlayers = await getPendingPlayers();
   const pendingTournaments = await getPendingTournamentRegistrations();
   const supabase = await createClient();
-  const { getCurrentAcademyId } = await import('@/lib/supabase/server');
-  const academyId = await getCurrentAcademyId();
   
-  // Get payments with status 'Pending Approval' or 'Pending' (for enrollment payments from import)
-  // Filter by academy_id
+  // Single-tenant: no academy filtering needed
   let pendingPaymentsQuery = supabase
     .from('payments')
     .select('*')
     .in('status', ['Pending Approval', 'Pending'])
     .order('payment_date', { ascending: false });
-  
-  if (academyId) {
-    pendingPaymentsQuery = pendingPaymentsQuery.eq('academy_id', academyId);
-  }
   
   const { data: pendingPaymentsData } = await pendingPaymentsQuery;
   const pendingPayments: PendingPayment[] = Array.isArray(pendingPaymentsData)
