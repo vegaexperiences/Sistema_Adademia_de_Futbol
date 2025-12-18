@@ -25,9 +25,6 @@ interface UserManagementProps {
 }
 
 export function UserManagement({ currentUserEmail }: UserManagementProps) {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:24',message:'Component render',data:{currentUserEmail},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
   const [users, setUsers] = useState<User[]>([])
   const [roles, setRoles] = useState<Role[]>([])
   const [userRoles, setUserRoles] = useState<Record<string, UserRole[]>>({})
@@ -42,32 +39,20 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:40',message:'useEffect triggered',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     loadData()
   }, [])
 
   const loadData = async () => {
     setIsLoading(true)
     setError(null)
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:42',message:'loadData entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
 
     try {
       console.log('[UserManagement] Loading data...')
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:47',message:'Before Promise.all',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
       const [usersResult, rolesResult] = await Promise.all([
         getAllUsers(),
         getAllRoles(),
       ])
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:54',message:'After Promise.all',data:{usersError:usersResult.error,usersCount:usersResult.data?.length||0,rolesError:rolesResult.error,rolesCount:rolesResult.data?.length||0,academiesError:academiesResult.error,academiesCount:academiesResult.data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
       console.log('[UserManagement] Results:', {
         users: { error: usersResult.error, count: usersResult.data?.length || 0 },
         roles: { error: rolesResult.error, count: rolesResult.data?.length || 0 },
@@ -75,9 +60,6 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
 
       if (usersResult.error) {
         console.error('[UserManagement] Error loading users:', usersResult.error)
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:60',message:'Users error path',data:{error:usersResult.error},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-        // #endregion
         setError(usersResult.error)
         setIsLoading(false)
         return
@@ -97,52 +79,27 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
       // Load roles for each user
       if (usersResult.data && usersResult.data.length > 0) {
         console.log('[UserManagement] Loading roles for', usersResult.data.length, 'users')
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:87',message:'Loading user roles',data:{usersCount:usersResult.data.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-        // #endregion
         const rolesMap: Record<string, UserRole[]> = {}
         for (let i = 0; i < usersResult.data.length; i++) {
           const user = usersResult.data[i]
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:92',message:'Before getUserRoles',data:{userId:user.id,userIndex:i,totalUsers:usersResult.data.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-          // #endregion
           try {
             const userRolesResult = await getUserRoles(user.id)
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:96',message:'After getUserRoles',data:{userId:user.id,userIndex:i,hasError:!!userRolesResult.error,error:userRolesResult.error,rolesCount:userRolesResult.data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-            // #endregion
             if (userRolesResult.data) {
               rolesMap[user.id] = userRolesResult.data
             }
           } catch (err: any) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:102',message:'getUserRoles catch',data:{userId:user.id,userIndex:i,error:err.message,errorStack:err.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-            // #endregion
             console.error('[UserManagement] Error loading roles for user', user.id, ':', err)
             // Continue with next user
           }
         }
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:101',message:'After loading user roles',data:{rolesMapSize:Object.keys(rolesMap).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-        // #endregion
         setUserRoles(rolesMap)
       }
 
       // Single-tenant mode: no academy selection needed
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:100',message:'Before finally block',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
     } catch (err: any) {
       console.error('[UserManagement] Unexpected error:', err)
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:103',message:'Catch block',data:{error:err.message,errorStack:err.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
       setError(err.message || 'Error al cargar datos')
     } finally {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/9bb383e5-e9d8-4a41-b56c-bd9bbb1d838d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserManagement.tsx:107',message:'Finally block - setting isLoading to false',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
       setIsLoading(false)
     }
   }
