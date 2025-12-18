@@ -388,9 +388,6 @@ async function calculateScholarshipOpportunityCost(playerId: string): Promise<nu
     .select('*, families(id)')
     .eq('id', playerId);
 
-  if (academyId) {
-    query = query;
-  }
 
   const { data: player } = await query.single();
 
@@ -426,9 +423,6 @@ async function calculateScholarshipOpportunityCost(playerId: string): Promise<nu
       .in('status', ['Active', 'Scholarship'])
       .order('created_at');
 
-    if (academyId) {
-      familyQuery = familyQuery;
-    }
 
     const { data: familyPlayers } = await familyQuery;
 

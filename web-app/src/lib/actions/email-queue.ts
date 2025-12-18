@@ -140,7 +140,7 @@ export async function sendEmailImmediately(
 
   try {
     // Get academy context for Brevo client
-    const academyId = await getCurrentAcademyId()
+    const academyId = null // Single-tenant
     const brevoClient = await getBrevoClientForAcademy(academyId)
     
     // Send email immediately via Brevo
@@ -206,7 +206,7 @@ export async function sendEmailImmediately(
         sent_at: sentAt,
         scheduled_for: new Date().toISOString().split('T')[0],
         brevo_email_id: messageId || null,
-         || null, // Store academy_id for webhook matching
+        academy_id: null, // Single-tenant: no academy_id
         metadata: emailMetadata,
       })
       .select()
@@ -449,7 +449,7 @@ export async function queueEmail(
     : scheduledDate;
   
   // Get academy context
-  const academyId = await getCurrentAcademyId()
+  const academyId = null // Single-tenant
   
   // Prepare metadata with player_id and family_id if provided
   const emailMetadata = {
@@ -466,7 +466,7 @@ export async function queueEmail(
       subject,
       html_content: htmlContent,
       scheduled_for: scheduledDateOnly,
-       || null, // Store academy_id for Brevo client selection
+       academy_id: null, // Store academy_id for Brevo client selection
       metadata: emailMetadata
     });
   
@@ -645,8 +645,8 @@ export async function processEmailQueue() {
         .eq('id', email.id)
         .eq('status', 'pending'); // Only update if still pending
       
-      // Get academy-specific Brevo client
-      const academyId = email.academy_id || await getCurrentAcademyId()
+      // Get academy-specific Brevo client (single-tenant)
+      const academyId = null // Single-tenant: no academy_id
       const brevoClient = await getBrevoClientForAcademy(academyId)
       
       const sendSmtpEmail: SendSmtpEmail = {
@@ -1065,9 +1065,6 @@ export async function getRandomPlayers(count: number): Promise<{ id: string; fir
     .select('id, first_name, last_name, cedula, status, family_id, families ( tutor_email, tutor_name )')
     .not('family_id', 'is', null);
 
-  if (academyId) {
-    query = query;
-  }
 
   const { data, error } = await query;
 

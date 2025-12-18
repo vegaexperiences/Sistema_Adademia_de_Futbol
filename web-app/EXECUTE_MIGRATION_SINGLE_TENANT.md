@@ -27,6 +27,8 @@ Este documento explica cómo ejecutar la migración SQL que convierte la base de
 4. Esperar confirmación (puede tomar 5-15 minutos)
 5. Descargar backup para guardar localmente
 
+
+
 **Opción B: Via CLI** (si tienes acceso)
 ```bash
 # Instalar Supabase CLI si no lo tienes

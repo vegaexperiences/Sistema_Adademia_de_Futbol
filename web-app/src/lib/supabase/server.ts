@@ -35,3 +35,6 @@ export async function createClient() {
 
   return client
 }
+
+// Re-export for compatibility during migration
+export { getCurrentAcademyId, getCurrentAcademy } from '../utils/academy-stub';

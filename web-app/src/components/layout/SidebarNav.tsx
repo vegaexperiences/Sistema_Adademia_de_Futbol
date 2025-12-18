@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Users, 
@@ -21,7 +20,8 @@ interface SidebarNavProps {
 
 export function SidebarNav({ pendingCount }: SidebarNavProps) {
   const pathname = usePathname();
-  const [navLabels, setNavLabels] = useState({
+  // Use default navigation labels (single-tenant)
+  const navLabels = {
     dashboard: 'Dashboard',
     approvals: 'Aprobaciones',
     players: 'Jugadores',
@@ -32,24 +32,7 @@ export function SidebarNav({ pendingCount }: SidebarNavProps) {
     reports: 'Reportes',
     emails: 'Correos',
     settings: 'Configuración',
-  });
-
-  useEffect(() => {
-    if (academy?.settings?.navigation) {
-      setNavLabels({
-        dashboard: academy.settings.navigation.dashboard || 'Dashboard',
-        approvals: academy.settings.navigation.approvals || 'Aprobaciones',
-        players: academy.settings.navigation.players || 'Jugadores',
-        finances: academy.settings.navigation.finances || 'Finanzas',
-        tournaments: academy.settings.navigation.tournaments || 'Torneos',
-        tutors: academy.settings.navigation.tutors || 'Tutores',
-        families: academy.settings.navigation.families || 'Familias',
-        reports: academy.settings.navigation.reports || 'Reportes',
-        emails: academy.settings.navigation.emails || 'Correos',
-        settings: academy.settings.navigation.settings || 'Configuración',
-      });
-    }
-  }, [academy]);
+  };
 
   const navLinks = [
     { href: '/dashboard', icon: LayoutDashboard, label: navLabels.dashboard, exact: true },

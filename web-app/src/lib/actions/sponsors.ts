@@ -51,9 +51,6 @@ export async function getAllSponsors(includeInactive: boolean = false): Promise<
     query = query.eq('is_active', true);
   }
 
-  if (academyId) {
-    query = query;
-  }
 
   const { data, error } = await query;
 
@@ -83,9 +80,6 @@ export async function getSponsorById(id: string): Promise<{ data: Sponsor | null
     .eq('id', id)
     .eq('is_active', true);
 
-  if (academyId) {
-    query = query;
-  }
 
   const { data, error } = await query.single();
 
@@ -124,29 +118,10 @@ export async function createSponsorRegistration(
   }
 ): Promise<{ data: SponsorRegistration | null; error: string | null }> {
   const supabase = await createClient();
-  let academyId = await getCurrentAcademyId();
-
-  // If no academy context, try to get it from the sponsor
-  if (!academyId) {
-    console.log('[createSponsorRegistration] No academy context, fetching from sponsor...');
-    const { data: sponsor, error: sponsorError } = await supabase
-      .from('sponsors')
-      .select('academy_id')
-      .eq('id', data.sponsor_id)
-      .single();
-
-    if (sponsorError || !sponsor || !sponsor.academy_id) {
-      console.error('[createSponsorRegistration] Could not get academy_id from sponsor:', sponsorError);
-      return { data: null, error: 'No academy context found and could not determine from sponsor' };
-    }
-
-    academyId = sponsor.academy_id;
-    console.log('[createSponsorRegistration] Got academy_id from sponsor:', academyId);
-  }
-
+  
+  // Single-tenant: no academy context needed
   const registrationData = {
     ...data,
-    
     status: 'pending' as const,
   };
 
@@ -173,7 +148,7 @@ export async function createSponsorRegistration(
         const { data: academy, error: academyError } = await supabase
           .from('academies')
           .select('id, name, display_name, settings')
-          .eq('id', academyId)
+          .limit(1)
           .single();
         
         const academyName = academy?.display_name || academy?.name || 'Suarez Academy';
@@ -250,9 +225,6 @@ export async function getSponsorRegistrations(): Promise<{ data: SponsorRegistra
     `)
     .order('created_at', { ascending: false });
 
-  if (academyId) {
-    query = query;
-  }
 
   const { data, error } = await query;
 
@@ -334,9 +306,6 @@ export async function getSponsorRegistrationsWithPlayers(): Promise<{ data: Spon
     `)
     .order('created_at', { ascending: false });
 
-  if (academyId) {
-    query = query;
-  }
 
   const { data, error } = await query;
 
@@ -373,7 +342,7 @@ export async function assignPlayerToSponsor(
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) /* Single-tenant: no academy check */ {
     return { success: false, error: 'No academy context found' };
   }
 
@@ -591,7 +560,7 @@ export async function createSponsor(data: {
 }): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) /* Single-tenant: no academy check */ {
     return { data: null, error: 'No academy context found' };
   }
 
@@ -644,7 +613,7 @@ export async function updateSponsor(
 ): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) /* Single-tenant: no academy check */ {
     return { data: null, error: 'No academy context found' };
   }
 
@@ -698,7 +667,7 @@ export async function updateSponsor(
 export async function deleteSponsor(id: string): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) /* Single-tenant: no academy check */ {
     return { success: false, error: 'No academy context found' };
   }
 
@@ -756,7 +725,7 @@ export async function toggleSponsorActive(
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) /* Single-tenant: no academy check */ {
     return { success: false, error: 'No academy context found' };
   }
 
@@ -795,7 +764,7 @@ export async function toggleSponsorActive(
 export async function getOrCreateOpenDonationSponsorLevel(): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) /* Single-tenant: no academy check */ {
     return { data: null, error: 'No academy context found' };
   }
 

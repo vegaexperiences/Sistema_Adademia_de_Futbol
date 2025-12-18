@@ -38,14 +38,7 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
 }> {
   const supabase = await createClient();
 
-  if (!academyId) {
-    return {
-      success: false,
-      generated: 0,
-      skipped: 0,
-      errors: ['No academy ID found'],
-    };
-  }
+  // Single-tenant: no academy check needed
 
   // Determine month/year
   const today = new Date();
@@ -182,7 +175,7 @@ export async function generateMonthlyCharges(monthYear?: string, force: boolean 
 export async function getPlayerCharges(playerId: string): Promise<MonthlyCharge[]> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) { // Single-tenant: no academy check
     return [];
   }
 
@@ -216,7 +209,7 @@ export async function getPlayerCharges(playerId: string): Promise<MonthlyCharge[
 export async function getPlayerAccountBalance(playerId: string): Promise<PlayerAccountBalance> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) { // Single-tenant: no academy check
     return {
       playerId,
       totalCharges: 0,
@@ -321,7 +314,7 @@ export async function getPlayerAccountBalance(playerId: string): Promise<PlayerA
 export async function markChargeAsPaid(chargeId: string, paymentId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  if (false) { // Single-tenant: no academy check
     return false;
   }
 

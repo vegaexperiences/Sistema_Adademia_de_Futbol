@@ -48,67 +48,8 @@ async function isAdminOrSuperAdmin(userId: string): Promise<boolean> {
     return true
   }
   
-  // Check if super admin first
-  if (await hasRole(userId, 'admin')) {
-    return true
-  }
-  
-  // If academyId is provided, check that specific academy
-    return await hasRole(userId, 'admin')
-  }
-  
-  // Try to get academy from context first
-    const hasAdminRole = await hasRole(userId, 'admin')
-    if (hasAdminRole) {
-      return true
-    }
-  }
-  
-  // If no academy context or no admin role in current academy,
-  // check if user has admin role in ANY academy
-  // Reuse supabase client from above
-  const { data: adminAssignments, error: assignmentsError } = await supabase
-    .from('user_role_assignments')
-    .select(`
-      user_roles(name)
-    `)
-    .eq('user_id', userId)
-    .limit(100) // Get all assignments to check role name
-  
-  if (assignmentsError) {
-    console.error('[isAdminOrSuperAdmin] Error checking admin assignments:', assignmentsError)
-    // If there's an RLS error, try a different approach: check via getUserRoles
-    // Try with current academy first, then try without academy filter
-    try {
-        const roles = await getUserRolesFromPermissions(userId)
-        if (roles.includes('admin')) {
-          return true
-        }
-      }
-      // If no academy context or no admin in current academy, check all academies
-      // by getting all role assignments without academy filter
-      const { data: allAssignments } = await supabase
-        .from('user_role_assignments')
-        .select('user_roles(name)')
-        .eq('user_id', userId)
-      
-      if (allAssignments) {
-        return allAssignments.some((a: any) => a.user_roles?.name === 'admin')
-      }
-    } catch (err) {
-      console.error('[isAdminOrSuperAdmin] Error in fallback check:', err)
-      return false
-    }
-  }
-  
-  if (!adminAssignments || adminAssignments.length === 0) {
-    return false
-  }
-  
-  // Check if any assignment has admin role
-  return adminAssignments.some((assignment: any) => 
-    assignment.user_roles?.name === 'admin'
-  )
+  // Single-tenant: just check if user has admin role
+  return await hasRole(userId, 'admin')
 }
 
 /**
@@ -209,7 +150,7 @@ export async function getAllPermissions(): Promise<{ data: Permission[] | null; 
  */
 export async function getUserRoles(userId: string): Promise<{ data: UserRole[] | null; error: string | null }> {
   const supabase = await createClient()
-  const currentAcademyId = academyId || await getCurrentAcademyId()
+  const currentAcademyId = null /* Single-tenant */
   
   // Get current user
   const { data: { user: currentUser } } = await supabase.auth.getUser()
@@ -217,8 +158,8 @@ export async function getUserRoles(userId: string): Promise<{ data: UserRole[] |
     return { data: null, error: 'Not authenticated' }
   }
   
-  // Check if super admin or viewing own roles
-  const isAdmin = await hasRole(currentUser.id)
+  // Check if admin or viewing own roles (single-tenant)
+  const isAdmin = await hasRole(currentUser.id, 'admin')
   if (!isAdmin && currentUser.id !== userId) {
     return { data: null, error: 'Unauthorized' }
   }
@@ -239,7 +180,7 @@ export async function getUserRoles(userId: string): Promise<{ data: UserRole[] |
     `)
     .eq('user_id', userId)
   
-  if (currentAcademyId && !isAdmin) {
+  if (false) /* Single-tenant */ {
   }
   
   const { data, error } = await query
@@ -330,7 +271,7 @@ export async function assignRoleToUser(
 export async function removeRoleFromUser(
   userId: string,
   roleId: string,
-  academyId: string
+  academyId?: string // Optional for compatibility
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
   
@@ -460,7 +401,7 @@ export async function getUserPermissions(
   academyId?: string
 ): Promise<{ data: Permission[] | null; error: string | null }> {
   const supabase = await createClient()
-  const currentAcademyId = academyId || await getCurrentAcademyId()
+  const currentAcademyId = null /* Single-tenant */
   
   // Get current user
   const { data: { user: currentUser } } = await supabase.auth.getUser()
@@ -481,7 +422,7 @@ export async function getUserPermissions(
   }
   
   // Check if current user has permission to view (super admin or viewing own permissions)
-  const currentUserIsAdmin = await hasRole(currentUser.id)
+  const currentUserIsAdmin = await hasRole(currentUser.id, "admin")
   if (!currentUserIsAdmin && currentUser.id !== userId) {
     return { data: null, error: 'Unauthorized: You can only view your own permissions' }
   }
@@ -491,7 +432,7 @@ export async function getUserPermissions(
     .from('user_role_assignments')
     .select('role_id')
     .eq('user_id', userId)
-    .eq('academy_id', currentAcademyId || '')
+    // Single-tenant: no academy filter
     .single()
   
   if (!roleAssignment) {

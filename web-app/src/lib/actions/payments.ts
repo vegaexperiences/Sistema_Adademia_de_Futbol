@@ -33,9 +33,6 @@ export async function getPlayerPayments(playerId: string) {
     .select('id')
     .eq('id', playerId);
   
-  if (academyId) {
-    playerQuery = playerQuery;
-  }
   
   const { data: playerCheck, error: playerCheckError } = await playerQuery.single();
   
@@ -54,9 +51,6 @@ export async function getPlayerPayments(playerId: string) {
     .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
     .order('payment_date', { ascending: false });
   
-  if (academyId) {
-    query = query;
-  }
   
   const { data, error } = await query;
   
@@ -80,9 +74,6 @@ export async function getPlayerPayments(playerId: string) {
     .order('payment_date', { ascending: false })
     .limit(10);
   
-  if (academyId) {
-    unlinkedQuery = unlinkedQuery;
-  }
   
   const { data: unlinkedPayments, error: unlinkedError } = await unlinkedQuery;
   
@@ -157,9 +148,6 @@ export async function getPlayersPayments(playerIds: string[]) {
     .neq('status', 'Rejected') // Exclude rejected payments - they are not real payments
     .order('payment_date', { ascending: false });
   
-  if (academyId) {
-    query = query;
-  }
   
   const { data, error } = await query;
   
@@ -259,9 +247,6 @@ export async function createPayment(payment: Payment) {
     })
     .eq('id', payment.player_id);
   
-  if (academyId) {
-    playerUpdateQuery = playerUpdateQuery;
-  }
   
   await playerUpdateQuery;
   
@@ -494,9 +479,6 @@ export async function updateCustomMonthlyFee(playerId: string, customFee: number
     .update({ custom_monthly_fee: customFee })
     .eq('id', playerId);
   
-  if (academyId) {
-    query = query;
-  }
   
   const { error } = await query;
   
@@ -518,9 +500,6 @@ export async function updatePlayerStatus(playerId: string, status: 'Active' | 'S
     .update({ status })
     .eq('id', playerId);
   
-  if (academyId) {
-    query = query;
-  }
   
   const { error } = await query;
   
@@ -592,9 +571,6 @@ export async function calculateMonthlyFee(playerId: string) {
     .select('*, families(id)')
     .eq('id', playerId);
   
-  if (academyId) {
-    query = query;
-  }
   
   const { data: player } = await query.single();
   
@@ -631,9 +607,6 @@ export async function calculateMonthlyFee(playerId: string) {
       .eq('family_id', player.families.id)
       .order('created_at');
     
-    if (academyId) {
-      familyQuery = familyQuery;
-    }
     
     const { data: familyPlayers } = await familyQuery;
     
@@ -659,9 +632,6 @@ export async function getPaymentSummary(playerId: string) {
     .eq('player_id', playerId)
     .neq('status', 'Rejected'); // Exclude rejected payments - they are not real payments
   
-  if (academyId) {
-    query = query;
-  }
   
   const { data: payments } = await query;
   
@@ -685,9 +655,6 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
     .select('*')
     .eq('id', paymentId);
   
-  if (academyId) {
-    paymentQuery = paymentQuery;
-  }
   
   const { data: payment, error: paymentError } = await paymentQuery.single();
 
@@ -705,9 +672,6 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
     .select('id')
     .eq('id', playerId);
   
-  if (academyId) {
-    playerQuery = playerQuery;
-  }
   
   const { data: player, error: playerError } = await playerQuery.single();
 
@@ -733,9 +697,6 @@ export async function linkPaymentToPlayer(paymentId: string, playerId: string) {
     .update(updateData)
     .eq('id', paymentId);
   
-  if (academyId) {
-    updateQuery = updateQuery;
-  }
   
   const { error: updateError } = await updateQuery;
 
@@ -768,9 +729,6 @@ export async function autoLinkUnlinkedPaymentsForPlayer(playerId: string) {
     .order('payment_date', { ascending: false })
     .limit(50);
   
-  if (academyId) {
-    query = query;
-  }
   
   const { data: unlinkedPayments, error: unlinkedError } = await query;
   
@@ -858,18 +816,10 @@ export async function updatePaymentAmount(
       return { data: null, error: 'No autorizado: debe iniciar sesión' };
     }
 
-    // Check if super admin
+    // Check if super admin (single-tenant)
     const isAdmin = await isSuperAdmin(user.id);
     if (!isAdmin) {
-      // Check if admin role in current academy
-      if (academyId) {
-        const hasAdminRole = await hasRole(user.id, 'admin', academyId);
-        if (!hasAdminRole) {
-          return { data: null, error: 'No autorizado: se requieren permisos de administrador' };
-        }
-      } else {
-        return { data: null, error: 'No autorizado: se requieren permisos de administrador' };
-      }
+      return { data: null, error: 'No autorizado: se requieren permisos de administrador' };
     }
   } catch (error: any) {
     console.error('[updatePaymentAmount] Error checking admin status:', error);
@@ -882,9 +832,6 @@ export async function updatePaymentAmount(
     .select('id, amount, player_id, academy_id')
     .eq('id', paymentId);
 
-  if (academyId) {
-    paymentQuery = paymentQuery;
-  }
 
   const { data: existingPayment, error: fetchError } = await paymentQuery.single();
 

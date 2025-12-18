@@ -34,13 +34,10 @@ export default async function PlayerProfilePage({
         tutor_cedula_url
       )
     `)
-    .eq('id', id);
+    .eq('id', id)
+    .single();
   
-  if (academyId) {
-    query = query.eq('academy_id', academyId);
-  }
-  
-  const { data: player } = await query.single();
+  const { data: player } = await query;
 
   if (!player) {
     notFound();

@@ -222,14 +222,13 @@ export async function approvePlayer(
     playerId,
     type,
     deletedFromPending: true,
-    emailSent: !!tutorEmailForEmail || !!tutorEmailForScholarship,
   });
   
   return { 
     success: true,
     message: type === 'Active' 
-      ? `Jugador aprobado como Normal. ${tutorEmailForEmail ? 'Correo enviado.' : '⚠️ No se pudo enviar correo (email no encontrado).'}`
-      : `Jugador aprobado como Becado. ${tutorEmailForScholarship ? 'Correo enviado.' : '⚠️ No se pudo enviar correo (email no encontrado).'}`,
+      ? 'Jugador aprobado como Normal.'
+      : 'Jugador aprobado como Becado.',
   };
   } catch (error: any) {
     console.error('Unexpected error in approvePlayer:', error);

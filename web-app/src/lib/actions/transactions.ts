@@ -104,7 +104,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
   
   // Filter by academy_id: include payments with matching academy_id OR payments without academy_id
   // We'll filter by player's academy_id in the code for payments without academy_id
-  paymentsQuery = paymentsQuery.or(`academy_id.eq.${academyId},academy_id.is.null`);
+  paymentsQuery = paymentsQuery.or(`academy_id.is.null,academy_id.is.null`);
 
   if (filter.startDate) {
     paymentsQuery = paymentsQuery.gte('payment_date', filter.startDate);
@@ -135,16 +135,16 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       const paymentAcademyId = payment.academy_id;
       const playerAcademyId = player?.academy_id;
       
-      if (paymentAcademyId && paymentAcademyId !== academyId) {
+      if (paymentAcademyId && paymentAcademyId !== null) {
         return; // Payment has academy_id but doesn't match
       }
       
-      if (!paymentAcademyId && playerAcademyId && playerAcademyId !== academyId) {
+      if (!paymentAcademyId && playerAcademyId && playerAcademyId !== null) {
         return; // Payment doesn't have academy_id but player has different academy_id
       }
       
       // For sponsor payments, check academy_id directly
-      if (payment.type === 'sponsor' && paymentAcademyId && paymentAcademyId !== academyId) {
+      if (payment.type === 'sponsor' && paymentAcademyId && paymentAcademyId !== null) {
         return; // Sponsor payment has academy_id but doesn't match
       }
       
@@ -298,7 +298,7 @@ export async function getTransactions(filter: TransactionsFilter = {}): Promise<
       const staff = Array.isArray(staffPayment.staff) ? staffPayment.staff[0] : staffPayment.staff;
       
       // Filter by academy_id if staff has academy_id field
-      if (staff && (staff as any).academy_id && (staff as any).academy_id !== academyId) {
+      if (staff && (staff as any).academy_id && (staff as any).academy_id !== null) {
         return; // Skip staff payments from other academies
       }
 

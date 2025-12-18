@@ -357,9 +357,6 @@ export async function getScholarshipOpportunityCost(monthYear: string): Promise<
           .in('status', ['Active', 'Scholarship'])
           .order('created_at');
 
-        if (academyId) {
-          familyQuery = familyQuery;
-        }
 
         const { data: familyPlayers } = await familyQuery;
 

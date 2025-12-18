@@ -28,8 +28,10 @@ interface MobileHeaderProps {
 export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps) {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const pathname = usePathname();
-  const [displayName, setDisplayName] = useState('SUAREZ ACADEMY');
-  const [navLabels, setNavLabels] = useState({
+  // Use environment variables or defaults (single-tenant)
+  const displayName = process.env.NEXT_PUBLIC_ACADEMY_NAME || 'SUAREZ ACADEMY';
+  const logoUrl = process.env.NEXT_PUBLIC_ACADEMY_LOGO || '/logo.png';
+  const navLabels = {
     dashboard: 'Dashboard',
     approvals: 'Aprobaciones',
     players: 'Jugadores',
@@ -40,28 +42,7 @@ export function MobileHeader({ userEmail, pendingCount = 0 }: MobileHeaderProps)
     reports: 'Reportes',
     emails: 'Correos',
     settings: 'Configuración',
-  });
-  
-  // Get logo URL from academy context, fallback to default
-  const logoUrl = academy?.logo_url || academy?.logo_medium_url || academy?.logo_small_url || '/logo.png';
-
-  useEffect(() => {
-    if (academy) {
-      setDisplayName(academy.display_name || academy.name || 'SUAREZ ACADEMY');
-      setNavLabels({
-        dashboard: academy.settings?.navigation?.dashboard || 'Dashboard',
-        approvals: academy.settings?.navigation?.approvals || 'Aprobaciones',
-        players: academy.settings?.navigation?.players || 'Jugadores',
-        finances: academy.settings?.navigation?.finances || 'Finanzas',
-        tournaments: academy.settings?.navigation?.tournaments || 'Torneos',
-        tutors: academy.settings?.navigation?.tutors || 'Tutores',
-        families: academy.settings?.navigation?.families || 'Familias',
-        reports: academy.settings?.navigation?.reports || 'Reportes',
-        emails: academy.settings?.navigation?.emails || 'Correos',
-        settings: academy.settings?.navigation?.settings || 'Configuración',
-      });
-    }
-  }, [academy]);
+  };
 
   // Close menu on route change
   useEffect(() => {

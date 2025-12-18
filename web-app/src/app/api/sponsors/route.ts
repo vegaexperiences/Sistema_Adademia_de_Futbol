@@ -54,17 +54,13 @@ export async function POST(request: Request) {
     // Verify sponsor exists and is active
     const supabase = await createClient();
 
-    let query = supabase
+    // Single-tenant: verify sponsor exists and is active
+    const { data: sponsor, error: sponsorError} = await supabase
       .from('sponsors')
       .select('id, amount, is_active')
       .eq('id', data.sponsor_id)
-      .eq('is_active', true);
-
-    if (academyId) {
-      query = query.eq('academy_id', academyId);
-    }
-
-    const { data: sponsor, error: sponsorError } = await query.single();
+      .eq('is_active', true)
+      .single();
 
     if (sponsorError || !sponsor) {
       return NextResponse.json(

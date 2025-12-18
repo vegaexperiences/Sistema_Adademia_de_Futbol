@@ -196,7 +196,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
     }
   }
 
-  const handleRemoveRole = async (userId: string, roleId: string, academyId: string) => {
+  const handleRemoveRole = async (userId: string, roleId: string) => {
     if (!confirm('¿Estás seguro de que deseas remover este rol?')) {
       return
     }
@@ -206,7 +206,7 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
     setSuccess(null)
 
     try {
-      const result = await removeRoleFromUser(userId, roleId, academyId)
+      const result = await removeRoleFromUser(userId, roleId)
 
       if (result.error) {
         setError(result.error)
@@ -362,9 +362,8 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
           <div className="space-y-4">
             {users.map((user) => {
               const userRolesList = userRoles[user.id] || []
-              const filteredRoles = selectedAcademy
-                ? userRolesList.filter(r => r.academy_id === selectedAcademy)
-                : userRolesList
+              // Single-tenant: no academy filtering
+              const filteredRoles = userRolesList
 
               return (
                 <div
@@ -404,14 +403,9 @@ export function UserManagement({ currentUserEmail }: UserManagementProps) {
                                 className="flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium"
                               >
                                 <span>{userRole.display_name}</span>
-                                {userRole.academy_name && (
-                                  <span className="text-xs text-purple-600">
-                                    ({userRole.academy_name})
-                                  </span>
-                                )}
                                 {user.email !== currentUserEmail && (
                                   <button
-                                    onClick={() => handleRemoveRole(user.id, userRole.id, userRole.academy_id)}
+                                    onClick={() => handleRemoveRole(user.id, userRole.id)}
                                     className="text-purple-600 hover:text-purple-800"
                                     title="Remover rol"
                                   >

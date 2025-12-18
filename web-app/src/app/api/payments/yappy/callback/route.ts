@@ -705,7 +705,7 @@ export async function GET(request: NextRequest) {
 
     // Validate hash if provided
     if (hash) {
-      const isValidHash = await YappyService.validateCallbackHash(callbackParams, hash, academyId);
+      const isValidHash = await YappyService.validateCallbackHash(callbackParams, hash, null); // Single-tenant
       if (!isValidHash) {
         console.warn('[Yappy Callback] Hash validation failed');
         // Note: We'll still process the callback but log the warning

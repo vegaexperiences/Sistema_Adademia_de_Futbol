@@ -7,21 +7,10 @@ export const size = {
 
 export const contentType = 'image/png'
 
-function getAcademyInitials(academyName: string): string {
-  // Get first letter of each word, up to 2 letters
-  const words = academyName.trim().split(/\s+/)
-  if (words.length === 0) return 'A'
-  
-  if (words.length === 1) {
-    return words[0].substring(0, 2).toUpperCase()
-  }
-  
-  return (words[0][0] + words[words.length - 1][0]).toUpperCase()
-}
-
 export default async function AppleIcon() {
   try {
-    const iconUrl = await getAcademyAppleTouchIcon()
+    const iconUrl = process.env.NEXT_PUBLIC_ACADEMY_LOGO || '/logo.png'
+    const academyName = process.env.NEXT_PUBLIC_ACADEMY_NAME || 'Academia'
     
     // If it's a URL, fetch and return it
     if (iconUrl.startsWith('http')) {
@@ -53,17 +42,11 @@ export default async function AppleIcon() {
       // Ignore file system errors
     }
     
-    // Get academy for initials
-    let initials = 'SA'
-    try {
-      const academy = await getCurrentAcademy()
-      if (academy) {
-        const academyName = academy.display_name || academy.name || 'Suarez Academy'
-        initials = getAcademyInitials(academyName)
-      }
-    } catch (e) {
-      // Use default initials
-    }
+    // Generate initials from academy name
+    const words = academyName.trim().split(/\s+/)
+    const initials = words.length > 1
+      ? (words[0][0] + words[words.length - 1][0]).toUpperCase()
+      : academyName.substring(0, 2).toUpperCase()
     
     // Final fallback: return a simple icon with academy initials
     return new ImageResponse(

@@ -27,18 +27,7 @@ export interface LateFee {
 export async function getLateFeeConfig(): Promise<LateFeeConfig> {
   const supabase = await createClient();
 
-  if (!academyId) {
-    // Return default config if no academy context
-    return {
-      enabled: false,
-      type: 'percentage',
-      value: 5,
-      graceDays: 5,
-      paymentDeadlineDay: 1,
-    };
-  }
-
-  // Get all late fee related settings (filter by academy_id if available)
+  // Single-tenant: get global settings
   let settingsQuery = supabase
     .from('settings')
     .select('key, value')
@@ -48,14 +37,8 @@ export async function getLateFeeConfig(): Promise<LateFeeConfig> {
       'late_fee_value',
       'late_fee_grace_days',
       'statement_payment_day', // Use existing payment day setting
-    ]);
-
-  // Filter by academy_id if available, otherwise get global settings (academy_id IS NULL)
-  if (academyId) {
-    settingsQuery = settingsQuery.or(`academy_id.eq.${academyId},academy_id.is.null`);
-  } else {
-    settingsQuery = settingsQuery.is('academy_id', null);
-  }
+    ])
+    .is('academy_id', null); // Get global settings
 
   const { data: settings } = await settingsQuery;
 
@@ -84,7 +67,8 @@ export async function getLateFeeConfig(): Promise<LateFeeConfig> {
 export async function updateLateFeeConfig(config: Partial<LateFeeConfig>): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  // Single-tenant: no academy check
+  if (false) {
     return { success: false, error: 'No academy context available' };
   }
 
@@ -204,7 +188,8 @@ export async function updateLateFeeConfig(config: Partial<LateFeeConfig>): Promi
 export async function getPlayerLateFees(playerId: string): Promise<LateFee[]> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  // Single-tenant: no academy check
+  if (false) {
     return [];
   }
 
@@ -245,7 +230,8 @@ export async function hasLateFeeBeenApplied(
 ): Promise<boolean> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  // Single-tenant: no academy check
+  if (false) {
     return false;
   }
 
@@ -283,7 +269,8 @@ export async function applyLateFeesToOverdueCharges(
 }> {
   const supabase = await createClient();
 
-  if (!academyId) {
+  // Single-tenant: no academy check
+  if (false) {
     return { success: false, applied: 0, errors: ['No academy context available'] };
   }
 

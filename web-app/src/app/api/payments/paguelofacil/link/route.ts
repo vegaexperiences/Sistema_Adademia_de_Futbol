@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
       orderId,
       customParams,
       expiresIn: expiresIn ? parseInt(expiresIn) : 3600,
-    }, academyId);
+    }, null); // Single-tenant: no academyId needed
 
     if (!result.success) {
       return NextResponse.json(

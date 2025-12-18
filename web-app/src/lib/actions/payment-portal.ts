@@ -90,9 +90,6 @@ async function checkIsAdmin(): Promise<boolean> {
     }
     
     // Check admin role in current academy
-    if (academyId) {
-      return await hasRole(user.id, 'admin', academyId);
-    }
     
     return false;
   } catch (error) {
@@ -114,17 +111,13 @@ async function checkIsAdmin(): Promise<boolean> {
  */
 export async function searchByCedula(cedula: string): Promise<{ data: PlayerSearchResult[] | null; error: string | null }> {
   const supabase = await createClient();
-  let academyId = await getCurrentAcademyId();
+  let academyId = null // Single-tenant;
 
   if (!cedula || cedula.trim().length === 0) {
     return { data: null, error: 'La cédula es requerida' };
   }
 
-  // If no academyId, try to get it from the first available academy (fallback for public portal)
-    } catch (error: any) {
-      console.error('[searchByCedula] Error getting fallback academy:', error);
-    }
-  }
+  // Single-tenant: no academy fallback needed
 
   // Normalize cedula and generate all variants
   const cedulaVariants = normalizeCedulaForSearch(cedula);
@@ -132,11 +125,7 @@ export async function searchByCedula(cedula: string): Promise<{ data: PlayerSear
   console.log('[searchByCedula] Starting search:', {
     input: cedula,
     variants: cedulaVariants.variants,
-    academyId,
-    hasAcademyId: !!academyId,
   });
-
-  // If still no academyId, we can't proceed (RLS will block)
 
   // Check if user is admin (for cross-academy search fallback)
   const isAdmin = await checkIsAdmin();

@@ -15,16 +15,13 @@ export default async function PayPlayerPage({ params, searchParams }: PayPlayerP
 
   // Verify player exists and belongs to academy
   const supabase = await createClient();
-
-  if (!academyId) {
-    notFound();
-  }
+  
+  // Single-tenant: no academy check needed
 
   const { data: player, error } = await supabase
     .from('players')
     .select('id')
     .eq('id', playerId)
-    .eq('academy_id', academyId)
     .single();
 
   if (error || !player) {

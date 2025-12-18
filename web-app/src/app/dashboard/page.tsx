@@ -5,20 +5,18 @@ import Link from 'next/link';
 export default async function DashboardPage() {
   const supabase = await createClient();
   
-  // Get stats - filter by academy_id
-  let playersQuery = supabase.from('players').select('status, family_id, academy_id');
-  let familiesQuery = supabase.from('families').select('id, academy_id, players(status, academy_id)');
-  let pendingPlayersQuery = supabase.from('pending_players').select('id, academy_id');
+  // Get stats - single-tenant (no academy filtering)
+  const { data: players } = await supabase
+    .from('players')
+    .select('status, family_id');
   
-  if (academyId) {
-    playersQuery = playersQuery.eq('academy_id', academyId);
-    familiesQuery = familiesQuery.eq('academy_id', academyId);
-    pendingPlayersQuery = pendingPlayersQuery.eq('academy_id', academyId);
-  }
+  const { data: families } = await supabase
+    .from('families')
+    .select('id, players(status)');
   
-  const { data: players } = await playersQuery;
-  const { data: families } = await familiesQuery;
-  const { data: pendingPlayersData } = await pendingPlayersQuery;
+  const { data: pendingPlayersData } = await supabase
+    .from('pending_players')
+    .select('id');
   
   // Only count approved players (Active or Scholarship) for total
   // Note: players table now only contains Active/Scholarship players

@@ -4,9 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export function Footer() {
-  
-  // Get logo URL from academy context, fallback to default
-  const logoUrl = academy?.logo_medium_url || academy?.logo_url || academy?.logo_small_url || '/logo.png';
+  // Use environment variable or default logo
+  const logoUrl = process.env.NEXT_PUBLIC_ACADEMY_LOGO || '/logo.png';
+  const academyName = process.env.NEXT_PUBLIC_ACADEMY_NAME || 'Suarez Academy';
   
   return (
     <footer className="bg-white/80 backdrop-blur-md border-t border-gray-200/50 transition-colors duration-300">
@@ -49,7 +49,7 @@ export function Footer() {
             </Link>
           </div>
           <p className="mt-8 text-base text-gray-400 md:mt-0 md:order-1">
-            &copy; {new Date().getFullYear()} Suarez Academy. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} {academyName}. Todos los derechos reservados.
           </p>
         </div>
       </div>

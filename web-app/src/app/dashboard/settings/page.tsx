@@ -60,50 +60,21 @@ export default async function SettingsPage() {
   }
 
   // Check if user is super admin
+  // Single-tenant: check if user is admin
+  const { checkIsAdmin } = await import('@/lib/actions/permissions');
   let isSuperAdminUser = false;
   try {
-    isSuperAdminUser = await checkIsSuperAdmin();
+    isSuperAdminUser = await checkIsAdmin();
   } catch (error) {
     // Silently fail
   }
 
-  // Get current academy for branding/logo management (super admin only)
+  // Single-tenant: no academy management needed
   let currentAcademy: any = null;
-  if (isSuperAdminUser) {
-    try {
-      let academy = await getCurrentAcademy();
-      
-      // If no academy detected but user is super admin, try to get first academy
-      if (!academy) {
-        const { getAllAcademies } = await import('@/lib/actions/academies');
-        const academiesResult = await getAllAcademies();
-        if (academiesResult.data && academiesResult.data.length > 0) {
-          // Use first academy as fallback
-          academy = academiesResult.data[0];
-        }
-      }
-      
-      if (academy) {
-        // Convert to the Academy type expected by BrandingConfig and LogoUploader
-        currentAcademy = {
-          ...academy,
-          domain_status: null,
-          domain_configured_at: null,
-          created_at: '',
-          updated_at: '',
-        };
-      }
-    } catch (error) {
-      // Silently fail
-    }
-  }
 
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
-      {/* Academy Selector (Super Admin only) */}
-      {isSuperAdminUser && (
-        <AcademySettingsSelector />
-      )}
+      {/* Single-tenant: no academy selector needed */}
 
       {/* Header with Glass Effect */}
       <div className="glass-card p-4 sm:p-6">
@@ -509,7 +480,7 @@ export default async function SettingsPage() {
               Gestionar Academias
             </Link>
           </div>
-          <SuperAdminSettings initialAdmins={superAdmins} currentUserEmail={currentUserEmail} />
+          <SuperAdminSettings />
         </div>
       )}
 
@@ -561,9 +532,7 @@ export default async function SettingsPage() {
               <p className="text-sm text-gray-700 mb-4">
                 <span className="font-bold">💡 Nota:</span> Personaliza el nombre de visualización y las etiquetas de navegación para la academia actual.
               </p>
-            <BrandingConfig 
-              academy={currentAcademy}
-            />
+            <BrandingConfig />
             </div>
           ) : (
             <div className="bg-gradient-to-br from-pink-50 to-rose-50 p-6 rounded-xl border-l-4 border-pink-500">
@@ -593,9 +562,7 @@ export default async function SettingsPage() {
               <p className="text-sm text-gray-700 mb-4">
                 <span className="font-bold">💡 Nota:</span> Sube o configura las URLs de los logos y favicons para la academia actual. Se mostrarán en toda la aplicación.
               </p>
-              <LogoUploader 
-                academy={currentAcademy}
-              />
+              <LogoUploader />
             </div>
           ) : (
             <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-xl border-l-4 border-cyan-500">
