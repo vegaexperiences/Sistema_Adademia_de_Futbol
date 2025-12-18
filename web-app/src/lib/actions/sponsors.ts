@@ -13,7 +13,6 @@ export interface Sponsor {
   is_active: boolean;
   display_order: number;
   image_url?: string;
-  academy_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -30,7 +29,6 @@ export interface SponsorRegistration {
   payment_id?: string;
   status: 'pending' | 'approved' | 'cancelled';
   notes?: string;
-  academy_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -144,17 +142,10 @@ export async function createSponsorRegistration(
       if (sponsorResult.data) {
         const sponsor = sponsorResult.data;
         
-        // Get academy information
-        const { data: academy, error: academyError } = await supabase
-          .from('academies')
-          .select('id, name, display_name, settings')
-          .limit(1)
-          .single();
-        
-        const academyName = academy?.display_name || academy?.name || 'Suarez Academy';
-        const academySettings = academy?.settings || {};
-        const academyPhone = academySettings.contact_phone || academySettings.phone || '60368042';
-        const academyEmail = academySettings.contact_email || academySettings.email || 'info@suarezacademy.com';
+        // Single-tenant: use hardcoded academy info from env vars
+        const academyName = process.env.NEXT_PUBLIC_ACADEMY_NAME || 'Suarez Academy';
+        const academyPhone = process.env.ACADEMY_CONTACT_PHONE || '60368042';
+        const academyEmail = process.env.ACADEMY_CONTACT_EMAIL || 'info@suarezacademy.com';
         
         // Format benefits as HTML list
         const benefitsHtml = sponsor.benefits && sponsor.benefits.length > 0
@@ -342,34 +333,28 @@ export async function assignPlayerToSponsor(
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
 
-  if (false) /* Single-tenant: no academy check */ {
-    return { success: false, error: 'No academy context found' };
-  }
-
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { success: false, error: 'User not authenticated' };
   }
 
-  // Verify sponsor registration exists and belongs to current academy
+  // Verify sponsor registration exists (single-tenant)
   const { data: registration, error: regError } = await supabase
     .from('sponsor_registrations')
-    .select('id, academy_id')
+    .select('id')
     .eq('id', sponsorRegistrationId)
-    
     .single();
 
   if (regError || !registration) {
     return { success: false, error: 'Sponsor registration not found' };
   }
 
-  // Verify player exists and belongs to current academy
+  // Verify player exists (single-tenant)
   const { data: player, error: playerError } = await supabase
     .from('players')
-    .select('id, academy_id')
+    .select('id')
     .eq('id', playerId)
-    
     .single();
 
   if (playerError || !player) {
@@ -388,13 +373,12 @@ export async function assignPlayerToSponsor(
     return { success: false, error: 'Player is already assigned to this sponsor' };
   }
 
-  // Create assignment
+  // Create assignment (single-tenant)
   const { error } = await supabase
     .from('sponsor_player_assignments')
     .insert({
       sponsor_registration_id: sponsorRegistrationId,
       player_id: playerId,
-      
       assigned_by: user.id,
       notes: notes || null,
     });
@@ -560,10 +544,6 @@ export async function createSponsor(data: {
 }): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
 
-  if (false) /* Single-tenant: no academy check */ {
-    return { data: null, error: 'No academy context found' };
-  }
-
   if (!data.name || !data.amount || data.amount <= 0) {
     return { data: null, error: 'Name and amount are required. Amount must be greater than 0' };
   }
@@ -576,7 +556,6 @@ export async function createSponsor(data: {
     display_order: data.display_order ?? 0,
     image_url: data.image_url || null,
     is_active: data.is_active !== undefined ? data.is_active : true,
-    
   };
 
   const { data: sponsor, error } = await supabase
@@ -613,20 +592,15 @@ export async function updateSponsor(
 ): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
 
-  if (false) /* Single-tenant: no academy check */ {
-    return { data: null, error: 'No academy context found' };
-  }
-
-  // Verify sponsor exists and belongs to current academy
+  // Verify sponsor exists (single-tenant)
   const { data: existingSponsor, error: checkError } = await supabase
     .from('sponsors')
-    .select('id, academy_id')
+    .select('id')
     .eq('id', id)
-    
     .single();
 
   if (checkError || !existingSponsor) {
-    return { data: null, error: 'Sponsor not found or does not belong to current academy' };
+    return { data: null, error: 'Sponsor not found' };
   }
 
   // Validate amount if provided
@@ -667,11 +641,7 @@ export async function updateSponsor(
 export async function deleteSponsor(id: string): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
 
-  if (false) /* Single-tenant: no academy check */ {
-    return { success: false, error: 'No academy context found' };
-  }
-
-  // Verify sponsor exists and belongs to current academy
+  // Verify sponsor exists (single-tenant)
   const { data: existingSponsor, error: checkError } = await supabase
     .from('sponsors')
     .select('id, academy_id')
@@ -725,20 +695,15 @@ export async function toggleSponsorActive(
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient();
 
-  if (false) /* Single-tenant: no academy check */ {
-    return { success: false, error: 'No academy context found' };
-  }
-
-  // Verify sponsor exists and belongs to current academy
+  // Verify sponsor exists (single-tenant)
   const { data: existingSponsor, error: checkError } = await supabase
     .from('sponsors')
-    .select('id, academy_id')
+    .select('id')
     .eq('id', id)
-    
     .single();
 
   if (checkError || !existingSponsor) {
-    return { success: false, error: 'Sponsor not found or does not belong to current academy' };
+    return { success: false, error: 'Sponsor not found' };
   }
 
   const { error } = await supabase
@@ -764,16 +729,11 @@ export async function toggleSponsorActive(
 export async function getOrCreateOpenDonationSponsorLevel(): Promise<{ data: Sponsor | null; error: string | null }> {
   const supabase = await createClient();
 
-  if (false) /* Single-tenant: no academy check */ {
-    return { data: null, error: 'No academy context found' };
-  }
-
-  // Try to find existing "Donación Abierta" level
+  // Try to find existing "Donación Abierta" level (single-tenant)
   let query = supabase
     .from('sponsors')
     .select('*')
     .eq('name', 'Donación Abierta')
-    
     .maybeSingle();
 
   const { data: existing, error: findError } = await query;
@@ -794,7 +754,7 @@ export async function getOrCreateOpenDonationSponsorLevel(): Promise<{ data: Spo
     };
   }
 
-  // If not found, create it
+  // If not found, create it (single-tenant)
   const sponsorData = {
     name: 'Donación Abierta',
     description: 'Donación libre de padrino - monto a definir por el donante',
@@ -803,7 +763,6 @@ export async function getOrCreateOpenDonationSponsorLevel(): Promise<{ data: Spo
     display_order: 9999, // Put it at the end
     image_url: null,
     is_active: true,
-    
   };
 
   const { data: newSponsor, error: createError } = await supabase

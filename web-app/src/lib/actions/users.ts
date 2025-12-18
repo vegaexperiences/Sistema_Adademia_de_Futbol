@@ -164,19 +164,19 @@ export async function getUserRoles(userId: string): Promise<{ data: UserRole[] |
     return { data: null, error: 'Unauthorized' }
   }
   
+  // Single-tenant: no academy_id needed
   let query = supabase
     .from('user_role_assignments')
     .select(`
       id,
       role_id,
-      academy_id,
       created_at,
       user_roles!inner (
         id,
         name,
         display_name,
         description
-      ),
+      )
     `)
     .eq('user_id', userId)
   
