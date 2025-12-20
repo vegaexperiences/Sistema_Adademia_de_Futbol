@@ -109,3 +109,5 @@ Luego verificar en Vercel si compila. Si no, arreglar esos 3 archivos específic
 - Algunos archivos tienen `academyId = null` como placeholder temporal
 
 **Estado actual**: El sistema es funcionalmente single-tenant. Solo faltan arreglos de sintaxis en 3 archivos.
+
+

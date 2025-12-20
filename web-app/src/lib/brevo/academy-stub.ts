@@ -12,3 +12,5 @@ export async function getBrevoClientForAcademy(academyId: string | null) {
     fromName: process.env.BREVO_FROM_NAME || 'Academia',
   };
 }
+
+

@@ -1,18 +1,26 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getDatabaseConfig } from '../config/client-config'
 
 /**
  * Create Supabase Server Client - Single Tenant
  * 
- * Simplified version without academy context.
+ * Uses centralized configuration for better maintainability and isolation.
  * RLS policies have been updated to work without academy filtering.
+ * 
+ * Architecture: Single-Tenant Replicable
+ * - Each deployment connects to its own Supabase project via environment variables
+ * - Configuration is validated on startup via client-config module
  */
 export async function createClient() {
   const cookieStore = await cookies()
 
+  // Get database configuration from centralized config
+  const dbConfig = getDatabaseConfig()
+
   const client = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    dbConfig.url,
+    dbConfig.anonKey,
     {
       cookies: {
         getAll() {

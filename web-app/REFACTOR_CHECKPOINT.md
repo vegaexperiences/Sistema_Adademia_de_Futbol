@@ -225,3 +225,5 @@ git branch -D refactor/remove-multi-tenant
 
 **Última actualización**: 2024-12-18  
 **Status**: 🟡 TRABAJO EN PROGRESO - NO DEPLOYAR
+
+

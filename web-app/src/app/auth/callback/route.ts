@@ -134,3 +134,5 @@ export async function GET(request: NextRequest) {
     `${requestUrl.origin}/auth/forgot-password?error=${encodeURIComponent('Enlace de verificación inválido. Por favor solicita uno nuevo.')}`
   )
 }
+
+

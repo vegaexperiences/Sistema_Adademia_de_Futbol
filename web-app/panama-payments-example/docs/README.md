@@ -34,3 +34,5 @@ All endpoints are documented in `swagger.yaml`. Key endpoints:
 - `POST /api/payments/paguelofacil/tokenize` - Tokenize card
 - `POST /api/payments/paguelofacil/process` - Process payment
 
+
+

@@ -30,3 +30,5 @@ export async function getAcademyAppleTouchIcon(): Promise<string> {
 export async function getAcademyDisplayName(): Promise<string> {
   return process.env.NEXT_PUBLIC_ACADEMY_NAME || 'Academia';
 }
+
+

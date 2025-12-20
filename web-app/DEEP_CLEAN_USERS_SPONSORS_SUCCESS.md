@@ -239,3 +239,5 @@ Estas variables deben estar configuradas en:
 **Estado**: 🟢 **LISTO PARA PRODUCCIÓN**
 
 Los módulos de Gestión de Usuarios y Gestión de Padrinos ahora funcionan perfectamente en modo single-tenant, sin ninguna referencia a la arquitectura multi-tenant anterior.
+
+

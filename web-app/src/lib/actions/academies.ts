@@ -20,3 +20,5 @@ export async function getAcademyById(id: string): Promise<{ data: Academy | null
   // Single-tenant: no academies
   return { data: null, error: 'Not found' };
 }
+
+

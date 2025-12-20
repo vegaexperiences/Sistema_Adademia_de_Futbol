@@ -89,89 +89,26 @@ export class PagueloFacilService {
       // If academy config not found, fall through to env vars
     }
 
-    // Fallback to environment variables (backward compatibility)
+    // Fallback to centralized configuration (backward compatibility with env vars)
     if (!this.config) {
-      // Get tokens and clean them (remove any non-ASCII characters that might have been copied incorrectly)
-      const rawApiKey = process.env.PAGUELOFACIL_ACCESS_TOKEN || '';
-      const rawCclw = process.env.PAGUELOFACIL_CCLW || '';
-      
-      // Clean tokens: remove non-ASCII characters and trim whitespace
-      const apiKey = rawApiKey.replace(/[^\x20-\x7E]/g, '').trim();
-      const cclw = rawCclw.replace(/[^\x20-\x7E]/g, '').trim();
-      const sandbox = process.env.PAGUELOFACIL_SANDBOX === 'true';
-
-      // Validate sandbox configuration
-      if (sandbox) {
-        // Verify that URLs match sandbox environment
-        const linkDeamonUrl = sandbox
-          ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
-          : 'https://secure.paguelofacil.com/LinkDeamon.cfm';
-        
-        console.log('[PagueloFacil] Sandbox mode enabled:', {
-          sandbox,
-          linkDeamonUrl,
-          note: 'Using sandbox credentials and endpoints',
-        });
-      } else {
-        console.log('[PagueloFacil] Production mode enabled');
+      try {
+        // Try to get from centralized config first
+        const { getPagueloFacilConfig } = await import('@/lib/config/client-config');
+        const config = getPagueloFacilConfig();
+        // Convert to expected format
+        this.config = {
+          apiKey: config.accessToken,
+          cclw: config.cclw,
+          sandbox: config.sandbox,
+        };
+      } catch (error) {
+        // If centralized config not available or PagueloFácil not configured, throw error
+        // This ensures clear error messages instead of silent failures
+        throw new Error(
+          'PagueloFácil payment provider not configured. ' +
+          'Set PAGUELOFACIL_ACCESS_TOKEN and PAGUELOFACIL_CCLW environment variables.'
+        );
       }
-
-      // Log sandbox status for debugging
-      const cclwPreview = cclw.length > 20 
-        ? `${cclw.substring(0, 10)}...${cclw.substring(cclw.length - 10)}`
-        : cclw;
-      
-      console.log('[PagueloFacil] ========== CONFIGURATION LOADED ==========');
-      console.log('[PagueloFacil] Configuration loaded:', {
-        sandbox,
-        sandboxEnv: process.env.PAGUELOFACIL_SANDBOX,
-        sandboxEnvRaw: process.env.PAGUELOFACIL_SANDBOX,
-        hasApiKey: !!apiKey,
-        hasCclw: !!cclw,
-        apiKeyLength: apiKey.length,
-        apiKeyPreview: apiKey.length > 20 ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 10)}` : apiKey,
-        cclwLength: cclw.length,
-        cclwPreview,
-        linkDeamonUrl: sandbox
-          ? 'https://sandbox.paguelofacil.com/LinkDeamon.cfm'
-          : 'https://secure.paguelofacil.com/LinkDeamon.cfm',
-      });
-      
-      // Validate sandbox configuration
-      if (sandbox && process.env.PAGUELOFACIL_SANDBOX !== 'true') {
-        console.warn('[PagueloFacil] ⚠️ WARNING: Sandbox mode detected but PAGUELOFACIL_SANDBOX is not exactly "true"');
-      }
-      
-      if (!sandbox && process.env.PAGUELOFACIL_SANDBOX === 'true') {
-        console.warn('[PagueloFacil] ⚠️ WARNING: PAGUELOFACIL_SANDBOX is "true" but sandbox mode is false - check environment variable');
-      }
-
-      if (!apiKey || !cclw) {
-        console.error('[PagueloFacil] ❌ CRITICAL: Missing credentials:', {
-          hasApiKey: !!apiKey,
-          hasCclw: !!cclw,
-          apiKeyEnv: process.env.PAGUELOFACIL_ACCESS_TOKEN ? 'Set' : 'Not set',
-          cclwEnv: process.env.PAGUELOFACIL_CCLW ? 'Set' : 'Not set',
-        });
-        throw new Error('PagueloFacil credentials not configured. Please set PAGUELOFACIL_ACCESS_TOKEN and PAGUELOFACIL_CCLW environment variables.');
-      }
-      
-      // Validate CCLW format (should be hexadecimal, typically 128+ characters)
-      if (cclw.length < 64) {
-        console.warn('[PagueloFacil] ⚠️ WARNING: CCLW seems too short. Expected length: 128+ characters, got:', cclw.length);
-      }
-      
-      // Validate that CCLW is hexadecimal
-      if (!/^[0-9A-Fa-f]+$/.test(cclw)) {
-        console.warn('[PagueloFacil] ⚠️ WARNING: CCLW contains non-hexadecimal characters. This may indicate a copy/paste issue.');
-      }
-
-      // Log warning if tokens were cleaned (indicates potential copy/paste issue)
-      if (rawApiKey !== apiKey || rawCclw !== cclw) {
-        console.warn('[PagueloFacil] Tokens were cleaned - some non-ASCII characters were removed. Please verify your environment variables.');
-      }
-
-      this.config = { apiKey, cclw, sandbox };
     }
 
     return this.config;

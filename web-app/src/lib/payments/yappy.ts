@@ -115,48 +115,20 @@ export class YappyService {
       // If academy config not found, fall through to env vars
     }
 
-    // Fallback to environment variables (backward compatibility)
+    // Fallback to centralized configuration (backward compatibility with env vars)
     if (!this.config) {
-      // Clean merchantId and secretKey - remove whitespace, newlines, and special characters
-      const rawMerchantId = process.env.YAPPY_MERCHANT_ID || '';
-      const rawSecretKey = process.env.YAPPY_SECRET_KEY || '';
-      const merchantId = rawMerchantId.trim().replace(/[\r\n\t]/g, '');
-      const secretKey = rawSecretKey.trim().replace(/[\r\n\t]/g, '');
-      
-      // Get domain URL - Yappy panel shows it with https://, but web component expects domain only
-      let domainUrl = process.env.YAPPY_DOMAIN_URL || process.env.NEXT_PUBLIC_APP_URL || '';
-      // Remove protocol and trailing slash for component attribute (Yappy web component expects domain only)
-      // Example: https://sistema-adademia-de-futbol-tura.vercel.app -> sistema-adademia-de-futbol-tura.vercel.app
-      domainUrl = domainUrl.replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
-      const environment = (process.env.YAPPY_ENVIRONMENT || 'production') as 'production' | 'testing';
-
-      console.log('[Yappy] Configuration loaded from environment:', {
-        environment,
-        hasMerchantId: !!merchantId,
-        hasSecretKey: !!secretKey,
-        domainUrl,
-        merchantIdLength: merchantId.length,
-        secretKeyLength: secretKey.length,
-        domainUrlLength: domainUrl.length,
-        domainUrlPreview: domainUrl || 'EMPTY',
-        merchantIdHasNewlines: rawMerchantId.includes('\n') || rawMerchantId.includes('\r'),
-        secretKeyHasNewlines: rawSecretKey.includes('\n') || rawSecretKey.includes('\r'),
-      });
-
-      if (!merchantId || !secretKey) {
-        throw new Error('Yappy credentials not configured. Please set YAPPY_MERCHANT_ID and YAPPY_SECRET_KEY environment variables.');
+      try {
+        // Try to get from centralized config first
+        const { getYappyConfig } = await import('@/lib/config/client-config');
+        this.config = getYappyConfig();
+      } catch (error) {
+        // If centralized config not available or Yappy not configured, throw error
+        // This ensures clear error messages instead of silent failures
+        throw new Error(
+          'Yappy payment provider not configured. ' +
+          'Set YAPPY_MERCHANT_ID, YAPPY_SECRET_KEY, and YAPPY_DOMAIN_URL environment variables.'
+        );
       }
-
-      if (!domainUrl || domainUrl.trim().length === 0) {
-        throw new Error('Yappy domain URL not configured. Please set YAPPY_DOMAIN_URL or NEXT_PUBLIC_APP_URL environment variable.');
-      }
-
-      // Warn if credentials were cleaned
-      if (rawMerchantId !== merchantId || rawSecretKey !== secretKey) {
-        console.warn('[Yappy] ⚠️ Credentials were cleaned - whitespace/newlines removed. Please check your environment variables.');
-      }
-
-      this.config = { merchantId, secretKey, domainUrl, environment };
     }
 
     return this.config;

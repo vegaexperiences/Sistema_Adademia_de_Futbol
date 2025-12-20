@@ -47,3 +47,5 @@ Si aún hay problemas después de ejecutar la migración:
 3. Verifica que existan jugadores en la base de datos con la cédula que estás buscando
 
 
+
+

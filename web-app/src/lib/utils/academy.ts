@@ -11,3 +11,5 @@ export async function isSuperAdmin(userId?: string): Promise<boolean> {
   const { hasRole } = await import('./permissions');
   return await hasRole(userId, 'admin');
 }
+
+

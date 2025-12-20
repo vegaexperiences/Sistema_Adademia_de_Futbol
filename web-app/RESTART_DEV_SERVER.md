@@ -35,3 +35,5 @@ Después de estos pasos, los errores deberían desaparecer:
 - ❌ "selecciona una academia" → Ya no debería aparecer
 
 El código está 100% limpio de referencias a academies y academy_id. Es solo un problema de cache.
+
+

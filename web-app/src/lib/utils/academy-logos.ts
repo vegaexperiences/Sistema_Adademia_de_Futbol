@@ -3,3 +3,5 @@
  */
 
 export { getAcademyLogo, getAcademyFavicon, getAcademyAppleTouchIcon } from './academy-stub';
+
+

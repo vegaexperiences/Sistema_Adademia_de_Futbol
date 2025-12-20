@@ -478,3 +478,5 @@ Cuando se despliegue, verificar:
 **Estado**: 🟢 **LISTO PARA PRODUCCIÓN**
 
 El sistema ahora es 100% single-tenant sin ninguna referencia residual a la arquitectura multi-tenant anterior.
+
+

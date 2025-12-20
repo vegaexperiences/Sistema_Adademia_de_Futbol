@@ -1,5 +1,10 @@
 /**
  * Validates required environment variables on application startup
+ * 
+ * DEPRECATED: Use getClientConfig() from '@/lib/config/client-config' instead
+ * This function is kept for backward compatibility during migration
+ * 
+ * @deprecated Use getClientConfig() for centralized configuration
  */
 export function validateEnv() {
   const requiredEnvVars = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'];
@@ -35,6 +40,7 @@ export function validateEnv() {
 }
 
 // Validate on module load (only in server-side)
+// Note: New code should use getClientConfig() which includes validation
 if (typeof window === 'undefined') {
   try {
     validateEnv();

@@ -47,3 +47,5 @@ https://sistema-adademia-de-futbol-tura.vercel.app/pay?cedula=8-1234-5678
 ```
 
 
+
+

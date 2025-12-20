@@ -160,3 +160,5 @@ vercel logs | grep "Auth Callback"
 3. Captura de pantalla del error
 4. Logs de consola del navegador
 5. Logs de Vercel (si tienes acceso)
+
+

@@ -23,3 +23,5 @@ export async function getYappyConfig(academyId: string | null) {
     environment: (process.env.YAPPY_ENVIRONMENT || 'testing') as 'testing' | 'production',
   };
 }
+
+

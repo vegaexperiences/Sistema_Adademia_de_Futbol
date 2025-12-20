@@ -193,3 +193,5 @@ Una vez deployado, verificar:
 **Estado Final**: 🟢 **LISTO PARA PRODUCCIÓN**
 
 El sistema de gestión de usuarios ahora funciona completamente en modo single-tenant, sin referencias a academias y con todas las funcionalidades operativas.
+
+

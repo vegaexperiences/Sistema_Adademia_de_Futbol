@@ -346,3 +346,5 @@ See `REFACTOR_CHECKPOINT.md` for overall migration status.
 **Version**: Single-Tenant v1.0  
 **Next.js**: 15.x  
 **Node**: 18.x / 20.x
+
+
